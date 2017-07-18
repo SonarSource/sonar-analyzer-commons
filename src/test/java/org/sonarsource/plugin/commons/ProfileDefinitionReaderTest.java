@@ -19,10 +19,8 @@
  */
 package org.sonarsource.plugin.commons;
 
-import java.util.Arrays;
-import java.util.List;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.sonar.api.profiles.RulesProfile;
@@ -38,8 +36,11 @@ public class ProfileDefinitionReaderTest {
 
   private RuleFinder ruleFinder;
 
-  @Before
-  public void setUp() throws Exception {
+  @org.junit.Rule
+  public ExpectedException thrown = ExpectedException.none();
+
+  @Test
+  public void load_profile_keys() throws Exception {
     ruleFinder = mock(RuleFinder.class);
     when(ruleFinder.findByKey(anyString(), anyString())).thenAnswer(new Answer<Rule>() {
       @Override
@@ -49,27 +50,39 @@ public class ProfileDefinitionReaderTest {
         return Rule.create(repositoryKey, ruleKey, ruleKey);
       }
     });
+
+    RulesProfile profile = RulesProfile.create("profile-name", "lang-key");
+    ProfileDefinitionReader definitionReader = new ProfileDefinitionReader(ruleFinder);
+    definitionReader.activateRules(profile, "repo-key", "org/sonarsource/plugin/commons/Sonar_way_profile.json");
+    assertThat(profile.getActiveRules()).hasSize(3);
+    assertThat(profile.getActiveRule("repo-key", "S100")).isNotNull();
+    assertThat(profile.getActiveRule("repo-key", "S110")).isNotNull();
+    assertThat(profile.getActiveRule("repo-key", "S123")).isNotNull();
+    assertThat(profile.getActiveRule("repo-key", "S666")).isNull();
   }
 
   @Test
-  public void load_profile_keys() throws Exception {
-    @org.sonar.check.Rule(key = "S100")
-    class RuleA {
-    }
-    @org.sonar.check.Rule(key = "S110")
-    class RuleB {
-    }
-    @org.sonar.check.Rule(key = "S666")
-    class RuleC {
-    }
-    List<Class> rules = Arrays.asList(RuleA.class, RuleB.class, RuleC.class);
+  public void fails_with_non_existing_rule_key() throws Exception {
+    ruleFinder = mock(RuleFinder.class);
+    when(ruleFinder.findByKey(anyString(), anyString())).thenAnswer(new Answer<Rule>() {
+      @Override
+      public Rule answer(InvocationOnMock iom) throws Throwable {
+        String repositoryKey = (String) iom.getArguments()[0];
+        String ruleKey = (String) iom.getArguments()[1];
+        if (ruleKey.equals("S666")) {
+          return null;
+        }
+        return Rule.create(repositoryKey, ruleKey, ruleKey);
+      }
+    });
+
     RulesProfile profile = RulesProfile.create("profile-name", "lang-key");
     ProfileDefinitionReader definitionReader = new ProfileDefinitionReader(ruleFinder);
-    definitionReader.activateRules(profile, "repo-key", rules, "org/sonarsource/plugin/commons/Sonar_way_profile.json");
-    assertThat(profile.getActiveRules()).hasSize(2);
-    assertThat(profile.getActiveRule("repo-key", "S100")).isNotNull();
-    assertThat(profile.getActiveRule("repo-key", "S110")).isNotNull();
-    assertThat(profile.getActiveRule("repo-key", "S666")).isNull();
+
+    thrown.expect(IllegalStateException.class);
+    thrown.expectMessage("Failed to activate rule with key 'S666'. No corresponding rule found in repository with key 'repo-key'.");
+
+    definitionReader.activateRules(profile, "repo-key", "org/sonarsource/plugin/commons/Sonar_way_profile_invalid.json");
   }
 
 }

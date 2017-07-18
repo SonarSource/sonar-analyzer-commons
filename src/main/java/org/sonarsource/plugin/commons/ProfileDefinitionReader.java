@@ -20,40 +20,43 @@
 package org.sonarsource.plugin.commons;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.sonar.api.profiles.RulesProfile;
-import org.sonar.api.rules.RuleAnnotationUtils;
+import org.sonar.api.rules.Rule;
 import org.sonar.api.rules.RuleFinder;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
+ * Use to create {@link RulesProfile} based on json file.
+ *
  * Not designed for multi-threads
  */
 public final class ProfileDefinitionReader {
 
   private final RuleFinder ruleFinder;
-  private JsonParser jsonParser;
 
   public ProfileDefinitionReader(RuleFinder ruleFinder) {
     this.ruleFinder = ruleFinder;
-    jsonParser = new JsonParser();
   }
 
-  public void activateRules(RulesProfile profile, String repositoryKey, List<Class> ruleClasses, String profilePath) {
+  public void activateRules(RulesProfile profile, String repositoryKey, String profilePath) {
     Set<String> activeKeys = loadActiveKeysFromJsonProfile(profilePath);
-    for (Class ruleClass : ruleClasses) {
-      String ruleKey = RuleAnnotationUtils.getRuleKey(ruleClass);
-      if (activeKeys.contains(ruleKey)) {
-        profile.activateRule(ruleFinder.findByKey(repositoryKey, ruleKey), null);
+    for (String activeKey : activeKeys) {
+      Rule rule = ruleFinder.findByKey(repositoryKey, activeKey);
+      if (rule == null) {
+        String errorMessage = "Failed to activate rule with key '%s'. No corresponding rule found in repository with key '%s'.";
+        throw new IllegalStateException(String.format(errorMessage, activeKey, repositoryKey));
       }
+
+      profile.activateRule(rule, null);
     }
   }
 
   private Set<String> loadActiveKeysFromJsonProfile(String profilePath) {
+    JsonParser jsonParser = new JsonParser();
     Map<String, Object> root;
     try {
       root = jsonParser.parse(Resources.toString(profilePath, UTF_8));
