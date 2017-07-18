@@ -22,6 +22,8 @@
     <version.jsr305>3.0.2</version.jsr305>
     <version.mockito>2.8.9</version.mockito>
     <version.junit>4.12</version.junit>
+    <!-- used for deployment to SonarSource Artifactory -->
+    <gitRepositoryName>sonar-plugin-commons</gitRepositoryName>
   </properties>
 
   <dependencies>
