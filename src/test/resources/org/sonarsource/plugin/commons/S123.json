@@ -1,0 +1,14 @@
+{
+  "title": "Avoid doing assignments in the condition part of if\/while\/for statements",
+  "type": "CODE_SMELL",
+  "status": "ready",
+  "remediation": {
+    "func": "Linear",
+    "linearDesc": null,
+    "linearFactor": "10mn"
+  },
+  "tags": [
+    
+  ],
+  "defaultSeverity": "Major"
+}
