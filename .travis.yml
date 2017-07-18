@@ -1,0 +1,25 @@
+language: java
+sudo: false
+
+jdk:
+  - oraclejdk8
+
+install: true
+script: ./travis.sh
+env:
+  - TEST=ci
+matrix:
+  fast_finish: true
+
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+before_cache:
+  - rm -rf $HOME/.m2/repository/org/sonarsource/plugin-commons
+  - find $HOME/.m2 -name resolver-status.properties -exec rm {} \;
+
+notifications:
+  email: false
+  webhooks:
+  - secure: CdFEkAxjvC4IGlZ6KYbcZczEQWEdOex7pf5ksX3Qc5zwiQWoblWxrXuZ9ij+J65WrvEK3NhRCC5hVqg1RUFXPnqjuateQQqRID6vzlEk4qX7tbrgtkBBvcyXrirC27au4MwxgrTVsoQHJhKqNTV9ppWkGDR9WRRdJQbVJIPbh+ug7jTFUuXX42aw2+eosTnl67UM+K/zY4vn6jlmLq3Zn8mfwoSD8VVLkb9IWa4zSpMFUrlBJyXp+nkIvzZjWeo+daBQ7BFoTvElNxT8VMRsDIiv6rbNvrOBcW7mL6+XrWYYNN8UeXLjJBIZirEJbYm7gbky4LxmPEc7heIwBxOn+oevTfI1H8kHERJXapevazTDDlycHAAoaJg0PNkSiPKl3h34aduBcbCVMd13EE+xYFqUW24n4esve6c7CCK8QT9zUwaJ47GOuWdygmpFGw1QwsNJKYLZ9BvPmIDXdlX11Z33ds0Mtg7K42bjv24nN8zOsCLoTj70vdBejhWgql3rNY0zHutXNksIc1beqP+e6eHSs4Q9UpD5h0vGkWE6BlIcaOdWnblfZ0Y1cEIKt8ElKmekXh//c17CYwpYMct6/W/McsFxuTD2ROfzu0CFfucFtlBYJkOR0ha2lfKQOmix2t6kiwkg0XDgoZMGqf+tn2gtYXaMhdTF6U/CVrGD10Y=
+  on_start: always
