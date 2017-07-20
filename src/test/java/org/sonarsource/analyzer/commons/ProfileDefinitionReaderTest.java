@@ -1,5 +1,5 @@
 /*
- * SonarQube Plugin Commons
+ * SonarQube Analyzer Commons
  * Copyright (C) 2009-2017 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.plugin.commons;
+package org.sonarsource.analyzer.commons;
 
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -53,7 +53,7 @@ public class ProfileDefinitionReaderTest {
 
     RulesProfile profile = RulesProfile.create("profile-name", "lang-key");
     ProfileDefinitionReader definitionReader = new ProfileDefinitionReader(ruleFinder);
-    definitionReader.activateRules(profile, "repo-key", "org/sonarsource/plugin/commons/Sonar_way_profile.json");
+    definitionReader.activateRules(profile, "repo-key", "org/sonarsource/analyzer/commons/Sonar_way_profile.json");
     assertThat(profile.getActiveRules()).hasSize(3);
     assertThat(profile.getActiveRule("repo-key", "S100")).isNotNull();
     assertThat(profile.getActiveRule("repo-key", "S110")).isNotNull();
@@ -82,7 +82,7 @@ public class ProfileDefinitionReaderTest {
     thrown.expect(IllegalStateException.class);
     thrown.expectMessage("Failed to activate rule with key 'S666'. No corresponding rule found in repository with key 'repo-key'.");
 
-    definitionReader.activateRules(profile, "repo-key", "org/sonarsource/plugin/commons/Sonar_way_profile_invalid.json");
+    definitionReader.activateRules(profile, "repo-key", "org/sonarsource/analyzer/commons/Sonar_way_profile_invalid.json");
   }
 
 }

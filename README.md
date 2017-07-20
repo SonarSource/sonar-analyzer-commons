@@ -1,2 +1,2 @@
-# sonar-plugin-commons
+# sonar-analyzer-commons
 Logic useful for an average language plugin
