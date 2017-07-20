@@ -14,6 +14,7 @@
   <version>1.0-SNAPSHOT</version>
 
   <name>SonarQube Analyzer Commons</name>
+  <description>Logic useful for a language plugin</description>
 
   <properties>
     <!-- versions -->
