@@ -1,5 +1,5 @@
 /*
- * SonarQube Plugin Commons
+ * SonarQube Analyzer Commons
  * Copyright (C) 2009-2017 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
@@ -18,6 +18,6 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 @ParametersAreNonnullByDefault
-package org.sonarsource.plugin.commons;
+package org.sonarsource.analyzer.commons;
 
 import javax.annotation.ParametersAreNonnullByDefault;

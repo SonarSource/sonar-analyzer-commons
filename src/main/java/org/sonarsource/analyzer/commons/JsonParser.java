@@ -1,5 +1,5 @@
 /*
- * SonarQube Plugin Commons
+ * SonarQube Analyzer Commons
  * Copyright (C) 2009-2017 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
@@ -17,24 +17,30 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.plugin.commons;
+package org.sonarsource.analyzer.commons;
 
-import java.io.IOException;
-import org.junit.Test;
+import java.util.Map;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import jdk.nashorn.api.scripting.JSObject;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.assertj.core.api.Assertions.assertThat;
+/**
+ * Not designed for multi-threads
+ */
+class JsonParser {
 
-public class ResourcesTest {
+  private JSObject nashornParser;
 
-  @Test
-  public void read_resource() throws Exception {
-    assertThat(Resources.toString("org/sonarsource/plugin/commons/ResourcesTest.txt", UTF_8)).isEqualTo("hello\n");
+  JsonParser() {
+    try {
+      nashornParser = (JSObject) new ScriptEngineManager().getEngineByName("nashorn").eval("JSON.parse");
+    } catch (ScriptException e) {
+      throw new IllegalStateException("Can not get 'JSON.parse' from 'nashorn' script engine.", e);
+    }
   }
 
-  @Test(expected = IOException.class)
-  public void read_invalid_resource() throws Exception {
-    Resources.toString("invalid/path.txt", UTF_8);
+  Map<String, Object> parse(String data) {
+    return (Map<String, Object>) nashornParser.call(null, data);
   }
 
 }
