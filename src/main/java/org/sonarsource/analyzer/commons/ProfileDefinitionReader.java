@@ -55,7 +55,7 @@ public final class ProfileDefinitionReader {
     }
   }
 
-  private Set<String> loadActiveKeysFromJsonProfile(String profilePath) {
+  static Set<String> loadActiveKeysFromJsonProfile(String profilePath) {
     JsonParser jsonParser = new JsonParser();
     Map<String, Object> root;
     try {
