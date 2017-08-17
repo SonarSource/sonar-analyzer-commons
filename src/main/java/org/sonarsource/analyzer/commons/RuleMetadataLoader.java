@@ -51,6 +51,11 @@ public class RuleMetadataLoader {
     this(resourceFolder, Collections.emptySet());
   }
 
+  /**
+   * This constructor should not be used when SonarQube runtime version is less than 6.0
+   * because it would trigger calls to {@link org.sonar.api.server.rule.RulesDefinition.NewRule#setActivatedByDefault(boolean)}
+   * which was added in SonarQube 6.0.
+   */
   public RuleMetadataLoader(String resourceFolder, String defaultProfilePath) {
     this(resourceFolder, ProfileDefinitionReader.loadActiveKeysFromJsonProfile(defaultProfilePath));
   }
