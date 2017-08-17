@@ -20,9 +20,11 @@
 package org.sonarsource.analyzer.commons;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.RuleType;
@@ -41,12 +43,27 @@ public class RuleMetadataLoader {
 
   private static final char RESOURCE_SEP = '/';
   private final String resourceFolder;
+  private final Set<String> activatedByDefault;
 
   private JsonParser jsonParser;
 
   public RuleMetadataLoader(String resourceFolder) {
+    this(resourceFolder, Collections.emptySet());
+  }
+
+  /**
+   * This constructor should not be used when SonarQube runtime version is less than 6.0
+   * because it would trigger calls to {@link org.sonar.api.server.rule.RulesDefinition.NewRule#setActivatedByDefault(boolean)}
+   * which was added in SonarQube 6.0.
+   */
+  public RuleMetadataLoader(String resourceFolder, String defaultProfilePath) {
+    this(resourceFolder, ProfileDefinitionReader.loadActiveKeysFromJsonProfile(defaultProfilePath));
+  }
+
+  private RuleMetadataLoader(String resourceFolder, Set<String> activatedByDefault) {
     this.resourceFolder = resourceFolder;
-    jsonParser = new JsonParser();
+    this.jsonParser = new JsonParser();
+    this.activatedByDefault = activatedByDefault;
   }
 
   public void addRulesByAnnotatedClass(NewRepository repository, List<Class> ruleClasses) {
@@ -65,7 +82,16 @@ public class RuleMetadataLoader {
     NewRule rule = addAnnotatedRule(repository, ruleClass);
     setDescriptionFromHtml(rule);
     setMetadataFromJson(rule);
+    setDefaultActivation(rule);
     return rule;
+  }
+
+  private void setDefaultActivation(NewRule rule) {
+    if (activatedByDefault.contains(rule.key())) {
+      // We should NOT call setActivatedByDefault if no default profile was provided:
+      // this is how plugins should use this class when the runtime version of SQ does not support setActivatedByDefault
+      rule.setActivatedByDefault(true);
+    }
   }
 
   private static NewRule addAnnotatedRule(NewRepository repository, Class<?> ruleClass) {
@@ -92,6 +118,7 @@ public class RuleMetadataLoader {
     NewRule rule = repository.createRule(ruleKey);
     setDescriptionFromHtml(rule);
     setMetadataFromJson(rule);
+    setDefaultActivation(rule);
     return rule;
   }
 

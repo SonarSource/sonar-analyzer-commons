@@ -54,10 +54,10 @@ public class ProfileDefinitionReaderTest {
     RulesProfile profile = RulesProfile.create("profile-name", "lang-key");
     ProfileDefinitionReader definitionReader = new ProfileDefinitionReader(ruleFinder);
     definitionReader.activateRules(profile, "repo-key", "org/sonarsource/analyzer/commons/Sonar_way_profile.json");
-    assertThat(profile.getActiveRules()).hasSize(3);
+    assertThat(profile.getActiveRules()).hasSize(2);
     assertThat(profile.getActiveRule("repo-key", "S100")).isNotNull();
     assertThat(profile.getActiveRule("repo-key", "S110")).isNotNull();
-    assertThat(profile.getActiveRule("repo-key", "S123")).isNotNull();
+    assertThat(profile.getActiveRule("repo-key", "S123")).isNull();
     assertThat(profile.getActiveRule("repo-key", "S666")).isNull();
   }
 

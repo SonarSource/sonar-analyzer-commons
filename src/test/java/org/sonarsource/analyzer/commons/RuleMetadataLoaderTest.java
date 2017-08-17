@@ -35,7 +35,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class RuleMetadataLoaderTest {
 
-  private final String RULE_REPOSITORY_KEY = "rule-definition-reader-test";
+  private static final String RESOURCE_FOLDER = "org/sonarsource/analyzer/commons";
+  private static final String DEFAULT_PROFILE_PATH = "org/sonarsource/analyzer/commons/Sonar_way_profile.json";
+  private static final String RULE_REPOSITORY_KEY = "rule-definition-reader-test";
   private RulesDefinition.Context context;
   private NewRepository newRepository;
   private RuleMetadataLoader ruleMetadataLoader;
@@ -44,7 +46,7 @@ public class RuleMetadataLoaderTest {
   public void setup() {
     context = new RulesDefinition.Context();
     newRepository = context.createRepository(RULE_REPOSITORY_KEY, "magic");
-    ruleMetadataLoader = new RuleMetadataLoader("org/sonarsource/analyzer/commons");
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER);
   }
 
   @Test
@@ -135,6 +137,39 @@ public class RuleMetadataLoaderTest {
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
     assertThat(repository.rule("S100")).isNotNull();
     assertThat(repository.rule("S110")).isNotNull();
+  }
+
+  @Test
+  public void no_profile() throws Exception {
+    @Rule(key = "S100") class TestRule {
+    }
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S100");
+    assertThat(rule.activatedByDefault()).isFalse();
+  }
+
+  @Test
+  public void rule_not_in_default_profile() throws Exception {
+    @Rule(key = "S123") class TestRule {
+    }
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S123");
+    assertThat(rule.activatedByDefault()).isFalse();
+  }
+
+  @Test
+  public void rule_in_default_profile() throws Exception {
+    @Rule(key = "S100") class TestRule {
+    }
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S100");
+    assertThat(rule.activatedByDefault()).isTrue();
   }
 
   private static <T> List<T> list(T ...elements) {
