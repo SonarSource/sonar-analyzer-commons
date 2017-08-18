@@ -19,6 +19,9 @@
  */
 package org.sonarsource.analyzer.commons;
 
+/**
+ * A utility class to compute the offsets which should be provided to SonarQube APIs (highlighting, CPD).
+ */
 public class TokenLocation {
 
   private final int startLine;
@@ -26,6 +29,12 @@ public class TokenLocation {
   private final int endLine;
   private final int endLineOffset;
 
+  /**
+   * Constructor which computes end line and column based on the token content.
+   * @param line the line at which the token starts (lines start at 1)
+   * @param column the column at which the token starts (columns start at 0)
+   * @param value the content of the token
+   */
   public TokenLocation(int line, int column, String value) {
     this.startLine = line;
     this.startLineOffset = column;
