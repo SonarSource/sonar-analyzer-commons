@@ -10,11 +10,57 @@
   </parent>
 
   <groupId>org.sonarsource.analyzer-commons</groupId>
-  <artifactId>sonar-analyzer-commons</artifactId>
+  <artifactId>sonar-analyzer-commons-parent</artifactId>
   <version>1.2-SNAPSHOT</version>
+  <packaging>pom</packaging>
 
-  <name>SonarQube Analyzer Commons</name>
-  <description>Logic useful for a language plugin</description>
+  <name>SonarQube Analyzer Commons Parent</name>
+  <description>Logic useful for a language analyser plugin and test</description>
+  <organization>
+    <name>SonarSource</name>
+  </organization>
+  <licenses>
+    <license>
+      <name>GNU LGPL 3</name>
+      <url>http://www.gnu.org/licenses/lgpl.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>alban-auzeill</id>
+      <name>Alban Auzeill</name>
+      <organization>SonarSource</organization>
+    </developer>
+    <developer>
+      <id>inverno</id>
+      <name>Carlo Bottiglieri</name>
+      <organization>SonarSource</organization>
+    </developer>
+    <developer>
+      <id>vilchik-elena</id>
+      <name>Elena Vilchik</name>
+      <organization>SonarSource</organization>
+    </developer>
+    <developer>
+      <id>pynicolas</id>
+      <name>Pierre-Yves Nicolas</name>
+      <organization>SonarSource</organization>
+    </developer>
+  </developers>
+
+  <modules>
+    <module>commons</module>
+    <module>test-commons</module>
+  </modules>
+
+  <scm>
+    <connection>scm:git:git@github.com:SonarSource/sonar-analyzer-commons.git</connection>
+    <developerConnection>scm:git:git@github.com:SonarSource/sonar-analyzer-commons.git</developerConnection>
+    <url>https://github.com/SonarSource/sonar-analyzer-commons</url>
+    <tag>HEAD</tag>
+  </scm>
 
   <properties>
     <!-- versions -->
@@ -27,41 +73,39 @@
     <gitRepositoryName>sonar-analyzer-commons</gitRepositoryName>
   </properties>
 
-  <dependencies>
-    <!-- PROVIDED -->
-    <dependency>
-      <groupId>org.sonarsource.sonarqube</groupId>
-      <artifactId>sonar-plugin-api</artifactId>
-      <version>${version.sonar}</version>
-      <scope>provided</scope>
-    </dependency>
+  <dependencyManagement>
+    <dependencies>
+      <!-- PROVIDED -->
+      <dependency>
+        <groupId>org.sonarsource.sonarqube</groupId>
+        <artifactId>sonar-plugin-api</artifactId>
+        <version>${version.sonar}</version>
+      </dependency>
 
-    <!-- COMPILE -->
-    <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>jsr305</artifactId>
-      <version>${version.jsr305}</version>
-    </dependency>
+      <!-- COMPILE -->
+      <dependency>
+        <groupId>com.google.code.findbugs</groupId>
+        <artifactId>jsr305</artifactId>
+        <version>${version.jsr305}</version>
+      </dependency>
 
-    <!-- TEST -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${version.junit}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.assertj</groupId>
-      <artifactId>assertj-core</artifactId>
-      <version>${version.assertj}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>${version.mockito}</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+      <!-- TEST -->
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>${version.junit}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.assertj</groupId>
+        <artifactId>assertj-core</artifactId>
+        <version>${version.assertj}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>${version.mockito}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
 </project>
