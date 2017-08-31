@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class FileIssuesTest {
 
   public static final Path CODE_JS = Paths.get("src/test/resources/code.js");
-  public static final Path CODE_ISSUES_JS = Paths.get("src/test/resources/code.issues.js");
+  public static final Path CODE_ISSUES_JS = Paths.get("src/test/resources/code.js.issues.txt");
 
   @Test
   public void parse() throws Exception {

@@ -167,14 +167,24 @@ public class LineIssues {
       Map<Integer, PerLineLocationWriter> writerPerLine = new TreeMap<>();
       for (PreciseLocation location : locations) {
         writerPerLine.computeIfAbsent(
-          location.range.line, key -> new PerLineLocationWriter(String.format("%03d: ", key), testFile.lineWithoutComment(key))).add(location);
+          location.range.line, key -> new PerLineLocationWriter(String.format("%03d: ", key), reportLineAt(key))).add(location);
       }
       writerPerLine.values().forEach(writer -> writer.write(out));
     } else {
       appendLineNumber(out, line);
-      out.append(testFile.lineWithoutComment(line));
+      out.append(reportLineAt(line));
     }
     out.append("\n");
+  }
+
+  private String reportLineAt(int lineNumber) {
+    if (lineNumber < 0 || lineNumber > testFile.lines.length) {
+      return "ERROR, no line " + lineNumber + " in " + testFile.name;
+    } else if (lineNumber == 0) {
+      return "<issue on file " + testFile.name + ">";
+    } else {
+      return testFile.lineWithoutComment(lineNumber);
+    }
   }
 
 }

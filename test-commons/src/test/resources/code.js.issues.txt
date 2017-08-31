@@ -1,4 +1,7 @@
 code.js
+000: // Noncompliant {{Issue on file}}
+000: <issue on file code.js>
+
 004: // Noncompliant 2
 004: function test() {
 
@@ -18,7 +21,7 @@ code.js
 
 
 022: // Noncompliant
-019:     int size = 0;
+019:     var size = 0;
              ^^^^> 1.1
 022:     alert("Hello");
          ^^^^^ 2

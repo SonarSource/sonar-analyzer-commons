@@ -16,7 +16,7 @@ function test() { // Noncompliant 2
     alert("Hello");
  // ^^^^^< {{Secondary location message2}}
 
-    int size = 0;
+    var size = 0;
  //     ^^^^> 1.1
 
     alert("Hello"); // Noncompliant
@@ -30,3 +30,5 @@ function test() { // Noncompliant 2
  // ^^^^^  ^^^^^<
 
 }
+
+// Noncompliant@0 {{Issue on file}}
