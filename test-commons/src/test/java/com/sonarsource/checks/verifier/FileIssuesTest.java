@@ -46,6 +46,8 @@ public class FileIssuesTest {
       }
     }
     FileIssues.Report report = fileIssues.report();
+    assertThat(report.expectedCount).isEqualTo(7);
+    assertThat(report.actualCount).isEqualTo(0);
     assertThat(report.expected).isEqualTo(expectedIssues.content);
   }
 

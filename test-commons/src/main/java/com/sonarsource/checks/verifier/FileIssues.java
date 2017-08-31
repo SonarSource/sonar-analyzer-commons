@@ -119,18 +119,20 @@ public class FileIssues {
       throw new IllegalStateException("Secondary location '>' without next primary location at " + orphanSecondary.range.toString());
     }
 
+    int expectedCount = expectedIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum();
     String expected = testFile.name + "\n" + expectedIssueMap.values().stream()
       .map(LineIssues::validateExpected)
       .map(LineIssues::toString)
       .collect(Collectors.joining("\n"));
 
+    int actualCount = actualIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum();
     String actual = testFile.name + "\n" + actualIssueMap.values().stream()
       .map(lineIssues -> lineIssues.dropUntestedAttributes(expectedIssueMap.get(lineIssues.line)))
       .map(LineIssues::toString)
       .collect(Collectors.joining("\n"));
 
     String context = "In file (" + testFile.name + ":" + firstDiffLine(expected, actual) + ")";
-    return new Report(context, expected, actual);
+    return new Report(context, expectedCount, actualCount, expected, actual);
   }
 
   private static int firstDiffLine(String expected, String actual) {
@@ -148,11 +150,15 @@ public class FileIssues {
 
   public static class Report {
     public final String diffContext;
+    public final int expectedCount;
+    public final int actualCount;
     public final String expected;
     public final String actual;
 
-    public Report(String diffContext, String expected, String actual) {
+    public Report(String diffContext, int expectedCount, int actualCount, String expected, String actual) {
       this.diffContext = diffContext;
+      this.expectedCount = expectedCount;
+      this.actualCount = actualCount;
       this.expected = expected;
       this.actual = actual;
     }
