@@ -40,7 +40,8 @@ public final class NoncompliantCommentParser {
     // messages, ex: {{msg1}} {{msg2}}
     + "(?<messages>(\\{\\{.*?\\}\\} *+)+)?"
     // params, ex: [[effortToFix=2;id=main]]
-    + "(?:\\[\\[(?<params>[^\\]]++)\\]\\] *+)?");
+    + "(?:\\[\\[(?<params>[^\\]]++)\\]\\] *+)?"
+    + "(\r|\n|\r\n)?");
 
   private NoncompliantCommentParser() {
     // utility class
