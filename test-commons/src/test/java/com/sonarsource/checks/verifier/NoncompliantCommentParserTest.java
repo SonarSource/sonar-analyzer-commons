@@ -90,4 +90,17 @@ public class NoncompliantCommentParserTest {
     parse(file, 1, " Noncompliant 3 {{msg1}} {{msg2}} {{msg3}}");
   }
 
+  @Test
+  public void support_comment_with_newLine() throws Exception {
+    LineIssues issues = parse(file, 1, " Noncompliant\n");
+    assertThat(issues).isNotNull();
+    assertThat(issues.messages).hasSize(1);
+    issues = parse(file, 1, " Noncompliant\r");
+    assertThat(issues).isNotNull();
+    assertThat(issues.messages).hasSize(1);
+    issues = parse(file, 1, " Noncompliant\r\n");
+    assertThat(issues).isNotNull();
+    assertThat(issues.messages).hasSize(1);
+  }
+
 }
