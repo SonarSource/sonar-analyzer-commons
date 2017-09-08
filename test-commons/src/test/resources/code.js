@@ -16,15 +16,8 @@ function test() { // Noncompliant 2
     alert("Hello");
  // ^^^^^< {{Secondary location message2}}
 
-    var size = 0;
- //     ^^^^> 1.1
-
-    alert("Hello"); // Noncompliant
+    alert(msg); // Noncompliant {{Error}} [[effortToFix=2.5]]
  // ^^^^^
-
-    if (size) {
- //     ^^^^< 1.2
-    }
 
     alert("Hello"); // Noncompliant
  // ^^^^^  ^^^^^<

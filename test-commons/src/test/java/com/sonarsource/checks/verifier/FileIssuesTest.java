@@ -45,10 +45,33 @@ public class FileIssuesTest {
         fileIssues.addComment(line, column, lineOfCode.substring(commentStart));
       }
     }
+
+    fileIssues.addActualIssue(0, "Issue on file", null);
+
+    fileIssues.addActualIssue(4, "issue1", null);
+    fileIssues.addActualIssue(4, "issue2", null);
+
+    PrimaryLocation primary1 = new PrimaryLocation(new UnderlinedRange(9, 11, 9, 13), 1);
+    primary1.addSecondary(new UnderlinedRange(6, 9, 6, 11), "msg");
+    fileIssues.addActualIssue(9, "msg", primary1);
+
+    PrimaryLocation primary2 = new PrimaryLocation(new UnderlinedRange(12, 5, 12, 9), 2);
+    primary2.addSecondary(new UnderlinedRange(12, 10, 12, 18), "Secondary location message1");
+    primary2.addSecondary(new UnderlinedRange(16, 5, 16, 9), "Secondary location message2");
+    fileIssues.addActualIssue(12, "Rule message", primary2);
+
+    PrimaryLocation primary3 = new PrimaryLocation(new UnderlinedRange(19, 5, 19, 9), 0);
+    fileIssues.addActualIssue(19, "Error", primary3, 2.5d);
+
+    PrimaryLocation primary4 = new PrimaryLocation(new UnderlinedRange(22, 5, 22, 9), 1);
+    primary4.addSecondary(new UnderlinedRange(22, 12, 22, 16), "msg");
+    fileIssues.addActualIssue(22, "msg", primary4);
+
+    // PreciseLocation location = new FlowLocation(range, primaryIsBefore, flowIndex, indexInTheFlow, message);
     FileIssues.Report report = fileIssues.report();
     assertThat(report.expectedCount).isEqualTo(7);
-    assertThat(report.actualCount).isEqualTo(0);
-    assertThat(report.expected).isEqualTo(expectedIssues.content);
+    assertThat(report.actual).isEqualTo(report.expected);
+    assertThat(report.actual).isEqualTo(expectedIssues.content);
   }
 
 }

@@ -21,8 +21,8 @@ package com.sonarsource.checks.verifier;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -56,7 +56,7 @@ public class LineIssues {
   }
 
   public static LineIssues at(TestFile testFile, int line, @Nullable PrimaryLocation primaryLocation) {
-    return new LineIssues(testFile, line, new String[0], Collections.emptyMap(), primaryLocation);
+    return new LineIssues(testFile, line, new String[0], new HashMap<>(), primaryLocation);
   }
 
   public void add(String message, @Nullable Double effortToFix) {
@@ -141,7 +141,8 @@ public class LineIssues {
     }
     Double effort = effortToFix();
     if (effort != null) {
-      out.append(" [[effortToFix=").append(effort.longValue()).append("]]");
+      String displayedEffort = effort.toString().replaceFirst(".0$", "");
+      out.append(" [[effortToFix=").append(displayedEffort).append("]]");
     }
     out.append("\n");
     appendLocations(out);

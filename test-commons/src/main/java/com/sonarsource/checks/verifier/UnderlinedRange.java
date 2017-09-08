@@ -50,6 +50,14 @@ public class UnderlinedRange implements Comparable<UnderlinedRange> {
    */
   public final int endColumn;
 
+  /**
+   * @param line, start at 1, line number of the first character of the token, same as TokenLocation#startLine()
+   * @param column, start at 1, column number of the first character of the token, same as TokenLocation#startLineOffset()+1,
+   * @param endLine, start at 1, line number of the last character of the token, same as TokenLocation#endLine(),
+   * if the token is on a single line, endLine == line
+   * @param endColumn, start at 1, column number of the last character of the token, same as TokenLocation#endLineOffset(),
+   * if the token has only one character, endColumn == column
+   */
   public UnderlinedRange(int line, int column, int endLine, int endColumn) {
     this.line = line;
     this.column = column;

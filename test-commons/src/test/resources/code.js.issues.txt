@@ -20,16 +20,12 @@ code.js
          ^^^^^< {{Secondary location message2}}
 
 
+019: // Noncompliant {{Error}} [[effortToFix=2.5]]
+019:     alert(msg);
+         ^^^^^
+
+
 022: // Noncompliant
-019:     var size = 0;
-             ^^^^> 1.1
 022:     alert("Hello");
-         ^^^^^ 2
-025:     if (size) {
-             ^^^^< 1.2
-
-
-029: // Noncompliant
-029:     alert("Hello");
          ^^^^^ 1^^^^^<
 
