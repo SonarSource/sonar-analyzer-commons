@@ -39,7 +39,8 @@ public final class PreciseLocationParser {
     // count, ex: 3 |OR| direction, ex: < |OR| direction with index, ex: < 1 |OR| direction and flowId, ex: < 2.1
     " *+(?:(?<count>\\d++)|(?:(?<direction><|>) *+((?<majorIndex>\\d++)(\\.(?<minorIndex>\\d++))?)?))?" +
     // message, ex: {{msg}}
-    " *+(?:\\{\\{(?<message>.*?)\\}\\})? *+");
+    " *+(?:\\{\\{(?<message>.*?)\\}\\})? *+" +
+    "(?:\r(\n?)|\n)?");
 
   private PreciseLocationParser() {
     // utility class

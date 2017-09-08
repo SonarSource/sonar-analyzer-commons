@@ -47,6 +47,11 @@ public class FileIssues {
     this.testFile = testFile;
   }
 
+  /**
+   * @param line, start at 1, line number of the first character of the token, same as TokenLocation#startLine()
+   * @param column, start at 1, column number of the first character of the token, same as TokenLocation#startLineOffset()+1,
+   * @param comment including the comment prefix
+   */
   public void addComment(int line, int column, String comment) {
     if (comment.startsWith(testFile.commentPrefix)) {
       String commentContent = comment.substring(testFile.commentPrefix.length());
@@ -108,9 +113,19 @@ public class FileIssues {
     }
   }
 
+  /**
+   * @param line of the issue, start at 1, same as TokenLocation#startLine()
+   */
   public void addActualIssue(int line, String message, @Nullable PrimaryLocation preciseLocation) {
+    addActualIssue(line, message, preciseLocation, null);
+  }
+
+  /**
+   * @param line of the issue, start at 1, same as TokenLocation#startLine()
+   */
+  public void addActualIssue(int line, String message, @Nullable PrimaryLocation preciseLocation, @Nullable Double effortToFix) {
     LineIssues lineIssues = actualIssueMap.computeIfAbsent(line, key -> LineIssues.at(testFile, line, preciseLocation));
-    lineIssues.add(message, null);
+    lineIssues.add(message, effortToFix);
   }
 
   public Report report() {

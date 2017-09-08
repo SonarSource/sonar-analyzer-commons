@@ -62,6 +62,16 @@ public class PreciseLocationParserTest {
   }
 
   @Test
+  public void support_comment_with_newLine() throws Exception {
+    List<PreciseLocation> locations = parse(42, 10, "  ^^^\n");
+    assertThat(locations).hasSize(1);
+    locations = parse(42, 10, "  ^^^\r");
+    assertThat(locations).hasSize(1);
+    locations = parse(42, 10, "  ^^^\r\n");
+    assertThat(locations).hasSize(1);
+  }
+
+  @Test
   public void parse_secondary() throws Exception {
     List<PreciseLocation> locations = parse(42, 2, "    ^^< {{msg1}} ^^^^> 5 {{msg2}}");
     assertThat(locations).hasSize(2);

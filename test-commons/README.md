@@ -51,16 +51,6 @@ alert(msg);
 //^[sc=1;el=+1;ec=11]@-1
 ```
 
-Assert flows.
-```javascript
-  alert(msg);
-//      ^^^> 1.2 {{first flow, second message}}
-  alert(msg); // Noncompliant {{Rule message}}
-//      ^^^
-  alert(msg);
-//      ^^^< 1.1 {{first flow, first message}}
-```
-
 ### Usage at Verifier level
 
 ```java
@@ -81,11 +71,14 @@ fileIssues.addComment(line, column, commentText);
 // For each actual issue, store it with "addActualIssue" method:
 // without precise location:
 fileIssues.addActualIssue(lineNumber, message, null);
-// or with precise location:
+// or with precise location (note: column start at 1 and endColumn is the last character of the token,
+// not the following one, if the token has only one character, endColumn == column)
 UnderlinedRange primaryRange = new UnderlinedRange(from.line(), from.column(), to.endLine(), to.endColumn());
 PrimaryLocation primary = new PrimaryLocation(primaryRange, secondaryLocationCount);
 primary.addSecondary(secondaryRange, secondarymessage);
 fileIssues.addActualIssue(lineNumber, message, primary);
+
+// Note: Issue global to a file can be reported at line 0 and asserted using "// Noncompliant@0 {{...}}"
 
 // at the end assert the result
 FileIssues.Report report = fileIssues.report();
