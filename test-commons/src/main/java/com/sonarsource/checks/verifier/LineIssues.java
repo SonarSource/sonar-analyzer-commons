@@ -19,6 +19,7 @@
  */
 package com.sonarsource.checks.verifier;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -141,8 +142,8 @@ public class LineIssues {
     }
     Double effort = effortToFix();
     if (effort != null) {
-      String displayedEffort = effort.toString().replaceFirst(".0$", "");
-      out.append(" [[effortToFix=").append(displayedEffort).append("]]");
+      DecimalFormat effortToFixFormat = new DecimalFormat("0.##");
+      out.append(" [[effortToFix=").append(effortToFixFormat.format(effort)).append("]]");
     }
     out.append("\n");
     appendLocations(out);

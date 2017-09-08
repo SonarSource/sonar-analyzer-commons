@@ -51,16 +51,6 @@ alert(msg);
 //^[sc=1;el=+1;ec=11]@-1
 ```
 
-Assert flows.
-```javascript
-  alert(msg);
-//      ^^^> 1.2 {{first flow, second message}}
-  alert(msg); // Noncompliant {{Rule message}}
-//      ^^^
-  alert(msg);
-//      ^^^< 1.1 {{first flow, first message}}
-```
-
 ### Usage at Verifier level
 
 ```java
@@ -88,7 +78,7 @@ PrimaryLocation primary = new PrimaryLocation(primaryRange, secondaryLocationCou
 primary.addSecondary(secondaryRange, secondarymessage);
 fileIssues.addActualIssue(lineNumber, message, primary);
 
-// Note: Issue global to a file can be report at line 0 and asserted using "// Noncompliant@0 {{...}}"
+// Note: Issue global to a file can be reported at line 0 and asserted using "// Noncompliant@0 {{...}}"
 
 // at the end assert the result
 FileIssues.Report report = fileIssues.report();
