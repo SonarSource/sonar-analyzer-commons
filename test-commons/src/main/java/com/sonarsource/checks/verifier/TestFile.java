@@ -67,7 +67,8 @@ public class TestFile {
       }
       code = code.substring(0, commentPos);
     }
-    return code;
+    // Replace tabulation by a visible char to better understand report alignment problems
+    return code.replace('\t', '➞');
   }
 
   @Nullable
