@@ -29,3 +29,8 @@ code.js
 022:     alert("Hello");
          ^^^^^ 1^^^^^<
 
+
+026: // Noncompliant
+026: ➞alert(msg);
+            ^^^
+

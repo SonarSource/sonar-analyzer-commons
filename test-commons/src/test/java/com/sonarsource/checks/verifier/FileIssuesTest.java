@@ -67,9 +67,12 @@ public class FileIssuesTest {
     primary4.addSecondary(new UnderlinedRange(22, 12, 22, 16), "msg");
     fileIssues.addActualIssue(22, "msg", primary4);
 
+    PrimaryLocation primary5 = new PrimaryLocation(new UnderlinedRange(26, 8, 26, 10), null);
+    fileIssues.addActualIssue(26, "Error", primary5);
+
     // PreciseLocation location = new FlowLocation(range, primaryIsBefore, flowIndex, indexInTheFlow, message);
     FileIssues.Report report = fileIssues.report();
-    assertThat(report.expectedCount).isEqualTo(7);
+    assertThat(report.expectedCount).isEqualTo(8);
     assertThat(report.actual).isEqualTo(report.expected);
     assertThat(report.actual).isEqualTo(expectedIssues.content);
   }

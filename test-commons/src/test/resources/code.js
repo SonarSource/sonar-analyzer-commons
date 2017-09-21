@@ -22,6 +22,10 @@ function test() { // Noncompliant 2
     alert("Hello"); // Noncompliant
  // ^^^^^  ^^^^^<
 
+ // there's one "tab character" at the beginning of the following two lines
+	alert(msg); // Noncompliant
+	//    ^^^
+
 }
 
 // Noncompliant@0 {{Issue on file}}
