@@ -17,14 +17,16 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
 import com.sonarsource.checks.coverage.UtilityClass;
+import com.sonarsource.checks.verifier.FileContent;
+import java.nio.file.Paths;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import static com.sonarsource.checks.verifier.NoncompliantCommentParser.parse;
+import static com.sonarsource.checks.verifier.internal.NoncompliantCommentParser.parse;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class NoncompliantCommentParserTest {
@@ -32,7 +34,7 @@ public class NoncompliantCommentParserTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none();
 
-  private TestFile file = new TestFile("source_code", "//", "\n\n\n\n");
+  private TestFile file = new TestFile(new FileContent(Paths.get("source_code"), "\n\n\n\n"));
 
   @Test
   public void constructor() throws Exception {

@@ -17,31 +17,34 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
+import com.sonarsource.checks.verifier.internal.PreciseLocation;
+import com.sonarsource.checks.verifier.internal.SecondaryLocation;
+import com.sonarsource.checks.verifier.internal.UnderlinedRange;
 import javax.annotation.Nullable;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class FlowLocationTest {
+public class SecondaryLocationTest {
 
   @Test
   public void test() throws Exception {
-    UnderlinedRange range = new UnderlinedRange(5, 6, 5, 11);
+    UnderlinedRange range = new UnderlinedRange(5, 3, 5, 8);
 
-    assertThat(flow("XX", range, false, 2, 3, null))
-      .isEqualTo("XX     ^^^^^^> 2.3");
+    assertThat(secondary("XX", range, false, 7, null))
+      .isEqualTo("XX  ^^^^^^> 7");
 
-    assertThat(flow("", range, false, 1, 1, "msg1"))
-      .isEqualTo("     ^^^^^^> 1.1 {{msg1}}");
+    assertThat(secondary("", range, false, 1, "msg1"))
+      .isEqualTo("  ^^^^^^> 1 {{msg1}}");
 
-    assertThat(flow("", range, true, 1, 1, null))
-      .isEqualTo("     ^^^^^^< 1.1");
+    assertThat(secondary("", range, true, null, null))
+      .isEqualTo("  ^^^^^^<");
   }
 
-  private static String flow(String prefix, UnderlinedRange range, boolean primaryIsBefore, int flowIndex, int indexInTheFlow, @Nullable String message) {
-    PreciseLocation location = new FlowLocation(range, primaryIsBefore, flowIndex, indexInTheFlow, message);
+  private static String secondary(String prefix, UnderlinedRange range, boolean primaryIsBefore, @Nullable Integer index, @Nullable String message) {
+    PreciseLocation location = new SecondaryLocation(range, primaryIsBefore, index, message);
     StringBuilder out = new StringBuilder();
     out.append(prefix);
     location.write(prefix.length(), out);

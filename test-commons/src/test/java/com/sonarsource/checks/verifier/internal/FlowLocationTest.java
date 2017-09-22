@@ -17,41 +17,34 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
-import java.util.Collections;
-import java.util.List;
+import com.sonarsource.checks.verifier.internal.FlowLocation;
+import com.sonarsource.checks.verifier.internal.PreciseLocation;
+import com.sonarsource.checks.verifier.internal.UnderlinedRange;
 import javax.annotation.Nullable;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class PrimaryLocationTest {
+public class FlowLocationTest {
 
   @Test
   public void test() throws Exception {
-    UnderlinedRange range = new UnderlinedRange(5, 3, 5, 8);
-    SecondaryLocation secondary = new SecondaryLocation(new UnderlinedRange(6, 21, 6, 25), true, null, null);
+    UnderlinedRange range = new UnderlinedRange(5, 6, 5, 11);
 
-    assertThat(primary("XX", range, null, Collections.emptyList()))
-      .isEqualTo("XX  ^^^^^^");
+    assertThat(flow("XX", range, false, 2, 3, null))
+      .isEqualTo("XX     ^^^^^^> 2.3");
 
-    assertThat(primary("", range, 0, Collections.emptyList()))
-      .isEqualTo("  ^^^^^^ 0");
+    assertThat(flow("", range, false, 1, 1, "msg1"))
+      .isEqualTo("     ^^^^^^> 1.1 {{msg1}}");
 
-    assertThat(primary("", range, null, Collections.singletonList(secondary)))
-      .isEqualTo("  ^^^^^^");
-
-    assertThat(primary("", range, 1, Collections.singletonList(secondary)))
-      .isEqualTo("  ^^^^^^ 1");
-
-    assertThat(primary("", range, 2, Collections.singletonList(secondary)))
-      .isEqualTo("  ^^^^^^ 2[ERROR expect 1]");
+    assertThat(flow("", range, true, 1, 1, null))
+      .isEqualTo("     ^^^^^^< 1.1");
   }
 
-  private static String primary(String prefix, UnderlinedRange range, @Nullable Integer expectedAdditionalCount, List<SecondaryLocation> secondaryLocations) {
-    PrimaryLocation location = new PrimaryLocation(range, expectedAdditionalCount);
-    location.secondaryLocations.addAll(secondaryLocations);
+  private static String flow(String prefix, UnderlinedRange range, boolean primaryIsBefore, int flowIndex, int indexInTheFlow, @Nullable String message) {
+    PreciseLocation location = new FlowLocation(range, primaryIsBefore, flowIndex, indexInTheFlow, message);
     StringBuilder out = new StringBuilder();
     out.append(prefix);
     location.write(prefix.length(), out);

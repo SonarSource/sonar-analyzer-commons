@@ -17,16 +17,30 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
-public abstract class PreciseLocation {
+import javax.annotation.Nullable;
 
-  public final UnderlinedRange range;
+public class FlowLocation extends SecondaryLocation {
 
-  public PreciseLocation(UnderlinedRange range) {
-    this.range = range;
+  public final int flowIndex;
+
+  public final int indexInTheFlow;
+
+  public FlowLocation(UnderlinedRange range, boolean primaryIsBefore, int flowIndex, int indexInTheFlow, @Nullable String message) {
+    super(range, primaryIsBefore, flowIndex, message);
+    this.flowIndex = flowIndex;
+    this.indexInTheFlow = indexInTheFlow;
   }
 
-  public abstract void write(int indent, StringBuilder line);
+  @Override
+  public void write(int indent, StringBuilder out) {
+    range.underline(indent, out);
+    out.append(primaryIsBefore ? '<' : '>');
+    out.append(' ').append(flowIndex).append('.').append(indexInTheFlow);
+    if (message != null) {
+      out.append(" {{").append(message).append("}}");
+    }
+  }
 
 }

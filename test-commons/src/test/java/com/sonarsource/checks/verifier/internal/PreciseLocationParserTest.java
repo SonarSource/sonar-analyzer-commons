@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
 import com.sonarsource.checks.coverage.UtilityClass;
 import java.util.List;
@@ -25,7 +25,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import static com.sonarsource.checks.verifier.PreciseLocationParser.parse;
+import static com.sonarsource.checks.verifier.internal.PreciseLocationParser.parse;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class PreciseLocationParserTest {

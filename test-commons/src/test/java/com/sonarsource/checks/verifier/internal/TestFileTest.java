@@ -17,11 +17,13 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
+import com.sonarsource.checks.verifier.FileContent;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.hamcrest.CoreMatchers;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -38,33 +40,27 @@ public class TestFileTest {
 
   @Test
   public void constructor() {
-    TestFile file = TestFile.read(MAIN_JS, UTF_8, "//");
-    assertThat(file.name).isEqualTo("main.js");
-    assertThat(file.commentPrefix).isEqualTo("//");
-    assertThat(file.content).startsWith("function main()");
-    assertThat(file.lines).containsExactly(
+    TestFile file = new TestFile(new FileContent(MAIN_JS, UTF_8));
+    file.addCommentToHide(new Comment(file.getPath(), 2, 19, 21, " Noncompliant"));
+    file.addCommentToHide(new Comment(file.getPath(), 2, 27, 29, "liant"));
+    assertThat(file.getName()).isEqualTo("main.js");
+    assertThat(file.getContent()).startsWith("function main()");
+    assertThat(file.getLines()).containsExactly(
       "function main() {",
-      "  alert('Hello'); // display hello",
+      "  alert('Hello'); // Noncompliant",
       "}",
       "");
-    assertThat(file.line(2)).isEqualTo("  alert('Hello'); // display hello");
+    assertThat(file.line(2)).isEqualTo("  alert('Hello'); // Noncompliant");
     assertThat(file.line(3)).isEqualTo("}");
     assertThat(file.lineWithoutComment(2)).isEqualTo("  alert('Hello');");
     assertThat(file.lineWithoutComment(3)).isEqualTo("}");
-    assertThat(file.commentAt(2)).isEqualTo("// display hello");
+    assertThat(file.commentAt(2)).isEqualTo("// Noncompliant");
     assertThat(file.commentAt(3)).isNull();
   }
 
   @Test
-  public void invalid_file_path() {
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage(CoreMatchers.startsWith("Failed to read 'invalid.js':"));
-    TestFile.read(Paths.get("bad/invalid.js"), UTF_8, "//");
-  }
-
-  @Test
   public void invalid_positive_line() {
-    TestFile file = new TestFile("file.cpp", "//", "int a;\nint b;\n");
+    TestFile file = new TestFile(new FileContent(Paths.get("file.cpp"), "int a;\nint b;\n"));
     thrown.expect(IllegalStateException.class);
     thrown.expectMessage("No line 5 in file.cpp");
     file.line(5);
@@ -72,10 +68,33 @@ public class TestFileTest {
 
   @Test
   public void invalid_negative_line() {
-    TestFile file = new TestFile("file.cpp", "//", "int a;\nint b;\n");
+    TestFile file = new TestFile(new FileContent(Paths.get("file.cpp"), "int a;\nint b;\n"));
     thrown.expect(IllegalStateException.class);
     thrown.expectMessage("No line -2 in file.cpp");
     file.line(-2);
+  }
+
+  @Test
+  public void comment_with_wrong_path() {
+    TestFile file = new TestFile(new FileContent(Paths.get("file.cpp"), "int a;\nint b;\n"));
+    thrown.expect(IllegalStateException.class);
+    thrown.expectMessage("This comment is not related to file");
+    file.addCommentToHide(new Comment(Paths.get("file2.cpp"), 2, 19, 21, " Noncompliant"));
+  }
+
+  static List<Comment> parseComments(String prefix, FileContent file) {
+    List<Comment> comments = new ArrayList<>();
+    String[] lines = file.getLines();
+    for (int line = 1; line <= lines.length; line++) {
+      String lineOfCode = lines[line - 1];
+      int commentStart = lineOfCode.indexOf(prefix);
+      if (commentStart != -1) {
+        int column = commentStart + 1;
+        comments.add(new Comment(file.getPath().toAbsolutePath(),
+          line, column, column + prefix.length(), lineOfCode.substring(commentStart + prefix.length())));
+      }
+    }
+    return comments;
   }
 
 }
