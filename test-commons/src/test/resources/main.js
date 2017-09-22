@@ -1,3 +1,3 @@
 function main() {
-  alert('Hello'); // display hello
+  alert('Hello'); // Noncompliant
 }

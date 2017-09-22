@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,23 +43,19 @@ public class FileIssues {
 
   private final List<SecondaryLocation> orphanSecondaryOrFlowLocations = new ArrayList<>();
 
-  public FileIssues(TestFile testFile) {
+  public FileIssues(TestFile testFile, List<Comment> comments) {
     this.testFile = testFile;
-  }
-
-  /**
-   * @param line, start at 1, line number of the first character of the token, same as TokenLocation#startLine()
-   * @param column, start at 1, column number of the first character of the token, same as TokenLocation#startLineOffset()+1,
-   * @param comment including the comment prefix
-   */
-  public void addComment(int line, int column, String comment) {
-    if (comment.startsWith(testFile.commentPrefix)) {
-      String commentContent = comment.substring(testFile.commentPrefix.length());
-      LineIssues lineIssues = NoncompliantCommentParser.parse(testFile, line, commentContent);
+    for (Comment comment : comments) {
+      LineIssues lineIssues = NoncompliantCommentParser.parse(testFile, comment.line, comment.content);
       if (lineIssues != null) {
+        testFile.addCommentToHide(comment);
         expectedIssueMap.put(lineIssues.line, lineIssues);
       } else {
-        PreciseLocationParser.parse(line, column + testFile.commentPrefix.length(), commentContent).forEach(this::addLocation);
+        List<PreciseLocation> locations = PreciseLocationParser.parse(comment.line, comment.contentColumn, comment.content);
+        if (!locations.isEmpty()) {
+          testFile.addCommentToHide(comment);
+          locations.forEach(this::addLocation);
+        }
       }
     }
   }
@@ -133,21 +129,26 @@ public class FileIssues {
       SecondaryLocation orphanSecondary = orphanSecondaryOrFlowLocations.get(0);
       throw new IllegalStateException("Secondary location '>' without next primary location at " + orphanSecondary.range.toString());
     }
+    Report report = new Report();
 
-    int expectedCount = expectedIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum();
-    String expected = testFile.name + "\n" + expectedIssueMap.values().stream()
+    report.setExpectedCount(expectedIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum());
+
+    report.appendExpected(testFile.getName() + "\n" + expectedIssueMap.values().stream()
       .map(LineIssues::validateExpected)
       .map(LineIssues::toString)
-      .collect(Collectors.joining("\n"));
+      .collect(Collectors.joining("\n")));
 
-    int actualCount = actualIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum();
-    String actual = testFile.name + "\n" + actualIssueMap.values().stream()
+    report.setActualCount(actualIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum());
+
+    report.appendActual(testFile.getName() + "\n" + actualIssueMap.values().stream()
       .map(lineIssues -> lineIssues.dropUntestedAttributes(expectedIssueMap.get(lineIssues.line)))
       .map(LineIssues::toString)
-      .collect(Collectors.joining("\n"));
+      .collect(Collectors.joining("\n")));
 
-    String context = "In file (" + testFile.name + ":" + firstDiffLine(expected, actual) + ")";
-    return new Report(context, expectedCount, actualCount, expected, actual);
+    int line = firstDiffLine(report.getExpected(), report.getActual());
+    report.appendContext("In file (" + testFile.getName() + ":" + line + ")");
+
+    return report;
   }
 
   private static int firstDiffLine(String expected, String actual) {
@@ -163,19 +164,4 @@ public class FileIssues {
     return line;
   }
 
-  public static class Report {
-    public final String diffContext;
-    public final int expectedCount;
-    public final int actualCount;
-    public final String expected;
-    public final String actual;
-
-    public Report(String diffContext, int expectedCount, int actualCount, String expected, String actual) {
-      this.diffContext = diffContext;
-      this.expectedCount = expectedCount;
-      this.actualCount = actualCount;
-      this.expected = expected;
-      this.actual = actual;
-    }
-  }
 }
