@@ -17,27 +17,34 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
 import javax.annotation.Nullable;
 
-public class FlowLocation extends SecondaryLocation {
+public class SecondaryLocation extends PreciseLocation {
 
-  public final int flowIndex;
+  public final boolean primaryIsBefore;
 
-  public final int indexInTheFlow;
+  @Nullable
+  public Integer index;
 
-  public FlowLocation(UnderlinedRange range, boolean primaryIsBefore, int flowIndex, int indexInTheFlow, @Nullable String message) {
-    super(range, primaryIsBefore, flowIndex, message);
-    this.flowIndex = flowIndex;
-    this.indexInTheFlow = indexInTheFlow;
+  @Nullable
+  public String message;
+
+  public SecondaryLocation(UnderlinedRange range, boolean primaryIsBefore, @Nullable Integer index, @Nullable String message) {
+    super(range);
+    this.primaryIsBefore = primaryIsBefore;
+    this.index = index;
+    this.message = message;
   }
 
   @Override
   public void write(int indent, StringBuilder out) {
     range.underline(indent, out);
     out.append(primaryIsBefore ? '<' : '>');
-    out.append(' ').append(flowIndex).append('.').append(indexInTheFlow);
+    if (index != null) {
+      out.append(" ").append(index);
+    }
     if (message != null) {
       out.append(" {{").append(message).append("}}");
     }

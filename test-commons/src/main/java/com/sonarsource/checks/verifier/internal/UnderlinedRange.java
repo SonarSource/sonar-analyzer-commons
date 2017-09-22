@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -117,8 +117,6 @@ public class UnderlinedRange implements Comparable<UnderlinedRange> {
       }
       if (endLine > line) {
         params.add("el=+" + (endLine - line));
-      } else if (endLine < line) {
-        params.add("el=-" + (line - endLine));
       }
       params.add("ec=" + endColumn);
       textLine.append("^[");

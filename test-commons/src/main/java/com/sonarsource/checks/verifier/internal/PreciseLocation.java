@@ -17,37 +17,16 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
-import javax.annotation.Nullable;
+public abstract class PreciseLocation {
 
-public class SecondaryLocation extends PreciseLocation {
+  public final UnderlinedRange range;
 
-  public final boolean primaryIsBefore;
-
-  @Nullable
-  public Integer index;
-
-  @Nullable
-  public String message;
-
-  public SecondaryLocation(UnderlinedRange range, boolean primaryIsBefore, @Nullable Integer index, @Nullable String message) {
-    super(range);
-    this.primaryIsBefore = primaryIsBefore;
-    this.index = index;
-    this.message = message;
+  public PreciseLocation(UnderlinedRange range) {
+    this.range = range;
   }
 
-  @Override
-  public void write(int indent, StringBuilder out) {
-    range.underline(indent, out);
-    out.append(primaryIsBefore ? '<' : '>');
-    if (index != null) {
-      out.append(" ").append(index);
-    }
-    if (message != null) {
-      out.append(" {{").append(message).append("}}");
-    }
-  }
+  public abstract void write(int indent, StringBuilder line);
 
 }

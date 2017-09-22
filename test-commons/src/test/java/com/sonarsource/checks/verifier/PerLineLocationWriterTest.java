@@ -19,6 +19,11 @@
  */
 package com.sonarsource.checks.verifier;
 
+import com.sonarsource.checks.verifier.internal.PerLineLocationWriter;
+import com.sonarsource.checks.verifier.internal.PreciseLocation;
+import com.sonarsource.checks.verifier.internal.PrimaryLocation;
+import com.sonarsource.checks.verifier.internal.SecondaryLocation;
+import com.sonarsource.checks.verifier.internal.UnderlinedRange;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

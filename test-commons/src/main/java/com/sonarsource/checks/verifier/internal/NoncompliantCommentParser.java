@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
-import static com.sonarsource.checks.verifier.PreciseLocationParser.LINE_ADJUSTMENT;
+import static com.sonarsource.checks.verifier.internal.PreciseLocationParser.LINE_ADJUSTMENT;
 
 public final class NoncompliantCommentParser {
 
