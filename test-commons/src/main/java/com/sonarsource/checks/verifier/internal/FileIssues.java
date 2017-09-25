@@ -48,12 +48,12 @@ public class FileIssues {
     for (Comment comment : comments) {
       LineIssues lineIssues = NoncompliantCommentParser.parse(testFile, comment.line, comment.content);
       if (lineIssues != null) {
-        testFile.addCommentToHide(comment);
+        testFile.addNoncompliantComment(comment);
         expectedIssueMap.put(lineIssues.line, lineIssues);
       } else {
         List<PreciseLocation> locations = PreciseLocationParser.parse(comment.line, comment.contentColumn, comment.content);
         if (!locations.isEmpty()) {
-          testFile.addCommentToHide(comment);
+          testFile.addNoncompliantComment(comment);
           locations.forEach(this::addLocation);
         }
       }
@@ -131,14 +131,14 @@ public class FileIssues {
     }
     Report report = new Report();
 
-    report.setExpectedCount(expectedIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum());
+    report.setExpectedIssueCount(expectedIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum());
 
     report.appendExpected(testFile.getName() + "\n" + expectedIssueMap.values().stream()
       .map(LineIssues::validateExpected)
       .map(LineIssues::toString)
       .collect(Collectors.joining("\n")));
 
-    report.setActualCount(actualIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum());
+    report.setActualIssueCount(actualIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum());
 
     report.appendActual(testFile.getName() + "\n" + actualIssueMap.values().stream()
       .map(lineIssues -> lineIssues.dropUntestedAttributes(expectedIssueMap.get(lineIssues.line)))

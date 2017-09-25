@@ -76,12 +76,10 @@ class InternalIssue implements SingleFileVerifier.IssueBuilder, MultiFileVerifie
     return this;
   }
 
-  @Override
   public InternalIssue addFlow(int line, int column, int endLine, int endColumn, int flowIndex, @Nullable String message) {
     return addFlow(path, line, column, endLine, endColumn, flowIndex, message);
   }
 
-  @Override
   public InternalIssue addFlow(Path flowPath, int line, int column, int endLine, int endColumn, int flowIndex, @Nullable String message) {
     int flowOffset = flowIndex - 1;
     while (flowOffset >= flows.size()) {

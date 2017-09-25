@@ -63,7 +63,7 @@ public class FileIssuesTest {
 
     FileContent expectedIssues = new FileContent(CODE_ISSUES_JS);
     Report report = fileIssues.report();
-    assertThat(report.getExpectedCount()).isEqualTo(8);
+    assertThat(report.getExpectedIssueCount()).isEqualTo(8);
     assertThat(report.getActual()).isEqualTo(report.getExpected());
     assertThat(report.getActual()).isEqualTo(expectedIssues.getContent());
   }

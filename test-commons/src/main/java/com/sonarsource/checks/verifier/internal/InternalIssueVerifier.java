@@ -23,7 +23,6 @@ import com.sonarsource.checks.verifier.FileContent;
 import com.sonarsource.checks.verifier.MultiFileVerifier;
 import com.sonarsource.checks.verifier.SingleFileVerifier;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,7 +40,7 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
   private Set<Path> filesToVerify = new LinkedHashSet<>();
   private Map<Path, List<Comment>> comments = new HashMap<>();
   private Map<Path, List<InternalIssue>> actualIssues = new HashMap<>();
-  private Charset encoding = StandardCharsets.UTF_8;
+  private Charset encoding;
 
   public InternalIssueVerifier(Path mainSourceFilePath, Charset encoding) {
     this.mainSourceFilePath = mainSourceFilePath.toAbsolutePath();
@@ -136,20 +135,20 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
   private void assertIssues(boolean expectsIssues) {
     Report report = buildReport();
     String error = null;
-    if (!expectsIssues && report.getExpectedCount() != 0) {
+    if (!expectsIssues && report.getExpectedIssueCount() != 0) {
       error = "ERROR: 'assertNoIssues()' is called but there's some 'Noncompliant' comments.\n";
       report.prependExpected(error);
-    } else if (expectsIssues && report.getExpectedCount() == 0) {
+    } else if (expectsIssues && report.getExpectedIssueCount() == 0) {
       error = "ERROR: 'assertOneOrMoreIssues()' is called but there's no 'Noncompliant' comments.\n";
       report.prependExpected(error);
-    } else if (!expectsIssues && report.getActualCount() != 0) {
-      error = "ERROR: Found " + report.getActualCount() + " unexpected issues.\n";
+    } else if (!expectsIssues && report.getActualIssueCount() != 0) {
+      error = "ERROR: Found " + report.getActualIssueCount() + " unexpected issues.\n";
       report.prependActual(error);
-    } else if (expectsIssues && report.getActualCount() == 0) {
+    } else if (expectsIssues && report.getActualIssueCount() == 0) {
       error = "ERROR: Expect some issues, but there's none.\n";
       report.prependActual(error);
-    } else if (report.getExpectedCount() != report.getActualCount()) {
-      error = "ERROR: Expect " + report.getExpectedCount() + " issues instead of " + report.getActualCount() + "\n";
+    } else if (report.getExpectedIssueCount() != report.getActualIssueCount()) {
+      error = "ERROR: Expect " + report.getExpectedIssueCount() + " issues instead of " + report.getActualIssueCount() + "\n";
     }
     if (error != null) {
       report.appendContext("\n").appendContext(error);

@@ -144,18 +144,6 @@ public interface MultiFileVerifier {
      * @param message optional message, can be null
      */
     Issue addSecondary(Path path, int line, int column, int endLine, int endColumn, @Nullable String message);
-
-    /**
-     * Add a flow location with an optional message
-     * @param path path of the source code file related to this location
-     * @param line, start at 1, line number of the first character
-     * @param column, start at 1, column number of the first character
-     * @param endLine, start at 1, line number of the last character, if the location is on one line then endLine == line
-     * @param endColumn, start at 1, column number of the last character, if there's only one character then endColumn == column
-     * @param flowIndex, start at 1, to distinguish on which flow the location is appended
-     * @param message optional message, can be null
-     */
-    Issue addFlow(Path path, int line, int column, int endLine, int endColumn, int flowIndex, @Nullable String message);
   }
 
 }

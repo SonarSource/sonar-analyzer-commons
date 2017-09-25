@@ -20,34 +20,34 @@
 package com.sonarsource.checks.verifier.internal;
 
 public class Report {
-  private int expectedCount;
-  private int actualCount;
+  private int expectedIssueCount;
+  private int actualIssueCount;
   private StringBuilder context;
   private StringBuilder expected;
   private StringBuilder actual;
 
   public Report() {
-    expectedCount = 0;
-    actualCount = 0;
+    expectedIssueCount = 0;
+    actualIssueCount = 0;
     context = new StringBuilder();
     expected = new StringBuilder();
     actual = new StringBuilder();
   }
 
-  public int getExpectedCount() {
-    return expectedCount;
+  public int getExpectedIssueCount() {
+    return expectedIssueCount;
   }
 
-  public void setExpectedCount(int count) {
-    expectedCount = count;
+  public void setExpectedIssueCount(int count) {
+    expectedIssueCount = count;
   }
 
-  public int getActualCount() {
-    return actualCount;
+  public int getActualIssueCount() {
+    return actualIssueCount;
   }
 
-  public void setActualCount(int count) {
-    actualCount = count;
+  public void setActualIssueCount(int count) {
+    actualIssueCount = count;
   }
 
   public String getActual() {
@@ -88,8 +88,8 @@ public class Report {
   }
 
   public Report append(Report report) {
-    expectedCount += report.expectedCount;
-    actualCount += report.actualCount;
+    expectedIssueCount += report.expectedIssueCount;
+    actualIssueCount += report.actualIssueCount;
     context.append(report.context).append("; ");
     expected.append(report.expected).append("\n");
     actual.append(report.actual).append("\n");

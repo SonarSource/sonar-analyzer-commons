@@ -75,7 +75,7 @@ public class LineIssuesTest {
     TestFile file = new TestFile(new FileContent(Paths.get("source_code").toAbsolutePath(), code));
     List<Comment> comments = TestFileTest.parseComments(commentPrefix, file);
     for (Comment comment : comments) {
-      file.addCommentToHide(comment);
+      file.addNoncompliantComment(comment);
     }
     Comment comment = comments.stream().filter(c -> c.line == line).findFirst().orElse(null);
     assertThat(comment).as("Comment at line " + line).isNotNull();

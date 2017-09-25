@@ -41,8 +41,8 @@ public class TestFileTest {
   @Test
   public void constructor() {
     TestFile file = new TestFile(new FileContent(MAIN_JS, UTF_8));
-    file.addCommentToHide(new Comment(file.getPath(), 2, 19, 21, " Noncompliant"));
-    file.addCommentToHide(new Comment(file.getPath(), 2, 27, 29, "liant"));
+    file.addNoncompliantComment(new Comment(file.getPath(), 2, 19, 21, " Noncompliant"));
+    file.addNoncompliantComment(new Comment(file.getPath(), 2, 27, 29, "liant"));
     assertThat(file.getName()).isEqualTo("main.js");
     assertThat(file.getContent()).startsWith("function main()");
     assertThat(file.getLines()).containsExactly(
@@ -52,8 +52,8 @@ public class TestFileTest {
       "");
     assertThat(file.line(2)).isEqualTo("  alert('Hello'); // Noncompliant");
     assertThat(file.line(3)).isEqualTo("}");
-    assertThat(file.lineWithoutComment(2)).isEqualTo("  alert('Hello');");
-    assertThat(file.lineWithoutComment(3)).isEqualTo("}");
+    assertThat(file.lineWithoutNoncompliantComment(2)).isEqualTo("  alert('Hello');");
+    assertThat(file.lineWithoutNoncompliantComment(3)).isEqualTo("}");
     assertThat(file.commentAt(2)).isEqualTo("// Noncompliant");
     assertThat(file.commentAt(3)).isNull();
   }
@@ -79,7 +79,7 @@ public class TestFileTest {
     TestFile file = new TestFile(new FileContent(Paths.get("file.cpp"), "int a;\nint b;\n"));
     thrown.expect(IllegalStateException.class);
     thrown.expectMessage("This comment is not related to file");
-    file.addCommentToHide(new Comment(Paths.get("file2.cpp"), 2, 19, 21, " Noncompliant"));
+    file.addNoncompliantComment(new Comment(Paths.get("file2.cpp"), 2, 19, 21, " Noncompliant"));
   }
 
   static List<Comment> parseComments(String prefix, FileContent file) {

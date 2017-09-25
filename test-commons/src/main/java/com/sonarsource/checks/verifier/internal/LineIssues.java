@@ -184,7 +184,7 @@ public class LineIssues {
     } else if (lineNumber == 0) {
       return "<issue on file " + testFile.getName() + ">";
     } else {
-      return testFile.lineWithoutComment(lineNumber);
+      return testFile.lineWithoutNoncompliantComment(lineNumber);
     }
   }
 

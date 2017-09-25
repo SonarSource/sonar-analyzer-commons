@@ -34,7 +34,7 @@ class TestFile extends FileContent {
     super(file.getPath(), file.getContent());
   }
 
-  void addCommentToHide(Comment comment) {
+  void addNoncompliantComment(Comment comment) {
     if (!comment.path.equals(getPath())) {
       throw new IllegalStateException("This comment is not related to file '" + getPath() + "' but '" + comment.path + "'");
     }
@@ -48,7 +48,7 @@ class TestFile extends FileContent {
     return getLines()[lineNumber - 1];
   }
 
-  String lineWithoutComment(int line) {
+  String lineWithoutNoncompliantComment(int line) {
     String code = line(line);
     List<Comment> comments = commentListPreLineMap.get(line);
     if (comments != null) {
