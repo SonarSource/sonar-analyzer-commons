@@ -20,33 +20,32 @@
 package com.sonarsource.checks.verifier.internal;
 
 import com.sonarsource.checks.verifier.FileContent;
-import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
-public class Comment {
-  public final Path path;
-  public final int line;
-  public final int column;
-  public final int contentColumn;
-  public final String content;
+public class SingleLineCommentParser implements Comment.Parser {
 
-  public Comment(Path path, int line, int column, int contentColumn, String content) {
-    this.path = path;
-    this.line = line;
-    this.column = column;
-    this.contentColumn = contentColumn;
-    this.content = content;
+  public final String commentPrefix;
+
+  public SingleLineCommentParser(String commentPrefix) {
+    this.commentPrefix = commentPrefix;
   }
 
   @Override
-  public String toString() {
-    return "(" + path.getFileName() + "," + line + "," + column + "," + contentColumn + "," + content + ")";
+  public List<Comment> parse(FileContent file) {
+    List<Comment> comments = new ArrayList<>();
+    String[] lines = file.getContent().split("\r?\n|\r", -1);
+    for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      String line = lines[lineIndex];
+      int commentIndex = line.indexOf(commentPrefix);
+      if (commentIndex != -1) {
+        int lineNumber = lineIndex + 1;
+        int column = commentIndex + 1;
+        int contentColumn = column + commentPrefix.length();
+        String commentContent = line.substring(contentColumn - 1);
+        comments.add(new Comment(file.getPath(), lineNumber, column, contentColumn, commentContent));
+      }
+    }
+    return comments;
   }
-
-  public interface Parser {
-
-    List<Comment> parse(FileContent file);
-
-  }
-
 }

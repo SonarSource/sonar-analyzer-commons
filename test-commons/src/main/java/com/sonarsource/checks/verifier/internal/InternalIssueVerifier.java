@@ -48,6 +48,14 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
     filesToVerify.add(this.mainSourceFilePath);
   }
 
+  void addComments(List<Comment> commentList) {
+    for (Comment comment : commentList) {
+      filesToVerify.add(comment.path);
+      comments.computeIfAbsent(comment.path, key -> new ArrayList<>())
+        .add(comment);
+    }
+  }
+
   @Override
   public InternalIssueVerifier addComment(Path path, int line, int column, String content, int prefixLength, int suffixLength) {
     Path absolutePath = path.toAbsolutePath();
