@@ -60,8 +60,7 @@ public class SingleFileVerifierTest {
     SingleFileVerifier verifier = SingleFileVerifier.create(path, UTF_8);
 
     CommentParser.create()
-      .addSingleLineCommentParser("//")
-      .addMultiLineCommentParser("/*", "*/")
+      .addSingleLineCommentSyntax("//")
       .parseInto(path, verifier);
 
     verifier.reportIssue("Issue on file").onFile();

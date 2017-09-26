@@ -32,14 +32,8 @@ public class InternalCommentParser implements CommentParser {
   private List<Comment.Parser> commentParsers = new ArrayList<>();
 
   @Override
-  public InternalCommentParser addSingleLineCommentParser(String commentPrefix) {
+  public InternalCommentParser addSingleLineCommentSyntax(String commentPrefix) {
     commentParsers.add(new SingleLineCommentParser(commentPrefix));
-    return this;
-  }
-
-  @Override
-  public InternalCommentParser addMultiLineCommentParser(String commentPrefix, String commentSuffix) {
-    commentParsers.add(new MultiLineCommentParser(commentPrefix, commentSuffix));
     return this;
   }
 

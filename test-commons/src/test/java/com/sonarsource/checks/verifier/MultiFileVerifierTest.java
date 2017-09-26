@@ -50,8 +50,7 @@ public class MultiFileVerifierTest {
     MultiFileVerifier verifier = MultiFileVerifier.create(path, UTF_8);
 
     CommentParser.create()
-      .addSingleLineCommentParser("//")
-      .addMultiLineCommentParser("/*", "*/")
+      .addSingleLineCommentSyntax("//")
       .parseInto(path, verifier);
 
     verifier.reportIssue(path, "Issue on file").onFile();

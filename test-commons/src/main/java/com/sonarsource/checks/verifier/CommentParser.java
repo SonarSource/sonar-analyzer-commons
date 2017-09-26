@@ -34,21 +34,10 @@ public interface CommentParser {
    * But there's some limitation, like for this case in java:
    * String name = "Paul//Smith"; // Noncompliant
    * Example:
-   *   parser.addSingleLineCommentParser("//");
+   *   parser.addSingleLineCommentSyntax("//");
    * </pre>
    */
-  CommentParser addSingleLineCommentParser(String commentPrefix);
-
-  /**
-   * <pre>
-   * This comment parser find comment delimited by "commentPrefix" and "commentSuffix".
-   * But there's some limitation, like for this case in java:
-   * String name = "/*";
-   * Example:
-   *   parser.addMultiLineCommentParser("{*", "*}");
-   * </pre>
-   */
-  CommentParser addMultiLineCommentParser(String commentPrefix, String commentSuffix);
+  CommentParser addSingleLineCommentSyntax(String commentPrefix);
 
   /**
    * @param path source file to parse
