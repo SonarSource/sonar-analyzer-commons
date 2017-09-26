@@ -17,8 +17,9 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
+import com.sonarsource.checks.verifier.internal.UnderlinedRange;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

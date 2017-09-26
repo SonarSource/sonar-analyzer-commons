@@ -17,8 +17,9 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
+import com.sonarsource.checks.verifier.FileContent;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.Test;
@@ -33,18 +34,8 @@ public class FileIssuesTest {
 
   @Test
   public void parse() throws Exception {
-    TestFile codeFile = TestFile.read(CODE_JS, UTF_8, "//");
-    TestFile expectedIssues = TestFile.read(CODE_ISSUES_JS, UTF_8, "//");
-    FileIssues fileIssues = new FileIssues(codeFile);
-    String[] lines = codeFile.content.split("\n");
-    for (int line = 1; line <= lines.length; line++) {
-      String lineOfCode = lines[line - 1];
-      int commentStart = Math.max(lineOfCode.indexOf("//"),lineOfCode.indexOf("/*"));
-      if (commentStart != -1) {
-        int column = commentStart + 1;
-        fileIssues.addComment(line, column, lineOfCode.substring(commentStart));
-      }
-    }
+    TestFile codeFile = new TestFile(new FileContent(CODE_JS.toAbsolutePath(), UTF_8));
+    FileIssues fileIssues = new FileIssues(codeFile, TestFileTest.parseComments("//", codeFile));
 
     fileIssues.addActualIssue(0, "Issue on file", null);
 
@@ -70,11 +61,11 @@ public class FileIssuesTest {
     PrimaryLocation primary5 = new PrimaryLocation(new UnderlinedRange(26, 8, 26, 10), null);
     fileIssues.addActualIssue(26, "Error", primary5);
 
-    // PreciseLocation location = new FlowLocation(range, primaryIsBefore, flowIndex, indexInTheFlow, message);
-    FileIssues.Report report = fileIssues.report();
-    assertThat(report.expectedCount).isEqualTo(8);
-    assertThat(report.actual).isEqualTo(report.expected);
-    assertThat(report.actual).isEqualTo(expectedIssues.content);
+    FileContent expectedIssues = new FileContent(CODE_ISSUES_JS);
+    Report report = fileIssues.report();
+    assertThat(report.getExpectedIssueCount()).isEqualTo(8);
+    assertThat(report.getActual()).isEqualTo(report.getExpected());
+    assertThat(report.getActual()).isEqualTo(expectedIssues.getContent());
   }
 
 }

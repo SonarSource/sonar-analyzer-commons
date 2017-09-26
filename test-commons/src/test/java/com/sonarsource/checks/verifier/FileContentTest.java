@@ -26,10 +26,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestFileTest {
+public class FileContentTest {
 
   public static final Path MAIN_JS = Paths.get("src/test/resources/main.js");
 
@@ -38,44 +37,23 @@ public class TestFileTest {
 
   @Test
   public void constructor() {
-    TestFile file = TestFile.read(MAIN_JS, UTF_8, "//");
-    assertThat(file.name).isEqualTo("main.js");
-    assertThat(file.commentPrefix).isEqualTo("//");
-    assertThat(file.content).startsWith("function main()");
-    assertThat(file.lines).containsExactly(
+    FileContent file = new FileContent(MAIN_JS);
+    assertThat(file.getName()).isEqualTo("main.js");
+    assertThat(file.getPath()).isEqualTo(MAIN_JS);
+    assertThat(file.getFile()).isEqualTo(MAIN_JS.toFile());
+    assertThat(file.getContent()).startsWith("function main()");
+    assertThat(file.getLines()).containsExactly(
       "function main() {",
-      "  alert('Hello'); // display hello",
+      "  alert('Hello'); // Noncompliant",
       "}",
       "");
-    assertThat(file.line(2)).isEqualTo("  alert('Hello'); // display hello");
-    assertThat(file.line(3)).isEqualTo("}");
-    assertThat(file.lineWithoutComment(2)).isEqualTo("  alert('Hello');");
-    assertThat(file.lineWithoutComment(3)).isEqualTo("}");
-    assertThat(file.commentAt(2)).isEqualTo("// display hello");
-    assertThat(file.commentAt(3)).isNull();
   }
 
   @Test
   public void invalid_file_path() {
     thrown.expect(IllegalStateException.class);
-    thrown.expectMessage(CoreMatchers.startsWith("Failed to read 'invalid.js':"));
-    TestFile.read(Paths.get("bad/invalid.js"), UTF_8, "//");
-  }
-
-  @Test
-  public void invalid_positive_line() {
-    TestFile file = new TestFile("file.cpp", "//", "int a;\nint b;\n");
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("No line 5 in file.cpp");
-    file.line(5);
-  }
-
-  @Test
-  public void invalid_negative_line() {
-    TestFile file = new TestFile("file.cpp", "//", "int a;\nint b;\n");
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("No line -2 in file.cpp");
-    file.line(-2);
+    thrown.expectMessage(CoreMatchers.startsWith("Failed to read 'bad/invalid.js':"));
+    new FileContent(Paths.get("bad/invalid.js"));
   }
 
 }

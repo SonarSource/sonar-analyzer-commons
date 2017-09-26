@@ -1,18 +1,18 @@
 code.js
-000: // Noncompliant {{Issue on file}}
+000: Noncompliant {{Issue on file}}
 000: <issue on file code.js>
 
-004: // Noncompliant 2
+004: Noncompliant 2
 004: function test() {
 
-009: // Noncompliant
+009: Noncompliant
 006:     var msg = "Hello";
              ^^^>
 009:     alert(msg);
                ^^^ 1
 
 
-012: // Noncompliant {{Rule message}}
+012: Noncompliant {{Rule message}}
 012:     alert("Hello");
          ^^^^^ 2
               ^^^^^^^^^< {{Secondary location message1}}
@@ -20,17 +20,17 @@ code.js
          ^^^^^< {{Secondary location message2}}
 
 
-019: // Noncompliant {{Error}} [[effortToFix=2.5]]
+019: Noncompliant {{Error}} [[effortToFix=2.5]]
 019:     alert(msg);
          ^^^^^
 
 
-022: // Noncompliant
+022: Noncompliant
 022:     alert("Hello");
          ^^^^^ 1^^^^^<
 
 
-026: // Noncompliant
+026: Noncompliant
 026: ➞alert(msg);
             ^^^
 

@@ -17,11 +17,14 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
+import com.sonarsource.checks.verifier.FileContent;
+import java.nio.file.Paths;
+import java.util.List;
 import org.junit.Test;
 
-import static com.sonarsource.checks.verifier.NoncompliantCommentParser.parse;
+import static com.sonarsource.checks.verifier.internal.NoncompliantCommentParser.parse;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class LineIssuesTest {
@@ -36,44 +39,47 @@ public class LineIssuesTest {
       "ls\n"
         + "cd folder # Noncompliant",
       2, ""
-        + "002: # Noncompliant\n"
+        + "002: Noncompliant\n"
         + "002: cd folder\n");
     assertMatch("//",
       "a++; // Noncompliant {{error}}", 1, ""
-        + "001: // Noncompliant {{error}}\n"
+        + "001: Noncompliant {{error}}\n"
         + "001: a++;\n");
     assertMatch("//",
       "a++; // Noncompliant {{error1}} {{error2}}", 1, ""
-        + "001: // Noncompliant {{error1}} {{error2}}\n"
+        + "001: Noncompliant {{error1}} {{error2}}\n"
         + "001: a++;\n");
     assertMatch("//",
       "a++; // Noncompliant 3", 1, ""
-        + "001: // Noncompliant 3\n"
+        + "001: Noncompliant 3\n"
         + "001: a++;\n");
     assertMatch("--",
       "\nEXEC f\n-- Noncompliant@2", 3, ""
-        + "002: -- Noncompliant\n"
+        + "002: Noncompliant\n"
         + "002: EXEC f\n");
     assertMatch("--",
       "\n-- Noncompliant@+1\nEXEC f\n", 2, ""
-        + "003: -- Noncompliant\n"
+        + "003: Noncompliant\n"
         + "003: EXEC f\n");
     assertMatch("--",
       "\nEXEC f\n\n-- Noncompliant@-2", 4, ""
-        + "002: -- Noncompliant\n"
+        + "002: Noncompliant\n"
         + "002: EXEC f\n");
     assertMatch("//",
       "i++; // Noncompliant {{error}} [[effortToFix=2]]", 1, ""
-        + "001: // Noncompliant {{error}} [[effortToFix=2]]\n"
+        + "001: Noncompliant {{error}} [[effortToFix=2]]\n"
         + "001: i++;\n");
   }
 
   private static void assertMatch(String commentPrefix, String code, int line, String expected) {
-    TestFile file = new TestFile("source_code", commentPrefix, code);
-    String comment = file.commentAt(line);
+    TestFile file = new TestFile(new FileContent(Paths.get("source_code").toAbsolutePath(), code));
+    List<Comment> comments = TestFileTest.parseComments(commentPrefix, file);
+    for (Comment comment : comments) {
+      file.addNoncompliantComment(comment);
+    }
+    Comment comment = comments.stream().filter(c -> c.line == line).findFirst().orElse(null);
     assertThat(comment).as("Comment at line " + line).isNotNull();
-    String commentContent = comment.substring(commentPrefix.length());
-    LineIssues lineIssues = parse(file, line, commentContent);
+    LineIssues lineIssues = parse(file, line, comment.content);
     assertThat(lineIssues == null ? "<null>" : lineIssues.toString()).isEqualTo(expected);
   }
 

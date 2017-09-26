@@ -17,35 +17,23 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
-import javax.annotation.Nullable;
+import com.sonarsource.checks.verifier.internal.Comment;
+import java.nio.file.Paths;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SecondaryLocationTest {
-
+public class CommentTest {
   @Test
-  public void test() throws Exception {
-    UnderlinedRange range = new UnderlinedRange(5, 3, 5, 8);
-
-    assertThat(secondary("XX", range, false, 7, null))
-      .isEqualTo("XX  ^^^^^^> 7");
-
-    assertThat(secondary("", range, false, 1, "msg1"))
-      .isEqualTo("  ^^^^^^> 1 {{msg1}}");
-
-    assertThat(secondary("", range, true, null, null))
-      .isEqualTo("  ^^^^^^<");
+  public void constructor() throws Exception {
+    Comment comment = new Comment(Paths.get("dir/file.js"),1, 2, 3, "Error");
+    assertThat(comment.path).isEqualTo(Paths.get("dir/file.js"));
+    assertThat(comment.line).isEqualTo(1);
+    assertThat(comment.column).isEqualTo(2);
+    assertThat(comment.contentColumn).isEqualTo(3);
+    assertThat(comment.content).isEqualTo("Error");
+    assertThat(comment.toString()).isEqualTo("(file.js,1,2,3,Error)");
   }
-
-  private static String secondary(String prefix, UnderlinedRange range, boolean primaryIsBefore, @Nullable Integer index, @Nullable String message) {
-    PreciseLocation location = new SecondaryLocation(range, primaryIsBefore, index, message);
-    StringBuilder out = new StringBuilder();
-    out.append(prefix);
-    location.write(prefix.length(), out);
-    return out.toString();
-  }
-
 }

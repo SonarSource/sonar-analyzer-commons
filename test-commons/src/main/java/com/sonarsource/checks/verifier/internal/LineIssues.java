@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier;
+package com.sonarsource.checks.verifier.internal;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ import javax.annotation.Nullable;
 
 public class LineIssues {
 
-  public static final String COMMENT_PREFIX = " Noncompliant";
+  public static final String COMMENT_PREFIX = "Noncompliant";
 
   private static final String EFFORT_TO_FIX = "effortToFix";
 
@@ -131,7 +131,6 @@ public class LineIssues {
     }
     StringBuilder out = new StringBuilder();
     appendLineNumber(out, line);
-    out.append(testFile.commentPrefix);
     out.append(COMMENT_PREFIX);
     if (messages.size() > 1 && messages.get(0) == null) {
       out.append(" ").append(messages.size());
@@ -180,12 +179,12 @@ public class LineIssues {
   }
 
   private String reportLineAt(int lineNumber) {
-    if (lineNumber < 0 || lineNumber > testFile.lines.length) {
-      return "ERROR, no line " + lineNumber + " in " + testFile.name;
+    if (lineNumber < 0 || lineNumber > testFile.getLines().length) {
+      return "ERROR, no line " + lineNumber + " in " + testFile.getName();
     } else if (lineNumber == 0) {
-      return "<issue on file " + testFile.name + ">";
+      return "<issue on file " + testFile.getName() + ">";
     } else {
-      return testFile.lineWithoutComment(lineNumber);
+      return testFile.lineWithoutNoncompliantComment(lineNumber);
     }
   }
 
