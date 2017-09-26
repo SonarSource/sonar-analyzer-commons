@@ -17,36 +17,38 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package com.sonarsource.checks.verifier.internal;
+package com.sonarsource.checks.verifier;
 
-import com.sonarsource.checks.verifier.FileContent;
+import com.sonarsource.checks.verifier.internal.InternalCommentParser;
 import java.nio.file.Path;
-import java.util.List;
 
-public class Comment {
-  public final Path path;
-  public final int line;
-  public final int column;
-  public final int contentColumn;
-  public final String content;
+public interface CommentParser {
 
-  public Comment(Path path, int line, int column, int contentColumn, String content) {
-    this.path = path;
-    this.line = line;
-    this.column = column;
-    this.contentColumn = contentColumn;
-    this.content = content;
+  static CommentParser create() {
+    return new InternalCommentParser();
   }
 
-  @Override
-  public String toString() {
-    return "(" + path.getFileName() + "," + line + "," + column + "," + contentColumn + "," + content + ")";
-  }
+  /**
+   * <pre>
+   * This comment parser is able split a line using "commentPrefix".
+   * But there's some limitation, like for this case in java:
+   * String name = "Paul//Smith"; // Noncompliant
+   * Example:
+   *   parser.addSingleLineCommentSyntax("//");
+   * </pre>
+   */
+  CommentParser addSingleLineCommentSyntax(String commentPrefix);
 
-  public interface Parser {
+  /**
+   * @param path source file to parse
+   * @param verifier verifier for feed
+   */
+  void parseInto(Path path, MultiFileVerifier verifier);
 
-    List<Comment> parse(FileContent file);
-
-  }
+  /**
+   * @param path source file to parse
+   * @param verifier verifier for feed
+   */
+  void parseInto(Path path, SingleFileVerifier verifier);
 
 }

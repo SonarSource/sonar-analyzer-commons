@@ -44,6 +44,38 @@ public class MultiFileVerifierTest {
   }
 
   @Test
+  public void code_js_with_comment_parser() throws Exception {
+    Path path = Paths.get("src/test/resources/code.js");
+
+    MultiFileVerifier verifier = MultiFileVerifier.create(path, UTF_8);
+
+    CommentParser.create()
+      .addSingleLineCommentSyntax("//")
+      .parseInto(path, verifier);
+
+    verifier.reportIssue(path, "Issue on file").onFile();
+    verifier.reportIssue(path, "issue1").onLine(4);
+    verifier.reportIssue(path, "issue2").onLine(4);
+
+    verifier.reportIssue(path, "msg").onRange(9, 11, 9, 13)
+      .addSecondary(path, 6, 9, 6, 11, "msg");
+
+    verifier.reportIssue(path, "Rule message").onRange(12, 5, 12, 9)
+      .addSecondary(path, 12, 10, 12, 18, "Secondary location message1")
+      .addSecondary(path, 16, 5, 16, 9, "Secondary location message2");
+
+    verifier.reportIssue(path, "Error").onRange(19, 5, 19, 9)
+      .withGap(2.5d);
+
+    verifier.reportIssue(path, "msg").onRange(22, 5, 22, 9)
+      .addSecondary(path, 22, 12, 22, 16, "msg");
+
+    verifier.reportIssue(path, "msg").onRange(26, 8, 26, 10);
+
+    verifier.assertOneOrMoreIssues();
+  }
+
+  @Test
   public void code_js_without_comment_parser() throws Exception {
     Path path = Paths.get("src/test/resources/code.js");
 

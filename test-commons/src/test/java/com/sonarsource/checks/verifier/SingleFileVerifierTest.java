@@ -53,4 +53,36 @@ public class SingleFileVerifierTest {
     verifier.assertOneOrMoreIssues();
   }
 
+  @Test
+  public void code_js_with_comment_parser() throws Exception {
+    Path path = Paths.get("src/test/resources/code.js");
+
+    SingleFileVerifier verifier = SingleFileVerifier.create(path, UTF_8);
+
+    CommentParser.create()
+      .addSingleLineCommentSyntax("//")
+      .parseInto(path, verifier);
+
+    verifier.reportIssue("Issue on file").onFile();
+    verifier.reportIssue("issue1").onLine(4);
+    verifier.reportIssue("issue2").onLine(4);
+
+    verifier.reportIssue("msg").onRange(9, 11, 9, 13)
+      .addSecondary(6, 9, 6, 11, "msg");
+
+    verifier.reportIssue("Rule message").onRange(12, 5, 12, 9)
+      .addSecondary(12, 10, 12, 18, "Secondary location message1")
+      .addSecondary(16, 5, 16, 9, "Secondary location message2");
+
+    verifier.reportIssue("Error").onRange(19, 5, 19, 9)
+      .withGap(2.5d);
+
+    verifier.reportIssue("msg").onRange(22, 5, 22, 9)
+      .addSecondary(22, 12, 22, 16, "msg");
+
+    verifier.reportIssue("msg").onRange(26, 8, 26, 10);
+
+    verifier.assertOneOrMoreIssues();
+  }
+
 }
