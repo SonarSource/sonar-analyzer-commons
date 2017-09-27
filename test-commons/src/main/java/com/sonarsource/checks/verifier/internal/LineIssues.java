@@ -56,6 +56,14 @@ public class LineIssues {
     this.primaryLocation = primaryLocation;
   }
 
+  void merge(LineIssues other) {
+    messages.addAll(other.messages);
+    params.putAll(other.params);
+    if (primaryLocation == null) {
+      primaryLocation = other.primaryLocation;
+    }
+  }
+
   public static LineIssues at(TestFile testFile, int line, @Nullable PrimaryLocation primaryLocation) {
     return new LineIssues(testFile, line, new String[0], new HashMap<>(), primaryLocation);
   }
@@ -187,5 +195,4 @@ public class LineIssues {
       return testFile.lineWithoutNoncompliantComment(lineNumber);
     }
   }
-
 }
