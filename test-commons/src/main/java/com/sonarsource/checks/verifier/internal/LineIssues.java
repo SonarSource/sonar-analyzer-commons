@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 public class LineIssues {
@@ -140,13 +139,14 @@ public class LineIssues {
     StringBuilder out = new StringBuilder();
     appendLineNumber(out, line);
     out.append(COMMENT_PREFIX);
-    if (messages.size() > 1 && messages.get(0) == null) {
+    boolean oneMessageIsMissing = messages.stream().filter(Objects::isNull).count() > 0;
+    if (oneMessageIsMissing && messages.size() > 1) {
       out.append(" ").append(messages.size());
-    } else if (messages.get(0) != null) {
-      out.append(" {{");
-      out.append(messages.stream().collect(Collectors.joining("}} {{")));
-      out.append("}}");
     }
+    messages.stream()
+      .filter(Objects::nonNull)
+      .sorted()
+      .forEach(message -> out.append(" {{").append(message).append("}}"));
     Double effort = effortToFix();
     if (effort != null) {
       DecimalFormat effortToFixFormat = new DecimalFormat("0.##");
