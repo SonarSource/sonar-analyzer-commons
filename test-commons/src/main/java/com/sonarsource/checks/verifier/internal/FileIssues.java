@@ -49,7 +49,12 @@ public class FileIssues {
       LineIssues lineIssues = NoncompliantCommentParser.parse(testFile, comment.line, comment.content);
       if (lineIssues != null) {
         testFile.addNoncompliantComment(comment);
-        expectedIssueMap.put(lineIssues.line, lineIssues);
+        LineIssues existingLineIssues = expectedIssueMap.get(lineIssues.line);
+        if (existingLineIssues != null) {
+          existingLineIssues.merge(lineIssues);
+        } else {
+          expectedIssueMap.put(lineIssues.line, lineIssues);
+        }
       } else {
         List<PreciseLocation> locations = PreciseLocationParser.parse(comment.line, comment.contentColumn, comment.content);
         if (!locations.isEmpty()) {

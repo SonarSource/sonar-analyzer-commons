@@ -85,4 +85,18 @@ public class SingleFileVerifierTest {
     verifier.assertOneOrMoreIssues();
   }
 
+  @Test
+  public void several_issues_on_the_same_line() throws Exception {
+
+    Path path = Paths.get("src/test/resources/several-issues-on-the-same-line.js");
+
+    SingleFileVerifier verifier = SingleFileVerifier.create(path, UTF_8);
+    CommentParser.create().addSingleLineCommentSyntax("//").parseInto(path, verifier);
+
+    verifier.reportIssue("Error1").onLine(2);
+    verifier.reportIssue("Error2").onLine(2);
+    verifier.reportIssue("Error3").onLine(2);
+
+    verifier.assertOneOrMoreIssues();
+  }
 }
