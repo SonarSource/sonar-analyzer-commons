@@ -19,9 +19,6 @@
  */
 package com.sonarsource.checks.verifier.internal;
 
-import com.sonarsource.checks.verifier.internal.FlowLocation;
-import com.sonarsource.checks.verifier.internal.PreciseLocation;
-import com.sonarsource.checks.verifier.internal.UnderlinedRange;
 import javax.annotation.Nullable;
 import org.junit.Test;
 
@@ -47,7 +44,7 @@ public class FlowLocationTest {
     PreciseLocation location = new FlowLocation(range, primaryIsBefore, flowIndex, indexInTheFlow, message);
     StringBuilder out = new StringBuilder();
     out.append(prefix);
-    location.write(prefix.length(), out);
+    location.write(prefix.length(), out, primaryIsBefore);
     return out.toString();
   }
 

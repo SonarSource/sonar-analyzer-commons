@@ -114,4 +114,22 @@ public class SingleFileVerifierTest {
 
     verifier.assertOneOrMoreIssues();
   }
+
+  @Test
+  public void primary_and_secondary_at_the_same_location() throws Exception {
+    Path path = Paths.get("src/test/resources/same-location.js");
+
+    SingleFileVerifier verifier = SingleFileVerifier.create(path, UTF_8);
+    CommentParser.create().addSingleLineCommentSyntax("//").parseInto(path, verifier);
+
+    verifier.reportIssue("Primary1")
+      .onRange(2,5,2,7)
+      .addSecondary(2, 5,2,7, "Secondary1");
+
+    verifier.reportIssue("Primary2")
+      .onRange(6,5,6,7)
+      .addSecondary(6, 5,6,7, "Secondary2");
+
+    verifier.assertOneOrMoreIssues();
+  }
 }

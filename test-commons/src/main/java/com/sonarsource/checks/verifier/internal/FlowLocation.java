@@ -34,9 +34,9 @@ public class FlowLocation extends SecondaryLocation {
   }
 
   @Override
-  public void write(int indent, StringBuilder out) {
+  public void write(int indent, StringBuilder out, boolean primaryIsWritten) {
     range.underline(indent, out);
-    out.append(primaryIsBefore ? '<' : '>');
+    out.append(primaryIsWritten ? '<' : '>');
     out.append(' ').append(flowIndex).append('.').append(indexInTheFlow);
     if (message != null) {
       out.append(" {{").append(message).append("}}");

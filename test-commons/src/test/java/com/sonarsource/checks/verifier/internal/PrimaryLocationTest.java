@@ -19,9 +19,6 @@
  */
 package com.sonarsource.checks.verifier.internal;
 
-import com.sonarsource.checks.verifier.internal.PrimaryLocation;
-import com.sonarsource.checks.verifier.internal.SecondaryLocation;
-import com.sonarsource.checks.verifier.internal.UnderlinedRange;
 import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -57,7 +54,7 @@ public class PrimaryLocationTest {
     location.secondaryLocations.addAll(secondaryLocations);
     StringBuilder out = new StringBuilder();
     out.append(prefix);
-    location.write(prefix.length(), out);
+    location.write(prefix.length(), out, false);
     return out.toString();
   }
 
