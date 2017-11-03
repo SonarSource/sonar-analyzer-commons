@@ -39,9 +39,9 @@ public class SecondaryLocation extends PreciseLocation {
   }
 
   @Override
-  public void write(int indent, StringBuilder out) {
+  public void write(int indent, StringBuilder out, boolean primaryIsWritten) {
     range.underline(indent, out);
-    out.append(primaryIsBefore ? '<' : '>');
+    out.append(primaryIsWritten ? '<' : '>');
     if (index != null) {
       out.append(" ").append(index);
     }

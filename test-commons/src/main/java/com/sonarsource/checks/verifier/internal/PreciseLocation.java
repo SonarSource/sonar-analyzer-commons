@@ -27,6 +27,6 @@ public abstract class PreciseLocation {
     this.range = range;
   }
 
-  public abstract void write(int indent, StringBuilder line);
+  public abstract void write(int indent, StringBuilder line, boolean primaryIsWritten);
 
 }

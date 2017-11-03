@@ -22,6 +22,7 @@ package com.sonarsource.checks.verifier.internal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import javax.annotation.Nullable;
 
 public class PerLineLocationWriter {
 
@@ -40,10 +41,11 @@ public class PerLineLocationWriter {
     locations.add(location);
   }
 
-  public void write(StringBuilder out) {
+  public void write(StringBuilder out, @Nullable UnderlinedRange primaryRange) {
     locations.sort(Comparator.comparing(location -> location.range));
     for (PreciseLocation location : locations) {
-      location.write(indent, availableStringBuilder(location));
+      boolean primaryIsWritten = primaryRange != null && primaryRange.compareTo(location.range) <= 0;
+      location.write(indent, availableStringBuilder(location), primaryIsWritten);
     }
     for (StringBuilder locationLine : outputLines) {
       out.append(locationLine).append('\n');

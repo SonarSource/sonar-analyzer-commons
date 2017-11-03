@@ -178,7 +178,7 @@ public class LineIssues {
         writerPerLine.computeIfAbsent(
           location.range.line, key -> new PerLineLocationWriter(String.format("%03d: ", key), reportLineAt(key))).add(location);
       }
-      writerPerLine.values().forEach(writer -> writer.write(out));
+      writerPerLine.values().forEach(writer -> writer.write(out, primaryLocation.range));
     } else {
       appendLineNumber(out, line);
       out.append(reportLineAt(line));

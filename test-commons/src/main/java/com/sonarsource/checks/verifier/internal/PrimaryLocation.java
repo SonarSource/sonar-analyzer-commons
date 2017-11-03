@@ -42,14 +42,14 @@ public class PrimaryLocation extends PreciseLocation {
   }
 
   public SecondaryLocation addSecondary(UnderlinedRange range, @Nullable String message) {
-    boolean primaryIsBefore = this.range.compareTo(range) < 0;
+    boolean primaryIsBefore = this.range.compareTo(range) <= 0;
     SecondaryLocation location = new SecondaryLocation(range, primaryIsBefore, secondaryLocations.size() + 1, message);
     secondaryLocations.add(location);
     return location;
   }
 
   @Override
-  public void write(int indent, StringBuilder out) {
+  public void write(int indent, StringBuilder out, boolean primaryIsWritten) {
     range.underline(indent, out);
     if (expectedAdditionalCount != null) {
       out.append(' ').append(expectedAdditionalCount);

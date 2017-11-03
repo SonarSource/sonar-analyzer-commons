@@ -79,7 +79,12 @@ public class PerLineLocationWriterTest {
     PerLineLocationWriter writer = new PerLineLocationWriter(lineNumber, code);
     locations.forEach(writer::add);
     StringBuilder out = new StringBuilder();
-    writer.write(out);
+    UnderlinedRange primaryRange = locations.stream()
+      .filter(location -> location instanceof PrimaryLocation)
+      .findFirst()
+      .map(location->location.range)
+      .orElse(null);
+    writer.write(out, primaryRange);
     assertThat(out.toString()).isEqualTo(expected);
   }
 
