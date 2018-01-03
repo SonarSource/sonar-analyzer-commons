@@ -30,8 +30,16 @@ class TestFile extends FileContent {
 
   private final Map<Integer, List<Comment>> commentListPreLineMap = new HashMap<>();
 
+  private final String lineNumberPrefixFormat;
+
   TestFile(FileContent file) {
     super(file.getPath(), file.getContent());
+    int maxLineNumberLength = String.valueOf(file.getLines().length).length();
+    lineNumberPrefixFormat = "%0" + Math.max(3, maxLineNumberLength) + "d: ";
+  }
+
+  String linePrefix(int lineNumber) {
+    return String.format(lineNumberPrefixFormat, lineNumber);
   }
 
   void addNoncompliantComment(Comment comment) {

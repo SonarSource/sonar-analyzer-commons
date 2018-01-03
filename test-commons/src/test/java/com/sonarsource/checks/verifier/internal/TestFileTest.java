@@ -23,6 +23,7 @@ import com.sonarsource.checks.verifier.FileContent;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
@@ -95,6 +96,19 @@ public class TestFileTest {
       }
     }
     return comments;
+  }
+
+  @Test
+  public void line_prefix_small_file() {
+    TestFile file = new TestFile(new FileContent(Paths.get("file.cpp"), "int a;\nint b;\n"));
+    assertThat(file.linePrefix(2)).isEqualTo("002: ");
+  }
+
+  @Test
+  public void line_prefix_big_file() {
+    String fileContentWith1200Lines = String.join("\n", Collections.nCopies(1200, ""));
+    TestFile file = new TestFile(new FileContent(Paths.get("file.cpp"), fileContentWith1200Lines));
+    assertThat(file.linePrefix(2)).isEqualTo("0002: ");
   }
 
 }
