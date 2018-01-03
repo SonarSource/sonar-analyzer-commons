@@ -157,11 +157,8 @@ public class LineIssues {
     return out.toString();
   }
 
-  private static void appendLineNumber(StringBuilder out, int lineNumber) {
-    if (lineNumber > 999) {
-      throw new IllegalStateException();
-    }
-    out.append(String.format("%03d: ", lineNumber));
+  private void appendLineNumber(StringBuilder out, int lineNumber) {
+    out.append(testFile.linePrefix(lineNumber));
   }
 
   private void appendLocations(StringBuilder out) {
@@ -176,7 +173,7 @@ public class LineIssues {
       Map<Integer, PerLineLocationWriter> writerPerLine = new TreeMap<>();
       for (PreciseLocation location : locations) {
         writerPerLine.computeIfAbsent(
-          location.range.line, key -> new PerLineLocationWriter(String.format("%03d: ", key), reportLineAt(key))).add(location);
+          location.range.line, key -> new PerLineLocationWriter(testFile.linePrefix(key), reportLineAt(key))).add(location);
       }
       writerPerLine.values().forEach(writer -> writer.write(out, primaryLocation.range));
     } else {
