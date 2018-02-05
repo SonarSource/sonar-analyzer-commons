@@ -21,14 +21,14 @@ package org.sonarsource.analyzer.recognizers;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class CamelCaseDetectorTest {
 
   @Test
   public void scan() {
     CamelCaseDetector detector = new CamelCaseDetector(0.3);
-    assertEquals(1, detector.scan("isDog() or isCat()"));
-    assertEquals(0, detector.scan("String name;"));
+    assertThat(detector.scan("isDog() or isCat()")).isEqualTo(1);
+    assertThat(detector.scan("String name;")).isEqualTo(0);
   }
 }

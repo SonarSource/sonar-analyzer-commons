@@ -21,15 +21,18 @@ package org.sonarsource.analyzer.recognizers;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class EndWithDetectorTest {
 
   @Test
   public void scan() {
     EndWithDetector detector = new EndWithDetector(0.3, '}');
-    assertEquals(1, detector.scan(" return true; }"));
-    assertEquals(0, detector.scan("} catch(NullPointerException e) {"));
-    assertEquals(1, detector.scan("} "));
+    assertThat(detector.scan(" return true; }")).isEqualTo(1);
+    assertThat(detector.scan("} catch(NullPointerException e) {")).isEqualTo(0);
+    assertThat(detector.scan("} ")).isEqualTo(1);
+    assertThat(detector.scan("}*")).isEqualTo(1);
+    assertThat(detector.scan("}/")).isEqualTo(1);
+    assertThat(detector.scan("")).isEqualTo(0);
   }
 }

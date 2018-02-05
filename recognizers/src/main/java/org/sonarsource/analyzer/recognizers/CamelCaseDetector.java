@@ -40,7 +40,7 @@ public class CamelCaseDetector extends Detector {
     return 0;
   }
 
-  private boolean isLowerCaseThenUpperCase(char previousChar, char indexChar) {
+  private static boolean isLowerCaseThenUpperCase(char previousChar, char indexChar) {
     return Character.getType(previousChar) == Character.LOWERCASE_LETTER && Character.getType(indexChar) == Character.UPPERCASE_LETTER;
   }
 }

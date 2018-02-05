@@ -21,18 +21,18 @@ package org.sonarsource.analyzer.recognizers;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class KeywordsDetectorTest {
 
   @Test
   public void scan() {
     KeywordsDetector detector = new KeywordsDetector(0.3, "public", "static");
-    assertEquals(2, detector.scan("public static void main"));
-    assertEquals(1, detector.scan("private(static} String name;"));
-    assertEquals(0, detector.scan("publicstatic"));
-    assertEquals(0, detector.scan("i++;"));
+    assertThat(detector.scan("public static void main")).isEqualTo(2);
+    assertThat(detector.scan("private(static} String name;")).isEqualTo(1);
+    assertThat(detector.scan("publicstatic")).isEqualTo(0);
+    assertThat(detector.scan("i++;")).isEqualTo(0);
     detector = new KeywordsDetector(0.3, true, "PUBLIC");
-    assertEquals(2, detector.scan("Public static pubLIC"));
+    assertThat(detector.scan("Public static pubLIC")).isEqualTo(2);
   }
 }

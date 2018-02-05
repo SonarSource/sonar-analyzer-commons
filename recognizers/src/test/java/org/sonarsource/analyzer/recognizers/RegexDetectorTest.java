@@ -19,9 +19,11 @@
  */
 package org.sonarsource.analyzer.recognizers;
 
+import org.assertj.core.data.Offset;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 public class RegexDetectorTest {
 
@@ -38,17 +40,19 @@ public class RegexDetectorTest {
   @Test
   public void testProbability() {
     RegexDetector pattern = new RegexDetector("toto", 0.3);
-    assertEquals(0.3, pattern.recognition(" toto "), 0.01);
-    assertEquals(0, pattern.recognition("sql"), 0.01);
-    assertEquals(1 - Math.pow(0.7, 3), pattern.recognition(" toto toto toto "), 0.01);
+    Offset<Double> range = within(0.01);
+    assertThat(pattern.recognition(" toto ")).isCloseTo(0.3, range);
+    assertThat(pattern.recognition("sql")).isCloseTo(0, range);
+    assertThat(pattern.recognition(" toto toto toto ")).isCloseTo(1 - Math.pow(0.7, 3), range);
   }
 
   @Test
   public void testSeveralMatches() {
     RegexDetector pattern = new RegexDetector("(\\S\\.\\S)", 0.3); // \S is non-whitespace character
-    assertEquals(0.0, pattern.recognition(" toto "), 0.001);
-    assertEquals(0.3, pattern.recognition("abc.def ghi jkl"), 0.001);
-    assertEquals(0.51, pattern.recognition("abc.def.ghi"), 0.001);
-    assertEquals(0.51, pattern.recognition("abc.def ghi.jkl"), 0.001);
+    Offset<Double> range = within(0.001);
+    assertThat(pattern.recognition(" toto ")).isCloseTo(0.0, range);
+    assertThat(pattern.recognition("abc.def ghi jkl")).isCloseTo(0.3, range);
+    assertThat(pattern.recognition("abc.def.ghi")).isCloseTo(0.51, range);
+    assertThat(pattern.recognition("abc.def ghi.jkl")).isCloseTo(0.51, range);
   }
 }
