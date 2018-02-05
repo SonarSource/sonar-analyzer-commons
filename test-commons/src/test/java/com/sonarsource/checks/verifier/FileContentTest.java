@@ -52,8 +52,9 @@ public class FileContentTest {
   @Test
   public void invalid_file_path() {
     thrown.expect(IllegalStateException.class);
-    thrown.expectMessage(CoreMatchers.startsWith("Failed to read 'bad/invalid.js':"));
-    new FileContent(Paths.get("bad/invalid.js"));
+    Path path = Paths.get("bad/invalid.js");
+    thrown.expectMessage(CoreMatchers.startsWith("Failed to read '" + path.toString() + "':"));
+    new FileContent(path);
   }
 
 }
