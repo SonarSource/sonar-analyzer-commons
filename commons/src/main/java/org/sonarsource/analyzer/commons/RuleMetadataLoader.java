@@ -57,7 +57,7 @@ public class RuleMetadataLoader {
    * which was added in SonarQube 6.0.
    */
   public RuleMetadataLoader(String resourceFolder, String defaultProfilePath) {
-    this(resourceFolder, ProfileDefinitionReader.loadActiveKeysFromJsonProfile(defaultProfilePath));
+    this(resourceFolder, BuiltInQualityProfileJsonLoader.loadActiveKeysFromJsonProfile(defaultProfilePath));
   }
 
   private RuleMetadataLoader(String resourceFolder, Set<String> activatedByDefault) {
