@@ -20,27 +20,22 @@
 package org.sonarsource.analyzer.commons;
 
 import java.util.Map;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import jdk.nashorn.api.scripting.JSObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 /**
  * Not designed for multi-threads
  */
 class JsonParser {
 
-  private JSObject nashornParser;
-
-  JsonParser() {
-    try {
-      nashornParser = (JSObject) new ScriptEngineManager().getEngineByName("nashorn").eval("JSON.parse");
-    } catch (ScriptException e) {
-      throw new IllegalStateException("Can not get 'JSON.parse' from 'nashorn' script engine.", e);
-    }
-  }
+  private final JSONParser parser = new JSONParser();
 
   Map<String, Object> parse(String data) {
-    return (Map<String, Object>) nashornParser.call(null, data);
+    try {
+      return (Map<String, Object>) parser.parse(data);
+    } catch (ParseException e) {
+      throw new IllegalArgumentException("Could not parse JSON", e);
+    }
   }
 
 }
