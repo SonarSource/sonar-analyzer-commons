@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.rule.RulesDefinition.DebtRemediationFunctions;
@@ -188,12 +187,10 @@ public class RuleMetadataLoader {
 
   private static String[] getStringArray(Map<String, Object> map, String propertyName) {
     Object propertyValue = map.get(propertyName);
-    if (propertyValue == null || !(propertyValue instanceof Map)) {
+    if (propertyValue == null || !(propertyValue instanceof List)) {
       throw new IllegalStateException("Invalid property " + propertyName);
     }
-    return ((Map<String, Object>) propertyValue).values().stream()
-      .map(Object::toString)
-      .collect(Collectors.toList()).toArray(new String[0]);
+    return ((List<String>) propertyValue).toArray(new String[0]);
   }
 
 }

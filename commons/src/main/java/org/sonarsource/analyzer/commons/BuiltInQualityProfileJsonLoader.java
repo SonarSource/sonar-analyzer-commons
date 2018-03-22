@@ -20,6 +20,8 @@
 package org.sonarsource.analyzer.commons;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -52,11 +54,11 @@ public final class BuiltInQualityProfileJsonLoader {
     } catch (IOException e) {
       throw new IllegalStateException("Can't read resource: " + profilePath, e);
     }
-    Map<String, Object> ruleKeys = (Map<String, Object>) root.get("ruleKeys");
+    List<String> ruleKeys = (List<String>) root.get("ruleKeys");
     if (ruleKeys == null) {
       throw new IllegalStateException("missing 'ruleKeys'");
     }
-    return ruleKeys.values().stream().map(Object::toString).collect(Collectors.toSet());
+    return new HashSet<>(ruleKeys);
   }
 
 }

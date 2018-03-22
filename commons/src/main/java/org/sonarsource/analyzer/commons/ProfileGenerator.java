@@ -107,15 +107,15 @@ public class ProfileGenerator {
 
   private static Set<String> getRuleKeys(String serverUrl, String language, String repository) throws IOException {
     Set<String> ruleKeys = new HashSet<>();
-    int total;
+    long total;
     int processed = 0;
     int page = 1;
     do {
       Map response = queryRules(serverUrl, language, repository, page);
-      total = (Integer) response.get("total");
+      total = (Long) response.get("total");
       @SuppressWarnings("unchecked")
-      Map<String, Map<String, String>> jsonRules = (Map<String, Map<String, String>>) response.get("rules");
-      for (Map<String, String> jsonRule : jsonRules.values()) {
+      List<Map<String, String>> jsonRules = (List<Map<String, String>>) response.get("rules");
+      for (Map<String, String> jsonRule : jsonRules) {
         String key = jsonRule.get("key").split(":")[1];
         ruleKeys.add(key);
         processed++;
