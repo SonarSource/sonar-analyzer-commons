@@ -34,4 +34,8 @@ public class JsonParserTest {
     assertThat(name).isEqualTo("Paul");
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void invalid_json() {
+    new JsonParser().parse("{{}");
+  }
 }

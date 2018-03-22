@@ -21,9 +21,12 @@ package org.sonarsource.analyzer.commons;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.debt.DebtRemediationFunction;
@@ -170,6 +173,23 @@ public class RuleMetadataLoaderTest {
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S100");
     assertThat(rule.activatedByDefault()).isTrue();
+  }
+
+  @Test
+  public void getStringArray() throws Exception {
+    Map<String, Object> map = Collections.singletonMap("key", Arrays.asList("x", "y"));
+    assertThat(RuleMetadataLoader.getStringArray(map, "key")).containsExactly("x", "y");
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void getStringArray_with_invalid_type() throws Exception {
+    Map<String, Object> map = Collections.singletonMap("key", "x");
+    RuleMetadataLoader.getStringArray(map, "key");
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void getStringArray_without_property() throws Exception {
+    RuleMetadataLoader.getStringArray(Collections.emptyMap(), "key");
   }
 
   private static <T> List<T> list(T ...elements) {
