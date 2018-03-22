@@ -185,10 +185,10 @@ public class RuleMetadataLoader {
     return (String) propertyValue;
   }
 
-  private static String[] getStringArray(Map<String, Object> map, String propertyName) {
+  static String[] getStringArray(Map<String, Object> map, String propertyName) {
     Object propertyValue = map.get(propertyName);
     if (propertyValue == null || !(propertyValue instanceof List)) {
-      throw new IllegalStateException("Invalid property " + propertyName);
+      throw new IllegalStateException("Invalid property: " + propertyName);
     }
     return ((List<String>) propertyValue).toArray(new String[0]);
   }
