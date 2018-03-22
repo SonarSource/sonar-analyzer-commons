@@ -75,4 +75,23 @@ public class BuiltInQualityProfileJsonLoaderTest {
 
     BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, PROFILE_PATH);
   }
+
+  @Test
+  public void fails_when_no_profile_found() {
+    thrown.expect(IllegalStateException.class);
+    thrown.expectMessage("Can't read resource: /wrong/path/Sonar_way_profile.json");
+
+    NewBuiltInQualityProfile newProfile = testContext.createBuiltInQualityProfile(PROFILE_NAME, LANGUAGE);
+    BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, "/wrong/path/Sonar_way_profile.json");
+  }
+
+  @Test
+  public void fails_when_no_rule_keys_in_profile() {
+    thrown.expect(IllegalStateException.class);
+    thrown.expectMessage("missing 'ruleKeys'");
+
+    NewBuiltInQualityProfile newProfile = testContext.createBuiltInQualityProfile(PROFILE_NAME, LANGUAGE);
+    BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, "org/sonarsource/analyzer/commons/Sonar_way_profile_no_rule_keys.json");
+  }
+
 }
