@@ -19,21 +19,21 @@
  */
 package org.sonarsource.analyzer.commons;
 
-import java.io.IOException;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.sonar.api.profiles.RulesProfile;
 import org.sonar.api.rules.Rule;
 import org.sonar.api.rules.RuleFinder;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.sonarsource.analyzer.commons.BuiltInQualityProfileJsonLoader.loadActiveKeysFromJsonProfile;
 
 /**
  * Use to create {@link RulesProfile} based on json file.
  *
  * Not designed for multi-threads
+ *
+ * @deprecated since 1.6. Use {@link BuiltInQualityProfileJsonLoader} instead.
  */
+@Deprecated
 public final class ProfileDefinitionReader {
 
   private final RuleFinder ruleFinder;
@@ -54,20 +54,4 @@ public final class ProfileDefinitionReader {
       profile.activateRule(rule, null);
     }
   }
-
-  static Set<String> loadActiveKeysFromJsonProfile(String profilePath) {
-    JsonParser jsonParser = new JsonParser();
-    Map<String, Object> root;
-    try {
-      root = jsonParser.parse(Resources.toString(profilePath, UTF_8));
-    } catch (IOException e) {
-      throw new IllegalStateException("Can't read resource: " + profilePath, e);
-    }
-    Map<String, Object> ruleKeys = (Map<String, Object>) root.get("ruleKeys");
-    if (ruleKeys == null) {
-      throw new IllegalStateException("missing 'ruleKeys'");
-    }
-    return ruleKeys.values().stream().map(Object::toString).collect(Collectors.toSet());
-  }
-
 }
