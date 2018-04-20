@@ -21,11 +21,17 @@ package com.sonarsource.checks.verifier;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.junit.ComparisonFailure;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class SingleFileVerifierTest {
+
+  @Rule
+  public ExpectedException expectedEx = ExpectedException.none();
 
   @Test
   public void code_js_simple() throws Exception {
@@ -114,7 +120,6 @@ public class SingleFileVerifierTest {
 
     verifier.assertOneOrMoreIssues();
   }
-
   @Test
   public void primary_and_secondary_at_the_same_location() throws Exception {
     Path path = Paths.get("src/test/resources/same-location.js");
@@ -132,4 +137,30 @@ public class SingleFileVerifierTest {
 
     verifier.assertOneOrMoreIssues();
   }
+
+  @Test
+  public void should_report_different_issues() throws Exception {
+    expectedEx.expect(ComparisonFailure.class);
+    expectedEx.expectMessage("ERROR: 'assertOneOrMoreIssues()' is called but there's no 'Noncompliant' comments.");
+
+    SingleFileVerifier verifier = getVerifier();
+
+//    verifier.reportIssue("message").onLine(1);
+//    verifier.reportIssue("message").onLine(5);
+//    verifier.reportIssue("Rule message").onLine(7);
+//    verifier.reportIssue("message").onRange(9, 11, 9, 13);
+
+
+    verifier.assertOneOrMoreIssues();
+  }
+
+  private SingleFileVerifier getVerifier() {
+    Path path = Paths.get("src/test/resources/diffReporting.js");
+
+    SingleFileVerifier verifier = SingleFileVerifier.create(path, UTF_8);
+    CommentParser.create().addSingleLineCommentSyntax("//").parseInto(path, verifier);
+    return verifier;
+  }
+
+
 }

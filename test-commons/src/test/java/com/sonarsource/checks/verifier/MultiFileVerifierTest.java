@@ -21,14 +21,17 @@ package com.sonarsource.checks.verifier;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.junit.Assert;
 import org.junit.ComparisonFailure;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class MultiFileVerifierTest {
+
+  @Rule
+  public ExpectedException expectedEx = ExpectedException.none();
 
   @Test
   public void code_js_simple() throws Exception {
@@ -118,22 +121,22 @@ public class MultiFileVerifierTest {
 
   @Test
   public void code_js_without_issue() throws Exception {
+    expectedEx.expect(ComparisonFailure.class);
+    expectedEx.expectMessage("ERROR: 'assertOneOrMoreIssues()' is called but there's no 'Noncompliant' comments.");
+
     Path path = Paths.get("src/test/resources/code.js");
     MultiFileVerifier verifier = MultiFileVerifier.create(path, UTF_8);
     // no addComment(...)
     // no reportIssue(...)
     verifier.assertNoIssues();
-
-    try {
-      verifier.assertOneOrMoreIssues();
-      Assert.fail("Should raise ComparisonFailure.");
-    } catch (ComparisonFailure failure) {
-      assertThat(failure.getExpected()).contains("ERROR: 'assertOneOrMoreIssues()' is called but there's no 'Noncompliant' comments.");
-    }
+    verifier.assertOneOrMoreIssues();
   }
 
   @Test
   public void code_js_with_one_issue() throws Exception {
+    expectedEx.expect(ComparisonFailure.class);
+    expectedEx.expectMessage("ERROR: 'assertNoIssues()' is called but there's some 'Noncompliant' comments.");
+
     Path path = Paths.get("src/test/resources/code.js");
     MultiFileVerifier verifier = MultiFileVerifier.create(path, UTF_8);
 
@@ -141,13 +144,7 @@ public class MultiFileVerifierTest {
     verifier.reportIssue(path, "issue").onLine(4);
 
     verifier.assertOneOrMoreIssues();
-
-    try {
-      verifier.assertNoIssues();
-      Assert.fail("Should raise ComparisonFailure.");
-    } catch (ComparisonFailure failure) {
-      assertThat(failure.getExpected()).contains("ERROR: 'assertNoIssues()' is called but there's some 'Noncompliant' comments.");
-    }
+    verifier.assertNoIssues();
   }
 
   @Test
