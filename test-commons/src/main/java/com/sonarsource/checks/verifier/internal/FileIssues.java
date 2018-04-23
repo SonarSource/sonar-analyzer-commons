@@ -151,7 +151,11 @@ public class FileIssues {
       .collect(Collectors.joining("\n")));
 
     int line = firstDiffLine(report.getExpected(), report.getActual());
-    report.appendContext("In file (" + testFile.getName() + ":" + line + ")");
+    String diff = "[----------------------------------------------------------------------]\n" +
+      "[ '-' means expected but not raised, '+' means raised but not expected ]\n" +
+      ReportDiff.diff(report.getExpected(), report.getActual()) +
+      "[----------------------------------------------------------------------]\n";
+    report.appendContext("In file (" + testFile.getName() + ":" + line + ")\n" + diff);
 
     return report;
   }
