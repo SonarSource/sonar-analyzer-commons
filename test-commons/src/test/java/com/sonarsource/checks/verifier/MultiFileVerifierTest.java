@@ -21,14 +21,19 @@ package com.sonarsource.checks.verifier;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.junit.Assert;
+import org.hamcrest.core.StringContains;
 import org.junit.ComparisonFailure;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class MultiFileVerifierTest {
+
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
+
 
   @Test
   public void code_js_simple() throws Exception {
@@ -124,12 +129,10 @@ public class MultiFileVerifierTest {
     // no reportIssue(...)
     verifier.assertNoIssues();
 
-    try {
-      verifier.assertOneOrMoreIssues();
-      Assert.fail("Should raise ComparisonFailure.");
-    } catch (ComparisonFailure failure) {
-      assertThat(failure.getExpected()).contains("ERROR: 'assertOneOrMoreIssues()' is called but there's no 'Noncompliant' comments.");
-    }
+    thrown.expect(ComparisonFailure.class);
+    thrown.expectMessage(StringContains.containsString(
+      "ERROR: 'assertOneOrMoreIssues()' is called but there's no 'Noncompliant' comments."));
+    verifier.assertOneOrMoreIssues();
   }
 
   @Test
@@ -142,12 +145,10 @@ public class MultiFileVerifierTest {
 
     verifier.assertOneOrMoreIssues();
 
-    try {
-      verifier.assertNoIssues();
-      Assert.fail("Should raise ComparisonFailure.");
-    } catch (ComparisonFailure failure) {
-      assertThat(failure.getExpected()).contains("ERROR: 'assertNoIssues()' is called but there's some 'Noncompliant' comments.");
-    }
+    thrown.expect(ComparisonFailure.class);
+    thrown.expectMessage(StringContains.containsString(
+      "ERROR: 'assertNoIssues()' is called but there's some 'Noncompliant' comments."));
+    verifier.assertNoIssues();
   }
 
   @Test
