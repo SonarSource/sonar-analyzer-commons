@@ -28,16 +28,10 @@ public class ReportDiffTest {
   @Test
   public void same_content() {
     String a = "a\n" +
-      "b\n" +
-      "c\n" +
-      "d\n" +
-      "e\n";
+      "b\n";
     String diff = ReportDiff.diff(a, a);
     assertThat(diff).isEqualTo("  a\n" +
-      "  b\n" +
-      "  c\n" +
-      "  d\n" +
-      "  e\n");
+      "  b\n");
   }
 
   @Test
@@ -109,15 +103,7 @@ public class ReportDiffTest {
       "m\n";
     String diff = ReportDiff.diff(expected, actual);
     assertThat(diff).isEqualTo("  a\n" +
-      "  b\n" +
-      "  c\n" +
-      "  d\n" +
-      "\n" +
       "...\n" +
-      "\n" +
-      "  i\n" +
-      "  j\n" +
-      "  k\n" +
       "  l\n" +
       "- E1\n" +
       "+ U1\n" +

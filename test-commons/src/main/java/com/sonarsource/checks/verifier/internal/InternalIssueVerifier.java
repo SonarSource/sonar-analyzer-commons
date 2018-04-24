@@ -144,22 +144,22 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
     Report report = buildReport();
     String error = null;
     if (!expectsIssues && report.getExpectedIssueCount() != 0) {
-      error = "ERROR: 'assertNoIssues()' is called but there's some 'Noncompliant' comments.\n";
-      report.prependExpected(error);
+      error = "ERROR: 'assertNoIssues()' is called but there's some 'Noncompliant' comments.";
+      report.prependExpected(error + "\n");
     } else if (expectsIssues && report.getExpectedIssueCount() == 0) {
-      error = "ERROR: 'assertOneOrMoreIssues()' is called but there's no 'Noncompliant' comments.\n";
-      report.prependExpected(error);
+      error = "ERROR: 'assertOneOrMoreIssues()' is called but there's no 'Noncompliant' comments.";
+      report.prependExpected(error + "\n");
     } else if (!expectsIssues && report.getActualIssueCount() != 0) {
-      error = "ERROR: Found " + report.getActualIssueCount() + " unexpected issues.\n";
-      report.prependActual(error);
+      error = "ERROR: Found " + report.getActualIssueCount() + " unexpected issues.";
+      report.prependActual(error + "\n");
     } else if (expectsIssues && report.getActualIssueCount() == 0) {
-      error = "ERROR: Expect some issues, but there's none.\n";
-      report.prependActual(error);
+      error = "ERROR: Expect some issues, but there's none.";
+      report.prependActual(error + "\n");
     } else if (report.getExpectedIssueCount() != report.getActualIssueCount()) {
-      error = "ERROR: Expect " + report.getExpectedIssueCount() + " issues instead of " + report.getActualIssueCount() + "\n";
+      error = "ERROR: Expect " + report.getExpectedIssueCount() + " issues instead of " + report.getActualIssueCount() + ".";
     }
     if (error != null) {
-      report.appendContext("\n").appendContext(error);
+      report.prependContext(error + " ");
     }
     assertEquals(report.getContext(), report.getExpected(), report.getActual());
   }

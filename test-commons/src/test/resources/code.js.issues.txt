@@ -1,4 +1,4 @@
-code.js
+<code.js>
 000: Noncompliant {{Issue on file}}
 000: <issue on file code.js>
 

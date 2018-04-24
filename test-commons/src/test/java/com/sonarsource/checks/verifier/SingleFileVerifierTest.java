@@ -122,7 +122,7 @@ public class SingleFileVerifierTest {
     thrown.expectMessage(StringContains.containsString(
       "[----------------------------------------------------------------------]\n" +
         "[ '-' means expected but not raised, '+' means raised but not expected ]\n" +
-        "  simple.js\n" +
+        "  <simple.js>\n" +
         "- 002: Noncompliant {{Rule message}}\n" +
         "+ 002: Noncompliant {{RuLe MeSsAgE}}\n" +
         "  002:     alert(msg);\n" +

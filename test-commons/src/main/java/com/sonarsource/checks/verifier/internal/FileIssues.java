@@ -138,14 +138,15 @@ public class FileIssues {
 
     report.setExpectedIssueCount(expectedIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum());
 
-    report.appendExpected(testFile.getName() + "\n" + expectedIssueMap.values().stream()
+    String testFileName = "<" + testFile.getName() + ">";
+    report.appendExpected(testFileName + "\n" + expectedIssueMap.values().stream()
       .map(LineIssues::validateExpected)
       .map(LineIssues::toString)
       .collect(Collectors.joining("\n")));
 
     report.setActualIssueCount(actualIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum());
 
-    report.appendActual(testFile.getName() + "\n" + actualIssueMap.values().stream()
+    report.appendActual(testFileName + "\n" + actualIssueMap.values().stream()
       .map(lineIssues -> lineIssues.dropUntestedAttributes(expectedIssueMap.get(lineIssues.line)))
       .map(LineIssues::toString)
       .collect(Collectors.joining("\n")));

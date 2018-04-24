@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
 
 public class ReportDiff {
 
-  public static final long MAX_EQUAL_LINE_COUNT_REPORTED = 4;
+  public static final long MAX_EQUAL_LINE_COUNT_REPORTED = 1;
 
   public static String diff(String expected, String actual) {
     StringBuilder out = new StringBuilder();
@@ -140,7 +140,7 @@ public class ReportDiff {
     public void print(StringBuilder out) {
       if (type == DiffType.EQUAL && lines.size() > MAX_EQUAL_LINE_COUNT_REPORTED * 2) {
         lines.stream().limit(MAX_EQUAL_LINE_COUNT_REPORTED).forEach(line -> print(out, line));
-        out.append("\n...\n\n");
+        out.append("...\n");
         lines.stream().skip(lines.size() - MAX_EQUAL_LINE_COUNT_REPORTED).forEach(line -> print(out, line));
       } else {
         lines.forEach(line -> print(out, line));
