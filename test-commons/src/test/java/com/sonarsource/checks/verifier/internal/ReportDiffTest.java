@@ -30,8 +30,7 @@ public class ReportDiffTest {
     String a = "a\n" +
       "b\n";
     String diff = ReportDiff.diff(a, a);
-    assertThat(diff).isEqualTo("  a\n" +
-      "  b\n");
+    assertThat(diff).isEqualTo("");
   }
 
   @Test
@@ -56,58 +55,17 @@ public class ReportDiffTest {
       "f\n" +
       "U4\n";
     String diff = ReportDiff.diff(expected, actual);
-    assertThat(diff).isEqualTo("  a\n" +
-      "  b\n" +
+    assertThat(diff).isEqualTo("  b\n" +
       "- E1\n" +
       "+ U1\n" +
       "+ c\n" +
       "+ U2\n" +
-      "  c\n" +
       "  d\n" +
       "- E2\n" +
       "  e\n" +
       "+ U3\n" +
       "  f\n" +
       "+ U4\n");
-  }
-
-  @Test
-  public void skip_equal_content() {
-    String expected = "a\n" +
-      "b\n" +
-      "c\n" +
-      "d\n" +
-      "e\n" +
-      "f\n" +
-      "g\n" +
-      "h\n" +
-      "i\n" +
-      "j\n" +
-      "k\n" +
-      "l\n" +
-      "E1\n" +
-      "m\n";
-    String actual = "a\n" +
-      "b\n" +
-      "c\n" +
-      "d\n" +
-      "e\n" +
-      "f\n" +
-      "g\n" +
-      "h\n" +
-      "i\n" +
-      "j\n" +
-      "k\n" +
-      "l\n" +
-      "U1\n" +
-      "m\n";
-    String diff = ReportDiff.diff(expected, actual);
-    assertThat(diff).isEqualTo("  a\n" +
-      "...\n" +
-      "  l\n" +
-      "- E1\n" +
-      "+ U1\n" +
-      "  m\n");
   }
 
 }

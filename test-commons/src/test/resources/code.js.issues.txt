@@ -7,30 +7,30 @@
 
 009: Noncompliant
 006:     var msg = "Hello";
-             ^^^>
+006:         ^^^>
 009:     alert(msg);
-               ^^^ 1
+009:           ^^^ 1
 
 
 012: Noncompliant {{Rule message}}
 012:     alert("Hello");
-         ^^^^^ 2
-              ^^^^^^^^^< {{Secondary location message1}}
+012:     ^^^^^ 2
+012:          ^^^^^^^^^< {{Secondary location message1}}
 016:     alert("Hello");
-         ^^^^^< {{Secondary location message2}}
+016:     ^^^^^< {{Secondary location message2}}
 
 
 019: Noncompliant {{Error}} [[effortToFix=2.5]]
 019:     alert(msg);
-         ^^^^^
+019:     ^^^^^
 
 
 022: Noncompliant
 022:     alert("Hello");
-         ^^^^^ 1^^^^^<
+022:     ^^^^^ 1^^^^^<
 
 
 026: Noncompliant
 026: ➞alert(msg);
-            ^^^
+026:        ^^^
 

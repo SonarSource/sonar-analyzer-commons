@@ -27,11 +27,13 @@ import javax.annotation.Nullable;
 
 public class ReportDiff {
 
-  public static final long MAX_EQUAL_LINE_COUNT_REPORTED = 1;
-
   public static String diff(String expected, String actual) {
     StringBuilder out = new StringBuilder();
-    diff(new LineBlock(expected), new LineBlock(actual)).forEach(block -> block.print(out));
+    List<DiffBlock> blocks = diff(new LineBlock(expected), new LineBlock(actual));
+    for (int i = 0; i < blocks.size(); i++) {
+      boolean isLastBlock = i == blocks.size() - 1;
+      blocks.get(i).print(out, isLastBlock);
+    }
     return out.toString();
   }
 
@@ -111,9 +113,11 @@ public class ReportDiff {
       this.start = start;
       this.size = size;
     }
+
     LineBlock before() {
       return new LineBlock(block.lines.subList(0, start));
     }
+
     LineBlock after() {
       return new LineBlock(block.lines.subList(start + size, block.lines.size()));
     }
@@ -132,22 +136,23 @@ public class ReportDiff {
   static class DiffBlock extends LineBlock {
     final DiffType type;
 
-    public DiffBlock(DiffType type, List<String> lines) {
+    DiffBlock(DiffType type, List<String> lines) {
       super(lines);
       this.type = type;
     }
 
-    public void print(StringBuilder out) {
-      if (type == DiffType.EQUAL && lines.size() > MAX_EQUAL_LINE_COUNT_REPORTED * 2) {
-        lines.stream().limit(MAX_EQUAL_LINE_COUNT_REPORTED).forEach(line -> print(out, line));
-        out.append("...\n");
-        lines.stream().skip(lines.size() - MAX_EQUAL_LINE_COUNT_REPORTED).forEach(line -> print(out, line));
+    void print(StringBuilder out, boolean isLastBlock) {
+      if (type == DiffType.EQUAL && !lines.isEmpty()) {
+        String lastLine = lines.get(lines.size() - 1);
+        if (!isLastBlock && !lastLine.trim().isEmpty()) {
+          print(out, lastLine);
+        }
       } else {
         lines.forEach(line -> print(out, line));
       }
     }
 
-    public void print(StringBuilder out, String line) {
+    void print(StringBuilder out, String line) {
       out.append(type.prefix).append(line).append('\n');
     }
   }
@@ -160,9 +165,11 @@ public class ReportDiff {
       this.left = left;
       this.right = right;
     }
+
     List<String> lines() {
       return left.block.lines.subList(left.start, left.start + left.size);
     }
+
     int size() {
       return left.size;
     }

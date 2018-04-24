@@ -120,14 +120,14 @@ public class SingleFileVerifierTest {
 
     thrown.expect(ComparisonFailure.class);
     thrown.expectMessage(StringContains.containsString(
-      "[----------------------------------------------------------------------]\n" +
+        "[----------------------------------------------------------------------]\n" +
         "[ '-' means expected but not raised, '+' means raised but not expected ]\n" +
         "  <simple.js>\n" +
         "- 002: Noncompliant {{Rule message}}\n" +
         "+ 002: Noncompliant {{RuLe MeSsAgE}}\n" +
         "  002:     alert(msg);\n" +
-        "-                ^^^\n" +
-        "+          ^^^^^\n" +
+        "- 002:           ^^^\n" +
+        "+ 002:     ^^^^^\n" +
         "[----------------------------------------------------------------------]"));
 
     verifier.assertOneOrMoreIssues();
