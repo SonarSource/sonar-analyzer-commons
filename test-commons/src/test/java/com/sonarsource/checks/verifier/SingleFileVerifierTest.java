@@ -21,11 +21,18 @@ package com.sonarsource.checks.verifier;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.hamcrest.core.StringContains;
+import org.junit.ComparisonFailure;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class SingleFileVerifierTest {
+
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
 
   @Test
   public void code_js_simple() throws Exception {
@@ -96,6 +103,32 @@ public class SingleFileVerifierTest {
     verifier.reportIssue("Error1").onLine(2);
     verifier.reportIssue("Error2").onLine(2);
     verifier.reportIssue("Error3").onLine(2);
+
+    verifier.assertOneOrMoreIssues();
+  }
+
+  @Test
+  public void report_when_issue_differences() throws Exception {
+
+    Path path = Paths.get("src/test/resources/simple.js");
+
+    SingleFileVerifier verifier = SingleFileVerifier.create(path, UTF_8);
+    CommentParser.create().addSingleLineCommentSyntax("//").parseInto(path, verifier);
+
+    verifier.reportIssue("RuLe MeSsAgE")
+      .onRange(2,5,2,9);
+
+    thrown.expect(ComparisonFailure.class);
+    thrown.expectMessage(StringContains.containsString(
+        "[----------------------------------------------------------------------]\n" +
+        "[ '-' means expected but not raised, '+' means raised but not expected ]\n" +
+        "  <simple.js>\n" +
+        "- 002: Noncompliant {{Rule message}}\n" +
+        "+ 002: Noncompliant {{RuLe MeSsAgE}}\n" +
+        "  002:     alert(msg);\n" +
+        "- 002:           ^^^\n" +
+        "+ 002:     ^^^^^\n" +
+        "[----------------------------------------------------------------------]"));
 
     verifier.assertOneOrMoreIssues();
   }

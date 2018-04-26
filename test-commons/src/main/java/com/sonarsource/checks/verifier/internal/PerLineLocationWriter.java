@@ -28,12 +28,15 @@ public class PerLineLocationWriter {
 
   private final int indent;
 
+  private final String linePrefix;
+
   private final List<PreciseLocation> locations = new ArrayList<>();
 
   private final List<StringBuilder> outputLines = new ArrayList<>();
 
   public PerLineLocationWriter(String lineNumber, String sourceCodeLine) {
     indent = lineNumber.length();
+    linePrefix = lineNumber;
     outputLines.add(new StringBuilder().append(lineNumber).append(sourceCodeLine));
   }
 
@@ -60,6 +63,7 @@ public class PerLineLocationWriter {
     }
     if (availableLineIndex >= outputLines.size()) {
       StringBuilder newLine = new StringBuilder();
+      newLine.append(linePrefix);
       outputLines.add(newLine);
       return newLine;
     } else {

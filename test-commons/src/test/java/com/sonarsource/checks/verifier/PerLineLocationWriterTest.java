@@ -46,7 +46,7 @@ public class PerLineLocationWriterTest {
       new PrimaryLocation(new UnderlinedRange(42, 1, 42, 3), 0)),
       "042: int length = 300;",
       "042: int length = 300;\n" +
-      "     ^^^ 0\n");
+      "042: ^^^ 0\n");
   }
 
   @Test
@@ -58,8 +58,8 @@ public class PerLineLocationWriterTest {
       new SecondaryLocation(new UnderlinedRange(42, 14, 42, 16), true, null, "msg2")),
       "042: int length = 300;",
       "042: int length = 300;\n" +
-      "     ^^^ ^^^^^^<^< {{msg1}}\n" +
-      "                  ^^^< {{msg2}}\n");
+      "042: ^^^ ^^^^^^<^< {{msg1}}\n" +
+      "042:              ^^^< {{msg2}}\n");
   }
 
   @Test
@@ -69,8 +69,8 @@ public class PerLineLocationWriterTest {
       new PrimaryLocation(new UnderlinedRange(42, 7, 42, 8), null)),
       "042: length++;",
       "042: length++;\n" +
-      "     ^^^^^^\n" +
-      "           ^^\n");
+      "042: ^^^^^^\n" +
+      "042:       ^^\n");
   }
 
   private void assertWriter(List<PreciseLocation> locations, String codeLine, String expected) {

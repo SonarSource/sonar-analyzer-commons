@@ -77,6 +77,11 @@ public class Report {
     return this;
   }
 
+  public Report prependContext(String text) {
+    context.insert(0, text);
+    return this;
+  }
+
   public Report prependExpected(String text) {
     expected.insert(0, text);
     return this;
