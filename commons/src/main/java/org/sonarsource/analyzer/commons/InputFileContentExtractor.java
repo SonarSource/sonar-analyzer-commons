@@ -26,6 +26,12 @@ import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.utils.Version;
 
+/**
+ * Use to provide compatibility between SQ API related to InputFile
+ *
+ * @deprecated since 1.8. This compatibility layer is not required as LTS 6.7 is available.
+ */
+@Deprecated
 public class InputFileContentExtractor {
 
   public static final Version V6_0 = Version.create(6, 0);
