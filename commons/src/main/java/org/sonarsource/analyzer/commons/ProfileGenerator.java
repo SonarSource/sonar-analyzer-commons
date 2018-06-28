@@ -19,7 +19,7 @@
  */
 package org.sonarsource.analyzer.commons;
 
-import java.io.BufferedReader;
+import com.google.gson.Gson;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -43,7 +43,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 public class ProfileGenerator {
 
-  private static final JsonParser jsonParser = new JsonParser();
+  private static final Gson GSON = new Gson();
   private static final int QUERY_PAGE_SIZE = 500;
 
   private ProfileGenerator() {
@@ -111,11 +111,9 @@ public class ProfileGenerator {
     int processed = 0;
     int page = 1;
     do {
-      Map response = queryRules(serverUrl, language, repository, page);
-      total = (Long) response.get("total");
-      @SuppressWarnings("unchecked")
-      List<Map<String, String>> jsonRules = (List<Map<String, String>>) response.get("rules");
-      for (Map<String, String> jsonRule : jsonRules) {
+      Response response = queryRules(serverUrl, language, repository, page);
+      total = response.total;
+      for (Map<String, String> jsonRule : response.rules) {
         String key = jsonRule.get("key").split(":")[1];
         ruleKeys.add(key);
         processed++;
@@ -126,7 +124,7 @@ public class ProfileGenerator {
     return ruleKeys;
   }
 
-  private static Map queryRules(String serverUrl, String language, String repository, int page) throws IOException {
+  private static Response queryRules(String serverUrl, String language, String repository, int page) throws IOException {
     Map<String, Object> queryParams = new HashMap<>();
     queryParams.put("languages", language);
     queryParams.put("repositories", repository);
@@ -140,10 +138,9 @@ public class ProfileGenerator {
     HttpURLConnection con = (HttpURLConnection) url.openConnection();
     con.setRequestMethod("GET");
     con.connect();
-    String response = new BufferedReader(new InputStreamReader(con.getInputStream()))
-      .lines().collect(Collectors.joining("\n"));
+    Response result = GSON.fromJson(new InputStreamReader(con.getInputStream()), Response.class);
     con.disconnect();
-    return jsonParser.parse(response);
+    return result;
   }
 
   public static class RulesConfiguration {
@@ -164,6 +161,13 @@ public class ProfileGenerator {
       this.parameterKey = parameterKey;
       this.parameterValue = parameterValue;
     }
+  }
+
+  private static class Response {
+    long total;
+    long p;
+    long ps;
+    List<Map<String, String>> rules;
   }
 
 }
