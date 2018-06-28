@@ -10,6 +10,9 @@ mvn clean install
 #### Dependency: sonar-analyzer-commons
 [commons](commons) Logic useful for a language plugin
 
+#### Dependency: sonar-analyzer-recognizers
+[recognizers](recognizers) Logic useful for detecting commented out code
+
 #### Dependency: sonar-analyzer-test-commons
 [test-commons](test-commons) Logic useful to test a language analyzer
 
