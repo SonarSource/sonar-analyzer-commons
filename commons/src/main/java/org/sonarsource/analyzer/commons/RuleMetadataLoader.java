@@ -19,10 +19,7 @@
  */
 package org.sonarsource.analyzer.commons;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -47,7 +44,7 @@ public class RuleMetadataLoader {
   private final String resourceFolder;
   private final Set<String> activatedByDefault;
 
-  private Gson gson = new Gson();
+  private JsonParser jsonParser;
 
   public RuleMetadataLoader(String resourceFolder) {
     this(resourceFolder, Collections.emptySet());
@@ -64,6 +61,7 @@ public class RuleMetadataLoader {
 
   private RuleMetadataLoader(String resourceFolder, Set<String> activatedByDefault) {
     this.resourceFolder = resourceFolder;
+    this.jsonParser = new JsonParser();
     this.activatedByDefault = activatedByDefault;
   }
 
@@ -138,8 +136,7 @@ public class RuleMetadataLoader {
     String jsonPath = resourceFolder + RESOURCE_SEP + rule.key() + ".json";
     Map<String, Object> root;
     try {
-      Type type = new TypeToken<Map<String, Object>>(){}.getType();
-      root = gson.fromJson(Resources.toString(jsonPath, UTF_8), type);
+      root = jsonParser.parse(Resources.toString(jsonPath, UTF_8));
     } catch (IOException | RuntimeException e) {
       throw new IllegalStateException("Can't read resource: " + jsonPath, e);
     }

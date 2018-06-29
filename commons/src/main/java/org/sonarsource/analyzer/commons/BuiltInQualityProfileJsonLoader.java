@@ -19,10 +19,10 @@
  */
 package org.sonarsource.analyzer.commons;
 
-import com.google.gson.Gson;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -46,18 +46,18 @@ public final class BuiltInQualityProfileJsonLoader {
   }
 
   static Set<String> loadActiveKeysFromJsonProfile(String profilePath) {
-    Profile profile;
+    JsonParser jsonParser = new JsonParser();
+    Map<String, Object> root;
     try {
-      profile = new Gson().fromJson(Resources.toString(profilePath, UTF_8), Profile.class);
+      root = jsonParser.parse(Resources.toString(profilePath, UTF_8));
     } catch (IOException e) {
       throw new IllegalStateException("Can't read resource: " + profilePath, e);
     }
-    return new HashSet<>(profile.ruleKeys);
-  }
-
-  private static class Profile {
-    String name;
-    List<String> ruleKeys;
+    List<String> ruleKeys = (List<String>) root.get("ruleKeys");
+    if (ruleKeys == null) {
+      throw new IllegalStateException("missing 'ruleKeys'");
+    }
+    return new HashSet<>(ruleKeys);
   }
 
 }
