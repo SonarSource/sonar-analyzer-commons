@@ -52,6 +52,7 @@
 
   <modules>
     <module>commons</module>
+    <module>recognizers</module>
     <module>test-commons</module>
   </modules>
 
