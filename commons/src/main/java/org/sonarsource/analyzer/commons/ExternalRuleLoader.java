@@ -27,10 +27,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.CheckForNull;
+import org.sonar.api.batch.ScannerSide;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.server.rule.RulesDefinition.NewRule;
 
+@ScannerSide
 public class ExternalRuleLoader {
 
   private static final int DEFAULT_REMEDIATION_COST = 5;
