@@ -1,5 +1,4 @@
 [
-  //  rule 1
   {
     "key": "bug-rule",
     "name": "Bug Rule Name",
@@ -7,7 +6,6 @@
     "description": "Bug Rule Description"
   },
 
-  //  rule 2
   {
     "key": "code-smell-rule",
     "name": "Code Smell Name",
@@ -16,7 +14,6 @@
     "tags": ["tag1", "tag2"]
   },
 
-  //  rule 3
   {
     "key": "vulnerability-rule",
     "name": "Vulnerability Name",
@@ -26,7 +23,6 @@
     "severity": "INFO"
   },
 
-  //  rule 4
   {
     "key": "no-type-rule",
     "name": "No Type Name",

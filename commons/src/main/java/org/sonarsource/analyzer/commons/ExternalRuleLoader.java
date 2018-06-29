@@ -19,14 +19,15 @@
  */
 package org.sonarsource.analyzer.commons;
 
-import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.CheckForNull;
+import org.json.simple.JSONArray;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.server.rule.RulesDefinition.NewRule;
@@ -65,7 +66,7 @@ public class ExternalRuleLoader {
       NewRule newRule = externalRepo.createRule(rule.key).setName(rule.name);
       newRule.setHtmlDescription(rule.getDescription(linterKey, linterName));
       newRule.setDebtRemediationFunction(newRule.debtRemediationFunctions().constantPerIssue(DEFAULT_REMEDIATION_COST + "min"));
-      newRule.setType(rule.getRuleType());
+      newRule.setType(rule.type);
 
       if (rule.tags != null) {
         newRule.setTags(rule.tags);
@@ -82,7 +83,7 @@ public class ExternalRuleLoader {
   public RuleType ruleType(String ruleKey) {
     ExternalRule externalRule = rulesMap.get(ruleKey);
     if (externalRule != null) {
-      return externalRule.getRuleType();
+      return externalRule.type;
     } else {
       return DEFAULT_ISSUE_TYPE;
     }
@@ -92,47 +93,53 @@ public class ExternalRuleLoader {
     InputStream inputStream = ExternalRuleLoader.class.getClassLoader().getResourceAsStream(pathToMetadata);
     try (InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
 
-      ExternalRule[] rules = new Gson().fromJson(inputStreamReader, ExternalRule[].class);
-      for (ExternalRule rule : rules) {
-        rulesMap.put(rule.key, rule);
+      List<Map<String, Object>> rules = new JsonParser().parseArray(inputStreamReader);
+      for (Map<String, Object> rule : rules) {
+        ExternalRule externalRule = new ExternalRule(rule);
+        rulesMap.put(externalRule.key, externalRule);
       }
 
     } catch (IOException e) {
       throw new IllegalStateException("Can't read resource: " + pathToMetadata, e);
     }
-
   }
 
   private static class ExternalRule {
-    String key;
-    String name;
+    final String key;
+    final String name;
 
     @CheckForNull
-    String url;
+    final String url;
 
     @CheckForNull
-    String description;
+    final String description;
 
     @CheckForNull
-    String[] tags;
+    final String[] tags;
 
     @CheckForNull
-    String severity;
+    final String severity;
 
-    @CheckForNull
-    String type;
+    final RuleType type;
 
-    RuleType sonarType;
-
-    RuleType getRuleType() {
-      if (sonarType == null) {
-        if (type != null) {
-          sonarType = RuleType.valueOf(type);
-        } else {
-          sonarType = DEFAULT_ISSUE_TYPE;
-        }
+    public ExternalRule(Map<String, Object> rule) {
+      this.key = (String) rule.get("key");
+      this.name = (String) rule.get("name");
+      this.url = (String) rule.get("url");
+      this.description = (String) rule.get("description");
+      JSONArray tagsAsList = (JSONArray) rule.get("tags");
+      if (tagsAsList != null) {
+        this.tags = (String[]) tagsAsList.toArray(new String[tagsAsList.size()]);
+      } else {
+        this.tags = null;
       }
-      return sonarType;
+      this.severity = (String) rule.get("severity");
+      String inputType = (String) rule.get("type");
+      if (inputType != null) {
+        type = RuleType.valueOf(inputType);
+      } else {
+        type = DEFAULT_ISSUE_TYPE;
+      }
     }
 
     String getDescription(String linterKey, String linterName) {

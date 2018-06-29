@@ -19,6 +19,9 @@
  */
 package org.sonarsource.analyzer.commons;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.util.List;
 import java.util.Map;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -33,6 +36,14 @@ class JsonParser {
   Map<String, Object> parse(String data) {
     try {
       return (Map<String, Object>) parser.parse(data);
+    } catch (ParseException e) {
+      throw new IllegalArgumentException("Could not parse JSON", e);
+    }
+  }
+
+  List<Map<String, Object>> parseArray(Reader reader) throws IOException {
+    try {
+      return (List<Map<String, Object>>) parser.parse(reader);
     } catch (ParseException e) {
       throw new IllegalArgumentException("Could not parse JSON", e);
     }
