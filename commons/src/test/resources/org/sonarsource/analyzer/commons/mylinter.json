@@ -1,0 +1,32 @@
+[
+  {
+    "key": "bug-rule",
+    "name": "Bug Rule Name",
+    "type": "BUG",
+    "description": "Bug Rule Description",
+    "constantDebt": "42min"
+  },
+
+  {
+    "key": "code-smell-rule",
+    "name": "Code Smell Name",
+    "type": "CODE_SMELL",
+    "url": "http://www.mylinter.org/code-smell-rule",
+    "tags": ["tag1", "tag2"]
+  },
+
+  {
+    "key": "vulnerability-rule",
+    "name": "Vulnerability Name",
+    "type": "VULNERABILITY",
+    "description": "Bug Rule Description",
+    "url": "http://www.mylinter.org/code-smell-rule",
+    "severity": "INFO"
+  },
+
+  {
+    "key": "no-type-rule",
+    "name": "No Type Name",
+    "severity": "BLOCKER"
+  }
+]

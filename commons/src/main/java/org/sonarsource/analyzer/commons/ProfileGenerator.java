@@ -64,7 +64,7 @@ public class ProfileGenerator {
     StringWriter stringWriter = new StringWriter();
     XMLStreamWriter xml = output.createXMLStreamWriter(stringWriter);
 
-    xml.writeStartDocument();
+    xml.writeStartDocument("UTF-8", "1.0");
     xml.writeStartElement("profile");
     el(xml, "name", "rules");
     el(xml, "language", language);

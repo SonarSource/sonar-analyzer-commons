@@ -50,7 +50,7 @@ public class ProfileGeneratorTest {
     Set<String> rules = new HashSet<>(Arrays.asList("S1451", "S2762", "S101"));
     File profile = ProfileGenerator.generateProfile("js", "javascript", rulesConfiguration, rules);
     String profileAsString = Files.readAllLines(profile.toPath()).stream().collect(Collectors.joining());
-    assertThat(profileAsString).isEqualTo("<?xml version='1.0' encoding='UTF-8'?><profile><name>rules</name><language>js</language><rules>" +
+    assertThat(profileAsString).isEqualTo("<?xml version=\"1.0\" encoding=\"UTF-8\"?><profile><name>rules</name><language>js</language><rules>" +
       "<rule><repositoryKey>javascript</repositoryKey><key>S101</key><priority>INFO</priority></rule>" +
       "<rule><repositoryKey>javascript</repositoryKey><key>S1451</key><priority>INFO</priority>" +
       "<parameters><parameter><key>headerFormat</key><value>// Copyright 20\\d\\d The Closure Library Authors. All Rights Reserved.</value></parameter>" +
