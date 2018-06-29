@@ -3,7 +3,8 @@
     "key": "bug-rule",
     "name": "Bug Rule Name",
     "type": "BUG",
-    "description": "Bug Rule Description"
+    "description": "Bug Rule Description",
+    "constantDebt": "42min"
   },
 
   {

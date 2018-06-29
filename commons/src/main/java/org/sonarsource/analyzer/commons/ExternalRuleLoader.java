@@ -32,12 +32,25 @@ import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.server.rule.RulesDefinition.NewRule;
 
+/**
+ * Creates external rule repository based on json file in the format <code>[ { "key": "...", "name": "..." }, ... ]</code>
+ * <p>
+ * "key" and "name" are required properties. Also could be provided:
+ * <ul>
+ * <li>url (link to rule page)</li>
+ * <li>description (html description of rule)</li>
+ * <li>constantDebt (e.g. "30min", by default "5min")</li>
+ * <li>tags (array of strings, e.g. <code>"tags": [ "foo", "bar" ]</code>)</li>
+ * <li>severity (as in SQ API, e.g. "MAJOR")</li>
+ * <li>type (as in SQ API, e.g. "BUG")</li>
+ * </ul>
+ */
 public class ExternalRuleLoader {
 
-  private static final int DEFAULT_REMEDIATION_COST = 5;
+  private static final String DEFAULT_REMEDIATION_COST = "5min";
   private static final RuleType DEFAULT_ISSUE_TYPE = RuleType.CODE_SMELL;
   private static final String DESCRIPTION_ONLY_URL = "See the description of %s rule <code>%s</code> at <a href=\"%s\">%s website</a>.";
-  private static final String DESCRIPTION_WITH_URL = "%s. See more at <a href=\"%s\">%s website</a>.";
+  private static final String DESCRIPTION_WITH_URL = "<p>%s</p> <p>See more at <a href=\"%s\">%s website</a>.</p>";
   private static final String DESCRIPTION_FALLBACK = "This is external rule <code>%s:%s</code>. No details are available.";
 
   private final String linterKey;
@@ -65,7 +78,7 @@ public class ExternalRuleLoader {
     for (ExternalRule rule : rulesMap.values()) {
       NewRule newRule = externalRepo.createRule(rule.key).setName(rule.name);
       newRule.setHtmlDescription(rule.getDescription(linterKey, linterName));
-      newRule.setDebtRemediationFunction(newRule.debtRemediationFunctions().constantPerIssue(DEFAULT_REMEDIATION_COST + "min"));
+      newRule.setDebtRemediationFunction(newRule.debtRemediationFunctions().constantPerIssue(rule.constantDebt));
       newRule.setType(rule.type);
 
       if (rule.tags != null) {
@@ -107,6 +120,7 @@ public class ExternalRuleLoader {
   private static class ExternalRule {
     final String key;
     final String name;
+    final RuleType type;
 
     @CheckForNull
     final String url;
@@ -120,13 +134,15 @@ public class ExternalRuleLoader {
     @CheckForNull
     final String severity;
 
-    final RuleType type;
+    final String constantDebt;
+
 
     public ExternalRule(Map<String, Object> rule) {
       this.key = (String) rule.get("key");
       this.name = (String) rule.get("name");
       this.url = (String) rule.get("url");
       this.description = (String) rule.get("description");
+      this.constantDebt = (String) rule.getOrDefault("constantDebt", DEFAULT_REMEDIATION_COST);
       JSONArray tagsAsList = (JSONArray) rule.get("tags");
       if (tagsAsList != null) {
         this.tags = (String[]) tagsAsList.toArray(new String[tagsAsList.size()]);

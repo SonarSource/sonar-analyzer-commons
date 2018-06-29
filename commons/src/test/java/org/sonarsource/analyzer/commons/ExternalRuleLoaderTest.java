@@ -62,14 +62,19 @@ public class ExternalRuleLoaderTest {
 
     assertThat(rule1.htmlDescription()).isEqualTo("Bug Rule Description");
     assertThat(rule2.htmlDescription()).isEqualTo("See the description of MyLinter rule <code>code-smell-rule</code> at <a href=\"http://www.mylinter.org/code-smell-rule\">MyLinter website</a>.");
-    assertThat(rule3.htmlDescription()).isEqualTo("Bug Rule Description. See more at <a href=\"http://www.mylinter.org/code-smell-rule\">MyLinter website</a>.");
+    assertThat(rule3.htmlDescription()).isEqualTo("<p>Bug Rule Description</p> <p>See more at <a href=\"http://www.mylinter.org/code-smell-rule\">MyLinter website</a>.</p>");
     assertThat(rule4.htmlDescription()).isEqualTo("This is external rule <code>my-linter-key:no-type-rule</code>. No details are available.");
 
     assertThat(rule1.tags()).isEmpty();
     assertThat(rule2.tags()).containsOnly("tag1", "tag2");
 
+    assertThat(rule1.debtRemediationFunction().baseEffort()).isEqualTo("42min");
+    assertThat(rule2.debtRemediationFunction().baseEffort()).isEqualTo("5min");
+
     assertThat(rule2.severity()).isEqualTo("MAJOR");
     assertThat(rule3.severity()).isEqualTo("INFO");
     assertThat(rule4.severity()).isEqualTo("BLOCKER");
+
+    assertThat(rule1.name()).isEqualTo("Bug Rule Name");
   }
 }
