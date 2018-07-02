@@ -4,7 +4,7 @@
     "name": "Bug Rule Name",
     "type": "BUG",
     "description": "Bug Rule Description",
-    "constantDebt": "42min"
+    "constantDebtMinutes": 42
   },
 
   {
