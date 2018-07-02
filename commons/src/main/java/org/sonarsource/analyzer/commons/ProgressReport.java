@@ -61,6 +61,7 @@ public class ProgressReport implements Runnable {
           log(currentFileNumber + "/" + count + " files " + adjective + ", current file: " + currentFilename);
         }
       } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
         break;
       }
     }
