@@ -20,6 +20,7 @@
 package org.sonarsource.analyzer.commons;
 
 import org.junit.Test;
+import org.sonar.api.batch.rule.Severity;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinition.Repository;
@@ -39,13 +40,19 @@ public class ExternalRuleLoaderTest {
       "mylang");
 
     assertThat(externalRuleLoader.ruleType("not-existing-key")).isEqualTo(RuleType.CODE_SMELL);
+    assertThat(externalRuleLoader.ruleSeverity("not-existing-key")).isEqualTo(Severity.MAJOR);
+    assertThat(externalRuleLoader.ruleConstantDebtMinutes("not-existing-key")).isEqualTo(5L);
 
     externalRuleLoader.createExternalRuleRepository(context);
 
     assertThat(externalRuleLoader.ruleType("not-existing-key")).isEqualTo(RuleType.CODE_SMELL);
     assertThat(externalRuleLoader.ruleType("bug-rule")).isEqualTo(RuleType.BUG);
+    assertThat(externalRuleLoader.ruleSeverity("bug-rule")).isEqualTo(Severity.MAJOR);
+    assertThat(externalRuleLoader.ruleConstantDebtMinutes("bug-rule")).isEqualTo(42L);
     assertThat(externalRuleLoader.ruleType("code-smell-rule")).isEqualTo(RuleType.CODE_SMELL);
     assertThat(externalRuleLoader.ruleType("vulnerability-rule")).isEqualTo(RuleType.VULNERABILITY);
+    assertThat(externalRuleLoader.ruleConstantDebtMinutes("vulnerability-rule")).isEqualTo(5L);
+    assertThat(externalRuleLoader.ruleSeverity("vulnerability-rule")).isEqualTo(Severity.INFO);
     assertThat(externalRuleLoader.ruleType("no-type-rule")).isEqualTo(RuleType.CODE_SMELL);
 
     assertThat(context.repositories()).hasSize(1);
