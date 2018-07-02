@@ -19,8 +19,6 @@
  */
 package org.sonarsource.analyzer.commons;
 
-import java.io.File;
-import java.util.Collection;
 import java.util.Iterator;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
@@ -31,8 +29,8 @@ public class ProgressReport implements Runnable {
   private final Logger logger;
   private int count;
   private int currentFileNumber = -1;
-  private File currentFile;
-  private Iterator<File> it;
+  private String currentFilename;
+  private Iterator<String> it;
   private final Thread thread;
   private final String adjective;
   private boolean success = false;
@@ -60,7 +58,7 @@ public class ProgressReport implements Runnable {
       try {
         Thread.sleep(period);
         synchronized (this) {
-          log(currentFileNumber + "/" + count + " files " + adjective + ", current file: " + currentFile.getAbsolutePath());
+          log(currentFileNumber + "/" + count + " files " + adjective + ", current file: " + currentFilename);
         }
       } catch (InterruptedException e) {
         break;
@@ -73,9 +71,9 @@ public class ProgressReport implements Runnable {
     }
   }
 
-  public synchronized void start(Collection<File> files) {
-    count = files.size();
-    it = files.iterator();
+  public synchronized void start(Iterable<String> filenames) {
+    count = size(filenames);
+    it = filenames.iterator();
 
     nextFile();
 
@@ -86,7 +84,7 @@ public class ProgressReport implements Runnable {
   public synchronized void nextFile() {
     if (it.hasNext()) {
       currentFileNumber++;
-      currentFile = it.next();
+      currentFilename = it.next();
     }
   }
 
@@ -108,6 +106,17 @@ public class ProgressReport implements Runnable {
       logger.info(message);
       logger.notifyAll();
     }
+  }
+
+  private static int size(Iterable iterable) {
+    int count = 0;
+    Iterator iterator = iterable.iterator();
+    while (iterator.hasNext()) {
+      iterator.next();
+      count++;
+    }
+
+    return  count;
   }
 
 }
