@@ -39,6 +39,8 @@ public class ExternalRuleLoaderTest {
       "org/sonarsource/analyzer/commons/mylinter.json",
       "mylang");
 
+    assertThat(externalRuleLoader.ruleKeys()).containsOnly("bug-rule", "code-smell-rule", "vulnerability-rule", "no-type-rule");
+
     assertThat(externalRuleLoader.ruleType("not-existing-key")).isEqualTo(RuleType.CODE_SMELL);
     assertThat(externalRuleLoader.ruleSeverity("not-existing-key")).isEqualTo(Severity.MAJOR);
     assertThat(externalRuleLoader.ruleConstantDebtMinutes("not-existing-key")).isEqualTo(5L);

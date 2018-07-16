@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.annotation.CheckForNull;
 import org.json.simple.JSONArray;
 import org.sonar.api.batch.rule.Severity;
@@ -93,6 +94,10 @@ public class ExternalRuleLoader {
     }
 
     externalRepo.done();
+  }
+
+  public Set<String> ruleKeys() {
+    return rulesMap.keySet();
   }
 
   public RuleType ruleType(String ruleKey) {
