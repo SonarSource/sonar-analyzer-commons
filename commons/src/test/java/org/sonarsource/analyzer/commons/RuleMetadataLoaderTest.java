@@ -192,6 +192,30 @@ public class RuleMetadataLoaderTest {
     RuleMetadataLoader.getStringArray(Collections.emptyMap(), "key");
   }
 
+  @Test
+  public void test_security_hotspot() {
+    @Rule(key = "S2092") class TestRule {
+    }
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SonarVersion.SQ_73_RUNTIME);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
+    assertThat(rule.type()).isEqualTo(RuleType.SECURITY_HOTSPOT);
+    assertThat(rule.securityStandards()).containsExactlyInAnyOrder("cwe:311", "cwe:315", "cwe:614", "owaspTop10:a2", "owaspTop10:a3");
+  }
+
+  @Test
+  public void test_security_hotspot_lts() {
+    @Rule(key = "S2092") class TestRule {
+    }
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SonarVersion.SQ_67_RUNTIME);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
+    assertThat(rule.type()).isEqualTo(RuleType.VULNERABILITY);
+    assertThat(rule.securityStandards()).hasSize(0);
+  }
+
   private static <T> List<T> list(T ...elements) {
     List<T> list = new ArrayList<T>();
     for (T element : elements) {
