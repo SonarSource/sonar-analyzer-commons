@@ -182,10 +182,14 @@ public class RuleMetadataLoader {
   }
 
   private static void setSecurityStandardsFromJson(NewRule rule, Map<String, Object> securityStandards) {
-    for (String standard : getStringArray(securityStandards, "OWASP")) {
-      rule.addOwaspTop10(RulesDefinition.OwaspTop10.valueOf(standard));
+    if (securityStandards.get("OWASP") != null) {
+      for (String standard : getStringArray(securityStandards, "OWASP")) {
+        rule.addOwaspTop10(RulesDefinition.OwaspTop10.valueOf(standard));
+      }
     }
-    rule.addCwe(getIntArray(securityStandards, "CWE"));
+    if (securityStandards.get("CWE") != null) {
+      rule.addCwe(getIntArray(securityStandards, "CWE"));
+    }
   }
 
   private static void setRemediationFromJson(NewRule rule, Map<String, Object> remediation) {
