@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.debt.DebtRemediationFunction;
@@ -214,6 +213,18 @@ public class RuleMetadataLoaderTest {
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
     assertThat(rule.type()).isEqualTo(RuleType.VULNERABILITY);
     assertThat(rule.securityStandards()).hasSize(0);
+  }
+
+  @Test
+  public void test_security_standards() {
+    @Rule(key = "S112") class TestRule {
+    }
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SonarVersion.SQ_73_RUNTIME);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S112");
+    assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
+    assertThat(rule.securityStandards()).containsExactlyInAnyOrder("cwe:397");
   }
 
   private static <T> List<T> list(T ...elements) {
