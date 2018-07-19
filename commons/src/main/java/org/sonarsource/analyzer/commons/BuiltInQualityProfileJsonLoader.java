@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.sonar.api.SonarRuntime;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.sonar.api.server.profile.BuiltInQualityProfilesDefinition.NewBuiltInQualityProfile;
@@ -43,6 +44,26 @@ public final class BuiltInQualityProfileJsonLoader {
     for (String activeKey : activeKeys) {
       profile.activateRule(repositoryKey, activeKey);
     }
+  }
+
+  /**
+   * Avoids activating Security Hotspots rules in a given profile if those are not supported (i.e. SQ version < 7.3)
+   */
+  public static void load(
+    NewBuiltInQualityProfile profile,
+    String repositoryKey,
+    String jsonProfilePath,
+    String resourcePath,
+    SonarRuntime sonarRuntime
+  ) {
+    RuleMetadataLoader ruleMetadataLoader = new RuleMetadataLoader(resourcePath, jsonProfilePath, sonarRuntime);
+    Set<String> activeKeys = loadActiveKeysFromJsonProfile(jsonProfilePath);
+    activeKeys.stream()
+      .filter(ruleKey -> {
+        Map<String, Object> ruleMetadata = ruleMetadataLoader.getMetadata(ruleKey);
+        return !ruleMetadataLoader.isSecurityHotspot(ruleMetadata) || ruleMetadataLoader.securityHotspotsSupported();
+      })
+      .forEach(activeKey -> profile.activateRule(repositoryKey, activeKey));
   }
 
   static Set<String> loadActiveKeysFromJsonProfile(String profilePath) {
