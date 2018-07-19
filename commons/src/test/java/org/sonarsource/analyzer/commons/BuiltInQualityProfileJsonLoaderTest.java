@@ -35,6 +35,7 @@ import static org.sonar.api.server.profile.BuiltInQualityProfilesDefinition.NewB
 public class BuiltInQualityProfileJsonLoaderTest {
 
   private static final String PROFILE_PATH = "org/sonarsource/analyzer/commons/Sonar_way_profile.json";
+  private static final String RESOURCE_FOLDER = "org/sonarsource/analyzer/commons";
   private static final String REPOSITORY_KEY = "repo-key";
   private static final String PROFILE_NAME = "profile-name";
   private static final String LANGUAGE = "lang-key";
@@ -92,6 +93,30 @@ public class BuiltInQualityProfileJsonLoaderTest {
 
     NewBuiltInQualityProfile newProfile = testContext.createBuiltInQualityProfile(PROFILE_NAME, LANGUAGE);
     BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, "org/sonarsource/analyzer/commons/Sonar_way_profile_no_rule_keys.json");
+  }
+
+  @Test
+  public void should_activate_hotspots_when_supported() {
+    NewBuiltInQualityProfile newProfile = testContext.createBuiltInQualityProfile(PROFILE_NAME, LANGUAGE);
+    String profilePath = "org/sonarsource/analyzer/commons/Sonar_way_profile_with_hotspots.json";
+    BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, profilePath, RESOURCE_FOLDER, SonarVersion.SQ_73_RUNTIME);
+    newProfile.done();
+    BuiltInQualityProfile profile = testContext.profile(LANGUAGE, PROFILE_NAME);
+
+    List<BuiltInActiveRule> activeRules = profile.rules();
+    assertThat(activeRules).extracting("ruleKey").containsExactlyInAnyOrder("S100", "S110", "S2092");
+  }
+
+  @Test
+  public void should_not_activate_hotspots_when_not_supported() {
+    NewBuiltInQualityProfile newProfile = testContext.createBuiltInQualityProfile(PROFILE_NAME, LANGUAGE);
+    String profilePath = "org/sonarsource/analyzer/commons/Sonar_way_profile_with_hotspots.json";
+    BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, profilePath, RESOURCE_FOLDER, SonarVersion.SQ_67_RUNTIME);
+    newProfile.done();
+    BuiltInQualityProfile profile = testContext.profile(LANGUAGE, PROFILE_NAME);
+
+    List<BuiltInActiveRule> activeRules = profile.rules();
+    assertThat(activeRules).extracting("ruleKey").containsExactlyInAnyOrder("S100", "S110");
   }
 
 }

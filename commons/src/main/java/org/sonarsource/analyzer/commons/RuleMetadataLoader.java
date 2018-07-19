@@ -25,13 +25,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import org.sonar.api.SonarRuntime;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.RuleType;
+import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinition.DebtRemediationFunctions;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.server.rule.RulesDefinition.NewRule;
 import org.sonar.api.server.rule.RulesDefinitionAnnotationLoader;
 import org.sonar.api.utils.AnnotationUtils;
+import org.sonar.api.utils.Version;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -41,10 +44,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class RuleMetadataLoader {
 
   private static final char RESOURCE_SEP = '/';
+  private static final String SECURITY_HOTSPOT = "SECURITY_HOTSPOT";
   private final String resourceFolder;
   private final Set<String> activatedByDefault;
-
+  private boolean supportsSecurityHotspots = false;
   private JsonParser jsonParser;
+  private SonarRuntime sonarRuntime;
 
   public RuleMetadataLoader(String resourceFolder) {
     this(resourceFolder, Collections.emptySet());
@@ -57,6 +62,17 @@ public class RuleMetadataLoader {
    */
   public RuleMetadataLoader(String resourceFolder, String defaultProfilePath) {
     this(resourceFolder, BuiltInQualityProfileJsonLoader.loadActiveKeysFromJsonProfile(defaultProfilePath));
+  }
+
+  /**
+   * Constructor used to deal with Security Hotspots rules:
+   * SQ Version > 7.2 => Security Hotspots Rules are supported
+   * otherwise        => Security Hotspots Rules are considered as Vulnerability rules
+   */
+  public RuleMetadataLoader(String resourceFolder, String defaultProfilePath, SonarRuntime sonarRuntime) {
+    this(resourceFolder, defaultProfilePath);
+    this.sonarRuntime = sonarRuntime;
+    this.supportsSecurityHotspots = securityHotspotsSupported();
   }
 
   private RuleMetadataLoader(String resourceFolder, Set<String> activatedByDefault) {
@@ -133,23 +149,43 @@ public class RuleMetadataLoader {
   }
 
   private void setMetadataFromJson(NewRule rule) {
-    String jsonPath = resourceFolder + RESOURCE_SEP + rule.key() + ".json";
-    Map<String, Object> root;
-    try {
-      root = jsonParser.parse(Resources.toString(jsonPath, UTF_8));
-    } catch (IOException | RuntimeException e) {
-      throw new IllegalStateException("Can't read resource: " + jsonPath, e);
+    Map<String, Object> ruleMetadata = getMetadata(rule.key());
+    rule.setName(getString(ruleMetadata, "title"));
+    rule.setSeverity(getUpperCaseString(ruleMetadata, "defaultSeverity"));
+    String type = getUpperCaseString(ruleMetadata, "type");
+    if (isSecurityHotspot(ruleMetadata) && !supportsSecurityHotspots) {
+      rule.setType(RuleType.VULNERABILITY);
+    } else {
+      rule.setType(RuleType.valueOf(type));
     }
-    rule.setName(getString(root, "title"));
-    rule.setSeverity(getUpperCaseString(root, "defaultSeverity"));
-    rule.setType(RuleType.valueOf(getUpperCaseString(root, "type")));
-    rule.setStatus(RuleStatus.valueOf(getUpperCaseString(root, "status")));
-    rule.setTags(getStringArray(root, "tags"));
+    rule.setStatus(RuleStatus.valueOf(getUpperCaseString(ruleMetadata, "status")));
+    rule.setTags(getStringArray(ruleMetadata, "tags"));
 
-    Object remediation = root.get("remediation");
+    Object remediation = ruleMetadata.get("remediation");
     if (remediation != null) {
       setRemediationFromJson(rule, (Map<String, Object>) remediation);
     }
+
+    Object securityStandards = ruleMetadata.get("securityStandards");
+    if (securityStandards != null && supportsSecurityHotspots) {
+      setSecurityStandardsFromJson(rule, (Map<String, Object>) securityStandards);
+    }
+  }
+
+  Map<String, Object> getMetadata(String ruleKey) {
+    String jsonPath = resourceFolder + RESOURCE_SEP + ruleKey + ".json";
+    try {
+      return jsonParser.parse(Resources.toString(jsonPath, UTF_8));
+    } catch (IOException | RuntimeException e) {
+      throw new IllegalStateException("Can't read resource: " + jsonPath, e);
+    }
+  }
+
+  private static void setSecurityStandardsFromJson(NewRule rule, Map<String, Object> securityStandards) {
+    for (String standard : getStringArray(securityStandards, "OWASP")) {
+      rule.addOwaspTop10(RulesDefinition.OwaspTop10.valueOf(standard));
+    }
+    rule.addCwe(getIntArray(securityStandards, "CWE"));
   }
 
   private static void setRemediationFromJson(NewRule rule, Map<String, Object> remediation) {
@@ -191,6 +227,24 @@ public class RuleMetadataLoader {
       throw new IllegalStateException("Invalid property: " + propertyName);
     }
     return ((List<String>) propertyValue).toArray(new String[0]);
+  }
+
+  private static int[] getIntArray(Map<String, Object> map, String propertyName) {
+    Object propertyValue = map.get(propertyName);
+    if (propertyValue == null || !(propertyValue instanceof List)) {
+      throw new IllegalStateException("Invalid property: " + propertyName);
+    }
+    return ((List<Number>) propertyValue).stream().mapToInt(Number::intValue).toArray();
+  }
+
+  boolean securityHotspotsSupported() {
+    final Version SQ_7_3 = Version.create(7, 3);
+    return sonarRuntime.getApiVersion().isGreaterThanOrEqual(SQ_7_3);
+  }
+
+  boolean isSecurityHotspot(Map<String, Object> ruleMetadata) {
+    String type = getUpperCaseString(ruleMetadata, "type");
+    return SECURITY_HOTSPOT.equals(type);
   }
 
 }
