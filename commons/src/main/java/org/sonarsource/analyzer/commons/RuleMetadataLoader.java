@@ -174,13 +174,11 @@ public class RuleMetadataLoader {
 
   Map<String, Object> getMetadata(String ruleKey) {
     String jsonPath = resourceFolder + RESOURCE_SEP + ruleKey + ".json";
-    Map<String, Object> metadata;
     try {
-      metadata = jsonParser.parse(Resources.toString(jsonPath, UTF_8));
+      return jsonParser.parse(Resources.toString(jsonPath, UTF_8));
     } catch (IOException | RuntimeException e) {
       throw new IllegalStateException("Can't read resource: " + jsonPath, e);
     }
-    return metadata;
   }
 
   private static void setSecurityStandardsFromJson(NewRule rule, Map<String, Object> securityStandards) {
