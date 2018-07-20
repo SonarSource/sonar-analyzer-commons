@@ -70,8 +70,8 @@ public class ExternalRuleLoaderTest {
     Rule rule4 = repository.rule("no-type-rule");
 
     assertThat(rule1.htmlDescription()).isEqualTo("Bug Rule Description");
-    assertThat(rule2.htmlDescription()).isEqualTo("See the description of MyLinter rule <code>code-smell-rule</code> at <a href=\"http://www.mylinter.org/code-smell-rule\">MyLinter website</a>.");
-    assertThat(rule3.htmlDescription()).isEqualTo("<p>Bug Rule Description</p> <p>See more at <a href=\"http://www.mylinter.org/code-smell-rule\">MyLinter website</a>.</p>");
+    assertThat(rule2.htmlDescription()).isEqualTo("See description of MyLinter rule <code>code-smell-rule</code> at the <a href=\"http://www.mylinter.org/code-smell-rule\">MyLinter website</a>.");
+    assertThat(rule3.htmlDescription()).isEqualTo("<p>Bug Rule Description</p> <p>See more at the <a href=\"http://www.mylinter.org/code-smell-rule\">MyLinter website</a>.</p>");
     assertThat(rule4.htmlDescription()).isEqualTo("This is external rule <code>my-linter-key:no-type-rule</code>. No details are available.");
 
     assertThat(rule1.tags()).isEmpty();
