@@ -52,8 +52,8 @@ public class ExternalRuleLoader {
   private static final Long DEFAULT_CONSTANT_DEBT_MINUTES = 5L;
   private static final RuleType DEFAULT_ISSUE_TYPE = RuleType.CODE_SMELL;
   private static final Severity DEFAULT_SEVERITY = Severity.MAJOR;
-  private static final String DESCRIPTION_ONLY_URL = "See the description of %s rule <code>%s</code> at <a href=\"%s\">%s website</a>.";
-  private static final String DESCRIPTION_WITH_URL = "<p>%s</p> <p>See more at <a href=\"%s\">%s website</a>.</p>";
+  private static final String DESCRIPTION_ONLY_URL = "See description of %s rule <code>%s</code> at the <a href=\"%s\">%s website</a>.";
+  private static final String DESCRIPTION_WITH_URL = "<p>%s</p> <p>See more at the <a href=\"%s\">%s website</a>.</p>";
   private static final String DESCRIPTION_FALLBACK = "This is external rule <code>%s:%s</code>. No details are available.";
 
   private final String linterKey;
