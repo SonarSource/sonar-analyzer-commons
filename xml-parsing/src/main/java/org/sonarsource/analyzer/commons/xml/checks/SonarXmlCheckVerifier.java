@@ -155,7 +155,7 @@ public class SonarXmlCheckVerifier {
     List<Flow> flows = issue.flows();
     // secondaries are N flows of size 1
     assertThat(flows).hasSize(secondaryLines.length);
-    assertThat(flows.stream().map(Flow::locations)).allMatch(flow -> flow.size() == 1);
+    assertThat(flows.stream().map(Flow::locations).collect(Collectors.toList())).allMatch(flow -> flow.size() == 1);
 
     // only contains lines
     Integer[] expectedLines = IntStream.of(secondaryLines).boxed().toArray(Integer[]::new);
