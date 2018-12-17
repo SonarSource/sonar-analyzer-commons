@@ -29,18 +29,6 @@ public class SonarXmlCheckTest {
   @Test
   public void test() throws Exception {
     TestCheck testCheck = new TestCheck();
-//    SensorContextTester sensorContext = SensorContextTester.create(new File("src/test/resources/"));
-//    InputFile inputFile = TestInputFileBuilder
-//      .create("moduleKey", "file.xml")
-//      .setModuleBaseDir(new File("src/test/resources/").toPath())
-//      .setCharset(StandardCharsets.UTF_8)
-//      .build();
-//
-//    XmlFile xmlFile = XmlFile.create(inputFile);
-//    testCheck.scanFile(sensorContext, RuleKey.of("my-repo", "my-rule-key"), xmlFile);
-
-//    Collection<Issue> issues = sensorContext.allIssues();
-//    assertThat(issues).hasSize(3);
 
     SonarXmlCheckVerifier.verifyNoIssue("file.xml", new SilentTestCheck());
     SonarXmlCheckVerifier.verifyIssueOnFile("file.xml", new FileTestCheck(), "Test file level message", 1, 2);

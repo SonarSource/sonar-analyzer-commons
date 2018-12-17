@@ -25,7 +25,7 @@ public class XmlTextRange {
   private final int endLine;
   private final int endColumn;
 
-  XmlTextRange(int startLine, int startColumn, int endLine, int endColumn) {
+  public XmlTextRange(int startLine, int startColumn, int endLine, int endColumn) {
     if (startLine > endLine) {
       throw new IllegalArgumentException("Cannot have a start line after end line");
     }
@@ -55,7 +55,7 @@ public class XmlTextRange {
     this(start.startLine, start.startColumn, end.computeSqLine(xmlStart), end.computeSqColumn(xmlStart));
   }
 
-  XmlTextRange(XmlTextRange start, XmlTextRange end) {
+  public XmlTextRange(XmlTextRange start, XmlTextRange end) {
     this(start.startLine, start.startColumn, end.endLine, end.endColumn);
   }
 

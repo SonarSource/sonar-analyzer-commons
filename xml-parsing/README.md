@@ -76,8 +76,8 @@ To retrieve such ranges use these static util methods of `XmlFile`:
 * `XmlFile.nameLocation(Element)`
 * `XmlFile.startLocation(CDataSection)`
 * `XmlFile.endLocation(CDataSection)`
-* `XmlFile.keyLocation(Attr)`
-* `XmlFile.valueLocation(Attr)`
+* `XmlFile.attributeNameLocation(Attr)`
+* `XmlFile.attributeValueLocation(Attr)`
 * `XmlFile.getRange(Node, Location)`
 
 ### Prolog (see `PrologElement` API)
