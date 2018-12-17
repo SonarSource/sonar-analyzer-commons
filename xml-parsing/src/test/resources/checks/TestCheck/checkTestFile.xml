@@ -1,0 +1,10 @@
+    <a> <!-- Noncompliant {{Test text range issue message with secondary}} -->
+<!--^^^  -->
+    <secondary1/>
+<!--^^^^^^^^^^^^^<  -->
+    <secondary2/>
+<!--^^^^^^^^^^^^^<  -->
+      <b> <!-- Noncompliant {{Test node issue message}} [[sc=2;el=+2;ec=6]]-->
+    Hello
+  </b>    World! <!-- Noncompliant {{Test text range issue message}} [[sc=6;el=+1;ec=1]]-->
+ </a>

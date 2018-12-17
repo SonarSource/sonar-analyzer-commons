@@ -54,6 +54,7 @@
     <module>commons</module>
     <module>recognizers</module>
     <module>test-commons</module>
+    <module>xml-parsing</module>
   </modules>
 
   <scm>
@@ -66,7 +67,7 @@
   <properties>
     <!-- versions -->
     <version.sonar>7.3-alpha1</version.sonar>
-    <version.assertj>3.6.2</version.assertj>
+    <version.assertj>3.8.0</version.assertj>
     <version.jsr305>3.0.2</version.jsr305>
     <version.mockito>2.21.0</version.mockito>
     <version.junit>4.12</version.junit>
@@ -81,6 +82,7 @@
         <groupId>org.sonarsource.sonarqube</groupId>
         <artifactId>sonar-plugin-api</artifactId>
         <version>${version.sonar}</version>
+        <scope>provided</scope>
       </dependency>
 
       <!-- COMPILE -->
