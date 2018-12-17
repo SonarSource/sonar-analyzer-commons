@@ -192,9 +192,13 @@ class XmlParser {
   private XMLStreamReader getXmlStreamReader() throws XMLStreamException {
     Reader reader = new StringReader(content);
 
-    XMLInputFactory factory = XMLInputFactory.newInstance();
+    // forcing the XMLInputFactory implementation class, in order to be sure that we are going to use the adequate
+    // stream reader while retrieving locations
+    XMLInputFactory factory = new com.ctc.wstx.stax.WstxInputFactory();
+
     factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
     factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
+    factory.setProperty(XMLInputFactory.IS_VALIDATING, false);
     return factory.createXMLStreamReader(reader);
   }
 

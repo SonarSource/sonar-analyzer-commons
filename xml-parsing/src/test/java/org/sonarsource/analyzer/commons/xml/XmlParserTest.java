@@ -261,6 +261,45 @@ public class XmlParserTest {
     assertNoData(docType, Location.START, Location.END, Location.NAME, Location.VALUE);
   }
 
+  /**
+   * Detailed in SONARXML-73, should be fixed with https://github.com/FasterXML/woodstox/issues/67
+   */
+  @Test
+  public void testCommentInDoctypeProduceWrongLocations() throws Exception {
+    Document document = XmlFile.create(
+      "<?xml version=\"1.0\"?>\n" +
+      "<!DOCTYPE menu [\n" +
+      "<!--\n" +
+      "Some comment\n" +
+      "-->\n" +
+      "<!ELEMENT menu (modulo)* >\n" +
+      "]>\n" +
+      "<menu value=\"foo\"></menu>").getDocument();
+    assertThat(document.getChildNodes().getLength()).isEqualTo(2);
+    DocumentType documentType = (DocumentType) document.getFirstChild();
+    assertRange(documentType, Location.NODE, 2, 0, 7, 2);
+    Node lastChild = document.getLastChild();
+    // location of the node is wrong, should be line 8, events are not at the correct place
+    // See https://github.com/FasterXML/woodstox/issues/67
+    assertRange(lastChild, Location.NODE, 7, 0, 7, 25);
+
+    document = XmlFile.create(
+      "<?xml version=\"1.0\"?>\n" +
+      "<!DOCTYPE menu [\n" +
+      "<!--" + /* extra space before NewLine */ " " + "\n" +
+      "Some comment\n" +
+      "-->\n" +
+      "<!ELEMENT menu (modulo)* >\n" +
+      "]>\n" +
+      "<menu value=\"foo\"></menu>").getDocument();
+    assertThat(document.getChildNodes().getLength()).isEqualTo(2);
+    documentType = (DocumentType) document.getFirstChild();
+    assertRange(documentType, Location.NODE, 2, 0, 7, 2);
+    lastChild = document.getLastChild();
+    // location is correct
+    assertRange(lastChild, Location.NODE, 8, 0, 8, 25);
+  }
+
   @Test
   public void testComment() throws Exception {
     Document document = XmlFile.create("<!-- comment --><tag/>").getDocument();
