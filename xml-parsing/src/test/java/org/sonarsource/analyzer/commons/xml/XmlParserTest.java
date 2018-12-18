@@ -66,6 +66,69 @@ public class XmlParserTest {
   }
 
   @Test
+  public void testLineSeprators() throws Exception {
+    String testCase = ""
+      /* _1 */ + "<foo%s"
+      /* _2 */ + "  attr1=\"1\">%s"
+      /* _3 */ + "  <!--%s"
+      /* _4 */ + "      comment%s"
+      /* _5 */ + "  -->%s"
+      /* _6 */ + "  <bar%s"
+      /* _7 */ + "    attr2=%s"
+      /* _8 */ + "      \"2\"%s"
+      /* _9 */ + "    attr3%s"
+      /* 10 */ + "      =%s"
+      /* 11 */ + "        \"3\"%s"
+      /* 12 */ + "  />%s"
+      /* 13 */ + "%s"
+      /* 14 */ + "</foo>%s";
+
+    String[] lf = {"\n"};
+    String[] cr = {"\r"};
+    String[] crlf = {"\r\n"};
+    String[] mixed = {"\r", "\r\n", "\n", "\r\n"};
+
+    for (String[] pattern : Arrays.asList(lf, cr, crlf, mixed)) {
+      String xmlContent = replaceEndOfLine(testCase, pattern);
+      XmlFile xmlFile = XmlFile.create(xmlContent);
+
+      Document document = xmlFile.getDocument();
+      assertRange(document, Location.NODE, 1, 0, 14, 6);
+
+      Node foo = document.getFirstChild();
+      assertRange(foo, Location.NODE, 1, 0, 14, 6);
+
+      Attr attr1 = (Attr) foo.getAttributes().getNamedItem("attr1");
+      assertRange(attr1, Location.NODE, 2, 2, 2, 11);
+
+      NodeList fooChildren = foo.getChildNodes();
+
+      Node comment = fooChildren.item(1);
+      assertRange(comment, Location.NODE, 3, 2, 5, 5);
+
+      Node bar = (Node) fooChildren.item(3);
+      assertRange(bar, Location.NODE, 6, 2, 12, 4);
+
+      Attr attr2 = (Attr) bar.getAttributes().getNamedItem("attr2");
+      assertRange(attr2, Location.NODE, 7, 4, 8, 9);
+
+      Attr attr3 = (Attr) bar.getAttributes().getNamedItem("attr3");
+      assertRange(attr3, Location.NODE, 9, 4, 11, 11);
+    }
+  }
+
+  private static String replaceEndOfLine(String content, String... replacements) {
+    String result = content;
+    int i = 0;
+    while (result.contains("%s")) {
+      result = result.replaceFirst("%s", replacements[i]);
+      i++;
+      i %= replacements.length;
+    }
+    return result;
+  }
+
+  @Test
   public void testSelfClosing() throws Exception {
     Document document = XmlFile.create("<foo />").getDocument();
     Node firstChild = document.getFirstChild();
