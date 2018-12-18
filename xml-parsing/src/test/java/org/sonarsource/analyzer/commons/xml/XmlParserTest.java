@@ -302,6 +302,15 @@ public class XmlParserTest {
     assertRange(prologElement.getPrologStartLocation(), 2, 2, 2, 7);
   }
 
+  /**
+   * Limitation of current parser
+   * see https://jira.sonarsource.com/browse/SONARXML-62
+   */
+  @Test(expected = ParseException.class)
+  public void testCommentedProlog() throws Exception {
+   XmlFile.create("<!--<?xml version=\"1.0\"?>--><tag/>");
+  }
+
   @Test
   public void testNesting() throws Exception {
     Document document = XmlFile.create("<a><b/><c /><d></d></a>").getDocument();
