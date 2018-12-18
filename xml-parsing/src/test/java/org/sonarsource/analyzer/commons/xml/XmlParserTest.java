@@ -66,6 +66,51 @@ public class XmlParserTest {
   }
 
   @Test
+  public void testLineSeprators() throws Exception {
+    String testCase = ""
+      + "<foo%s"
+      + "attr=\"1\">%s"
+      + "  <bar />%s"
+      + "</foo>%s";
+    String lf = String.format(testCase, "\n", "\n", "\n", "\n");
+    String cr = String.format(testCase, "\r", "\r", "\r", "\r");
+    String crlf = String.format(testCase, "\r\n", "\r\n", "\r\n", "\r\n");
+    String mixed = String.format(testCase, "\r", "\r\n", "\n", "\r\n");
+
+    for (String xmlString : Arrays.asList(lf, cr, crlf, mixed)) {
+      XmlFile xmlFile = XmlFile.create(xmlString);
+
+      Document document = xmlFile.getDocument();
+      assertRange(document, Location.NODE, 1, 0, 4, 6);
+
+      Node foo = document.getFirstChild();
+      assertThat(foo.getNodeName()).isEqualTo("foo");
+      assertRange(foo, Location.START, 1, 0, 2, 9);
+      assertRange(foo, Location.END, 4, 0, 4, 6);
+      assertRange(foo, Location.NODE, 1, 0, 4, 6);
+      assertRange(foo, Location.NAME, 1, 1, 1, 4);
+      assertNoData(foo, Location.VALUE);
+
+      Attr attr = (Attr) foo.getAttributes().getNamedItem("attr");
+      assertThat(attr.getValue()).isEqualTo("1");
+      assertRange(attr, Location.NAME, 2, 0, 2, 4);
+      assertRange(attr, Location.VALUE, 2, 5, 2, 8);
+      assertRange(attr, Location.NODE, 2, 0, 2, 8);
+      assertNoData(attr, Location.START, Location.END);
+
+      Node bar = (Node) foo.getChildNodes().item(1);
+      assertThat(bar.getNodeName()).isEqualTo("bar");
+      assertRange(bar, Location.START, 3, 2, 3, 9);
+      assertRange(bar, Location.END, 3, 2, 3, 9);
+      assertRange(bar, Location.NODE, 3, 2, 3, 9);
+      assertRange(bar, Location.NAME, 3, 3, 3, 6);
+      assertNoData(bar, Location.VALUE);
+
+      assertThat(xmlFile.getPrologElement()).isEmpty();
+    }
+  }
+
+  @Test
   public void testSelfClosing() throws Exception {
     Document document = XmlFile.create("<foo />").getDocument();
     Node firstChild = document.getFirstChild();

@@ -76,11 +76,17 @@ class XmlFilePosition {
   }
 
   private XmlFilePosition shift(char c) {
-    // what if old mac system with `\r` for new line
-    if (c == '\n') {
-      return new XmlFilePosition(content, line + 1, 1, characterOffset + 1);
+    int newOffset = characterOffset + 1;
+    if (c == '\n' || (c == '\r' && !isCRLF())) {
+      return new XmlFilePosition(content, line + 1, 1, newOffset);
     }
-    return new XmlFilePosition(content, line, column + 1, characterOffset + 1);
+    return new XmlFilePosition(content, line, column + 1, newOffset);
+  }
+
+  private boolean isCRLF() {
+    // we already have a '\r' at current offset and need a '\n' for next character
+    return characterOffset + 1 <= content.length()
+      && content.charAt(characterOffset + 1) == '\n';
   }
 
   boolean startsWith(String prefix) {
