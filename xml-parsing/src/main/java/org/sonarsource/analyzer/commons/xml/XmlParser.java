@@ -21,18 +21,12 @@ package org.sonarsource.analyzer.commons.xml;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -65,7 +59,7 @@ class XmlParser {
     try {
       setContent();
       ByteArrayInputStream stream = new ByteArrayInputStream(content.getBytes(xmlFile.getCharset()));
-      Document document = getDocumentBuilder(namespaceAware).parse(stream);
+      Document document = SafetyFactory.createDocumentBuilder(namespaceAware).parse(stream);
       xmlFile.setDocument(document, namespaceAware);
       currentNode = document;
       nodes.push(currentNode);
@@ -75,7 +69,7 @@ class XmlParser {
 
       setDocumentLocation(xmlFile);
 
-    } catch (XMLStreamException|SAXException|IOException|ParserConfigurationException e) {
+    } catch (XMLStreamException|SAXException|IOException e) {
       throw new ParseException(e);
     }
   }
@@ -110,7 +104,7 @@ class XmlParser {
   }
 
   private void parseXml() throws XMLStreamException {
-    XMLStreamReader xmlReader = getXmlStreamReader();
+    XMLStreamReader xmlReader = SafetyFactory.createXMLInputFactory().createXMLStreamReader(new StringReader(content));
 
     while (xmlReader.hasNext()) {
       previousEventIsText = xmlReader.getEventType() == XMLStreamConstants.CHARACTERS;
@@ -187,38 +181,6 @@ class XmlParser {
 
     currentNodeStartLocation = null;
     currentNodeStartRange = null;
-  }
-
-  private XMLStreamReader getXmlStreamReader() throws XMLStreamException {
-    Reader reader = new StringReader(content);
-
-    // forcing the XMLInputFactory implementation class, in order to be sure that we are going to use the adequate
-    // stream reader while retrieving locations
-    XMLInputFactory factory = new com.ctc.wstx.stax.WstxInputFactory();
-
-    factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-    factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-    factory.setProperty(XMLInputFactory.IS_VALIDATING, false);
-    return factory.createXMLStreamReader(reader);
-  }
-
-  private static DocumentBuilder getDocumentBuilder(boolean namespaceAware) throws ParserConfigurationException {
-    // forcing the DocumentBuilderFactory implementation class, in order to be sure that we are going to use the
-    // adequate parser, handling correctly all the elements
-    DocumentBuilderFactory documentBuilderFactory = new org.apache.xerces.jaxp.DocumentBuilderFactoryImpl();
-    documentBuilderFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-    documentBuilderFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-    documentBuilderFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-    documentBuilderFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-    documentBuilderFactory.setFeature("http://apache.org/xml/features/dom/create-entity-ref-nodes", false);
-    documentBuilderFactory.setValidating(false);
-    documentBuilderFactory.setExpandEntityReferences(false);
-    documentBuilderFactory.setNamespaceAware(namespaceAware);
-    DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-    // Implementations of DocumentBuilder usually provide Error Handlers, which may add some extra logic, such as logging.
-    // This line disable these custom handlers during parsing, as we don't need it
-    documentBuilder.setErrorHandler(null);
-    return documentBuilder;
   }
 
   private void visitStartElement(XMLStreamReader xmlReader, XmlFilePosition startLocation) throws XMLStreamException {
