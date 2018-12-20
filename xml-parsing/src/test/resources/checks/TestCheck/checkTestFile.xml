@@ -1,7 +1,7 @@
     <a> <!-- Noncompliant {{Test text range issue message with secondary}} -->
 <!--^^^  -->
     <secondary1/>
-<!--^^^^^^^^^^^^^<  -->
+<!--^^^^^^^^^^^^^< {{secondary message}} -->
     <secondary2/>
 <!--^^^^^^^^^^^^^<  -->
       <b> <!-- Noncompliant {{Test node issue message}} [[sc=2;el=+2;ec=6]]-->
