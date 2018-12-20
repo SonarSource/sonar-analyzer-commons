@@ -2,6 +2,7 @@ SonarQube Analyzer XML Parsing Commons
 =========================
 
 * [Parsing XML](#parsing)
+* [Providing safe parser](#safeParser)
 * [Writing a check for XML file](#writingCheck)
 * [Testing a check for XML file](#testingCheck)
 
@@ -89,6 +90,12 @@ To retrieve such ranges use these static util methods of `XmlFile`:
                     ^^ end
 ```
 
+
+## <a name="safeParser"></a>To instantiate safe parser
+If you don't need precise location of nodes in the file and you don't want/need to keep entire file in the memory you should use `SafetyFactory` to instantiate a safe parser.
+This parsers are configured the way to avoid any kind of vulnerability.
+* `SafelyFactory.createXMLInputFactory()`
+* `SafelyFactory.createDocumentBuilder()`
 
 ## <a name="writingCheck"></a>To write a check for XML file
 Implement a class extending `SonarXmlCheck`.
