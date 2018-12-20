@@ -123,13 +123,14 @@ public class SonarXmlCheckVerifier {
           textRange.end().lineOffset());
 
       issue.flows().forEach(flow -> {
-        TextRange secondaryRange = flow.locations().get(0).textRange();
+        IssueLocation secondaryLocation = flow.locations().get(0);
+        TextRange secondaryRange = secondaryLocation.textRange();
         actualIssue.addSecondary(
           secondaryRange.start().line(),
           secondaryRange.start().lineOffset() + 1,
           secondaryRange.end().line(),
           secondaryRange.end().lineOffset(),
-          null);
+          secondaryLocation.message());
       });
     });
 

@@ -21,6 +21,7 @@ package org.sonarsource.analyzer.commons.xml.checks;
 
 import java.util.Collections;
 import java.util.List;
+import javax.annotation.Nullable;
 import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.issue.NewIssue;
@@ -65,10 +66,16 @@ public abstract class SonarXmlCheck {
       .save();
   }
 
-  public final void reportIssue(XmlTextRange textRange, String message, List<XmlTextRange> secondaries) {
+  public final void reportIssue(XmlTextRange textRange, String message, List<Secondary> secondaries) {
     NewIssue issue = context.newIssue();
     NewIssueLocation location = getLocation(textRange, issue).message(message);
-    secondaries.forEach(secondary -> issue.addLocation(getLocation(secondary, issue)));
+    secondaries.forEach(secondary -> {
+      NewIssueLocation secondaryLocation = getLocation(secondary.range, issue);
+      if (secondary.message != null) {
+        secondaryLocation.message(secondary.message);
+      }
+      issue.addLocation(secondaryLocation);
+    });
 
     issue
       .at(location)
@@ -89,5 +96,20 @@ public abstract class SonarXmlCheck {
   public final void reportIssue(Node node, String message) {
     XmlTextRange textRange = XmlFile.nodeLocation(node);
     reportIssue(textRange, message, Collections.emptyList());
+  }
+
+  public static class Secondary {
+    final XmlTextRange range;
+    final String message;
+
+    public Secondary(XmlTextRange range, @Nullable String message) {
+      this.range = range;
+      this.message = message;
+    }
+
+    public Secondary(Node node, @Nullable String message) {
+      this.range = XmlFile.nodeLocation(node);
+      this.message = message;
+    }
   }
 }

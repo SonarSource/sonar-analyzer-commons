@@ -45,8 +45,8 @@ public class SonarXmlCheckTest {
 
       reportIssue(XmlFile.startLocation(a), "Test text range issue message with secondary",
         Lists.newArrayList(
-          XmlFile.nodeLocation(secondary1),
-          XmlFile.nodeLocation(secondary2)));
+          new Secondary(XmlFile.nodeLocation(secondary1), "secondary message"),
+          new Secondary(secondary2, null)));
 
       Element b = (Element) file.getDocument().getElementsByTagName("b").item(0);
       reportIssue(b, "Test node issue message");
