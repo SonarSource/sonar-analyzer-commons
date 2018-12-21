@@ -39,6 +39,7 @@ public class SafetyFactory {
     factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
     factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
     factory.setProperty(XMLInputFactory.IS_VALIDATING, false);
+    factory.setProperty("javax.xml.stream.isSupportingExternalEntities", false);
     return factory;
   }
 
@@ -56,6 +57,7 @@ public class SafetyFactory {
       documentBuilderFactory.setValidating(false);
       documentBuilderFactory.setExpandEntityReferences(false);
       documentBuilderFactory.setNamespaceAware(namespaceAware);
+      documentBuilderFactory.setXIncludeAware(false);
       DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
 
       // Implementations of DocumentBuilder usually provide Error Handlers, which may add some extra logic, such as logging.
