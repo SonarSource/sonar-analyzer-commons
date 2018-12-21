@@ -100,7 +100,7 @@ public abstract class SonarXmlCheck {
 
   public static class Secondary {
     final XmlTextRange range;
-    final String message;
+    @Nullable final String message;
 
     public Secondary(XmlTextRange range, @Nullable String message) {
       this.range = range;
