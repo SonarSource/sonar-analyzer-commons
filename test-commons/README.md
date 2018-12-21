@@ -3,31 +3,37 @@ SonarQube Analyzer Test Commons
 
 ### Noncompliant Format
 
-Assert issue.
-```javascript
+Assert an issue with the comment on the same line.
+```js
 alert(msg); // Noncompliant
+```
 
+Assert an issue with the comment on a different line.
+```js
 // Noncompliant@+1
 alert(msg);
+```
 
+Assert an issue with a message and/or an `effortToFix`.
+```js
 alert(msg); // Noncompliant {{Here the expected error message}} [[effortToFix=2]]
 ```
 
-Assert two issues.
-```javascript
+Assert several issues on the same line.
+```js
 alert(msg); // Noncompliant 2
 
 alert(msg); // Noncompliant {{Expected error message 1}} {{Expected error message 2}}
 ```
 
-Assert issue with precise primary location.
-```javascript
+Assert precise primary location of an issue with the comment on a line below containing required number of `^`
+```js
   alert(msg); // Noncompliant {{Rule message}}
 //      ^^^
 ```
 
-Assert issue with precise primary and secondary locations.
-```javascript
+Assert precise primary and secondary locations of an issue. Note, that when testing secondary locations *precise* primary location is **required**.
+```js
   alert(msg);
 //      ^^^> {{Secondary location message1}}
   alert(msg); // Noncompliant {{Rule message}}
@@ -36,19 +42,43 @@ Assert issue with precise primary and secondary locations.
 //      ^^^< {{Secondary location message2}}
 ```
 
-Subsequent precise secondary locations.
-```javascript
+Assert several secondary locations on the same line using `@-1`/`@+1` syntax.
+```js
   alert(msg); // Noncompliant {{Rule message}}
 //^^^^^
 //     ^^^^^@-1< {{Secondary location message1}}
 //          ^@-2< {{Secondary location message2}}
 ```
 
-Example of precise location on two lines (el=+1), starting one line above (@-1) at column 1 (sc=1), ending at column 11 (ec=11).
-```javascript
+Assert multiline primary or secondary location with following syntax. 
+For it you need only a single `^` pointing at the start column of location. 
+Position of `^` will be ignored when `sc` (start column) property is provided. 
+When no `@+X`/`@-X` is provided, line above comment will be considered as first line of location. 
+If `@+X`/`@-X` is provided, shift is done relatively to this line above. `+/-` in `el` (end line) will be considered relatively to start line of location.
+`ec` stands for end column.
+```js
+// issue is on both lines here
 alert(msg); // Noncompliant {{Rule message}}
 alert(msg);
 //^[sc=1;el=+1;ec=11]@-1
+```
+
+Same issue in a bit another way:
+```js
+// issue is on both lines here
+  alert(msg); // Noncompliant {{Rule message}}
+//^[el=+2;ec=13]
+  alert(msg);
+```
+
+Example of this syntax used for a single line primary location (can be useful if you can't indent code to fit comment start) and also secondary location:
+```js
+alert(msg); // Noncompliant {{Rule message}}
+//^[sc=1;el=+0;ec=11]
+
+alert(msg);
+alert(msg);
+//^[sc=1;el=+1;ec=11]@-1< {{Secondary message}}
 ```
 
 ### Usage at Verifier level
