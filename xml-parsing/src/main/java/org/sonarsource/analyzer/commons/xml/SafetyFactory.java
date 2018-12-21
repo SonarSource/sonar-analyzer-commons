@@ -39,7 +39,7 @@ public class SafetyFactory {
     factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
     factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
     factory.setProperty(XMLInputFactory.IS_VALIDATING, false);
-    factory.setProperty("javax.xml.stream.isSupportingExternalEntities", false);
+    factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
     return factory;
   }
 
