@@ -19,21 +19,15 @@
  */
 package org.sonarsource.analyzer.commons.xml.checks;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-import org.sonar.api.rule.RuleKey;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
-import org.w3c.dom.NamedNodeMap;
+import org.sonarsource.analyzer.commons.xml.XmlFile;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -41,8 +35,19 @@ public abstract class SimpleXPathBasedCheck extends SonarXmlCheck {
 
   private static final Logger LOG = Loggers.get(SimpleXPathBasedCheck.class);
 
-  private final XPath xpath = XPathFactory.newInstance().newXPath();
+  /**
+   * Rely on Apache Xalan for XPath implementation
+   */
+  private final XPath xpath = new org.apache.xpath.jaxp.XPathFactoryImpl().newXPath();
 
+  /**
+   * Compiles an XPath 1.0 expression using Apache Xalan XPath implementation.
+   *
+   * @param expression The expression to be compiled in XPath, as a String
+   * @return The compiled expression
+   * @throws IllegalStateException When the XPath expression can not be compiled by the Apache Xalan XPath engine.
+   *         Could occur with invalid expression, or incompatible XPath version.
+   */
   public XPathExpression getXPathExpression(String expression) {
     try {
       return xpath.compile(expression);
@@ -51,43 +56,36 @@ public abstract class SimpleXPathBasedCheck extends SonarXmlCheck {
     }
   }
 
+  /**
+   * Evaluates a XPath expression on a given node from DOM. The only situation where null is returned is when XPath fails 
+   * to evaluate the expression. This could occur with strangely built DOM. Note that in such case, the check will log extra 
+   * information if the debug level is set.
+   *
+   * @param expression The XPath expression to be used, preferably compiled using {@link #getXPathExpression(String)}
+   * @param node The node to use as starting point of the XPath expression
+   * @return The list of nodes, possibly empty, matching the XPath expression.
+   *         Note that it will return null only when XPath fails to evaluate the expression.
+   */
   @CheckForNull
   public NodeList evaluate(XPathExpression expression, Node node) {
     try {
       return (NodeList) expression.evaluate(node, XPathConstants.NODESET);
     } catch (XPathExpressionException e) {
       if (LOG.isDebugEnabled()) {
-        RuleKey ruleKey = ruleKey();
-        LOG.debug(String.format("[%s] Unable to evaluate XPath expression on file %s", ruleKey, inputFile()));
-        LOG.error(String.format("[%s] XPath exception:", ruleKey), e);
+        LOG.error(String.format("[%s] Unable to evaluate XPath expression on file %s", ruleKey(), inputFile()), e);
       }
       return null;
     }
   }
 
+  /**
+   * Evaluates a XPath expression on a given node from DOM, returning it as a java List of Node, possibly empty.
+   *
+   * @param expression The XPath expression to be used, preferably compiled using {@link #getXPathExpression(String)}
+   * @param node The node to use as starting point of the XPath expression
+   * @return The list of nodes, possibly empty, matching the XPath expression.
+   */
   public List<Node> evaluateAsList(XPathExpression expression, Node node) {
-    return asList(evaluate(expression, node));
-  }
-
-  public static List<Node> asList(@Nullable NodeList nodeList) {
-    if (nodeList == null) {
-      return Collections.emptyList();
-    }
-    int numberResults = nodeList.getLength();
-    if (numberResults == 0) {
-      return Collections.emptyList();
-    }
-    return IntStream.range(0, numberResults)
-      .mapToObj(nodeList::item)
-      .collect(Collectors.toList());
-  }
-
-  @CheckForNull
-  public static Node nodeAttribute(Node node, String attribute) {
-    NamedNodeMap attributes = node.getAttributes();
-    if (attributes == null) {
-      return null;
-    }
-    return attributes.getNamedItem(attribute);
+    return XmlFile.asList(evaluate(expression, node));
   }
 }

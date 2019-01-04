@@ -52,7 +52,7 @@ public abstract class SonarXmlCheck {
     return ruleKey;
   }
 
-  protected abstract void scanFile(XmlFile file);
+  public abstract void scanFile(XmlFile file);
 
   public final void reportIssueOnFile(String message, List<Integer> secondaryLocationLines) {
     NewIssue issue = context.newIssue();

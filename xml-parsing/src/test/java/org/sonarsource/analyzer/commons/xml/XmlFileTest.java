@@ -94,6 +94,25 @@ public class XmlFileTest {
     // for CData
     assertRange(XmlFile.startLocation(cdata)).containsExactly(1, 14, 1, 23);
     assertRange(XmlFile.endLocation(cdata)).containsExactly(2, 1, 2, 4);
+    assertThat(XmlFile.children(cdata)).isEmpty();
+
+    assertThat(XmlFile.asList(null)).isEmpty();
+  }
+
+  @Test
+  public void testNodeAttribute() throws Exception {
+    XmlFile xmlFile = XmlFile.create(
+      "<a attr='foo'>\n"
+        + "  <!-- comment -->\n"
+        + "  <b>world</b>\n"
+        + "</a>");
+
+    Node aNode = xmlFile.getDocument().getFirstChild();
+    assertThat(XmlFile.nodeAttribute(aNode, "attr")).isNotNull();
+    assertThat(XmlFile.nodeAttribute(aNode, "unknown")).isNull();
+
+    Node commentNode = aNode.getFirstChild();
+    assertThat(XmlFile.nodeAttribute(commentNode, "unknown")).isNull();
   }
 
   private AbstractObjectArrayAssert<?, Object> assertRange(XmlTextRange textRange) {

@@ -101,7 +101,7 @@ This parsers are configured the way to avoid any kind of vulnerability.
 Implement a class extending `SonarXmlCheck`.
 
 ```
-private static class FileCheck extends SonarXmlCheck {
+public class FileCheck extends SonarXmlCheck {
 
   @Override
   public void scanFile(XmlFile file) {
@@ -109,6 +109,26 @@ private static class FileCheck extends SonarXmlCheck {
   }
 }
 ```
+
+If you want to write a check which will rely on XPath, implement a class extending `SimpleXpathBasedCheck`.
+This class provides numerous methods to simplify writing checks which will query DOM.
+
+```
+public class MyXPathCheck extends SimpleXpathBasedCheck {
+
+  // all the <a> nodes of a DOM, whatever their position in the tree
+  private final XPathExpression myXPathExpressin = getXPathExpression("//a");
+
+  @Override
+  public void scanFile(XmlFile file) {
+    List<Node> aNodes = evaluateAsList(myXPathExpressin, file.getDocument());
+    for (Node aNode : aNodes) {
+      reportIssue(aNode, "Issue on each node <a> of the DOM.");
+    }
+  }
+}
+```
+
 
 ## <a name="testingCheck"></a>To test a check for XML file
 Use `SonarXmlCheckVerifier`:

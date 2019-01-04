@@ -54,7 +54,7 @@ public class SimpleXPathBasedCheckTest {
       XPathExpression failing = getXPathExpression("boolean(a");
 
       @Override
-      protected void scanFile(XmlFile file) {
+      public void scanFile(XmlFile file) {
         // do nothing
       }
     };
@@ -64,19 +64,21 @@ public class SimpleXPathBasedCheckTest {
   public void test_file_making_xpath_evaluation_fail_log_issues() throws Exception {
     XmlFile xmlFile = getXmlFile("src/test/resources/checks/SimpleXPathBasedCheck/xPathFailure.xml");
 
-    SimpleXPathBasedCheck check = new SimpleXPathBasedCheck() {
+    XPathTesterCheck check = new XPathTesterCheck() {
       public XPathExpression comments = getXPathExpression("//comment()");
 
       @Override
-      protected void scanFile(XmlFile file) {
+      public void scanFile(XmlFile file) {
         NodeList result = evaluate(comments, file.getDocument());
         assertThat(result).isNull();
+        isExecuted();
       }
     };
 
     logTester.clear();
     logTester.setLevel(LoggerLevel.INFO);
     check.scanFile(null, RuleKey.of("tst", "failingXpath"), xmlFile);
+    assertThat(check.hasBeenExecuted()).isTrue();
     assertThat(logTester.logs()).isEmpty();
 
     logTester.clear();
@@ -84,23 +86,22 @@ public class SimpleXPathBasedCheckTest {
     check.scanFile(null, RuleKey.of("tst", "failingXpath"), xmlFile);
     assertThat(logTester.logs()).isNotEmpty();
     List<String> debugs = logTester.logs(LoggerLevel.DEBUG);
-    assertThat(debugs).hasSize(1);
-    assertThat(debugs.get(0)).startsWith("[tst:failingXpath] Unable to evaluate XPath expression on file ");
+    assertThat(debugs).isEmpty();
     List<String> errors = logTester.logs(LoggerLevel.ERROR);
     assertThat(errors).hasSize(1);
-    assertThat(errors.get(0)).startsWith("[tst:failingXpath] XPath exception:");
+    assertThat(errors.get(0)).startsWith("[tst:failingXpath] Unable to evaluate XPath expression on file ");
   }
 
   @Test
   public void test_nodeList() throws Exception {
     XmlFile xmlFile = getXmlFile("src/test/resources/checks/SimpleXPathBasedCheck/simple.xml");
 
-    SimpleXPathBasedCheck check = new SimpleXPathBasedCheck() {
+    XPathTesterCheck check = new XPathTesterCheck() {
       XPathExpression bs = getXPathExpression("//b");
       XPathExpression ds = getXPathExpression("//d");
 
       @Override
-      protected void scanFile(XmlFile file) {
+      public void scanFile(XmlFile file) {
         Document node = file.getDocument();
 
         NodeList result = evaluate(bs, node);
@@ -115,36 +116,13 @@ public class SimpleXPathBasedCheckTest {
         List<Node> emptyAsList = evaluateAsList(ds, node);
         assertThat(emptyAsList).isEmpty();
 
-        assertThat(asList(null)).isEmpty();
+        isExecuted();
       }
     };
 
+    logTester.setLevel(LoggerLevel.DEBUG);
     check.scanFile(null, RuleKey.of("tst", "nodeList"), xmlFile);
-    assertThat(logTester.logs()).isEmpty();
-  }
-
-  @Test
-  public void test_nodeAttribute() throws Exception {
-    XmlFile xmlFile = getXmlFile("src/test/resources/checks/SimpleXPathBasedCheck/simple.xml");
-
-    SimpleXPathBasedCheck check = new SimpleXPathBasedCheck() {
-      XPathExpression a = getXPathExpression("//a");
-      XPathExpression comments = getXPathExpression("//comment()");
-
-      @Override
-      protected void scanFile(XmlFile file) {
-        Document node = file.getDocument();
-
-        Node aNode = evaluateAsList(a, node).get(0);
-        assertThat(nodeAttribute(aNode, "attr")).isNotNull();
-        assertThat(nodeAttribute(aNode, "unknown")).isNull();
-
-        Node commentNode = evaluateAsList(comments, node).get(0);
-        assertThat(nodeAttribute(commentNode, "unknown")).isNull();
-      }
-    };
-
-    check.scanFile(null, RuleKey.of("tst", "attribute"), xmlFile);
+    assertThat(check.hasBeenExecuted()).isTrue();
     assertThat(logTester.logs()).isEmpty();
   }
 
@@ -166,5 +144,18 @@ public class SimpleXPathBasedCheckTest {
       .build();
 
     return XmlFile.create(defaultInputFile);
+  }
+
+  abstract private static class XPathTesterCheck extends SimpleXPathBasedCheck {
+
+    private boolean executed = false;
+
+    public void isExecuted() {
+      this.executed = true;
+    }
+
+    public boolean hasBeenExecuted() {
+      return executed;
+    }
   }
 }
