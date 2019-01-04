@@ -40,15 +40,23 @@
       <version>1.11-SNAPSHOT</version>
     </dependency>
 
+    <!-- Provides DocumentBuilder used to parse XML files and produce DOM -->
     <dependency>
       <groupId>xerces</groupId>
       <artifactId>xercesImpl</artifactId>
-      <version>2.8.1</version>
+      <version>2.12.0</version>
     </dependency>
+    <!-- Required by xerces 2.x, as it provides some interfaces for XML nodes -->
+    <dependency>
+      <groupId>xml-apis</groupId>
+      <artifactId>xml-apis</artifactId>
+      <version>1.4.01</version>
+    </dependency>
+    <!-- Provides XMLInputFactory used to parse XML files and collect event position in file -->
     <dependency>
       <groupId>com.fasterxml.woodstox</groupId>
       <artifactId>woodstox-core</artifactId>
-      <version>5.0.3</version>
+      <version>5.2.0</version>
     </dependency>
 
   </dependencies>
