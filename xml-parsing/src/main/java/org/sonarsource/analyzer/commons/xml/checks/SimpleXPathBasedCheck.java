@@ -25,6 +25,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonarsource.analyzer.commons.xml.XmlFile;
@@ -35,17 +36,14 @@ public abstract class SimpleXPathBasedCheck extends SonarXmlCheck {
 
   private static final Logger LOG = Loggers.get(SimpleXPathBasedCheck.class);
 
-  /**
-   * Rely on Apache Xalan for XPath implementation
-   */
-  private final XPath xpath = new org.apache.xpath.jaxp.XPathFactoryImpl().newXPath();
+  private final XPath xpath = XPathFactory.newInstance().newXPath();
 
   /**
-   * Compiles an XPath 1.0 expression using Apache Xalan XPath implementation.
+   * Compiles an XPath 1.0 expression
    *
    * @param expression The expression to be compiled in XPath, as a String
    * @return The compiled expression
-   * @throws IllegalStateException When the XPath expression can not be compiled by the Apache Xalan XPath engine.
+   * @throws IllegalStateException When the XPath expression can not be compiled by the XPath engine.
    *         Could occur with invalid expression, or incompatible XPath version.
    */
   public XPathExpression getXPathExpression(String expression) {
