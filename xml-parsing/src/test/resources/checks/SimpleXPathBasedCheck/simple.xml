@@ -1,0 +1,9 @@
+<a attr="value">
+  <b></b>
+  <b />
+  <!-- comment -->
+  <b />
+  <c>
+    <b></b>
+  </c>
+</a>

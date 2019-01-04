@@ -44,7 +44,15 @@ public abstract class SonarXmlCheck {
     scanFile(file);
   }
 
-  protected abstract void scanFile(XmlFile file);
+  public final InputFile inputFile() {
+    return inputFile;
+  }
+
+  public final RuleKey ruleKey() {
+    return ruleKey;
+  }
+
+  public abstract void scanFile(XmlFile file);
 
   public final void reportIssueOnFile(String message, List<Integer> secondaryLocationLines) {
     NewIssue issue = context.newIssue();

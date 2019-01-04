@@ -22,16 +22,20 @@ package org.sonarsource.analyzer.commons.xml;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonar.api.batch.fs.InputFile;
 import org.w3c.dom.Attr;
 import org.w3c.dom.CDATASection;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -168,18 +172,53 @@ public class XmlFile {
     return Optional.ofNullable((XmlTextRange) node.getUserData(location.name()));
   }
 
-  public static List<Node> children(Node node) {
-    NodeList childNodes = node.getChildNodes();
-    List<Node> result = new ArrayList<>();
-    for (int i = 0; i < childNodes.getLength(); i++) {
-      result.add(childNodes.item(i));
-    }
-
-    return result;
-  }
-
   private static XmlTextRange getRangeOrThrow(Node node, Location location, String nodeType) {
     return getRange(node, location)
       .orElseThrow(() -> new IllegalStateException(String.format("Missing %s location on XML %s node", location.name().toLowerCase(Locale.ENGLISH), nodeType)));
+  }
+
+  /**
+   * Get all the children of a node, as a proper java list.
+   *
+   * @param node the node to get children from
+   * @return a list of nodes, possibly empty.
+   */
+  public static List<Node> children(Node node) {
+    return asList(node.getChildNodes());
+  }
+
+  /**
+   * Transform a NodeList (from DOM interface) into a java List
+   *
+   * @param nodeList the nodeList to be transformed into a List, possibly null
+   * @return The equivalent java list. Note that a null NodeList will produce an empty list.
+   */
+  public static List<Node> asList(@Nullable NodeList nodeList) {
+    if (nodeList == null) {
+      return Collections.emptyList();
+    }
+    int numberResults = nodeList.getLength();
+    if (numberResults == 0) {
+      return Collections.emptyList();
+    }
+    return IntStream.range(0, numberResults)
+      .mapToObj(nodeList::item)
+      .collect(Collectors.toList());
+  }
+
+  /**
+   * Try to retrieve the attribute node corresponding to an attribute name in a given node.
+   *
+   * @param node The node to query for an attribute
+   * @param attribute The name of the attribute to search for
+   * @return The corresponding attribute node, if the attribute can be found, or null if not found.
+   */
+  @CheckForNull
+  public static Node nodeAttribute(Node node, String attribute) {
+    NamedNodeMap attributes = node.getAttributes();
+    if (attributes == null) {
+      return null;
+    }
+    return attributes.getNamedItem(attribute);
   }
 }
