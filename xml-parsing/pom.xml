@@ -6,7 +6,7 @@
   <parent>
     <artifactId>sonar-analyzer-commons-parent</artifactId>
     <groupId>org.sonarsource.analyzer-commons</groupId>
-    <version>1.10.1-SNAPSHOT</version>
+    <version>1.11-SNAPSHOT</version>
   </parent>
 
   <artifactId>sonar-xml-parsing</artifactId>
@@ -37,7 +37,7 @@
     <dependency>
       <groupId>org.sonarsource.analyzer-commons</groupId>
       <artifactId>sonar-analyzer-test-commons</artifactId>
-      <version>1.10.1-SNAPSHOT</version>
+      <version>1.11-SNAPSHOT</version>
     </dependency>
 
     <!-- Provides DocumentBuilder used to parse XML files and produce DOM -->
