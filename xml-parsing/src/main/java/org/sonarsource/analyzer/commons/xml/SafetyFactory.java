@@ -44,8 +44,13 @@ public class SafetyFactory {
   }
 
   public static DocumentBuilder createDocumentBuilder(boolean namespaceAware) {
+    ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
     try {
-      // forcing the DocumentBuilderFactory implementation class, in order to be sure that we are going to use the
+      // Force a new classloader during initialization to be sure that we are going to use the classloader containing
+      // all the Xerces-related classes during instantiation of the XML parser
+      Thread.currentThread().setContextClassLoader(SafetyFactory.class.getClassLoader());
+
+      // Forcing the DocumentBuilderFactory implementation class, in order to be sure that we are going to use the
       // adequate parser, handling correctly all the elements
       DocumentBuilderFactory documentBuilderFactory = new org.apache.xerces.jaxp.DocumentBuilderFactoryImpl();
 
@@ -66,6 +71,9 @@ public class SafetyFactory {
       return documentBuilder;
     } catch (ParserConfigurationException e) {
       throw new IllegalStateException(e);
+    } finally {
+      // Set back the classloader in order to retrieve the previous state
+      Thread.currentThread().setContextClassLoader(currentClassLoader);
     }
   }
 
