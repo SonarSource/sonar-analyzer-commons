@@ -1,0 +1,10 @@
+{
+  "title": "title",
+  "type": "CODE_SMELL",
+  "defaultSeverity": "Minor",
+  "status": "ready",
+  "tags": [],
+  "securityStandards": {
+    "CWE": "none"
+  }
+}

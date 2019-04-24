@@ -19,10 +19,8 @@
  */
 package org.sonarsource.analyzer.commons;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +32,7 @@ import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.check.Rule;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 public class RuleMetadataLoaderTest {
 
@@ -56,7 +55,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "S100") class TestRule {
     }
 
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
     RulesDefinition.Rule rule = repository.rule("S100");
@@ -77,7 +76,7 @@ public class RuleMetadataLoaderTest {
   public void load_rule_S110() throws Exception {
     @Rule(key = "S110") class TestRule {
     }
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
     RulesDefinition.Rule rule = repository.rule("S110");
@@ -92,7 +91,7 @@ public class RuleMetadataLoaderTest {
 
   @Test
   public void load_rules_key_based() throws Exception {
-    ruleMetadataLoader.addRulesByRuleKey(newRepository, list("S110", "S100"));
+    ruleMetadataLoader.addRulesByRuleKey(newRepository, Arrays.asList("S110", "S100"));
     newRepository.done();
 
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
@@ -112,7 +111,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "S123")
     class TestRule {
     }
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
 
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
@@ -133,8 +132,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "S110")
     class RuleB {
     }
-    List<Class> rules = Arrays.asList(RuleA.class, RuleB.class);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, rules);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Arrays.asList(RuleA.class, RuleB.class));
     newRepository.done();
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
     assertThat(repository.rule("S100")).isNotNull();
@@ -143,10 +141,11 @@ public class RuleMetadataLoaderTest {
 
   @Test
   public void no_profile() throws Exception {
-    @Rule(key = "S100") class TestRule {
+    @Rule(key = "S100")
+    class TestRule {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S100");
     assertThat(rule.activatedByDefault()).isFalse();
@@ -154,10 +153,11 @@ public class RuleMetadataLoaderTest {
 
   @Test
   public void rule_not_in_default_profile() throws Exception {
-    @Rule(key = "S123") class TestRule {
+    @Rule(key = "S123")
+    class TestRule {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S123");
     assertThat(rule.activatedByDefault()).isFalse();
@@ -165,10 +165,11 @@ public class RuleMetadataLoaderTest {
 
   @Test
   public void rule_in_default_profile() throws Exception {
-    @Rule(key = "S100") class TestRule {
+    @Rule(key = "S100")
+    class TestRule {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S100");
     assertThat(rule.activatedByDefault()).isTrue();
@@ -193,10 +194,11 @@ public class RuleMetadataLoaderTest {
 
   @Test
   public void test_security_hotspot() {
-    @Rule(key = "S2092") class TestRule {
+    @Rule(key = "S2092")
+    class TestRule {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SonarVersion.SQ_73_RUNTIME);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
     assertThat(rule.type()).isEqualTo(RuleType.SECURITY_HOTSPOT);
@@ -205,10 +207,11 @@ public class RuleMetadataLoaderTest {
 
   @Test
   public void test_security_hotspot_lts() {
-    @Rule(key = "S2092") class TestRule {
+    @Rule(key = "S2092")
+    class TestRule {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SonarVersion.SQ_67_RUNTIME);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
     assertThat(rule.type()).isEqualTo(RuleType.VULNERABILITY);
@@ -217,22 +220,60 @@ public class RuleMetadataLoaderTest {
 
   @Test
   public void test_security_standards() {
-    @Rule(key = "S112") class TestRule {
+    @Rule(key = "S112")
+    class TestRule {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SonarVersion.SQ_73_RUNTIME);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, list(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S112");
     assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
     assertThat(rule.securityStandards()).containsExactlyInAnyOrder("cwe:397");
   }
 
-  private static <T> List<T> list(T ...elements) {
-    List<T> list = new ArrayList<T>();
-    for (T element : elements) {
-      list.add(element);
+  @Test
+  public void test_invalid_json_string() {
+    @Rule(key = "rule_missing_title")
+    class TestRule {
     }
-
-    return list;
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER);
+    try {
+      ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+      fail("Should have failed");
+    } catch (Exception e) {
+      assertThat(e).isInstanceOf(IllegalStateException.class);
+      assertThat(e).hasMessage("Invalid property: title");
+    }
   }
+
+  @Test
+  public void test_invalid_json_string_array() {
+    @Rule(key = "rule_wrong_tag")
+    class TestRule {
+    }
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER);
+    try {
+      ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+      fail("Should have failed");
+    } catch (Exception e) {
+      assertThat(e).isInstanceOf(IllegalStateException.class);
+      assertThat(e).hasMessage("Invalid property: tags");
+    }
+  }
+
+  @Test
+  public void test_invalid_json_int_array() {
+    @Rule(key = "rule_wrong_cwe")
+    class TestRule {
+    }
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, "org/sonarsource/analyzer/commons/profile_wrong_cwe.json", SonarVersion.SQ_73_RUNTIME);
+    try {
+      ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+      fail("Should have failed");
+    } catch (Exception e) {
+      assertThat(e).isInstanceOf(IllegalStateException.class);
+      assertThat(e).hasMessage("Invalid property: CWE");
+    }
+  }
+
 }
