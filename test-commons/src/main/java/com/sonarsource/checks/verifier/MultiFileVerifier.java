@@ -72,7 +72,7 @@ public interface MultiFileVerifier {
    * @param column start at 1, beginning of the comment prefix
    * @param content content of the comment with prefix and suffix
    * @param prefixLength for example, if the prefix is '//' then the length is 2
-   * @param suffixLength for example, if the suffix is '-->' then the length is 3
+   * @param suffixLength for example, if the suffix is '--&gt;' then the length is 3
    */
   MultiFileVerifier addComment(Path path, int line, int column, String content, int prefixLength, int suffixLength);
 

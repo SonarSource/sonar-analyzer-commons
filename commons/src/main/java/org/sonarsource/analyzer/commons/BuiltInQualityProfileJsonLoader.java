@@ -47,7 +47,7 @@ public final class BuiltInQualityProfileJsonLoader {
   }
 
   /**
-   * Avoids activating Security Hotspots rules in a given profile if those are not supported (i.e. SQ version < 7.3)
+   * Avoids activating Security Hotspots rules in a given profile if those are not supported (i.e. SQ version before 7.3)
    */
   public static void load(
     NewBuiltInQualityProfile profile,
