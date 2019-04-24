@@ -1,0 +1,6 @@
+{
+  "name": "Broken CWE",
+  "ruleKeys": [
+    "rule_wrong_cwe"
+  ]
+}

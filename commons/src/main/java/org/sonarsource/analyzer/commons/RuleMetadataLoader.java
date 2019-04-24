@@ -43,6 +43,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class RuleMetadataLoader {
 
+  private static final String INVALID_PROPERTY_MESSAGE = "Invalid property: %s";
   private static final char RESOURCE_SEP = '/';
   private static final String SECURITY_HOTSPOT = "SECURITY_HOTSPOT";
   private static final Version SQ_7_3 = Version.create(7, 3);
@@ -222,7 +223,7 @@ public class RuleMetadataLoader {
   private static String getString(Map<String, Object> map, String propertyName) {
     Object propertyValue = map.get(propertyName);
     if (!(propertyValue instanceof String)) {
-      throw new IllegalStateException("Invalid property '" + propertyName + "'");
+      throw new IllegalStateException(String.format(INVALID_PROPERTY_MESSAGE, propertyName));
     }
     return (String) propertyValue;
   }
@@ -230,7 +231,7 @@ public class RuleMetadataLoader {
   static String[] getStringArray(Map<String, Object> map, String propertyName) {
     Object propertyValue = map.get(propertyName);
     if (!(propertyValue instanceof List)) {
-      throw new IllegalStateException("Invalid property: " + propertyName);
+      throw new IllegalStateException(String.format(INVALID_PROPERTY_MESSAGE, propertyName));
     }
     return ((List<String>) propertyValue).toArray(new String[0]);
   }
@@ -238,7 +239,7 @@ public class RuleMetadataLoader {
   private static int[] getIntArray(Map<String, Object> map, String propertyName) {
     Object propertyValue = map.get(propertyName);
     if (!(propertyValue instanceof List)) {
-      throw new IllegalStateException("Invalid property: " + propertyName);
+      throw new IllegalStateException(String.format(INVALID_PROPERTY_MESSAGE, propertyName));
     }
     return ((List<Number>) propertyValue).stream().mapToInt(Number::intValue).toArray();
   }
