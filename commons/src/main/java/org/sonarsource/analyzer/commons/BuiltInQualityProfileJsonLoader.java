@@ -25,9 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.sonar.api.SonarRuntime;
+import org.sonar.api.server.profile.BuiltInQualityProfilesDefinition.NewBuiltInQualityProfile;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.sonar.api.server.profile.BuiltInQualityProfilesDefinition.NewBuiltInQualityProfile;
 
 /**
  * Use to create {@link NewBuiltInQualityProfile} based on json file, for profiles implementing {@link org.sonar.api.server.profile.BuiltInQualityProfilesDefinition}
