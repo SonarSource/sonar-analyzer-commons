@@ -66,8 +66,9 @@ public class RuleMetadataLoader {
 
   /**
    * Constructor used to deal with Security Hotspots rules:
-   * SQ Version > 7.2 => Security Hotspots Rules are supported
-   * otherwise        => Security Hotspots Rules are considered as Vulnerability rules
+   *
+   * - SQ Version greather than 7.2: Security Hotspots Rules are supported
+   * - otherwise: Security Hotspots Rules are considered as Vulnerability rules
    */
   public RuleMetadataLoader(String resourceFolder, String defaultProfilePath, SonarRuntime sonarRuntime) {
     this(resourceFolder, defaultProfilePath);
