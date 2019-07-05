@@ -28,16 +28,18 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <scope>compile</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.sonarsource.analyzer-commons</groupId>
       <artifactId>sonar-analyzer-test-commons</artifactId>
-      <version>1.10.3-SNAPSHOT</version>
+      <scope>provided</scope>
+      <version>${project.version}</version>
     </dependency>
 
     <!-- Provides DocumentBuilder used to parse XML files and produce DOM -->
