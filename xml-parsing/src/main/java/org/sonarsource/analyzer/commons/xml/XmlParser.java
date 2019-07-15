@@ -168,14 +168,14 @@ class XmlParser {
   }
 
   private void finalizePreviousNode(XmlFilePosition endLocation) {
-    if (currentNodeStartLocation != null) {
+    if (currentNodeStartLocation != null && currentNode != null) {
       setLocation(currentNode, Location.NODE, currentNodeStartLocation, endLocation);
       // for entity reference having a child which is it's text replacement
       // setting the same location
       if (currentNode.getFirstChild() != null) {
         setLocation(currentNode.getFirstChild(), Location.NODE, currentNodeStartLocation, endLocation);
       }
-    } else if (currentNodeStartRange != null) {
+    } else if (currentNodeStartRange != null && currentNode != null) {
       currentNode.setUserData(Location.NODE.name(), new XmlTextRange(currentNodeStartRange, endLocation, xmlFileStartLocation), null);
     }
 

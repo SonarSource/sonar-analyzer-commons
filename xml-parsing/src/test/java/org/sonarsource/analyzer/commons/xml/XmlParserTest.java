@@ -66,6 +66,33 @@ public class XmlParserTest {
   }
 
   @Test
+  public void testEmptyCDATA() throws Exception {
+    XmlFile xmlFile = XmlFile.create("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+      "<html>\n" +
+      "<a>\n" +
+      "    <b>\n" +
+      "        <![CDATA[]]>\n" +
+      "    </b>\n" +
+      "</a>" +
+      "<a>\n" +
+      "    <b> <![CDATA[]]>\n" +
+      "    </b>\n" +
+      "</a>" +
+      "<a>\n" +
+      "    <b><![CDATA[]]>\n" +
+      "    </b>\n" +
+      "</a>" +
+      "<a>\n" +
+      "    <b>\n" +
+      "      <![CDATA[ ]]>\n" +
+      "    </b>\n" +
+      "</a>" +
+      "</html>");
+    Document document = xmlFile.getDocument();
+    assertRange(document, Location.NODE, 1, 0, 17, 11);
+  }
+
+  @Test
   public void testLineSeprators() throws Exception {
     String testCase = ""
       /* _1 */ + "<foo%s"
