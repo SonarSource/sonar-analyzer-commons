@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import javautil.Locale;
 import javax.annotation.Nullable;
 
 public class LineIssues {
@@ -149,7 +150,7 @@ public class LineIssues {
       .forEach(message -> out.append(" {{").append(message).append("}}"));
     Double effort = effortToFix();
     if (effort != null) {
-      DecimalFormat effortToFixFormat = new DecimalFormat("0.##");
+      DecimalFormat effortToFixFormat = new DecimalFormat("0.##" ,new DecimalFormatSymbols(Locale.ENGLISH));
       out.append(" [[effortToFix=").append(effortToFixFormat.format(effort)).append("]]");
     }
     out.append("\n");
