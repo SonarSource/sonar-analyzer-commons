@@ -20,6 +20,7 @@
 package com.sonarsource.checks.verifier.internal;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -28,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-import javautil.Locale;
+import java.util.Locale;
 import javax.annotation.Nullable;
 
 public class LineIssues {
