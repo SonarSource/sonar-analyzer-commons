@@ -66,7 +66,7 @@ public final class BuiltInQualityProfileJsonLoader {
       .forEach(activeKey -> profile.activateRule(repositoryKey, activeKey));
   }
 
-  static Set<String> loadActiveKeysFromJsonProfile(String profilePath) {
+  public static Set<String> loadActiveKeysFromJsonProfile(String profilePath) {
     JsonParser jsonParser = new JsonParser();
     Map<String, Object> root;
     try {
