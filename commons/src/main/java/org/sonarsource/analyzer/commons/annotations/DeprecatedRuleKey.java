@@ -24,7 +24,15 @@ import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.sonarsource.analyzer.commons.RuleMetadataLoader;
 
+/**
+ * Annotate a rule class with this annotation in order to provide deprecated rule keys
+ * (see {@link org.sonar.api.server.rule.RulesDefinition.NewRule#addDeprecatedRuleKey(String, String)}).
+ * This annotation will make effect only when used with {@link RuleMetadataLoader}.
+ * Repository key can be omitted, then the current repository will be used.
+ * If there are several deprecated rule keys, put several annotations one after another.
+ */
 @Repeatable(DeprecatedRuleKeys.class)
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

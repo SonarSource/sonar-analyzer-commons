@@ -2,6 +2,7 @@
 Logic useful for an average language plugin
 
 * [`RuleMetadataLoader`](./src/main/java/org/sonarsource/analyzer/commons/RuleMetadataLoader.java) - to define rules metadata based on `json` and `html` files
+* [`DeprecatedRuleKey`](./src/main/java/org/sonarsource/analyzer/commons/annotations/DeprecatedRuleKey.java) annotation - when used with [`RuleMetadataLoader`](./src/main/java/org/sonarsource/analyzer/commons/RuleMetadataLoader.java) in will add deprecated rule key for an annotated rule
 * [`BuiltInQualityProfileJsonLoader`](./src/main/java/org/sonarsource/analyzer/commons/BuiltInQualityProfileJsonLoader.java) - to define default rules profiles based on `json` file
 * [`ProfileGenerator`](./src/main/java/org/sonarsource/analyzer/commons/ProfileGenerator.java) - to generate rules profile `xml` file (e.g. can be used for integration tests)
 * [`TokenLocation`](./src/main/java/org/sonarsource/analyzer/commons/TokenLocation.java) - to compute token location

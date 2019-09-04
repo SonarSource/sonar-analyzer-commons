@@ -144,7 +144,7 @@ public class RuleMetadataLoader {
   }
 
   private static void addDeprecatedRuleKey(NewRepository repository, NewRule rule, DeprecatedRuleKey deprecatedRuleKey) {
-    String repoKey = deprecatedRuleKey.repositoryKey().equals("") ? repository.key() : deprecatedRuleKey.repositoryKey();
+    String repoKey = deprecatedRuleKey.repositoryKey().isEmpty() ? repository.key() : deprecatedRuleKey.repositoryKey();
     rule.addDeprecatedRuleKey(repoKey, deprecatedRuleKey.ruleKey());
   }
 
