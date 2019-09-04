@@ -20,6 +20,7 @@
 package org.sonarsource.analyzer.commons;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -35,6 +36,8 @@ import org.sonar.api.server.rule.RulesDefinition.NewRule;
 import org.sonar.api.server.rule.RulesDefinitionAnnotationLoader;
 import org.sonar.api.utils.AnnotationUtils;
 import org.sonar.api.utils.Version;
+import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKey;
+import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKeys;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -126,7 +129,23 @@ public class RuleMetadataLoader {
     if (rule == null) {
       throw new IllegalStateException("Rule not found: " + ruleKey);
     }
+
+    DeprecatedRuleKeys deprecatedRuleKeys = AnnotationUtils.getAnnotation(ruleClass, DeprecatedRuleKeys.class);
+    if (deprecatedRuleKeys != null) {
+      Arrays.stream(deprecatedRuleKeys.value()).forEach(deprecatedRuleKey -> addDeprecatedRuleKey(repository, rule, deprecatedRuleKey));
+    } else {
+      DeprecatedRuleKey deprecatedRuleKey = AnnotationUtils.getAnnotation(ruleClass, DeprecatedRuleKey.class);
+      if (deprecatedRuleKey != null) {
+        addDeprecatedRuleKey(repository, rule, deprecatedRuleKey);
+      }
+    }
+
     return rule;
+  }
+
+  private static void addDeprecatedRuleKey(NewRepository repository, NewRule rule, DeprecatedRuleKey deprecatedRuleKey) {
+    String repoKey = deprecatedRuleKey.repositoryKey().equals("") ? repository.key() : deprecatedRuleKey.repositoryKey();
+    rule.addDeprecatedRuleKey(repoKey, deprecatedRuleKey.ruleKey());
   }
 
   private NewRule addRuleByRuleKey(NewRepository repository, String ruleKey) {
