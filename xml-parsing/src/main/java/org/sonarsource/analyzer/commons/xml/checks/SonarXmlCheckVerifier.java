@@ -35,7 +35,6 @@ import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.fs.TextRange;
 import org.sonar.api.batch.fs.internal.DefaultInputFile;
 import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
-import org.sonar.api.batch.rule.internal.ActiveRulesBuilder;
 import org.sonar.api.batch.sensor.internal.SensorContextTester;
 import org.sonar.api.batch.sensor.issue.Issue;
 import org.sonar.api.batch.sensor.issue.Issue.Flow;
@@ -76,8 +75,7 @@ public class SonarXmlCheckVerifier {
   private static SonarXmlCheckVerifier createVerifier(String fileName, SonarXmlCheck check) {
     File file = new File(new File(BASE_DIR.toFile(), check.getClass().getSimpleName()), fileName);
 
-    SensorContextTester context = SensorContextTester.create(BASE_DIR)
-      .setActiveRules(new ActiveRulesBuilder().create(RULE_KEY).activate().build());
+    SensorContextTester context = SensorContextTester.create(BASE_DIR);
 
     String filePath = file.getPath();
     String content;

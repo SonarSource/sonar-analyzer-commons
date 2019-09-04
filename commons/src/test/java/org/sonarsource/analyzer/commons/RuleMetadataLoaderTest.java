@@ -240,7 +240,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "S2092")
     class TestRule {
     }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SonarVersion.SQ_73_RUNTIME);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH);
     ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
@@ -249,24 +249,11 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void test_security_hotspot_lts() {
-    @Rule(key = "S2092")
-    class TestRule {
-    }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SonarVersion.SQ_67_RUNTIME);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
-    newRepository.done();
-    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
-    assertThat(rule.type()).isEqualTo(RuleType.VULNERABILITY);
-    assertThat(rule.securityStandards()).hasSize(0);
-  }
-
-  @Test
   public void test_security_standards() {
     @Rule(key = "S112")
     class TestRule {
     }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SonarVersion.SQ_73_RUNTIME);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH);
     ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S112");
@@ -309,7 +296,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "rule_wrong_cwe")
     class TestRule {
     }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, "org/sonarsource/analyzer/commons/profile_wrong_cwe.json", SonarVersion.SQ_73_RUNTIME);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, "org/sonarsource/analyzer/commons/profile_wrong_cwe.json");
     try {
       ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
       fail("Should have failed");

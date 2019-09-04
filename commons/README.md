@@ -1,4 +1,4 @@
-# sonar-analyzer-commons
+# sonar-analyzer-commons (compatible with SQ >=7.9)
 Logic useful for an average language plugin
 
 * [`RuleMetadataLoader`](./src/main/java/org/sonarsource/analyzer/commons/RuleMetadataLoader.java) - to define rules metadata based on `json` and `html` files

@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import org.sonar.api.SonarRuntime;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.rule.RulesDefinition;
@@ -35,7 +34,6 @@ import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.server.rule.RulesDefinition.NewRule;
 import org.sonar.api.server.rule.RulesDefinitionAnnotationLoader;
 import org.sonar.api.utils.AnnotationUtils;
-import org.sonar.api.utils.Version;
 import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKey;
 import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKeys;
 
@@ -49,36 +47,16 @@ public class RuleMetadataLoader {
   private static final String INVALID_PROPERTY_MESSAGE = "Invalid property: %s";
   private static final char RESOURCE_SEP = '/';
   private static final String SECURITY_HOTSPOT = "SECURITY_HOTSPOT";
-  private static final Version SQ_7_3 = Version.create(7, 3);
   private final String resourceFolder;
   private final Set<String> activatedByDefault;
-  private boolean supportsSecurityHotspots = false;
   private JsonParser jsonParser;
-  private SonarRuntime sonarRuntime;
 
   public RuleMetadataLoader(String resourceFolder) {
     this(resourceFolder, Collections.emptySet());
   }
 
-  /**
-   * This constructor should not be used when SonarQube runtime version is less than 6.0
-   * because it would trigger calls to {@link org.sonar.api.server.rule.RulesDefinition.NewRule#setActivatedByDefault(boolean)}
-   * which was added in SonarQube 6.0.
-   */
   public RuleMetadataLoader(String resourceFolder, String defaultProfilePath) {
     this(resourceFolder, BuiltInQualityProfileJsonLoader.loadActiveKeysFromJsonProfile(defaultProfilePath));
-  }
-
-  /**
-   * Constructor used to deal with Security Hotspots rules:
-   *
-   * - SQ Version greather than 7.2: Security Hotspots Rules are supported
-   * - otherwise: Security Hotspots Rules are considered as Vulnerability rules
-   */
-  public RuleMetadataLoader(String resourceFolder, String defaultProfilePath, SonarRuntime sonarRuntime) {
-    this(resourceFolder, defaultProfilePath);
-    this.sonarRuntime = sonarRuntime;
-    this.supportsSecurityHotspots = securityHotspotsSupported();
   }
 
   private RuleMetadataLoader(String resourceFolder, Set<String> activatedByDefault) {
@@ -175,11 +153,7 @@ public class RuleMetadataLoader {
     rule.setName(getString(ruleMetadata, "title"));
     rule.setSeverity(getUpperCaseString(ruleMetadata, "defaultSeverity"));
     String type = getUpperCaseString(ruleMetadata, "type");
-    if (isSecurityHotspot(ruleMetadata) && !supportsSecurityHotspots) {
-      rule.setType(RuleType.VULNERABILITY);
-    } else {
-      rule.setType(RuleType.valueOf(type));
-    }
+    rule.setType(RuleType.valueOf(type));
     rule.setStatus(RuleStatus.valueOf(getUpperCaseString(ruleMetadata, "status")));
     rule.setTags(getStringArray(ruleMetadata, "tags"));
 
@@ -189,7 +163,7 @@ public class RuleMetadataLoader {
     }
 
     Object securityStandards = ruleMetadata.get("securityStandards");
-    if (securityStandards != null && supportsSecurityHotspots) {
+    if (securityStandards != null) {
       setSecurityStandardsFromJson(rule, (Map<String, Object>) securityStandards);
     }
   }
@@ -261,10 +235,6 @@ public class RuleMetadataLoader {
       throw new IllegalStateException(String.format(INVALID_PROPERTY_MESSAGE, propertyName));
     }
     return ((List<Number>) propertyValue).stream().mapToInt(Number::intValue).toArray();
-  }
-
-  boolean securityHotspotsSupported() {
-    return sonarRuntime.getApiVersion().isGreaterThanOrEqual(SQ_7_3);
   }
 
   boolean isSecurityHotspot(Map<String, Object> ruleMetadata) {

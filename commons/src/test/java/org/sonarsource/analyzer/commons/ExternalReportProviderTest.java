@@ -23,11 +23,7 @@ import java.io.File;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
-import org.sonar.api.SonarQubeSide;
-import org.sonar.api.SonarRuntime;
 import org.sonar.api.batch.sensor.internal.SensorContextTester;
-import org.sonar.api.internal.SonarRuntimeImpl;
-import org.sonar.api.utils.Version;
 import org.sonar.api.utils.log.LogTester;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,20 +35,8 @@ public class ExternalReportProviderTest {
   private final String EXTERNAL_REPORTS_PROPERTY = "sonar.foo.mylinter.reportPaths";
 
   @Test
-  public void test_old_sq() throws Exception {
-    SensorContextTester context = SensorContextTester.create(new File("."));
-    context.setRuntime(getRuntime(7, 1));
-    context.settings().setProperty(EXTERNAL_REPORTS_PROPERTY, "foo.out, bar.out");
-    List<File> reportFiles = ExternalReportProvider.getReportFiles(context, EXTERNAL_REPORTS_PROPERTY);
-
-    assertThat(reportFiles).hasSize(0);
-    assertThat(logTester.logs()).containsOnly("Import of external issues requires SonarQube 7.2 or greater.");
-  }
-
-  @Test
   public void test_return_empty_when_no_value() throws Exception {
     SensorContextTester context = SensorContextTester.create(new File("."));
-    context.setRuntime(getRuntime(7, 2));
 
     List<File> reportFiles = ExternalReportProvider.getReportFiles(context, EXTERNAL_REPORTS_PROPERTY);
 
@@ -63,7 +47,6 @@ public class ExternalReportProviderTest {
   @Test
   public void test_resolve_abs_and_relative() throws Exception {
     SensorContextTester context = SensorContextTester.create(new File("src/test/resources"));
-    context.setRuntime(getRuntime(7, 2));
     context.settings().setProperty(EXTERNAL_REPORTS_PROPERTY, "foo.out, " + new File("src/test/resources/bar.out").getAbsolutePath());
     List<File> reportFiles = ExternalReportProvider.getReportFiles(context, EXTERNAL_REPORTS_PROPERTY);
 
@@ -74,7 +57,4 @@ public class ExternalReportProviderTest {
     assertThat(logTester.logs()).isEmpty();
   }
 
-  private SonarRuntime getRuntime(int major, int minor) {
-    return SonarRuntimeImpl.forSonarQube(Version.create(major, minor), SonarQubeSide.SERVER);
-  }
 }
