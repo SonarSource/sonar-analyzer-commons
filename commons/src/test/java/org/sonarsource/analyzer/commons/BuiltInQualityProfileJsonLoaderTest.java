@@ -96,27 +96,15 @@ public class BuiltInQualityProfileJsonLoaderTest {
   }
 
   @Test
-  public void should_activate_hotspots_when_supported() {
+  public void should_activate_hotspots() {
     NewBuiltInQualityProfile newProfile = testContext.createBuiltInQualityProfile(PROFILE_NAME, LANGUAGE);
     String profilePath = "org/sonarsource/analyzer/commons/Sonar_way_profile_with_hotspots.json";
-    BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, profilePath, RESOURCE_FOLDER, SonarVersion.SQ_73_RUNTIME);
+    BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, profilePath);
     newProfile.done();
     BuiltInQualityProfile profile = testContext.profile(LANGUAGE, PROFILE_NAME);
 
     List<BuiltInActiveRule> activeRules = profile.rules();
     assertThat(activeRules).extracting("ruleKey").containsExactlyInAnyOrder("S100", "S110", "S2092");
-  }
-
-  @Test
-  public void should_not_activate_hotspots_when_not_supported() {
-    NewBuiltInQualityProfile newProfile = testContext.createBuiltInQualityProfile(PROFILE_NAME, LANGUAGE);
-    String profilePath = "org/sonarsource/analyzer/commons/Sonar_way_profile_with_hotspots.json";
-    BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, profilePath, RESOURCE_FOLDER, SonarVersion.SQ_67_RUNTIME);
-    newProfile.done();
-    BuiltInQualityProfile profile = testContext.profile(LANGUAGE, PROFILE_NAME);
-
-    List<BuiltInActiveRule> activeRules = profile.rules();
-    assertThat(activeRules).extracting("ruleKey").containsExactlyInAnyOrder("S100", "S110");
   }
 
 }

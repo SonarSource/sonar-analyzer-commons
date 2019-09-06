@@ -24,12 +24,14 @@ import java.util.Collections;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonar.api.rule.RuleKey;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.debt.DebtRemediationFunction;
 import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.check.Rule;
+import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -70,6 +72,7 @@ public class RuleMetadataLoaderTest {
     assertThat(remediation).isNotNull();
     assertThat(remediation.type()).isEqualTo(DebtRemediationFunction.Type.CONSTANT_ISSUE);
     assertThat(remediation.baseEffort()).isEqualTo("5min");
+    assertThat(rule.deprecatedRuleKeys()).isEmpty();
   }
 
   @Test
@@ -122,6 +125,46 @@ public class RuleMetadataLoaderTest {
     assertThat(remediation.type()).isEqualTo(DebtRemediationFunction.Type.LINEAR);
     assertThat(remediation.gapMultiplier()).isEqualTo("10min");
     assertThat(rule.gapDescription()).isNull();
+  }
+
+  @Test
+  public void load_rule_with_deprecated_key() throws Exception {
+    @Rule(key = "S123")
+    @DeprecatedRuleKey(repositoryKey = "oldRepo", ruleKey = "oldKey")
+    class TestRule {
+    }
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    assertThat(repository.rule("S123").deprecatedRuleKeys()).containsExactlyInAnyOrder(RuleKey.of("oldRepo", "oldKey"));
+  }
+
+  @Test
+  public void load_rule_with_many_deprecated_keys() throws Exception {
+    @Rule(key = "S123")
+    @DeprecatedRuleKey(repositoryKey = "oldRepo1", ruleKey = "oldKey1")
+    @DeprecatedRuleKey(repositoryKey = "oldRepo2", ruleKey = "oldKey2")
+    class TestRule {
+    }
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    assertThat(repository.rule("S123").deprecatedRuleKeys()).containsExactlyInAnyOrder(RuleKey.of("oldRepo1", "oldKey1"), RuleKey.of("oldRepo2", "oldKey2"));
+  }
+
+  @Test
+  public void load_rule_with_deprecated_key_without_repo() throws Exception {
+    @Rule(key = "S123")
+    @DeprecatedRuleKey(ruleKey = "oldKey")
+    class TestRule {
+    }
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    assertThat(repository.rule("S123").deprecatedRuleKeys()).containsOnly(RuleKey.of(RULE_REPOSITORY_KEY, "oldKey"));
   }
 
   @Test
@@ -197,7 +240,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "S2092")
     class TestRule {
     }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SonarVersion.SQ_73_RUNTIME);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH);
     ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
@@ -206,24 +249,11 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void test_security_hotspot_lts() {
-    @Rule(key = "S2092")
-    class TestRule {
-    }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SonarVersion.SQ_67_RUNTIME);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
-    newRepository.done();
-    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
-    assertThat(rule.type()).isEqualTo(RuleType.VULNERABILITY);
-    assertThat(rule.securityStandards()).hasSize(0);
-  }
-
-  @Test
   public void test_security_standards() {
     @Rule(key = "S112")
     class TestRule {
     }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SonarVersion.SQ_73_RUNTIME);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH);
     ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S112");
@@ -266,7 +296,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "rule_wrong_cwe")
     class TestRule {
     }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, "org/sonarsource/analyzer/commons/profile_wrong_cwe.json", SonarVersion.SQ_73_RUNTIME);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, "org/sonarsource/analyzer/commons/profile_wrong_cwe.json");
     try {
       ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
       fail("Should have failed");

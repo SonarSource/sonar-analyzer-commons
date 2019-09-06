@@ -17,14 +17,15 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons;
+package org.sonarsource.analyzer.commons.annotations;
 
-import org.sonar.api.SonarQubeSide;
-import org.sonar.api.SonarRuntime;
-import org.sonar.api.internal.SonarRuntimeImpl;
-import org.sonar.api.utils.Version;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public class SonarVersion {
-  static final SonarRuntime SQ_73_RUNTIME = SonarRuntimeImpl.forSonarQube(Version.create(7, 3), SonarQubeSide.SERVER);
-  static final SonarRuntime SQ_67_RUNTIME = SonarRuntimeImpl.forSonarQube(Version.create(6, 7), SonarQubeSide.SERVER);
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface DeprecatedRuleKeys {
+  DeprecatedRuleKey[] value();
 }

@@ -70,11 +70,6 @@ public class ExternalRuleLoader {
     loadMetadataFile(pathToMetadata);
   }
 
-  /**
-   * IMPORTANT This method should not be used when SonarQube runtime version is less than 7.2
-   * because it would trigger calls to {@link org.sonar.api.server.rule.RulesDefinition.Context#createExternalRepository}
-   * which was added in SonarQube 7.2.
-   */
   public void createExternalRuleRepository(org.sonar.api.server.rule.RulesDefinition.Context context) {
     NewRepository externalRepo = context.createExternalRepository(linterKey, languageKey).setName(linterName);
 
