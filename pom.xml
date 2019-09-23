@@ -11,7 +11,7 @@
 
   <groupId>org.sonarsource.analyzer-commons</groupId>
   <artifactId>sonar-analyzer-commons-parent</artifactId>
-  <version>1.10.3-SNAPSHOT</version>
+  <version>1.11-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>SonarQube Analyzer Commons Parent</name>
