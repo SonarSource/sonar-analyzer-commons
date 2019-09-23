@@ -22,6 +22,7 @@ package com.sonarsource.checks.verifier.internal;
 import com.sonarsource.checks.verifier.FileContent;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Locale;
 import org.junit.Test;
 
 import static com.sonarsource.checks.verifier.internal.NoncompliantCommentParser.parse;
@@ -68,6 +69,15 @@ public class LineIssuesTest {
     assertMatch("//",
       "i++; // Noncompliant {{error}} [[effortToFix=2]]", 1, ""
         + "001: Noncompliant {{error}} [[effortToFix=2]]\n"
+        + "001: i++;\n");
+  }
+
+  @Test
+  public void use_another_locale() throws Exception {
+    Locale.setDefault(Locale.FRANCE);
+    assertMatch("//",
+      "i++; // Noncompliant {{error}} [[effortToFix=2.5]]", 1, ""
+        + "001: Noncompliant {{error}} [[effortToFix=2.5]]\n"
         + "001: i++;\n");
   }
 
