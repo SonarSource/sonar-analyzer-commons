@@ -20,11 +20,13 @@
 package com.sonarsource.checks.verifier.internal;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -149,7 +151,7 @@ public class LineIssues {
       .forEach(message -> out.append(" {{").append(message).append("}}"));
     Double effort = effortToFix();
     if (effort != null) {
-      DecimalFormat effortToFixFormat = new DecimalFormat("0.##");
+      DecimalFormat effortToFixFormat = new DecimalFormat("0.##", new DecimalFormatSymbols(Locale.ENGLISH));
       out.append(" [[effortToFix=").append(effortToFixFormat.format(effort)).append("]]");
     }
     out.append("\n");
