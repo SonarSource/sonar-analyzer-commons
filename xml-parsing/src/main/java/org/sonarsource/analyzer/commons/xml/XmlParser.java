@@ -59,7 +59,7 @@ class XmlParser {
     try {
       setContent();
       ByteArrayInputStream stream = new ByteArrayInputStream(content.getBytes(xmlFile.getCharset()));
-      Document document = SafetyFactory.createDocumentBuilder(namespaceAware).parse(stream);
+      Document document = SafeDomParserFactory.createDocumentBuilder(namespaceAware).parse(stream);
       xmlFile.setDocument(document, namespaceAware);
       currentNode = document;
       nodes.push(currentNode);
@@ -104,7 +104,7 @@ class XmlParser {
   }
 
   private void parseXml() throws XMLStreamException {
-    XMLStreamReader xmlReader = SafetyFactory.createXMLInputFactory().createXMLStreamReader(new StringReader(content));
+    XMLStreamReader xmlReader = SafeStaxParserFactory.createXMLInputFactory().createXMLStreamReader(new StringReader(content));
 
     while (xmlReader.hasNext()) {
       previousEventIsText = xmlReader.getEventType() == XMLStreamConstants.CHARACTERS;

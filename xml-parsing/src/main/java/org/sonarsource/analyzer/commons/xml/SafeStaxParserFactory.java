@@ -19,29 +19,24 @@
  */
 package org.sonarsource.analyzer.commons.xml;
 
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.stream.XMLInputFactory;
 
-public class SafetyFactory {
+public class SafeStaxParserFactory {
 
-  private SafetyFactory(){
+  private SafeStaxParserFactory() {
     // class with static methods only
   }
 
-  /**
-   * @deprecated Use {@link SafeStaxParserFactory#createXMLInputFactory()} instead.
-   */
-  @Deprecated
   public static XMLInputFactory createXMLInputFactory() {
-    return SafeStaxParserFactory.createXMLInputFactory();
-  }
+    // forcing the XMLInputFactory implementation class, in order to be sure that we are going to use the adequate
+    // stream reader while retrieving locations
+    XMLInputFactory factory = new com.ctc.wstx.stax.WstxInputFactory();
 
-  /**
-   * @deprecated Use {@link SafeDomParserFactory#createDocumentBuilder(boolean)} instead.
-   */
-  @Deprecated
-  public static DocumentBuilder createDocumentBuilder(boolean namespaceAware) {
-    return SafeDomParserFactory.createDocumentBuilder(namespaceAware);
+    factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+    factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
+    factory.setProperty(XMLInputFactory.IS_VALIDATING, false);
+    factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+    return factory;
   }
 
 }
