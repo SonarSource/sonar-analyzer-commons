@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>sonar-analyzer-commons-parent</artifactId>
@@ -9,9 +9,9 @@
     <version>1.11-SNAPSHOT</version>
   </parent>
 
-  <artifactId>sonar-xml-parsing</artifactId>
-  <name>Sonar Analyzers XML Parsing Commons</name>
-  <description>Logic useful to read and analyze XML files</description>
+  <artifactId>test-sonar-xml-parsing</artifactId>
+  <name>SonarSource Analyzers XML Parsing Test Commons</name>
+  <description>Logic useful to test XML parsing and XML-related rules</description>
 
   <dependencies>
     <!-- PROVIDED -->
@@ -27,28 +27,15 @@
 
     <dependency>
       <groupId>org.sonarsource.analyzer-commons</groupId>
-      <artifactId>sonar-analyzer-test-commons</artifactId>
+      <artifactId>sonar-xml-parsing</artifactId>
       <scope>provided</scope>
       <version>${project.version}</version>
     </dependency>
-
-    <!-- Provides DocumentBuilder used to parse XML files and produce DOM -->
     <dependency>
-      <groupId>xerces</groupId>
-      <artifactId>xercesImpl</artifactId>
-      <version>2.12.0</version>
-    </dependency>
-    <!-- Required by xerces 2.x, as it provides some interfaces for XML nodes -->
-    <dependency>
-      <groupId>xml-apis</groupId>
-      <artifactId>xml-apis</artifactId>
-      <version>1.4.01</version>
-    </dependency>
-    <!-- Provides XMLInputFactory used to parse XML files and collect event position in file -->
-    <dependency>
-      <groupId>com.fasterxml.woodstox</groupId>
-      <artifactId>woodstox-core</artifactId>
-      <version>5.2.0</version>
+      <groupId>org.sonarsource.analyzer-commons</groupId>
+      <artifactId>sonar-analyzer-test-commons</artifactId>
+      <scope>provided</scope>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>

@@ -4,7 +4,6 @@ SonarQube Analyzer XML Parsing Commons
 * [Parsing XML](#parsing)
 * [Providing safe parser](#safeParser)
 * [Writing a check for XML file](#writingCheck)
-* [Testing a check for XML file](#testingCheck)
 
 
 ## <a name="parsing"></a>To parse XML
@@ -128,17 +127,3 @@ public class MyXPathCheck extends SimpleXpathBasedCheck {
   }
 }
 ```
-
-
-## <a name="testingCheck"></a>To test a check for XML file
-Use `SonarXmlCheckVerifier`:
-```
-SonarXmlCheckVerifier.verifyIssueOnFile("file.xml", new FileTestCheck(), "File level message", 1, 2);
-```
-
-You can use comments notation from [test-commons](../test-commons) to assert issues information.
-```
-SonarXmlCheckVerifier.verifyIssues("checkTestFile.xml", testCheck);
-```
-
-> :exclamation: Tested XML files should be in directory `src/test/java/resources/checks/<CheckClassName>`

@@ -1,5 +1,5 @@
 /*
- * Sonar Analyzers XML Parsing Commons
+ * SonarSource Analyzers XML Parsing Test Commons
  * Copyright (C) 2009-2019 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
@@ -44,8 +44,6 @@ import org.sonarsource.analyzer.commons.xml.XmlFile;
 import org.sonarsource.analyzer.commons.xml.XmlTextRange;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Node;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class SonarXmlCheckVerifier {
 
@@ -97,7 +95,7 @@ public class SonarXmlCheckVerifier {
     XmlFile xmlFile;
     try {
       xmlFile = XmlFile.create(defaultInputFile);
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new IllegalStateException(String.format("Unable to scan xml file %s", filePath), e);
     }
 
@@ -146,23 +144,37 @@ public class SonarXmlCheckVerifier {
   }
 
   private void checkIssueOnFile(String expectedIssueMessage, int... secondaryLines) {
-    assertThat(issues).hasSize(1);
+    reportProblem(issues.size() != 1,
+      "Expected a single issue to be reported, but got %d.", issues.size());
     Issue issue = issues.iterator().next();
-    assertThat(issue.primaryLocation().message()).isEqualTo(expectedIssueMessage);
-    assertThat(issue.primaryLocation().textRange()).isNull();
+    String msg = issue.primaryLocation().message();
+    reportProblem(!expectedIssueMessage.equals(msg),
+      "Expected issue message to be \"%s\", but got \"%s\".", expectedIssueMessage, msg);
+    TextRange textRange = issue.primaryLocation().textRange();
+    reportProblem(textRange != null,
+      "Expected issue location to be null, but issue is reported on line %d.", textRange == null ? -1 : textRange.start().line());
 
     List<Flow> flows = issue.flows();
     // secondaries are N flows of size 1
-    assertThat(flows).hasSize(secondaryLines.length);
-    assertThat(flows.stream().map(Flow::locations).collect(Collectors.toList())).allMatch(flow -> flow.size() == 1);
+    reportProblem(flows.size() != secondaryLines.length,
+      "Expected %d secondary locations, but got %d.", secondaryLines.length, flows.size());
 
     // only contains lines
-    Integer[] expectedLines = IntStream.of(secondaryLines).boxed().toArray(Integer[]::new);
-    assertThat(flows.stream().map(Flow::locations).map(locs -> locs.get(0).textRange().start().line()).collect(Collectors.toList()))
-      .containsExactly(expectedLines);
+    List<Integer> expectedLines = IntStream.of(secondaryLines).boxed().collect(Collectors.toList());
+    List<Integer> reportedLines = flows.stream().map(Flow::locations).map(locs -> locs.get(0).textRange().start().line()).collect(Collectors.toList());
+    reportProblem(!expectedLines.equals(reportedLines),
+      "Expected secondary locations to be %s, but got %s.", 
+      expectedLines.stream().map(Object::toString).collect(Collectors.joining(",", "[", "]")),
+      reportedLines.stream().map(Object::toString).collect(Collectors.joining(",", "[", "]")));
   }
 
   private void checkNoIssues() {
-    assertThat(issues).isEmpty();
+    reportProblem(!issues.isEmpty(), "Expected no issues, but got %d.", issues.size());
+  }
+
+  private static void reportProblem(boolean condition, String message, Object... args) {
+    if (condition) {
+      throw new AssertionError(String.format(message, args));
+    }
   }
 }
