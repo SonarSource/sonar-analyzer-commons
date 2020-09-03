@@ -6,6 +6,7 @@
 * [recognizers](recognizers) Logic useful for detecting commented out code
 * [test-commons](test-commons) Logic useful to test a language analyzer
 * [xml-parsing](xml-parsing) Logic useful to analyze and test checks for XML file
+* [test-xml-parsing](test-xml-parsing) Logic useful to test XML parsing and XML-related rules
 
 
 ## Build

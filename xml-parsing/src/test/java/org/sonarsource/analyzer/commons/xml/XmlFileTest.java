@@ -22,7 +22,8 @@ package org.sonarsource.analyzer.commons.xml;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import org.assertj.core.api.AbstractObjectArrayAssert;
+import org.assertj.core.api.AbstractListAssert;
+import org.assertj.core.api.ObjectAssert;
 import org.junit.Test;
 import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
@@ -115,7 +116,7 @@ public class XmlFileTest {
     assertThat(XmlFile.nodeAttribute(commentNode, "unknown")).isNull();
   }
 
-  private AbstractObjectArrayAssert<?, Object> assertRange(XmlTextRange textRange) {
+  private AbstractListAssert<?, List<?>, Object, ObjectAssert<Object>> assertRange(XmlTextRange textRange) {
     return assertThat(textRange).extracting("startLine", "startColumn", "endLine", "endColumn");
   }
 
