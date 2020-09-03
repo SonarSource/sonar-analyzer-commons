@@ -1,4 +1,5 @@
-# sonar-analyzer-recognizers
+SonarSource Analyzers Recognizers
+=========================
 Classes required to detect code-like strings (e.g. for commented out code)
 
 ### License

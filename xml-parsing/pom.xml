@@ -10,7 +10,7 @@
   </parent>
 
   <artifactId>sonar-xml-parsing</artifactId>
-  <name>Sonar Analyzers XML Parsing Commons</name>
+  <name>SonarSource Analyzers XML Parsing Commons</name>
   <description>Logic useful to read and analyze XML files</description>
 
   <dependencies>

@@ -1,5 +1,5 @@
 /*
- * Sonar Analyzers XML Parsing Commons
+ * SonarSource Analyzers XML Parsing Commons
  * Copyright (C) 2009-2019 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *

@@ -10,7 +10,7 @@
   </parent>
 
   <artifactId>sonar-analyzer-recognizers</artifactId>
-  <name>SonarQube Analyzer Recognizers</name>
+  <name>SonarSource Analyzers Recognizers</name>
   <description>Shared code recognizers</description>
 
   <dependencies>

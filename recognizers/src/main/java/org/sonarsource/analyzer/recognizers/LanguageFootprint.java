@@ -1,5 +1,5 @@
 /*
- * SonarQube Analyzer Recognizers
+ * SonarSource Analyzers Recognizers
  * Copyright (C) 2009-2019 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *

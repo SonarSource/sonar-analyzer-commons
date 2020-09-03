@@ -1,4 +1,4 @@
-# Sonar Analyzer Commons for Plugin and Test
+# SonarSource Analyzers Commons Libraries
 
 ## Modules
 
