@@ -19,29 +19,21 @@
  */
 package org.sonarsource.analyzer.commons.xml;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.stream.XMLInputFactory;
+import org.junit.Test;
 
-public class SafetyFactory {
+import static org.assertj.core.api.Assertions.assertThat;
 
-  private SafetyFactory(){
-    // class with static methods only
+public class SafetyFactoryTest {
+
+  @Test
+  public void test_createXMLInputFactory() {
+    assertThat(SafetyFactory.createXMLInputFactory()).isNotNull();
   }
 
-  /**
-   * @deprecated Use {@link SafeStaxParserFactory#createXMLInputFactory()} instead.
-   */
-  @Deprecated
-  public static XMLInputFactory createXMLInputFactory() {
-    return SafeStaxParserFactory.createXMLInputFactory();
-  }
-
-  /**
-   * @deprecated Use {@link SafeDomParserFactory#createDocumentBuilder(boolean)} instead.
-   */
-  @Deprecated
-  public static DocumentBuilder createDocumentBuilder(boolean namespaceAware) {
-    return SafeDomParserFactory.createDocumentBuilder(namespaceAware);
+  @Test
+  public void test_createDocumentBuilder() {
+    assertThat(SafetyFactory.createDocumentBuilder(true)).isNotNull();
+    assertThat(SafetyFactory.createDocumentBuilder(false)).isNotNull();
   }
 
 }
