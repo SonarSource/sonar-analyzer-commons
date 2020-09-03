@@ -1,4 +1,4 @@
-SonarQube Analyzer Test Commons
+SonarSource Analyzer Test Commons
 =========================
 
 ### Noncompliant Format

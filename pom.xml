@@ -14,7 +14,7 @@
   <version>1.11-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <name>SonarQube Analyzer Commons Parent</name>
+  <name>SonarSource Analyzers Commons Parent</name>
   <description>Logic useful for a language analyser plugin and test</description>
   <organization>
     <name>SonarSource</name>

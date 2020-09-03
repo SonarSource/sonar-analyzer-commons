@@ -10,7 +10,7 @@
   </parent>
 
   <artifactId>sonar-analyzer-commons</artifactId>
-  <name>SonarQube Analyzer Commons</name>
+  <name>SonarSource Analyzers Commons</name>
   <description>Logic useful for a language plugin</description>
 
   <dependencies>

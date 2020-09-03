@@ -1,4 +1,4 @@
-SonarQube Analyzer XML Parsing Commons
+SonarSource Analyzer XML Parsing Commons
 =========================
 
 * [Parsing XML](#parsing)

@@ -11,7 +11,7 @@
   </parent>
 
   <artifactId>sonar-analyzer-test-commons</artifactId>
-  <name>SonarQube Analyzer Test Commons</name>
+  <name>SonarSource Analyzers Test Commons</name>
   <description>Logic useful to test a language analyzer</description>
 
   <dependencies>
