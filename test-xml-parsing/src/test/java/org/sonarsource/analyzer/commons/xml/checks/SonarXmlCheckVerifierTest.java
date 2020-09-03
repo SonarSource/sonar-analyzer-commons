@@ -20,12 +20,11 @@
 package org.sonarsource.analyzer.commons.xml.checks;
 
 import org.assertj.core.util.Lists;
-import org.junit.Assert;
 import org.junit.Test;
 import org.sonarsource.analyzer.commons.xml.XmlFile;
 import org.w3c.dom.Element;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SonarXmlCheckVerifierTest {
 
@@ -40,56 +39,60 @@ public class SonarXmlCheckVerifierTest {
   public void missing_file() {
     SilentTestCheck check = new SilentTestCheck();
 
-    IllegalStateException expected = Assert.assertThrows(IllegalStateException.class, () -> SonarXmlCheckVerifier.verifyIssueOnFile("missingFile.xml", check, "expected"));
-    assertThat(expected)
+    assertThatThrownBy(() -> SonarXmlCheckVerifier.verifyIssueOnFile("missingFile.xml", check, "expected"))
+      .isInstanceOf(IllegalStateException.class)
       .hasMessageStartingWith("Unable to load content of file ")
       .hasMessageEndingWith("missingFile.xml");
-  }
-
-  @Test
-  public void issues_while_not_expected() {
-    TestCheck check = new TestCheck();
-
-    AssertionError expected = Assert.assertThrows(AssertionError.class, () -> SonarXmlCheckVerifier.verifyNoIssue("checkTestFile.xml", check));
-    assertThat(expected).hasMessage("Expected no issues, but got 3.");
   }
 
   @Test
   public void malformed_xml() {
     SilentTestCheck check = new SilentTestCheck();
 
-    IllegalStateException expected = Assert.assertThrows(IllegalStateException.class, () -> SonarXmlCheckVerifier.verifyIssueOnFile("malformedFile.xml", check, "expected"));
-    assertThat(expected)
+    assertThatThrownBy(() -> SonarXmlCheckVerifier.verifyIssueOnFile("malformedFile.xml", check, "expected"))
+      .isInstanceOf(IllegalStateException.class)
       .hasMessageStartingWith("Unable to scan xml file ")
       .hasMessageEndingWith("malformedFile.xml");
   }
 
   @Test
+  public void issues_while_not_expected() {
+    TestCheck check = new TestCheck();
+    assertThatThrownBy(() -> SonarXmlCheckVerifier.verifyNoIssue("checkTestFile.xml", check))
+      .isInstanceOf(AssertionError.class)
+      .hasMessage("Expected no issues, but got 3.");
+  }
+
+  @Test
   public void verifier_on_file_should_fail_if_no_issue() {
     SilentTestCheck silentTestCheck = new SilentTestCheck();
-    AssertionError expected = Assert.assertThrows(AssertionError.class, () -> SonarXmlCheckVerifier.verifyIssueOnFile("file.xml", silentTestCheck, "Test file level message"));
-    assertThat(expected).hasMessage("Expected a single issue to be reported, but got 0.");
+    assertThatThrownBy(() -> SonarXmlCheckVerifier.verifyIssueOnFile("file.xml", silentTestCheck, "Test file level message"))
+      .isInstanceOf(AssertionError.class)
+      .hasMessage("Expected a single issue to be reported, but got 0.");
   }
 
   @Test
   public void verifier_on_file_should_fail_if_wrong_message() {
     FileTestCheck fileTestCheck = new FileTestCheck();
-    AssertionError expected = Assert.assertThrows(AssertionError.class, () -> SonarXmlCheckVerifier.verifyIssueOnFile("file.xml", fileTestCheck, "wrong"));
-    assertThat(expected).hasMessage("Expected issue message to be \"wrong\", but got \"Test file level message\".");
+    assertThatThrownBy(() -> SonarXmlCheckVerifier.verifyIssueOnFile("file.xml", fileTestCheck, "wrong"))
+      .isInstanceOf(AssertionError.class)
+      .hasMessage("Expected issue message to be \"wrong\", but got \"Test file level message\".");
   }
 
   @Test
   public void verifier_on_file_should_fail_if_wrong_number_of_secondaries() {
     FileTestCheck fileTestCheck = new FileTestCheck();
-    AssertionError expected = Assert.assertThrows(AssertionError.class, () -> SonarXmlCheckVerifier.verifyIssueOnFile("file.xml", fileTestCheck, "Test file level message", 1));
-    assertThat(expected).hasMessage("Expected 1 secondary locations, but got 2.");
+    assertThatThrownBy(() -> SonarXmlCheckVerifier.verifyIssueOnFile("file.xml", fileTestCheck, "Test file level message", 1))
+      .isInstanceOf(AssertionError.class)
+      .hasMessage("Expected 1 secondary locations, but got 2.");
   }
 
   @Test
   public void verifier_on_file_should_fail_if_wrong_secondaries() {
     FileTestCheck fileTestCheck = new FileTestCheck();
-    AssertionError expected = Assert.assertThrows(AssertionError.class, () -> SonarXmlCheckVerifier.verifyIssueOnFile("file.xml", fileTestCheck, "Test file level message", 2, 3));
-    assertThat(expected).hasMessage("Expected secondary locations to be [2,3], but got [1,2].");
+    assertThatThrownBy(() -> SonarXmlCheckVerifier.verifyIssueOnFile("file.xml", fileTestCheck, "Test file level message", 2, 3))
+      .isInstanceOf(AssertionError.class)
+      .hasMessage("Expected secondary locations to be [2, 3], but got [1, 2].");
   }
 
   @Test
@@ -100,8 +103,9 @@ public class SonarXmlCheckVerifierTest {
         reportIssue(file.getDocument().getFirstChild(), "expected");
       }
     };
-    AssertionError expected = Assert.assertThrows(AssertionError.class, () -> SonarXmlCheckVerifier.verifyIssueOnFile("file.xml", issueOnlineInsteadOfOnFile, "expected"));
-    assertThat(expected).hasMessage("Expected issue location to be null, but issue is reported on line 1.");
+    assertThatThrownBy(() -> SonarXmlCheckVerifier.verifyIssueOnFile("file.xml", issueOnlineInsteadOfOnFile, "expected"))
+      .isInstanceOf(AssertionError.class)
+      .hasMessage("Expected issue location to be null, but issue is reported on line 1.");
   }
 
   private static class TestCheck extends SonarXmlCheck {

@@ -28,13 +28,12 @@
     <dependency>
       <groupId>org.sonarsource.analyzer-commons</groupId>
       <artifactId>sonar-xml-parsing</artifactId>
-      <scope>provided</scope>
       <version>${project.version}</version>
     </dependency>
+
     <dependency>
       <groupId>org.sonarsource.analyzer-commons</groupId>
       <artifactId>sonar-analyzer-test-commons</artifactId>
-      <scope>provided</scope>
       <version>${project.version}</version>
     </dependency>
 
