@@ -106,7 +106,7 @@ public class XmlParserTest {
       Node comment = fooChildren.item(1);
       assertRange(comment, Location.NODE, 3, 2, 5, 5);
 
-      Node bar = (Node) fooChildren.item(3);
+      Node bar = fooChildren.item(3);
       assertRange(bar, Location.NODE, 6, 2, 12, 4);
 
       Attr attr2 = (Attr) bar.getAttributes().getNamedItem("attr2");
@@ -193,6 +193,64 @@ public class XmlParserTest {
   @Test(expected = ParseException.class)
   public void testFailingNonBuiltinEntity() throws Exception {
     XmlFile.create("<a>&ouml;</a>");
+  }
+
+  /**
+   * In the following situations, the CDATA is missing from the parsed XML document
+   * For reference: https://github.com/SonarSource/sonar-analyzer-commons/issues/88
+   */
+  @Test
+  public void testBuggyEmptyCDATA() throws Exception {
+    Document document = XmlFile.create(""
+      /* _1 */ + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+      /* _2 */ + "<a>\n"
+      /* _3 */ + "    <b>\n"
+      /* _4 */ + "        <![CDATA[]]>\n"
+      /* _5 */ + "    </b>\n"
+      /* _6 */ + "</a>")
+      .getDocument();
+
+    Node a = document.getElementsByTagName("a").item(0);
+    assertRange(a, Location.NODE, 2, 0, 6, 4);
+    Node b = document.getElementsByTagName("b").item(0);
+    assertRange(b, Location.NODE, 3, 4, 5, 8);
+
+    // Expecting a text range, the empty CDATA and another text range
+    assertThat(b.getChildNodes().getLength()).isOne();
+    Node childOfB = b.getFirstChild();
+    assertThat(childOfB.getNodeType()).isEqualTo(Document.TEXT_NODE);
+    // Starts after the missing CDATA
+    assertRange(childOfB, Location.NODE, 4, 20, 5, 4);
+    assertThat(childOfB.getNextSibling()).isNull();
+  }
+
+  /**
+   * In the following situations, the CDATA is visible in the parsed XML document
+   * For reference: https://github.com/SonarSource/sonar-analyzer-commons/issues/88
+   */
+  @Test
+  public void testWorkingEmptyCDATA() throws Exception {
+    Document document = XmlFile.create(""
+      /* _1 */ + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+      /* _2 */ + "<a>\n"
+      /* _3 */ + "    <b><![CDATA[]]>\n"
+      /* _4 */ + "        \n"
+      /* _5 */ + "    </b>\n"
+      /* _6 */ + "</a>")
+      .getDocument();
+
+    Node a = document.getElementsByTagName("a").item(0);
+    assertRange(a, Location.NODE, 2, 0, 6, 4);
+    Node b = document.getElementsByTagName("b").item(0);
+    assertRange(b, Location.NODE, 3, 4, 5, 8);
+
+    // Expecting the empty CDATA and another text range
+    assertThat(b.getChildNodes().getLength()).isOne();
+    Node childOfB = b.getFirstChild();
+    assertThat(childOfB.getNodeType()).isEqualTo(Document.TEXT_NODE);
+    // Location lost
+    assertNoData(childOfB, Location.START, Location.END, Location.NAME, Location.VALUE);
+    assertThat(childOfB.getNextSibling()).isNull();
   }
 
   @Test
@@ -531,6 +589,7 @@ public class XmlParserTest {
 
   private void assertRange(Node node, Location locationKind, int startLine, int startColumn, int endLine, int endColumn) {
     XmlTextRange textRange = ((XmlTextRange) node.getUserData(locationKind.name()));
+    assertThat(textRange).isNotNull();
     assertRange(textRange, startLine, startColumn, endLine, endColumn);
   }
 

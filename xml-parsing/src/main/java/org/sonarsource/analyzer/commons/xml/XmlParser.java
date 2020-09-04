@@ -205,7 +205,13 @@ class XmlParser {
   private void setNextNode() {
     if (currentNodeIsClosed) {
       // when currentNode (last processed node) is closed, it's impossible that we visit its child
-      currentNode = currentNode.getNextSibling();
+      Node nextSibling = currentNode.getNextSibling();
+      if (nextSibling == null) {
+        // Observed on empty CDATA, fallback on parent
+        currentNode = currentNode.getParentNode();
+      } else {
+        currentNode = nextSibling;
+      }
     } else {
       currentNode = currentNode.getFirstChild();
     }
