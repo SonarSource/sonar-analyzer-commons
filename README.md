@@ -1,5 +1,7 @@
 # SonarSource Analyzers Commons Libraries
 
+[![Build Status](https://api.cirrus-ci.com/github/SonarSource/sonar-analyzer-commons.svg?branch=master)](https://cirrus-ci.com/github/SonarSource/sonar-analyzer-commons) [![Quality Gate Status](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.analyzer-commons%3Asonar-analyzer-commons-parent&metric=alert_status)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.analyzer-commons%3Asonar-analyzer-commons-parent) [![Coverage](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.analyzer-commons%3Asonar-analyzer-commons-parent&metric=coverage)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.analyzer-commons%3Asonar-analyzer-commons-parent)
+
 ## Modules
 
 * [commons](commons) Logic useful for a language plugin
