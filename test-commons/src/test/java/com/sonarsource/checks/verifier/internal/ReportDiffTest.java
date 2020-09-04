@@ -30,7 +30,7 @@ public class ReportDiffTest {
     String a = "a\n" +
       "b\n";
     String diff = ReportDiff.diff(a, a);
-    assertThat(diff).isEqualTo("");
+    assertThat(diff).isEmpty();
   }
 
   @Test

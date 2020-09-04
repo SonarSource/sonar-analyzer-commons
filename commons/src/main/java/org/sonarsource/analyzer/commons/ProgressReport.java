@@ -109,9 +109,9 @@ public class ProgressReport implements Runnable {
     }
   }
 
-  private static int size(Iterable iterable) {
+  private static int size(Iterable<String> iterable) {
     int count = 0;
-    Iterator iterator = iterable.iterator();
+    Iterator<String> iterator = iterable.iterator();
     while (iterator.hasNext()) {
       iterator.next();
       count++;

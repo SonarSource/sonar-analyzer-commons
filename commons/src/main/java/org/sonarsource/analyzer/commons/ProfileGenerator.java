@@ -111,7 +111,7 @@ public class ProfileGenerator {
     int processed = 0;
     int page = 1;
     do {
-      Map response = queryRules(serverUrl, language, repository, page);
+      Map<String, Object> response = queryRules(serverUrl, language, repository, page);
       total = (Long) response.get("total");
       @SuppressWarnings("unchecked")
       List<Map<String, String>> jsonRules = (List<Map<String, String>>) response.get("rules");
@@ -126,7 +126,7 @@ public class ProfileGenerator {
     return ruleKeys;
   }
 
-  private static Map queryRules(String serverUrl, String language, String repository, int page) throws IOException {
+  private static Map<String, Object> queryRules(String serverUrl, String language, String repository, int page) throws IOException {
     Map<String, Object> queryParams = new HashMap<>();
     queryParams.put("languages", language);
     queryParams.put("repositories", repository);

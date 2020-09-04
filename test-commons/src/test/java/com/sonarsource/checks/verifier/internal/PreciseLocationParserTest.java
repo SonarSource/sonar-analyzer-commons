@@ -51,13 +51,13 @@ public class PreciseLocationParserTest {
     List<PreciseLocation> locations = parse(42, 10, "  ^^^");
     assertThat(locations).hasSize(1);
     PrimaryLocation location = (PrimaryLocation) locations.get(0);
-    assertThat(location.range.toString()).isEqualTo("(41:12,41:14)");
+    assertThat(location.range).hasToString("(41:12,41:14)");
     assertThat(location.expectedAdditionalCount).isNull();
 
     locations = parse(2, 1, "^ 5");
     assertThat(locations).hasSize(1);
     location = (PrimaryLocation) locations.get(0);
-    assertThat(location.range.toString()).isEqualTo("(1:1,1:1)");
+    assertThat(location.range).hasToString("(1:1,1:1)");
     assertThat(location.expectedAdditionalCount).isEqualTo(5);
   }
 
@@ -76,13 +76,13 @@ public class PreciseLocationParserTest {
     List<PreciseLocation> locations = parse(42, 2, "    ^^< {{msg1}} ^^^^> 5 {{msg2}}");
     assertThat(locations).hasSize(2);
     SecondaryLocation location = (SecondaryLocation) locations.get(0);
-    assertThat(location.range.toString()).isEqualTo("(41:6,41:7)");
+    assertThat(location.range).hasToString("(41:6,41:7)");
     assertThat(location.message).isEqualTo("msg1");
     assertThat(location.index).isNull();
     assertThat(location.primaryIsBefore).isTrue();
 
     location = (SecondaryLocation) locations.get(1);
-    assertThat(location.range.toString()).isEqualTo("(41:19,41:22)");
+    assertThat(location.range).hasToString("(41:19,41:22)");
     assertThat(location.message).isEqualTo("msg2");
     assertThat(location.index).isEqualTo(5);
     assertThat(location.primaryIsBefore).isFalse();
@@ -93,14 +93,14 @@ public class PreciseLocationParserTest {
     List<PreciseLocation> locations = parse(42, 3, "^^< 1.2 ^^^^> 3.4 {{msg2}}");
     assertThat(locations).hasSize(2);
     FlowLocation location = (FlowLocation) locations.get(0);
-    assertThat(location.range.toString()).isEqualTo("(41:3,41:4)");
+    assertThat(location.range).hasToString("(41:3,41:4)");
     assertThat(location.message).isNull();
     assertThat(location.flowIndex).isEqualTo(1);
     assertThat(location.indexInTheFlow).isEqualTo(2);
     assertThat(location.primaryIsBefore).isTrue();
 
     location = (FlowLocation) locations.get(1);
-    assertThat(location.range.toString()).isEqualTo("(41:11,41:14)");
+    assertThat(location.range).hasToString("(41:11,41:14)");
     assertThat(location.message).isEqualTo("msg2");
     assertThat(location.flowIndex).isEqualTo(3);
     assertThat(location.indexInTheFlow).isEqualTo(4);
@@ -112,13 +112,13 @@ public class PreciseLocationParserTest {
     List<PreciseLocation> locations = parse(42, 3, "  ^^^@10  ^^^@-1<  ^^^@+2<1.1");
     assertThat(locations).hasSize(3);
     PrimaryLocation location = (PrimaryLocation) locations.get(0);
-    assertThat(location.range.toString()).isEqualTo("(10:5,10:7)");
+    assertThat(location.range).hasToString("(10:5,10:7)");
 
     SecondaryLocation secondary = (SecondaryLocation) locations.get(1);
-    assertThat(secondary.range.toString()).isEqualTo("(40:13,40:15)");
+    assertThat(secondary.range).hasToString("(40:13,40:15)");
 
     FlowLocation flow = (FlowLocation) locations.get(2);
-    assertThat(flow.range.toString()).isEqualTo("(43:22,43:24)");
+    assertThat(flow.range).hasToString("(43:22,43:24)");
   }
 
   @Test
@@ -126,10 +126,10 @@ public class PreciseLocationParserTest {
     List<PreciseLocation> locations = parse(42, 3, "  ^[sc=1;el=+1;ec=5]@-1 ^[el=+2;ec=5]<");
     assertThat(locations).hasSize(2);
     PrimaryLocation location = (PrimaryLocation) locations.get(0);
-    assertThat(location.range.toString()).isEqualTo("(40:1,41:5)");
+    assertThat(location.range).hasToString("(40:1,41:5)");
 
     SecondaryLocation secondary = (SecondaryLocation) locations.get(1);
-    assertThat(secondary.range.toString()).isEqualTo("(41:27,43:5)");
+    assertThat(secondary.range).hasToString("(41:27,43:5)");
   }
 
   @Test

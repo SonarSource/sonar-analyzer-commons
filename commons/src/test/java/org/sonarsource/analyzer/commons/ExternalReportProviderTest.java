@@ -40,7 +40,7 @@ public class ExternalReportProviderTest {
 
     List<File> reportFiles = ExternalReportProvider.getReportFiles(context, EXTERNAL_REPORTS_PROPERTY);
 
-    assertThat(reportFiles).hasSize(0);
+    assertThat(reportFiles).isEmpty();
     assertThat(logTester.logs()).isEmpty();
   }
 

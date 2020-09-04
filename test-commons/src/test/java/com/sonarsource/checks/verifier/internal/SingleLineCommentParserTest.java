@@ -42,10 +42,10 @@ public class SingleLineCommentParserTest {
       "// Comment4"));
 
     assertThat(comments).hasSize(4);
-    assertThat(comments.get(0).toString()).isEqualTo("(file.js,1,5,7, Comment1)");
-    assertThat(comments.get(1).toString()).isEqualTo("(file.js,3,1,3, Comment2)");
-    assertThat(comments.get(2).toString()).isEqualTo("(file.js,4,5,7, Comment3)");
-    assertThat(comments.get(3).toString()).isEqualTo("(file.js,5,1,3, Comment4)");
+    assertThat(comments.get(0)).hasToString("(file.js,1,5,7, Comment1)");
+    assertThat(comments.get(1)).hasToString("(file.js,3,1,3, Comment2)");
+    assertThat(comments.get(2)).hasToString("(file.js,4,5,7, Comment3)");
+    assertThat(comments.get(3)).hasToString("(file.js,5,1,3, Comment4)");
   }
 
   @Test

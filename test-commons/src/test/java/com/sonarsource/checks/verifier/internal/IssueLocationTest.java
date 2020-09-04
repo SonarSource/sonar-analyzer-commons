@@ -29,14 +29,14 @@ public class IssueLocationTest {
   public void file() throws Exception {
     IssueLocation location = new IssueLocation.File(Paths.get("file.js"));
     assertThat(location.getType()).isEqualTo(IssueLocation.Type.FILE);
-    assertThat(location.getSourcePath().toString()).isEqualTo("file.js");
+    assertThat(location.getSourcePath()).hasToString("file.js");
   }
 
   @Test
   public void line() throws Exception {
     IssueLocation.Line location = new IssueLocation.Line(Paths.get("file.js"), 42);
     assertThat(location.getType()).isEqualTo(IssueLocation.Type.LINE);
-    assertThat(location.getSourcePath().toString()).isEqualTo("file.js");
+    assertThat(location.getSourcePath()).hasToString("file.js");
     assertThat(location.getLine()).isEqualTo(42);
   }
 
@@ -44,7 +44,7 @@ public class IssueLocationTest {
   public void range() throws Exception {
     IssueLocation.Range location = new IssueLocation.Range(Paths.get("file.js"), 42, 12, 43, 21);
     assertThat(location.getType()).isEqualTo(IssueLocation.Type.RANGE);
-    assertThat(location.getSourcePath().toString()).isEqualTo("file.js");
+    assertThat(location.getSourcePath()).hasToString("file.js");
     assertThat(location.getLine()).isEqualTo(42);
     assertThat(location.getColumn()).isEqualTo(12);
     assertThat(location.getEndLine()).isEqualTo(43);

@@ -1,5 +1,5 @@
 /*
- * SonarSource Analyzers Recognizers
+ * SonarSource Analyzers Commons
  * Copyright (C) 2009-2020 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
@@ -17,22 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.recognizers;
+@ParametersAreNonnullByDefault
+package org.sonarsource.analyzer.commons.annotations;
 
-import org.junit.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-public class EndWithDetectorTest {
-
-  @Test
-  public void scan() {
-    EndWithDetector detector = new EndWithDetector(0.3, '}');
-    assertThat(detector.scan(" return true; }")).isOne();
-    assertThat(detector.scan("} catch(NullPointerException e) {")).isZero();
-    assertThat(detector.scan("} ")).isOne();
-    assertThat(detector.scan("}*")).isOne();
-    assertThat(detector.scan("}/")).isOne();
-    assertThat(detector.scan("")).isZero();
-  }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

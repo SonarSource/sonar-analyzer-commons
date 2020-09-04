@@ -85,7 +85,7 @@ public class PerLineLocationWriterTest {
       .map(location->location.range)
       .orElse(null);
     writer.write(out, primaryRange);
-    assertThat(out.toString()).isEqualTo(expected);
+    assertThat(out).hasToString(expected);
   }
 
 }

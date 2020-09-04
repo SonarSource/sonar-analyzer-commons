@@ -58,9 +58,10 @@ public class NoncompliantCommentParserTest {
   public void params() throws Exception {
     LineIssues issues = parse(file, 1, " Noncompliant [[param1=2;param2]]");
     assertThat(issues).isNotNull();
-    assertThat(issues.params.keySet()).containsExactly("param1", "param2");
-    assertThat(issues.params.get("param1")).isEqualTo("2");
-    assertThat(issues.params.get("param2")).isEqualTo("");
+    assertThat(issues.params)
+      .containsOnlyKeys("param1", "param2")
+      .containsEntry("param1", "2")
+      .containsEntry("param2", "");
   }
 
   @Test
@@ -76,10 +77,9 @@ public class NoncompliantCommentParserTest {
   public void messages() throws Exception {
     LineIssues issues = parse(file, 1, " Noncompliant {{msg1}} {{msg2}} {{msg3}}");
     assertThat(issues).isNotNull();
-    assertThat(issues.messages).hasSize(3);
-    assertThat(issues.messages.get(0)).isEqualTo("msg1");
-    assertThat(issues.messages.get(1)).isEqualTo("msg2");
-    assertThat(issues.messages.get(2)).isEqualTo("msg3");
+    assertThat(issues.messages)
+      .hasSize(3)
+      .containsExactly("msg1", "msg2", "msg3");
   }
 
   @Test

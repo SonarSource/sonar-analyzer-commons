@@ -28,7 +28,7 @@ public class CamelCaseDetectorTest {
   @Test
   public void scan() {
     CamelCaseDetector detector = new CamelCaseDetector(0.3);
-    assertThat(detector.scan("isDog() or isCat()")).isEqualTo(1);
-    assertThat(detector.scan("String name;")).isEqualTo(0);
+    assertThat(detector.scan("isDog() or isCat()")).isOne();
+    assertThat(detector.scan("String name;")).isZero();
   }
 }

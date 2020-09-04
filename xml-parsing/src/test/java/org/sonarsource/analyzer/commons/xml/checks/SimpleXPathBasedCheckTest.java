@@ -112,7 +112,7 @@ public class SimpleXPathBasedCheckTest {
 
         NodeList empty = evaluate(ds, node);
         assertThat(empty).isNotNull();
-        assertThat(empty.getLength()).isEqualTo(0);
+        assertThat(empty.getLength()).isZero();
         List<Node> emptyAsList = evaluateAsList(ds, node);
         assertThat(emptyAsList).isEmpty();
 
