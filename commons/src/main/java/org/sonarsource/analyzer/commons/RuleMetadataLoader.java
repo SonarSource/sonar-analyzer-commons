@@ -65,7 +65,7 @@ public class RuleMetadataLoader {
     this.activatedByDefault = activatedByDefault;
   }
 
-  public void addRulesByAnnotatedClass(NewRepository repository, List<Class> ruleClasses) {
+  public void addRulesByAnnotatedClass(NewRepository repository, List<Class<?>> ruleClasses) {
     for (Class<?> ruleClass : ruleClasses) {
       addRuleByAnnotatedClass(repository, ruleClass);
     }

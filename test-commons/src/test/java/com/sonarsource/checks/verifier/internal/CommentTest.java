@@ -19,7 +19,6 @@
  */
 package com.sonarsource.checks.verifier.internal;
 
-import com.sonarsource.checks.verifier.internal.Comment;
 import java.nio.file.Paths;
 import org.junit.Test;
 
@@ -30,10 +29,10 @@ public class CommentTest {
   public void constructor() throws Exception {
     Comment comment = new Comment(Paths.get("dir/file.js"),1, 2, 3, "Error");
     assertThat(comment.path).isEqualTo(Paths.get("dir/file.js"));
-    assertThat(comment.line).isEqualTo(1);
+    assertThat(comment.line).isOne();
     assertThat(comment.column).isEqualTo(2);
     assertThat(comment.contentColumn).isEqualTo(3);
     assertThat(comment.content).isEqualTo("Error");
-    assertThat(comment.toString()).isEqualTo("(file.js,1,2,3,Error)");
+    assertThat(comment).hasToString("(file.js,1,2,3,Error)");
   }
 }

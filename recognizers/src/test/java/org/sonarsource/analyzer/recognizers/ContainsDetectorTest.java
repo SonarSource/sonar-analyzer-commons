@@ -29,6 +29,6 @@ public class ContainsDetectorTest {
   public void scan() {
     ContainsDetector detector = new ContainsDetector(0.3, "++", "for(");
     assertThat(detector.scan("for (int i =0; i++; i<4) {")).isEqualTo(2);
-    assertThat(detector.scan("String name;")).isEqualTo(0);
+    assertThat(detector.scan("String name;")).isZero();
   }
 }

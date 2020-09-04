@@ -19,7 +19,6 @@
  */
 package com.sonarsource.checks.verifier.internal;
 
-import com.sonarsource.checks.verifier.internal.UnderlinedRange;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +28,7 @@ public class UnderlinedRangeTest {
   @Test
   public void constructor() {
     UnderlinedRange range = new UnderlinedRange(1, 2, 3, 4);
-    assertThat(range.toString()).isEqualTo("(1:2,3:4)");
+    assertThat(range).hasToString("(1:2,3:4)");
   }
 
   @Test
@@ -39,31 +38,42 @@ public class UnderlinedRangeTest {
 
     a = new UnderlinedRange(100, 5, 110, 10);
     b = new UnderlinedRange(100, 5, 110, 10);
-    assertThat(a.compareTo(b)).isEqualTo(0);
-    assertThat(b.compareTo(a)).isEqualTo(0);
-    assertThat(a.equals(b)).isTrue();
-    assertThat(b.equals(a)).isTrue();
-    assertThat(a.hashCode()).isEqualTo(b.hashCode());
-    assertThat(a.equals(new Object())).isFalse();
+    assertThat(a)
+      .isEqualTo(b)
+      .isNotEqualTo(new Object())
+      .isEqualByComparingTo(b)
+      .hasSameHashCodeAs(b);
+    assertThat(b)
+      .isEqualTo(a)
+      .isEqualByComparingTo(a);
 
     b = new UnderlinedRange(101, 5, 110, 10);
-    assertThat(a.compareTo(b)).isEqualTo(-1);
-    assertThat(b.compareTo(a)).isEqualTo(+1);
-    assertThat(a.equals(b)).isFalse();
-    assertThat(b.equals(a)).isFalse();
-    assertThat(a.hashCode()).isNotEqualTo(b.hashCode());
+    assertThat(a)
+      .isLessThan(b)
+      .isNotEqualTo(b);
+    assertThat(b)
+      .isGreaterThan(a)
+      .isNotEqualTo(a);
+    assertThat(a.hashCode())
+      .isNotEqualTo(b.hashCode());
 
     b = new UnderlinedRange(100, 7, 110, 10);
-    assertThat(a.compareTo(b)).isEqualTo(-1);
-    assertThat(b.compareTo(a)).isEqualTo(+1);
+    assertThat(a)
+      .isLessThan(b);
+    assertThat(b)
+      .isGreaterThan(a);
 
     b = new UnderlinedRange(100, 5, 120, 10);
-    assertThat(a.compareTo(b)).isEqualTo(-1);
-    assertThat(b.compareTo(a)).isEqualTo(+1);
+    assertThat(a)
+      .isLessThan(b);
+    assertThat(b)
+      .isGreaterThan(a);
 
     b = new UnderlinedRange(100, 5, 110, 15);
-    assertThat(a.compareTo(b)).isEqualTo(-1);
-    assertThat(b.compareTo(a)).isEqualTo(+1);
+    assertThat(a)
+      .isLessThan(b);
+    assertThat(b)
+      .isGreaterThan(a);
   }
 
   @Test
@@ -107,7 +117,7 @@ public class UnderlinedRangeTest {
     StringBuilder line = new StringBuilder();
     line.append(exitingLn);
     range.underline(indent, line);
-    assertThat(line.toString()).isEqualTo(expected);
+    assertThat(line).hasToString(expected);
   }
 
   @Test(expected = IndexOutOfBoundsException.class)

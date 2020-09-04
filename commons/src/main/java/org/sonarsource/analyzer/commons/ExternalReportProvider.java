@@ -30,6 +30,9 @@ import org.sonar.api.utils.log.Loggers;
 
 public class ExternalReportProvider {
 
+  private ExternalReportProvider() {
+  }
+
   private static final Logger LOG = Loggers.get(ExternalReportProvider.class);
 
   public static List<File> getReportFiles(SensorContext context, String externalReportsProperty) {

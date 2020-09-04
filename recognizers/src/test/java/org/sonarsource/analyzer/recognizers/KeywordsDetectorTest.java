@@ -29,9 +29,9 @@ public class KeywordsDetectorTest {
   public void scan() {
     KeywordsDetector detector = new KeywordsDetector(0.3, "public", "static");
     assertThat(detector.scan("public static void main")).isEqualTo(2);
-    assertThat(detector.scan("private(static} String name;")).isEqualTo(1);
-    assertThat(detector.scan("publicstatic")).isEqualTo(0);
-    assertThat(detector.scan("i++;")).isEqualTo(0);
+    assertThat(detector.scan("private(static} String name;")).isOne();
+    assertThat(detector.scan("publicstatic")).isZero();
+    assertThat(detector.scan("i++;")).isZero();
     detector = new KeywordsDetector(0.3, true, "PUBLIC");
     assertThat(detector.scan("Public static pubLIC")).isEqualTo(2);
   }
