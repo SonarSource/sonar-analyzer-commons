@@ -21,6 +21,7 @@ package org.sonarsource.analyzer.commons;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -64,10 +65,6 @@ public class ProgressReportTest {
 
     report.stop();
 
-    // Waits for the thread to die
-    // Note: We cannot simply wait for a message here, because it could either be a progress or a stop one
-    report.join();
-
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
     verify(logger, atLeast(3)).info(captor.capture());
 
@@ -85,13 +82,49 @@ public class ProgressReportTest {
     Logger logger = mock(Logger.class);
 
     ProgressReport report = new ProgressReport(ProgressReport.class.getName(), 100, logger, "analyzed");
-    report.start(Arrays.asList("foo.java", "foo.java"));
+    report.start(Arrays.asList("foo.java"));
 
     // Wait for start message
     waitForMessage(logger);
 
     report.cancel();
-    report.join();
+  }
+
+  @Test(timeout = 5000)
+  public void testStopPreserveTheInterruptedFlag() throws InterruptedException {
+    Logger logger = mock(Logger.class);
+
+    ProgressReport report = new ProgressReport(ProgressReport.class.getName(), 100, logger, "analyzed");
+    report.start(Arrays.asList("foo.java"));
+
+    // Wait for start message
+    waitForMessage(logger);
+
+    AtomicBoolean interruptFlagPreserved = new AtomicBoolean(false);
+
+    Thread t = new Thread(() -> {
+      try {
+        Thread.sleep(10000);
+      } catch (InterruptedException e1) {
+        Thread.currentThread().interrupt();
+      }
+      report.stop();
+      try {
+        Thread.sleep(10000);
+      } catch (InterruptedException e) {
+        interruptFlagPreserved.set(true);
+      }
+    });
+    t.start();
+    t.interrupt();
+    t.join(1000);
+    assertThat(interruptFlagPreserved.get()).isTrue();
+
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+    verify(logger, atLeast(1)).info(captor.capture());
+
+    List<String> messages = captor.getAllValues();
+    assertThat(messages).contains("1/1" + " source files have been analyzed");
   }
 
   private static void waitForMessage(Logger logger) throws InterruptedException {
@@ -101,4 +134,3 @@ public class ProgressReportTest {
   }
 
 }
-
