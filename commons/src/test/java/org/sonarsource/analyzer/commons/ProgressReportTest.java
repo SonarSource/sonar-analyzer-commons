@@ -50,12 +50,12 @@ public class ProgressReportTest {
   }
 
   @Test(timeout = 5000)
-  public void test() throws Exception {
+  public void testPlural() throws Exception {
     Logger logger = mock(Logger.class);
 
     ProgressReport report = new ProgressReport(ProgressReportTest.class.getName(), 100, logger, "analyzed");
 
-    report.start(Arrays.asList("foo.java", "foo.java"));
+    report.start(Arrays.asList("foo1.java", "foo2.java"));
 
     // Wait for start message
     waitForMessage(logger);
@@ -72,9 +72,37 @@ public class ProgressReportTest {
     assertThat(messages.size()).isGreaterThanOrEqualTo(3);
     assertThat(messages.get(0)).isEqualTo("2 source files to be analyzed");
     for (int i = 1; i < messages.size() - 1; i++) {
-      assertThat(messages.get(i)).isEqualTo("0/2 files analyzed, current file: foo.java");
+      assertThat(messages.get(i)).isEqualTo("0/2 files analyzed, current file: foo1.java");
     }
     assertThat(messages.get(messages.size() - 1)).isEqualTo("2/2" + " source files have been analyzed");
+  }
+
+  @Test(timeout = 5000)
+  public void testSingular() throws Exception {
+    Logger logger = mock(Logger.class);
+
+    ProgressReport report = new ProgressReport(ProgressReportTest.class.getName(), 100, logger, "analyzed");
+
+    report.start(Arrays.asList("foo.java"));
+
+    // Wait for start message
+    waitForMessage(logger);
+
+    // Wait for at least one progress message
+    waitForMessage(logger);
+
+    report.stop();
+
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+    verify(logger, atLeast(3)).info(captor.capture());
+
+    List<String> messages = captor.getAllValues();
+    assertThat(messages.size()).isGreaterThanOrEqualTo(3);
+    assertThat(messages.get(0)).isEqualTo("1 source file to be analyzed");
+    for (int i = 1; i < messages.size() - 1; i++) {
+      assertThat(messages.get(i)).isEqualTo("0/1 files analyzed, current file: foo.java");
+    }
+    assertThat(messages.get(messages.size() - 1)).isEqualTo("1/1" + " source file has been analyzed");
   }
 
   @Test(timeout = 5000)
@@ -124,7 +152,7 @@ public class ProgressReportTest {
     verify(logger, atLeast(1)).info(captor.capture());
 
     List<String> messages = captor.getAllValues();
-    assertThat(messages).contains("1/1" + " source files have been analyzed");
+    assertThat(messages).contains("1/1" + " source file has been analyzed");
   }
 
   private static void waitForMessage(Logger logger) throws InterruptedException {
