@@ -54,21 +54,18 @@ public class ProgressReport implements Runnable {
 
   @Override
   public void run() {
+    log(count + " source files to be " + adjective);
     while (!Thread.interrupted()) {
       try {
         Thread.sleep(period);
-        synchronized (this) {
-          log(currentFileNumber + "/" + count + " files " + adjective + ", current file: " + currentFilename);
-        }
+        log(currentFileNumber + "/" + count + " files " + adjective + ", current file: " + currentFilename);
       } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
+        thread.interrupt();
         break;
       }
     }
-    synchronized (this) {
-      if (success) {
-        log(count + "/" + count + " source files have been " + adjective);
-      }
+    if (success) {
+      log(count + "/" + count + " source files have been " + adjective);
     }
   }
 
@@ -78,7 +75,6 @@ public class ProgressReport implements Runnable {
 
     nextFile();
 
-    log(count + " source files to be " + adjective);
     thread.start();
   }
 
@@ -92,14 +88,20 @@ public class ProgressReport implements Runnable {
   public synchronized void stop() {
     success = true;
     thread.interrupt();
+    join();
   }
 
   public synchronized void cancel() {
     thread.interrupt();
+    join();
   }
 
-  public void join() throws InterruptedException {
-    thread.join();
+  private void join() {
+    try {
+      thread.join();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
   }
 
   private void log(String message) {
@@ -117,7 +119,7 @@ public class ProgressReport implements Runnable {
       count++;
     }
 
-    return  count;
+    return count;
   }
 
 }
