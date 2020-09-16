@@ -20,6 +20,7 @@
 package org.sonarsource.analyzer.commons;
 
 import java.util.Iterator;
+import java.util.stream.StreamSupport;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 
@@ -27,8 +28,8 @@ public class ProgressReport implements Runnable {
 
   private final long period;
   private final Logger logger;
-  private int count;
-  private int currentFileNumber = -1;
+  private long count;
+  private long currentFileNumber = -1;
   private String currentFilename;
   private Iterator<String> it;
   private final Thread thread;
@@ -54,19 +55,33 @@ public class ProgressReport implements Runnable {
 
   @Override
   public void run() {
-    log(count + " source files to be " + adjective);
+    log(count + " source " + pluralizeFile(count) + " to be " + adjective);
     while (!Thread.interrupted()) {
       try {
         Thread.sleep(period);
-        log(currentFileNumber + "/" + count + " files " + adjective + ", current file: " + currentFilename);
+        log(currentFileNumber + "/" + count + " " + pluralizeFile(currentFileNumber) + " " + adjective + ", current file: " + currentFilename);
       } catch (InterruptedException e) {
         thread.interrupt();
         break;
       }
     }
     if (success) {
-      log(count + "/" + count + " source files have been " + adjective);
+      log(count + "/" + count + " source " + pluralizeFile(count) + " " + pluralizeHas(count) + " been " + adjective);
     }
+  }
+
+  private static String pluralizeFile(long count) {
+    if (count == 1L) {
+      return "file";
+    }
+    return "files";
+  }
+
+  private static String pluralizeHas(long count) {
+    if (count == 1L) {
+      return "has";
+    }
+    return "have";
   }
 
   public synchronized void start(Iterable<String> filenames) {
@@ -111,15 +126,8 @@ public class ProgressReport implements Runnable {
     }
   }
 
-  private static int size(Iterable<String> iterable) {
-    int count = 0;
-    Iterator<String> iterator = iterable.iterator();
-    while (iterator.hasNext()) {
-      iterator.next();
-      count++;
-    }
-
-    return count;
+  private static long size(Iterable<String> iterable) {
+    return StreamSupport.stream(iterable.spliterator(), false).count();
   }
 
 }
