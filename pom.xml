@@ -76,7 +76,7 @@
     <version.assertj>3.17.1</version.assertj>
     <version.jsr305>3.0.2</version.jsr305>
     <version.mockito>3.5.7</version.mockito>
-    <version.junit>4.13</version.junit>
+    <version.junit>4.13.1</version.junit>
     <!-- used for deployment to SonarSource Artifactory -->
     <gitRepositoryName>sonar-analyzer-commons</gitRepositoryName>
     <maven.compiler.release>8</maven.compiler.release>
