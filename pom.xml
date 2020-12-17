@@ -61,6 +61,7 @@
     <module>test-commons</module>
     <module>xml-parsing</module>
     <module>test-xml-parsing</module>
+    <module>test-reports-parser</module>
   </modules>
 
   <scm>
