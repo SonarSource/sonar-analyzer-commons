@@ -8,7 +8,8 @@ data class UnitTestResult(
     var status: String? = null,
     var stackTrace: String? = null,
     var message: String? = null,
-    var durationMilliseconds: Long = 0L) {
+    var durationMilliseconds: Long = 0L
+) {
 
     fun isErrorOrFailure(): Boolean = STATUS_ERROR == status || STATUS_FAILURE == status
 
