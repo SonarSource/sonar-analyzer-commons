@@ -50,7 +50,7 @@ class UnitTestIndexTest {
         assertThat(report.failures).isEqualTo(1)
         assertThat(report.errors).isEqualTo(2)
         assertThat(report.skipped).isZero
-        assertThat(report.results.size).isEqualTo(4)
+        assertThat(report.results().size).isEqualTo(4)
         assertThat(report.durationMilliseconds).isEqualTo(500L + 200L + 1000L + 350L)
     }
 
@@ -67,7 +67,7 @@ class UnitTestIndexTest {
         assertThat(report.failures).isZero
         assertThat(report.errors).isEqualTo(1)
         assertThat(report.skipped).isZero
-        assertThat(report.results.size).isEqualTo(2)
+        assertThat(report.results().size).isEqualTo(2)
         assertThat(report.durationMilliseconds).isEqualTo(500L + 200L)
     }
 

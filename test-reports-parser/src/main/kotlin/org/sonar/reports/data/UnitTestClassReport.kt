@@ -13,7 +13,9 @@ class UnitTestClassReport {
         private set
     var negativeTimeTestNumber = 0L
         private set
-    val results: MutableList<UnitTestResult> = mutableListOf()
+    private val results: MutableList<UnitTestResult> = mutableListOf()
+    
+    fun results() = results.toList()
 
     fun add(other: UnitTestClassReport): UnitTestClassReport {
         for (otherResult in other.results) {

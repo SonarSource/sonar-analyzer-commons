@@ -3,6 +3,7 @@ package org.sonar.reports.parser
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.sonar.reports.data.UnitTestIndex
 import org.sonar.reports.data.UnitTestResult
 import java.io.File
@@ -63,20 +64,34 @@ class UnitTestsStaxHandlerTest {
         val report = index["org.sonar.Foo"]!!
         Assertions.assertThat(report.errors).isEqualTo(1)
         Assertions.assertThat(report.failures).isEqualTo(1)
-        Assertions.assertThat(report.results.size).isEqualTo(2)
+        Assertions.assertThat(report.results().size).isEqualTo(2)
 
         // failure
-        val failure = report.results[0]
+        val failure = report.results()[0]
         Assertions.assertThat(failure.durationMilliseconds).isEqualTo(5L)
         Assertions.assertThat(failure.status).isEqualTo(UnitTestResult.STATUS_FAILURE)
         Assertions.assertThat(failure.name).isEqualTo("testOne")
         Assertions.assertThat(failure.message).startsWith("expected")
 
         // error
-        val error = report.results[1]
+        val error = report.results()[1]
         Assertions.assertThat(error.durationMilliseconds).isZero
         Assertions.assertThat(error.status).isEqualTo(UnitTestResult.STATUS_ERROR)
         Assertions.assertThat(error.name).isEqualTo("testTwo")
+    }
+
+    @Test
+    @Throws(XMLStreamException::class)
+    fun shouldThrowExceptionInCaseIncorrectNumbers() {
+        assertThrows<XMLStreamException> {
+            parse("wrongNumbers.xml")
+        }
+    }
+
+    @Test
+    @Throws(XMLStreamException::class)
+    fun shouldThrowExceptionInCaseNaNNumbers() {
+        parse("NANNumbers.xml")
     }
 
     @Test
@@ -101,6 +116,15 @@ class UnitTestsStaxHandlerTest {
     fun output_of_junit_5_2_test_without_display_name() {
         parse("TEST-#29.xml")
         Assertions.assertThat(index[")"]?.tests).isEqualTo(1)
+    }
+
+    @Test
+    @Throws(XMLStreamException::class)
+    fun parse_failed() {
+        val parser = UnitTestsStaxParser(index)
+        assertThrows<XMLStreamException> {
+            parser.parse(File("TEST-#42.xml"))
+        }
     }
 
     @Throws(XMLStreamException::class)

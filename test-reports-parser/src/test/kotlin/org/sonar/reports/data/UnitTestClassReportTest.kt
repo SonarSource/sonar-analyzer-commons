@@ -14,7 +14,7 @@ class UnitTestClassReportTest {
         report.add(UnitTestResult(status = UnitTestResult.STATUS_OK, durationMilliseconds = -200L))
         report.add(UnitTestResult(status = UnitTestResult.STATUS_SKIPPED))
 
-        assertThat(report.results.size).isEqualTo(4)
+        assertThat(report.results().size).isEqualTo(4)
         assertThat(report.skipped).isEqualTo(1)
         assertThat(report.tests).isEqualTo(4)
         assertThat(report.durationMilliseconds).isEqualTo(500L + 200L)
@@ -26,7 +26,7 @@ class UnitTestClassReportTest {
     @Test
     fun shouldHaveEmptyReport() {
         val report = UnitTestClassReport()
-        assertThat(report.results.size).isZero
+        assertThat(report.results().size).isZero
         assertThat(report.skipped).isZero
         assertThat(report.tests).isZero
         assertThat(report.durationMilliseconds).isZero
