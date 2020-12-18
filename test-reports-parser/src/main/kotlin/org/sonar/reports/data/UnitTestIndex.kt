@@ -1,6 +1,6 @@
 package org.sonar.reports.data
 
-class UnitTestIndex(private val indexByClassname: MutableMap<String, UnitTestClassReport> = mutableMapOf()) {
+class UnitTestIndex(val indexByClassname: MutableMap<String, UnitTestClassReport> = mutableMapOf()) {
 
     fun index(classname: String): UnitTestClassReport {
         return indexByClassname.computeIfAbsent(classname) { UnitTestClassReport() }
