@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -256,7 +257,6 @@ class XmlParser {
 
   private void visitAttributes(XmlFilePosition start, XmlFilePosition end) throws XMLStreamException {
     NamedNodeMap attributes = currentNode.getAttributes();
-    int attrIndex = 0;
     XmlFilePosition currentLocation = start.moveAfterWhitespaces();
 
     while (currentLocation.has("=", end)) {
@@ -266,13 +266,14 @@ class XmlParser {
       char c = attributeValueStart.readChar();
       XmlFilePosition attributeValueEnd = attributeValueStart.shift(1).moveAfter(String.valueOf(c));
 
-      Node attr = attributes.item(attrIndex);
+      String attributeName = currentLocation.textUntil(attributeNameEnd).trim();
+      Node attr = Objects.requireNonNull(attributes.getNamedItem(attributeName), String.format("Attribute '%s' not found.", attributeName));
+
       setLocation(attr, Location.NAME, currentLocation, attributeNameEnd);
       setLocation(attr, Location.VALUE, attributeValueStart, attributeValueEnd);
       setLocation(attr, Location.NODE, currentLocation, attributeValueEnd);
 
       currentLocation = attributeValueEnd.moveAfterWhitespaces();
-      attrIndex++;
     }
   }
 
