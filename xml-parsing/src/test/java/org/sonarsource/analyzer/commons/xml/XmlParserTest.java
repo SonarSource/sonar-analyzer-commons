@@ -30,6 +30,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
 import org.w3c.dom.Element;
 import org.w3c.dom.EntityReference;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.ProcessingInstruction;
@@ -106,7 +107,7 @@ public class XmlParserTest {
       Node comment = fooChildren.item(1);
       assertRange(comment, Location.NODE, 3, 2, 5, 5);
 
-      Node bar = (Node) fooChildren.item(3);
+      Node bar = fooChildren.item(3);
       assertRange(bar, Location.NODE, 6, 2, 12, 4);
 
       Attr attr2 = (Attr) bar.getAttributes().getNamedItem("attr2");
@@ -237,6 +238,62 @@ public class XmlParserTest {
 
     document = XmlFile.create("<a attr='>\"'/>").getDocument();
     assertRange(document.getFirstChild(), Location.NODE, 1, 0, 1, 14);
+  }
+
+  @Test
+  public void testAttributesLocations() throws Exception {
+    String testCase = "<?xml version='1.0' encoding='UTF-8'?>\n"
+      + "<data-sources>\n"
+      + "  <data-source id='attr01' provider='attr02' driver='attr03' name='attr04' save-password='attr05' read-only='attr06'>\n"
+      + "    <connection host='attr07' port='attr08' server='attr09' database='attr10' url='attr11' user='attr12' password='attr13' />\n"
+      + "  </data-source>\n"
+      + "</data-sources>\n";
+
+    XmlFile xmlFile = XmlFile.create(testCase);
+
+    Node connection = xmlFile.getDocument().getElementsByTagName("connection").item(0);
+    assertThat(connection.hasAttributes()).isTrue();
+
+    NamedNodeMap connectionAttributes = connection.getAttributes();
+    assertThat(connectionAttributes.getLength()).isEqualTo(7);
+
+    Node server = connectionAttributes.getNamedItem("server");
+    assertThat(server).isNotNull();
+    assertRange(server, Location.NODE, 4, 44, 4, 59);
+
+    Node password = connectionAttributes.getNamedItem("password");
+    assertThat(password).isNotNull();
+    assertRange(password, Location.NODE, 4, 105, 4, 122);
+  }
+
+  @Test
+  public void testAttributesWithNamespacesLocations() throws Exception {
+    String testCase = "<?xml version='1.0' encoding='UTF-8'?>\n"
+      + "<a xmlns:foo='http://www.w3.org/barfoo'\n"
+      + "   xmlns:bar='http://www.w3.org/qixbar'>\n"
+      + "  <foo:b foo:attr2='yolo' bar:attr1='tututte'/>\n"
+      + "</a>\n";
+
+    XmlFile file = XmlFile.create(testCase);
+
+    Document documentNsAware = file.getNamespaceAwareDocument();
+    Element a = (Element) documentNsAware.getFirstChild();
+    Element b = (Element) a.getFirstChild().getNextSibling();
+
+    assertThat(b.getNamespaceURI()).isEqualTo("http://www.w3.org/barfoo");
+    assertThat(b.getNodeName()).isEqualTo("foo:b");
+    assertThat(b.getLocalName()).isEqualTo("b");
+
+    NamedNodeMap bAttributes = b.getAttributes();
+    assertThat(bAttributes.getLength()).isEqualTo(2);
+
+    Node attr1 = bAttributes.getNamedItem("bar:attr1");
+    assertThat(attr1).isNotNull();
+    assertRange(attr1, Location.NODE, 4, 26, 4, 45);
+
+    Node attr2 = bAttributes.getNamedItem("foo:attr2");
+    assertThat(attr2).isNotNull();
+    assertRange(attr2, Location.NODE, 4, 9, 4, 25);
   }
 
   @Test
