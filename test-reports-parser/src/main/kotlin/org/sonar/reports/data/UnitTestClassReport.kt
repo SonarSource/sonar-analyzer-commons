@@ -31,8 +31,8 @@ class UnitTestClassReport {
         }
         results.add(result)
         when(result.status) {
-            UnitTestResult.STATUS_SKIPPED -> skipped++
             UnitTestResult.STATUS_FAILURE -> failures++
+            UnitTestResult.STATUS_SKIPPED -> skipped++
             UnitTestResult.STATUS_ERROR -> errors++
         }
         tests++

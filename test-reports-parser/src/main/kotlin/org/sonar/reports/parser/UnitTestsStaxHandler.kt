@@ -76,14 +76,14 @@ class UnitTestsStaxHandler(private val index: UnitTestIndex) {
         val childNode: SMInputCursor = testCaseCursor.descendantElementCursor()
         if (childNode.next != null) {
             when (childNode.localName) {
+                "failure" -> {
+                    status = UnitTestResult.STATUS_FAILURE
+                    setStackAndMessage(detail, childNode)
+                }
                 "skipped" -> {
                     status = UnitTestResult.STATUS_SKIPPED
                     // bug with surefire reporting wrong time for skipped tests
                     duration = 0L
-                }
-                "failure" -> {
-                    status = UnitTestResult.STATUS_FAILURE
-                    setStackAndMessage(detail, childNode)
                 }
                 "error" -> {
                     status = UnitTestResult.STATUS_ERROR
