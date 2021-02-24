@@ -60,6 +60,11 @@
       <artifactId>junit-jupiter-migrationsupport</artifactId>
       <version>5.7.0</version>
       <scope>test</scope>
+    </dependency>     
+    <dependency>
+      <groupId>org.sonarsource.sonarqube</groupId>
+      <artifactId>sonar-plugin-api-impl</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.sonarsource.analyzer-commons</groupId>

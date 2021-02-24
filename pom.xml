@@ -73,7 +73,7 @@
 
   <properties>
     <!-- versions -->
-    <version.sonar>7.9</version.sonar>
+    <version.sonar>8.7.0.41497</version.sonar>
     <version.assertj>3.17.1</version.assertj>
     <version.jsr305>3.0.2</version.jsr305>
     <version.mockito>3.5.7</version.mockito>
@@ -126,6 +126,11 @@
         <groupId>org.mockito</groupId>
         <artifactId>mockito-core</artifactId>
         <version>${version.mockito}</version>
+      </dependency>       
+      <dependency>
+        <groupId>org.sonarsource.sonarqube</groupId>
+        <artifactId>sonar-plugin-api-impl</artifactId>
+        <version>${version.sonar}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

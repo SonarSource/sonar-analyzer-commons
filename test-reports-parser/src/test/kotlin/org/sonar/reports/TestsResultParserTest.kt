@@ -1,8 +1,8 @@
 package org.sonar.reports
 
-//import org.junit.jupiter.api.extension.RegisterExtension
-//import org.sonar.api.utils.log.LogTesterJUnit5
-//import org.sonar.api.utils.log.LoggerLevel
+import org.junit.jupiter.api.extension.RegisterExtension
+import org.sonar.api.utils.log.LogTesterJUnit5
+import org.sonar.api.utils.log.LoggerLevel
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -28,11 +28,9 @@ class TestsResultParserTest {
   companion object {
     private const val FOO_CLASS = ":java.Foo"
 
-/*
         @JvmField
         @RegisterExtension
         val logTester: LogTesterJUnit5 = LogTesterJUnit5()
-*/
   }
 
   private var parser: TestsResultParser = DefaultTestParser()
@@ -205,7 +203,6 @@ class TestsResultParserTest {
     ).isEqualTo(48)
   }
 
-/*
     @Test
     @Throws(Exception::class)
     fun should_log_missing_resource_with_debug_level() {
@@ -220,7 +217,6 @@ class TestsResultParserTest {
         Assertions.assertThat(logTester.logs(LoggerLevel.WARN)).isEmpty()
         Assertions.assertThat(logTester.logs(LoggerLevel.DEBUG)).contains("Resource not found: org.sonar.Foo")
     }
-*/
 
   @Throws(URISyntaxException::class)
   private fun getDirs(vararg directoryNames: String): List<File> {
