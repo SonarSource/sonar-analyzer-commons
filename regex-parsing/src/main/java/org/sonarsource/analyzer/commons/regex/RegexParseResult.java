@@ -17,16 +17,16 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex;
+package org.sonarsource.analyzer.commons.regex;
 
 import java.util.Collections;
 import java.util.List;
-import org.sonar.java.regex.ast.FinalState;
-import org.sonar.java.regex.ast.FlagSet;
-import org.sonar.java.regex.ast.OpeningQuote;
-import org.sonar.java.regex.ast.RegexSyntaxElement;
-import org.sonar.java.regex.ast.RegexTree;
-import org.sonar.java.regex.ast.StartState;
+import org.sonarsource.analyzer.commons.regex.ast.FinalState;
+import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
+import org.sonarsource.analyzer.commons.regex.ast.OpeningQuote;
+import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
+import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
+import org.sonarsource.analyzer.commons.regex.ast.StartState;
 
 public class RegexParseResult {
 

@@ -17,14 +17,14 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex.ast;
+package org.sonarsource.analyzer.commons.regex.ast;
 
 import org.junit.jupiter.api.Test;
-import org.sonar.java.regex.RegexParserTestUtils;
+import org.sonarsource.analyzer.commons.regex.RegexParserTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.sonar.java.regex.RegexParserTestUtils.*;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.*;
 
 class CharacterTreeTest {
 

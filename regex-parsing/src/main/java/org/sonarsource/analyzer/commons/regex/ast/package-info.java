@@ -18,7 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 @ParametersAreNonnullByDefault
-package org.sonar.java.regex.ast;
+package org.sonarsource.analyzer.commons.regex.ast;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 

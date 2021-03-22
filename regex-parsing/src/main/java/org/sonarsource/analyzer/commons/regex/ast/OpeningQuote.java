@@ -17,9 +17,9 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex.ast;
+package org.sonarsource.analyzer.commons.regex.ast;
 
-import org.sonar.java.regex.RegexSource;
+import org.sonarsource.analyzer.commons.regex.RegexSource;
 
 /**
  * This class should only be instantiated by RegexParseResult.openingQuote() and only used when using

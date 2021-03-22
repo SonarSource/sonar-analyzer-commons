@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex;
+package org.sonarsource.analyzer.commons.regex;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,7 +28,7 @@ import java.util.TreeMap;
 import javax.annotation.Nullable;
 import org.sonar.java.AnalyzerMessage;
 import org.sonar.java.AnalyzerMessage.TextSpan;
-import org.sonar.java.regex.ast.IndexRange;
+import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
 import org.sonar.plugins.java.api.tree.LiteralTree;
 
 public class JavaRegexSource implements RegexSource {

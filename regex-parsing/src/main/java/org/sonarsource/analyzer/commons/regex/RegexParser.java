@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex;
+package org.sonarsource.analyzer.commons.regex;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,38 +29,38 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
-import org.sonar.java.regex.ast.AtomicGroupTree;
-import org.sonar.java.regex.ast.BackReferenceTree;
-import org.sonar.java.regex.ast.BoundaryTree;
-import org.sonar.java.regex.ast.CapturingGroupTree;
-import org.sonar.java.regex.ast.CharacterClassElementTree;
-import org.sonar.java.regex.ast.CharacterClassIntersectionTree;
-import org.sonar.java.regex.ast.CharacterClassTree;
-import org.sonar.java.regex.ast.CharacterClassUnionTree;
-import org.sonar.java.regex.ast.CharacterRangeTree;
-import org.sonar.java.regex.ast.CharacterTree;
-import org.sonar.java.regex.ast.CurlyBraceQuantifier;
-import org.sonar.java.regex.ast.DisjunctionTree;
-import org.sonar.java.regex.ast.DotTree;
-import org.sonar.java.regex.ast.EscapedCharacterClassTree;
-import org.sonar.java.regex.ast.FinalState;
-import org.sonar.java.regex.ast.FlagSet;
-import org.sonar.java.regex.ast.GroupTree;
-import org.sonar.java.regex.ast.IndexRange;
-import org.sonar.java.regex.ast.SourceCharacter;
-import org.sonar.java.regex.ast.LookAroundTree;
-import org.sonar.java.regex.ast.MiscEscapeSequenceTree;
-import org.sonar.java.regex.ast.NonCapturingGroupTree;
-import org.sonar.java.regex.ast.Quantifier;
-import org.sonar.java.regex.ast.RegexSyntaxElement;
-import org.sonar.java.regex.ast.RegexToken;
-import org.sonar.java.regex.ast.RegexTree;
-import org.sonar.java.regex.ast.RepetitionTree;
-import org.sonar.java.regex.ast.SequenceTree;
-import org.sonar.java.regex.ast.SimpleQuantifier;
-import org.sonar.java.regex.ast.StartState;
+import org.sonarsource.analyzer.commons.regex.ast.AtomicGroupTree;
+import org.sonarsource.analyzer.commons.regex.ast.BackReferenceTree;
+import org.sonarsource.analyzer.commons.regex.ast.BoundaryTree;
+import org.sonarsource.analyzer.commons.regex.ast.CapturingGroupTree;
+import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
+import org.sonarsource.analyzer.commons.regex.ast.CharacterClassIntersectionTree;
+import org.sonarsource.analyzer.commons.regex.ast.CharacterClassTree;
+import org.sonarsource.analyzer.commons.regex.ast.CharacterClassUnionTree;
+import org.sonarsource.analyzer.commons.regex.ast.CharacterRangeTree;
+import org.sonarsource.analyzer.commons.regex.ast.CharacterTree;
+import org.sonarsource.analyzer.commons.regex.ast.CurlyBraceQuantifier;
+import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
+import org.sonarsource.analyzer.commons.regex.ast.DotTree;
+import org.sonarsource.analyzer.commons.regex.ast.EscapedCharacterClassTree;
+import org.sonarsource.analyzer.commons.regex.ast.FinalState;
+import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
+import org.sonarsource.analyzer.commons.regex.ast.GroupTree;
+import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
+import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
+import org.sonarsource.analyzer.commons.regex.ast.LookAroundTree;
+import org.sonarsource.analyzer.commons.regex.ast.MiscEscapeSequenceTree;
+import org.sonarsource.analyzer.commons.regex.ast.NonCapturingGroupTree;
+import org.sonarsource.analyzer.commons.regex.ast.Quantifier;
+import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
+import org.sonarsource.analyzer.commons.regex.ast.RegexToken;
+import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
+import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
+import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
+import org.sonarsource.analyzer.commons.regex.ast.SimpleQuantifier;
+import org.sonarsource.analyzer.commons.regex.ast.StartState;
 
-import static org.sonar.java.regex.RegexLexer.EOF;
+import static org.sonarsource.analyzer.commons.regex.RegexLexer.EOF;
 
 public class RegexParser {
 

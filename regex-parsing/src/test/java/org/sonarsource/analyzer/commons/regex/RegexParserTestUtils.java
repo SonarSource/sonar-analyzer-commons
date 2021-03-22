@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex;
+package org.sonarsource.analyzer.commons.regex;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -26,19 +26,19 @@ import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import org.opentest4j.AssertionFailedError;
 import org.sonar.java.model.JParserTestUtils;
-import org.sonar.java.regex.ast.AutomatonState;
-import org.sonar.java.regex.ast.CharacterClassElementTree;
-import org.sonar.java.regex.ast.CharacterClassTree;
-import org.sonar.java.regex.ast.CharacterRangeTree;
-import org.sonar.java.regex.ast.EndOfRepetitionState;
-import org.sonar.java.regex.ast.FlagSet;
-import org.sonar.java.regex.ast.SourceCharacter;
-import org.sonar.java.regex.ast.CharacterTree;
-import org.sonar.java.regex.ast.RegexSyntaxElement;
-import org.sonar.java.regex.ast.RegexToken;
-import org.sonar.java.regex.ast.RegexTree;
-import org.sonar.java.regex.ast.RepetitionTree;
-import org.sonar.java.regex.ast.SequenceTree;
+import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
+import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
+import org.sonarsource.analyzer.commons.regex.ast.CharacterClassTree;
+import org.sonarsource.analyzer.commons.regex.ast.CharacterRangeTree;
+import org.sonarsource.analyzer.commons.regex.ast.EndOfRepetitionState;
+import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
+import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
+import org.sonarsource.analyzer.commons.regex.ast.CharacterTree;
+import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
+import org.sonarsource.analyzer.commons.regex.ast.RegexToken;
+import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
+import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
+import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
 import org.sonar.plugins.java.api.tree.BaseTreeVisitor;
 import org.sonar.plugins.java.api.tree.ClassTree;
 import org.sonar.plugins.java.api.tree.CompilationUnitTree;

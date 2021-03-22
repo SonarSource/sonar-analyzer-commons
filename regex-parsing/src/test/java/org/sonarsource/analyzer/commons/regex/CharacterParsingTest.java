@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex;
+package org.sonarsource.analyzer.commons.regex;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -25,11 +25,11 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.sonar.java.regex.ast.SourceCharacter;
+import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
 import org.sonar.plugins.java.api.tree.LiteralTree;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.sonar.java.regex.RegexParserTestUtils.getAllStringLiteralsFromFile;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.getAllStringLiteralsFromFile;
 
 class CharacterParsingTest {
 

@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex.ast;
+package org.sonarsource.analyzer.commons.regex.ast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.apache.commons.lang.StringEscapeUtils.escapeJava;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.sonar.java.regex.RegexParserTestUtils.assertFailParsing;
-import static org.sonar.java.regex.RegexParserTestUtils.assertSuccessfulParse;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertFailParsing;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParse;
 
 class BackReferenceTreeTest {
 

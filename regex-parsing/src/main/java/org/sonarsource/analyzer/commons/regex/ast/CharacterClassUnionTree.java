@@ -17,12 +17,12 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex.ast;
+package org.sonarsource.analyzer.commons.regex.ast;
 
 import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nonnull;
-import org.sonar.java.regex.RegexSource;
+import org.sonarsource.analyzer.commons.regex.RegexSource;
 
 public class CharacterClassUnionTree extends AbstractRegexSyntaxElement implements CharacterClassElementTree {
 

@@ -17,12 +17,12 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex;
+package org.sonarsource.analyzer.commons.regex;
 
 import java.util.NoSuchElementException;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
-import org.sonar.java.regex.ast.SourceCharacter;
+import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
 
 /**
  * Parse the contents of string literals and provide the individual characters of the string after processing escape

@@ -17,23 +17,23 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex.ast;
+package org.sonarsource.analyzer.commons.regex.ast;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import org.sonar.java.regex.RegexLexer;
-import org.sonar.java.regex.RegexSource;
+import org.sonarsource.analyzer.commons.regex.RegexLexer;
+import org.sonarsource.analyzer.commons.regex.RegexSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.sonar.java.regex.RegexParserTestUtils.assertCharacterClass;
-import static org.sonar.java.regex.RegexParserTestUtils.assertFailParsing;
-import static org.sonar.java.regex.RegexParserTestUtils.assertKind;
-import static org.sonar.java.regex.RegexParserTestUtils.assertCharacter;
-import static org.sonar.java.regex.RegexParserTestUtils.assertSuccessfulParse;
-import static org.sonar.java.regex.RegexParserTestUtils.assertType;
-import static org.sonar.java.regex.RegexParserTestUtils.makeSource;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertCharacterClass;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertFailParsing;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertKind;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertCharacter;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParse;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertType;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.makeSource;
 
 class EscapedCharacterClassTreeTest {
 

@@ -17,28 +17,28 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex;
+package org.sonarsource.analyzer.commons.regex;
 
 import java.util.List;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
-import org.sonar.java.regex.ast.DisjunctionTree;
-import org.sonar.java.regex.ast.CapturingGroupTree;
-import org.sonar.java.regex.ast.Quantifier;
-import org.sonar.java.regex.ast.RegexTree;
-import org.sonar.java.regex.ast.RepetitionTree;
-import org.sonar.java.regex.ast.SequenceTree;
-import org.sonar.java.regex.ast.SimpleQuantifier;
+import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
+import org.sonarsource.analyzer.commons.regex.ast.CapturingGroupTree;
+import org.sonarsource.analyzer.commons.regex.ast.Quantifier;
+import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
+import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
+import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
+import org.sonarsource.analyzer.commons.regex.ast.SimpleQuantifier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.sonar.java.regex.RegexParserTestUtils.assertKind;
-import static org.sonar.java.regex.RegexParserTestUtils.assertLocation;
-import static org.sonar.java.regex.RegexParserTestUtils.assertCharacter;
-import static org.sonar.java.regex.RegexParserTestUtils.assertPlainString;
-import static org.sonar.java.regex.RegexParserTestUtils.assertSuccessfulParseResult;
-import static org.sonar.java.regex.RegexParserTestUtils.assertType;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertKind;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertLocation;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertCharacter;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertPlainString;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParseResult;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertType;
 
 class CombinedTests {
 

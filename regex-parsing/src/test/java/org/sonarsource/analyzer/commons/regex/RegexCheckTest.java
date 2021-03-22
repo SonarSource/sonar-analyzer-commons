@@ -17,19 +17,19 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex;
+package org.sonarsource.analyzer.commons.regex;
 
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.sonar.java.AnalyzerMessage.TextSpan;
-import org.sonar.java.regex.ast.CharacterTree;
-import org.sonar.java.regex.ast.RegexSyntaxElement;
-import org.sonar.java.regex.ast.RegexTree;
-import org.sonar.java.regex.ast.SequenceTree;
+import org.sonarsource.analyzer.commons.regex.ast.CharacterTree;
+import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
+import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
+import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.sonar.java.regex.RegexParserTestUtils.assertKind;
-import static org.sonar.java.regex.RegexParserTestUtils.assertSuccessfulParse;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertKind;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParse;
 
 class RegexCheckTest implements RegexCheck {
 

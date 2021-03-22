@@ -17,16 +17,16 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex.ast;
+package org.sonarsource.analyzer.commons.regex.ast;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import org.sonar.java.regex.RegexParseResult;
+import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.sonar.java.regex.RegexParserTestUtils.assertSuccessfulParseResult;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParseResult;
 
 class AutomatonStateTest {
 

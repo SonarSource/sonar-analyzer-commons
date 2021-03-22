@@ -17,26 +17,26 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex.ast;
+package org.sonarsource.analyzer.commons.regex.ast;
 
 import org.junit.jupiter.api.Test;
-import org.sonar.java.regex.RegexParseResult;
-import org.sonar.java.regex.SyntaxError;
+import org.sonarsource.analyzer.commons.regex.RegexParseResult;
+import org.sonarsource.analyzer.commons.regex.SyntaxError;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.sonar.java.regex.RegexParserTestUtils.assertEdge;
-import static org.sonar.java.regex.RegexParserTestUtils.assertKind;
-import static org.sonar.java.regex.RegexParserTestUtils.assertListElements;
-import static org.sonar.java.regex.RegexParserTestUtils.assertLocation;
-import static org.sonar.java.regex.RegexParserTestUtils.assertCharacter;
-import static org.sonar.java.regex.RegexParserTestUtils.assertSingleEdge;
-import static org.sonar.java.regex.RegexParserTestUtils.assertSuccessfulParse;
-import static org.sonar.java.regex.RegexParserTestUtils.assertType;
-import static org.sonar.java.regex.RegexParserTestUtils.parseRegex;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertEdge;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertKind;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertListElements;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertLocation;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertCharacter;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSingleEdge;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParse;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertType;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.parseRegex;
 
 class CurlyBraceQuantifierTest {
 

@@ -17,13 +17,13 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex;
+package org.sonarsource.analyzer.commons.regex;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.sonar.java.regex.ast.FlagSet;
+import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
 import org.sonar.plugins.java.api.tree.LiteralTree;
 
 public final class RegexCache {

@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex.ast;
+package org.sonarsource.analyzer.commons.regex.ast;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -26,12 +26,12 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.sonar.java.regex.RegexParserTestUtils.assertJavaCharacter;
-import static org.sonar.java.regex.RegexParserTestUtils.assertListElements;
-import static org.sonar.java.regex.RegexParserTestUtils.assertCharacter;
-import static org.sonar.java.regex.RegexParserTestUtils.assertSingleEdge;
-import static org.sonar.java.regex.RegexParserTestUtils.assertSuccessfulParse;
-import static org.sonar.java.regex.RegexParserTestUtils.assertType;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertJavaCharacter;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertListElements;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertCharacter;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSingleEdge;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParse;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertType;
 
 class DisjunctionTreeTest {
 

@@ -17,9 +17,9 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex;
+package org.sonarsource.analyzer.commons.regex;
 
-import org.sonar.java.regex.ast.IndexRange;
+import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
 
 public interface RegexSource {
   String getSourceText();

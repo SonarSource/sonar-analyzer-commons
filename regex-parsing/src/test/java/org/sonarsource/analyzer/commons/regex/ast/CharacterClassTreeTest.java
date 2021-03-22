@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.java.regex.ast;
+package org.sonarsource.analyzer.commons.regex.ast;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -25,17 +25,17 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.sonar.java.regex.RegexParserTestUtils.assertCharacter;
-import static org.sonar.java.regex.RegexParserTestUtils.assertCharacterClass;
-import static org.sonar.java.regex.RegexParserTestUtils.assertCharacterRange;
-import static org.sonar.java.regex.RegexParserTestUtils.assertFailParsing;
-import static org.sonar.java.regex.RegexParserTestUtils.assertJavaCharacter;
-import static org.sonar.java.regex.RegexParserTestUtils.assertKind;
-import static org.sonar.java.regex.RegexParserTestUtils.assertListElements;
-import static org.sonar.java.regex.RegexParserTestUtils.assertListSize;
-import static org.sonar.java.regex.RegexParserTestUtils.assertSuccessfulParse;
-import static org.sonar.java.regex.RegexParserTestUtils.assertToken;
-import static org.sonar.java.regex.RegexParserTestUtils.assertType;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertCharacter;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertCharacterClass;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertCharacterRange;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertFailParsing;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertJavaCharacter;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertKind;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertListElements;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertListSize;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParse;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertToken;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertType;
 
 class CharacterClassTreeTest {
 
