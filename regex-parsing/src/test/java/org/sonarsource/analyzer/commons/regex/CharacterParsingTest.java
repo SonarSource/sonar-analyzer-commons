@@ -19,34 +19,19 @@
  */
 package org.sonarsource.analyzer.commons.regex;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
-import org.sonar.plugins.java.api.tree.LiteralTree;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.getAllStringLiteralsFromFile;
 
 class CharacterParsingTest {
 
-  private static final List<LiteralTree> literals = new ArrayList<>();
-
-  @BeforeAll
-  static void setup() {
-    literals.addAll(getAllStringLiteralsFromFile(new File("src/test/files/regex/CharacterParsing.java")));
-  }
-
   @Test
   void parsingUnicode() {
-    // "\t\u1234"
-    LiteralTree source = literals.get(0);
-    assertThat(source.value()).isEqualTo("\"\\t\\u1234\"");
-
-    RegexSource regexSource = new JavaRegexSource(Collections.singletonList(source));
+    String regex = "\\t\\u1234";
+    RegexSource regexSource = new JavaRegexSource(regex);
 
     List<SourceCharacter> unicodeCharacters = parseUnicode(regexSource);
     assertThat(unicodeCharacters.stream().map(SourceCharacter::getCharacter))
@@ -61,11 +46,8 @@ class CharacterParsingTest {
 
   @Test
   void escapedBackslashes() {
-    // "\\\\u+[a-fA-F0-9]{4}"
-    LiteralTree source = literals.get(1);
-    assertThat(source.value()).isEqualTo("\"\\\\\\\\u+[a-fA-F0-9]{4}\"");
-
-    RegexSource regexSource = new JavaRegexSource(Collections.singletonList(source));
+    String regex = "\\\\\\\\u+[a-fA-F0-9]{4}";
+    RegexSource regexSource = new JavaRegexSource(regex);
 
     List<SourceCharacter> unicodeCharacters = parseUnicode(regexSource);
     assertThat(unicodeCharacters.stream().map(SourceCharacter::getCharacter))

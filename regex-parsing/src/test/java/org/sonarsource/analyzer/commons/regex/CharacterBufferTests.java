@@ -19,7 +19,6 @@
  */
 package org.sonarsource.analyzer.commons.regex;
 
-import java.util.Collections;
 import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
@@ -81,6 +80,6 @@ class CharacterBufferTests {
   }
 
   private SourceCharacter makeCharacter(char c) {
-    return new SourceCharacter(new JavaRegexSource(Collections.emptyList()), new IndexRange(0, 1), c);
+    return new SourceCharacter(new JavaRegexSource(""), new IndexRange(0, 1), c);
   }
 }

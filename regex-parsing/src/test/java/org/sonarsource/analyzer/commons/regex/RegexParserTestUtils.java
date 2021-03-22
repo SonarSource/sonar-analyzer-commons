@@ -19,13 +19,10 @@
  */
 package org.sonarsource.analyzer.commons.regex;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import org.opentest4j.AssertionFailedError;
-import org.sonar.java.model.JParserTestUtils;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassTree;
@@ -39,12 +36,6 @@ import org.sonarsource.analyzer.commons.regex.ast.RegexToken;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
 import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
-import org.sonar.plugins.java.api.tree.BaseTreeVisitor;
-import org.sonar.plugins.java.api.tree.ClassTree;
-import org.sonar.plugins.java.api.tree.CompilationUnitTree;
-import org.sonar.plugins.java.api.tree.LiteralTree;
-import org.sonar.plugins.java.api.tree.Tree;
-import org.sonar.plugins.java.api.tree.VariableTree;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -239,33 +230,7 @@ public class RegexParserTestUtils {
     assertEquals(expectedEnd, element.getRange().getEndingOffset(), "Element should end at the given index.");
   }
 
-  // place the String which will contain the regex on 3rd line, starting from index 0
-  private static final String JAVA_CODE = "class Foo {\n  String str = \n\"%s\";\n}";
-
   public static RegexSource makeSource(String content) {
-    CompilationUnitTree tree = JParserTestUtils.parse(String.format(JAVA_CODE, content));
-    ClassTree foo = (ClassTree) tree.types().get(0);
-    VariableTree str = (VariableTree) foo.members().get(0);
-    LiteralCollector visitor = new LiteralCollector();
-    str.initializer().accept(visitor);
-    return new JavaRegexSource(visitor.stringLiterals);
-  }
-
-  public static List<LiteralTree> getAllStringLiteralsFromFile(File file) {
-    LiteralCollector visitor = new LiteralCollector();
-    JParserTestUtils.parse(file).accept(visitor);
-    return visitor.stringLiterals;
-  }
-
-  private static class LiteralCollector extends BaseTreeVisitor {
-
-    private final List<LiteralTree> stringLiterals = new ArrayList<>();
-
-    @Override
-    public void visitLiteral(LiteralTree tree) {
-      if (tree.is(Tree.Kind.STRING_LITERAL)) {
-        stringLiterals.add(tree);
-      }
-    }
+    return new JavaRegexSource(content);
   }
 }
