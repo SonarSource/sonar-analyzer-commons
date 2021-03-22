@@ -1,6 +1,6 @@
 /*
- * SonarQube Java
- * Copyright (C) 2012-2021 SonarSource SA
+ * SonarSource Analyzers Regex Parsing Commons
+ * Copyright (C) 2009-2021 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
