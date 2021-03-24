@@ -23,7 +23,7 @@ public abstract class Detector {
 
   private final double probability;
 
-  public Detector(double probability) {
+  protected Detector(double probability) {
     if (probability < 0 || probability > 1) {
       throw new IllegalArgumentException("probability should be between [0 .. 1]");
     }
