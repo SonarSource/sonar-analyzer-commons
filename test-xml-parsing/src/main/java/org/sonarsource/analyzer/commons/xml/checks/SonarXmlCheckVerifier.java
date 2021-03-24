@@ -19,7 +19,6 @@
  */
 package org.sonarsource.analyzer.commons.xml.checks;
 
-import com.sonarsource.checks.verifier.SingleFileVerifier;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -40,6 +39,7 @@ import org.sonar.api.batch.sensor.issue.Issue;
 import org.sonar.api.batch.sensor.issue.Issue.Flow;
 import org.sonar.api.batch.sensor.issue.IssueLocation;
 import org.sonar.api.rule.RuleKey;
+import org.sonarsource.analyzer.commons.checks.verifier.SingleFileVerifier;
 import org.sonarsource.analyzer.commons.xml.XmlFile;
 import org.sonarsource.analyzer.commons.xml.XmlTextRange;
 import org.w3c.dom.Comment;

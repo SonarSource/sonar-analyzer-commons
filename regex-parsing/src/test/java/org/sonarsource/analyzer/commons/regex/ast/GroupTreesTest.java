@@ -26,17 +26,15 @@ import org.sonarsource.analyzer.commons.regex.SyntaxError;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertCharacter;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertEdge;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertFailParsing;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertKind;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertListElements;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertListSize;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertLocation;
-import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertCharacter;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertPlainString;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSingleEdge;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParse;
