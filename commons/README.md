@@ -12,5 +12,5 @@ Logic useful for an average language plugin
 * [`ProgressReport`](./src/main/java/org/sonarsource/analyzer/commons/ProgressReport.java) - to produce logs with number of analyzed files
 
 ### License
-Copyright 2009-2017 SonarSource.
+Copyright 2009-2021 SonarSource.
 Licensed under the [GNU Lesser General Public License, Version 3.0](http://www.gnu.org/licenses/lgpl.txt)
