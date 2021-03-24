@@ -33,13 +33,19 @@ public final class PreciseLocationParser {
   // line adjustment, ex: @+1
   public static final String LINE_ADJUSTMENT = "(?:@(?<lineAdjustment>(?<relativeAdjustment>[+-])?\\d++))?";
 
+  private static final String COUNT = "(?<count>\\d++)";
+  private static final String DIRECTION = "(?<direction>[<>])";
+  private static final String MAJOR_INDEX = "(?<majorIndex>\\d++)";
+  private static final String MINOR_INDEX = "(?<minorIndex>\\d++)";
+  private static final String MESSAGE = "(?<message>.*?)";
+
   private static final Pattern LOCATION_REGEX = Pattern.compile(" *+" +
   // highlighted range, ex: ^^^^ |OR| ^^^@12 |OR| ^^^@-2
     "(?<range>\\^(?:\\[(?<params>[^\\]]++)\\]|\\^++)?)" + LINE_ADJUSTMENT +
     // count, ex: 3 |OR| direction, ex: < |OR| direction with index, ex: < 1 |OR| direction and flowId, ex: < 2.1
-    " *+(?:(?<count>\\d++)|(?:(?<direction><|>) *+((?<majorIndex>\\d++)(\\.(?<minorIndex>\\d++))?)?))?" +
+    " *+(?:" + COUNT + "|(?:" + DIRECTION + " *+(" + MAJOR_INDEX + "(\\." + MINOR_INDEX + ")?)?))?" +
     // message, ex: {{msg}}
-    " *+(?:\\{\\{(?<message>.*?)\\}\\})? *+" +
+    " *+(?:\\{\\{" + MESSAGE + "\\}\\})? *+" +
     "(?:\r(\n?)|\n)?");
 
   private PreciseLocationParser() {
@@ -73,15 +79,15 @@ public final class PreciseLocationParser {
       String countGroup = matcher.group("count");
       Integer additionalCount = countGroup == null ? null : Integer.valueOf(countGroup);
       return new PrimaryLocation(range, additionalCount);
-    } else if (minorIndexGroup == null) {
+    }
+    if (minorIndexGroup == null) {
       String majorIndex = matcher.group("majorIndex");
       Integer index = majorIndex == null ? null : Integer.valueOf(majorIndex);
       return new SecondaryLocation(range, direction.equals("<"), index, matcher.group("message"));
-    } else {
-      int majorIndex = Integer.parseInt(matcher.group("majorIndex"));
-      int minorIndex = Integer.parseInt(minorIndexGroup);
-      return new FlowLocation(range, direction.equals("<"), majorIndex, minorIndex, matcher.group("message"));
     }
+    int majorIndex = Integer.parseInt(matcher.group("majorIndex"));
+    int minorIndex = Integer.parseInt(minorIndexGroup);
+    return new FlowLocation(range, direction.equals("<"), majorIndex, minorIndex, matcher.group("message"));
   }
 
   public static int extractEffectiveLine(int line, Matcher matcher) {
@@ -118,8 +124,7 @@ public final class PreciseLocationParser {
     }
     if (shift.startsWith("-") || shift.startsWith("+")) {
       return referenceValue + Integer.parseInt(shift.substring(1));
-    } else {
-      return Integer.parseInt(shift);
     }
+    return Integer.parseInt(shift);
   }
 }
