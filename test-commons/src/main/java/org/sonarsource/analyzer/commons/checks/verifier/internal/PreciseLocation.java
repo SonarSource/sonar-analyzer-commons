@@ -23,7 +23,7 @@ public abstract class PreciseLocation {
 
   public final UnderlinedRange range;
 
-  public PreciseLocation(UnderlinedRange range) {
+  protected PreciseLocation(UnderlinedRange range) {
     this.range = range;
   }
 
