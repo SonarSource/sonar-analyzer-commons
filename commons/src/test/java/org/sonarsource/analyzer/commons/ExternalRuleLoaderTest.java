@@ -57,6 +57,10 @@ public class ExternalRuleLoaderTest {
     assertThat(externalRuleLoader.ruleSeverity("vulnerability-rule")).isEqualTo(Severity.INFO);
     assertThat(externalRuleLoader.ruleType("no-type-rule")).isEqualTo(RuleType.CODE_SMELL);
 
+    checkRepository(context);
+  }
+
+  private static void checkRepository(RulesDefinition.Context context) {
     assertThat(context.repositories()).hasSize(1);
     Repository repository = context.repository("external_my-linter-key");
     assertThat(repository.isExternal()).isTrue();
@@ -64,6 +68,10 @@ public class ExternalRuleLoaderTest {
     assertThat(repository.language()).isEqualTo("mylang");
     assertThat(repository.rules()).hasSize(4);
 
+    checkRules(repository);
+  }
+
+  private static void checkRules(Repository repository) {
     Rule rule1 = repository.rule("bug-rule");
     Rule rule2 = repository.rule("code-smell-rule");
     Rule rule3 = repository.rule("vulnerability-rule");
