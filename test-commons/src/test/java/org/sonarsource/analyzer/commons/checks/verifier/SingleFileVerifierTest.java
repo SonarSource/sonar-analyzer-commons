@@ -21,18 +21,13 @@ package org.sonarsource.analyzer.commons.checks.verifier;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.hamcrest.core.StringContains;
 import org.junit.ComparisonFailure;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SingleFileVerifierTest {
-
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
 
   @Test
   public void code_js_simple() throws Exception {
@@ -118,19 +113,18 @@ public class SingleFileVerifierTest {
     verifier.reportIssue("RuLe MeSsAgE")
       .onRange(2,5,2,9);
 
-    thrown.expect(ComparisonFailure.class);
-    thrown.expectMessage(StringContains.containsString(
+    assertThatThrownBy(() -> verifier.assertOneOrMoreIssues())
+      .isInstanceOf(ComparisonFailure.class)
+      .hasMessageContaining(
         "[----------------------------------------------------------------------]\n" +
-        "[ '-' means expected but not raised, '+' means raised but not expected ]\n" +
-        "  <simple.js>\n" +
-        "- 002: Noncompliant {{Rule message}}\n" +
-        "+ 002: Noncompliant {{RuLe MeSsAgE}}\n" +
-        "  002:     alert(msg);\n" +
-        "- 002:           ^^^\n" +
-        "+ 002:     ^^^^^\n" +
-        "[----------------------------------------------------------------------]"));
-
-    verifier.assertOneOrMoreIssues();
+          "[ '-' means expected but not raised, '+' means raised but not expected ]\n" +
+          "  <simple.js>\n" +
+          "- 002: Noncompliant {{Rule message}}\n" +
+          "+ 002: Noncompliant {{RuLe MeSsAgE}}\n" +
+          "  002:     alert(msg);\n" +
+          "- 002:           ^^^\n" +
+          "+ 002:     ^^^^^\n" +
+          "[----------------------------------------------------------------------]");
   }
 
   @Test

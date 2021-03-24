@@ -21,29 +21,24 @@ package org.sonarsource.analyzer.commons;
 
 import java.util.List;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.sonar.api.rule.RuleKey;
+import org.sonar.api.server.profile.BuiltInQualityProfilesDefinition.BuiltInActiveRule;
+import org.sonar.api.server.profile.BuiltInQualityProfilesDefinition.BuiltInQualityProfile;
+import org.sonar.api.server.profile.BuiltInQualityProfilesDefinition.Context;
+import org.sonar.api.server.profile.BuiltInQualityProfilesDefinition.NewBuiltInQualityProfile;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.sonar.api.server.profile.BuiltInQualityProfilesDefinition.BuiltInActiveRule;
-import static org.sonar.api.server.profile.BuiltInQualityProfilesDefinition.BuiltInQualityProfile;
-import static org.sonar.api.server.profile.BuiltInQualityProfilesDefinition.Context;
-import static org.sonar.api.server.profile.BuiltInQualityProfilesDefinition.NewBuiltInQualityProfile;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class BuiltInQualityProfileJsonLoaderTest {
 
   private static final String PROFILE_PATH = "org/sonarsource/analyzer/commons/Sonar_way_profile.json";
-  private static final String RESOURCE_FOLDER = "org/sonarsource/analyzer/commons";
   private static final String REPOSITORY_KEY = "repo-key";
   private static final String PROFILE_NAME = "profile-name";
   private static final String LANGUAGE = "lang-key";
 
   private Context testContext;
-
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
 
   @Before
   public void setup() {
@@ -69,30 +64,30 @@ public class BuiltInQualityProfileJsonLoaderTest {
   @Test
   public void fails_when_activating_rules_more_than_once() {
     NewBuiltInQualityProfile newProfile = testContext.createBuiltInQualityProfile(PROFILE_NAME, LANGUAGE);
+
+    // first activation
     BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, PROFILE_PATH);
 
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("The rule 'repo-key:S100' is already activated");
-
-    BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, PROFILE_PATH);
+    // second
+    assertThatThrownBy(() -> BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, PROFILE_PATH))
+      .isInstanceOf(IllegalArgumentException.class)
+      .hasMessage("The rule 'repo-key:S100' is already activated");
   }
 
   @Test
   public void fails_when_no_profile_found() {
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("Can't read resource: /wrong/path/Sonar_way_profile.json");
-
     NewBuiltInQualityProfile newProfile = testContext.createBuiltInQualityProfile(PROFILE_NAME, LANGUAGE);
-    BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, "/wrong/path/Sonar_way_profile.json");
+    assertThatThrownBy(() -> BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, "/wrong/path/Sonar_way_profile.json"))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Can't read resource: /wrong/path/Sonar_way_profile.json");
   }
 
   @Test
   public void fails_when_no_rule_keys_in_profile() {
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("missing 'ruleKeys'");
-
     NewBuiltInQualityProfile newProfile = testContext.createBuiltInQualityProfile(PROFILE_NAME, LANGUAGE);
-    BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, "org/sonarsource/analyzer/commons/Sonar_way_profile_no_rule_keys.json");
+    assertThatThrownBy(() -> BuiltInQualityProfileJsonLoader.load(newProfile, REPOSITORY_KEY, "org/sonarsource/analyzer/commons/Sonar_way_profile_no_rule_keys.json"))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("missing 'ruleKeys'");
   }
 
   @Test

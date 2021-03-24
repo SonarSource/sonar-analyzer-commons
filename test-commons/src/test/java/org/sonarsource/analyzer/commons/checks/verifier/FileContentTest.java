@@ -21,19 +21,14 @@ package org.sonarsource.analyzer.commons.checks.verifier;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.hamcrest.CoreMatchers;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class FileContentTest {
 
   public static final Path MAIN_JS = Paths.get("src/test/resources/main.js");
-
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
 
   @Test
   public void constructor() {
@@ -51,10 +46,11 @@ public class FileContentTest {
 
   @Test
   public void invalid_file_path() {
-    thrown.expect(IllegalStateException.class);
     Path path = Paths.get("bad/invalid.js");
-    thrown.expectMessage(CoreMatchers.startsWith("Failed to read '" + path.toString() + "':"));
-    new FileContent(path);
+
+    assertThatThrownBy(() -> { new FileContent(path); })
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessageStartingWith("Failed to read '" + path.toString() + "':");
   }
 
 }

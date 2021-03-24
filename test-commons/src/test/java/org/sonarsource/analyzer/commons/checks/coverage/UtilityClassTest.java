@@ -19,14 +19,11 @@
  */
 package org.sonarsource.analyzer.commons.checks.coverage;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class UtilityClassTest {
-
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
 
   @Test
   public void self_check() throws Exception {
@@ -36,25 +33,28 @@ public class UtilityClassTest {
   @Test
   public void error_if_not_final() throws Exception {
     class Utils { }
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("Utility class Utils should be 'final'");
-    UtilityClass.assertGoodPractice(Utils.class);
+
+    assertThatThrownBy(() -> UtilityClass.assertGoodPractice(Utils.class))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Utility class Utils should be 'final'");
   }
 
   @Test
   public void error_if_several_constructors() throws Exception {
     final class Utils { private Utils() {} private Utils(int a) {} }
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("Utility class Utils should only have one constructor.");
-    UtilityClass.assertGoodPractice(Utils.class);
+
+    assertThatThrownBy(() -> UtilityClass.assertGoodPractice(Utils.class))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Utility class Utils should only have one constructor.");
   }
 
   @Test
   public void error_if_constructor_not_private() throws Exception {
     final class Utils { public Utils() {} }
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("Utils constructor should be private.");
-    UtilityClass.assertGoodPractice(Utils.class);
+
+    assertThatThrownBy(() -> UtilityClass.assertGoodPractice(Utils.class))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Utils constructor should be private.");
   }
 
 }

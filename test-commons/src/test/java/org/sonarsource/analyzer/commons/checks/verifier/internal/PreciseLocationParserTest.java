@@ -20,18 +20,14 @@
 package org.sonarsource.analyzer.commons.checks.verifier.internal;
 
 import java.util.List;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.sonarsource.analyzer.commons.checks.coverage.UtilityClass;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.sonarsource.analyzer.commons.checks.verifier.internal.PreciseLocationParser.parse;
 
 public class PreciseLocationParserTest {
-
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
 
   @Test
   public void ignored_comment() throws Exception {
@@ -41,9 +37,9 @@ public class PreciseLocationParserTest {
 
   @Test
   public void unexpected_character_exception() throws Exception {
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("Precise Location: unexpected character found at line 42 col 15 in:  ^^^ ERROR");
-    parse(42, 10, " ^^^ ERROR");
+    assertThatThrownBy(() -> parse(42, 10, " ^^^ ERROR"))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Precise Location: unexpected character found at line 42 col 15 in:  ^^^ ERROR");
   }
 
   @Test
