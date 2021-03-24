@@ -24,20 +24,16 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.sonarsource.analyzer.commons.checks.verifier.FileContent;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class TestFileTest {
 
   public static final Path MAIN_JS = Paths.get("src/test/resources/main.js");
-
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
 
   @Test
   public void constructor() {
@@ -62,25 +58,29 @@ public class TestFileTest {
   @Test
   public void invalid_positive_line() {
     TestFile file = new TestFile(new FileContent(Paths.get("file.cpp"), "int a;\nint b;\n"));
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("No line 5 in file.cpp");
-    file.line(5);
+
+    assertThatThrownBy(() -> file.line(5))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("No line 5 in file.cpp");
   }
 
   @Test
   public void invalid_negative_line() {
     TestFile file = new TestFile(new FileContent(Paths.get("file.cpp"), "int a;\nint b;\n"));
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("No line -2 in file.cpp");
-    file.line(-2);
+
+    assertThatThrownBy(() -> file.line(-2))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("No line -2 in file.cpp");
   }
 
   @Test
   public void comment_with_wrong_path() {
     TestFile file = new TestFile(new FileContent(Paths.get("file.cpp"), "int a;\nint b;\n"));
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("This comment is not related to file");
-    file.addNoncompliantComment(new Comment(Paths.get("file2.cpp"), 2, 19, 21, " Noncompliant"));
+    Comment comment = new Comment(Paths.get("file2.cpp"), 2, 19, 21, " Noncompliant");
+
+    assertThatThrownBy(() -> file.addNoncompliantComment(comment))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessageStartingWith("This comment is not related to file");
   }
 
   static List<Comment> parseComments(String prefix, FileContent file) {

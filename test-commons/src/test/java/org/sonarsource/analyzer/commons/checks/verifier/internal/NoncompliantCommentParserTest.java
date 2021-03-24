@@ -20,19 +20,15 @@
 package org.sonarsource.analyzer.commons.checks.verifier.internal;
 
 import java.nio.file.Paths;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.sonarsource.analyzer.commons.checks.coverage.UtilityClass;
 import org.sonarsource.analyzer.commons.checks.verifier.FileContent;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.sonarsource.analyzer.commons.checks.verifier.internal.NoncompliantCommentParser.parse;
 
 public class NoncompliantCommentParserTest {
-
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
 
   private TestFile file = new TestFile(new FileContent(Paths.get("source_code"), "\n\n\n\n"));
 
@@ -49,9 +45,9 @@ public class NoncompliantCommentParserTest {
 
   @Test
   public void invalid_comment() throws Exception {
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("Invalid comment format line 1: Noncompliant Noncompliant");
-    parse(file, 1, "Noncompliant Noncompliant");
+    assertThatThrownBy(() -> parse(file, 1, "Noncompliant Noncompliant"))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Invalid comment format line 1: Noncompliant Noncompliant");
   }
 
   @Test
@@ -84,12 +80,12 @@ public class NoncompliantCommentParserTest {
 
   @Test
   public void issue_count_and_messages() throws Exception {
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("Error, you can not specify issue count and messages at line 1, you have to choose either: \n"
-      + "  Noncompliant 3\n"
-      + "or\n"
-      + "  Noncompliant {{msg1}} {{msg2}} {{msg3}}");
-    parse(file, 1, " Noncompliant 3 {{msg1}} {{msg2}} {{msg3}}");
+    assertThatThrownBy(() -> parse(file, 1, " Noncompliant 3 {{msg1}} {{msg2}} {{msg3}}"))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Error, you can not specify issue count and messages at line 1, you have to choose either: \n"
+        + "  Noncompliant 3\n"
+        + "or\n"
+        + "  Noncompliant {{msg1}} {{msg2}} {{msg3}}\n");
   }
 
   @Test
