@@ -61,6 +61,7 @@
     <module>test-commons</module>
     <module>xml-parsing</module>
     <module>test-xml-parsing</module>
+    <module>regex-parsing</module>
   </modules>
 
   <scm>
@@ -77,6 +78,7 @@
     <version.jsr305>3.0.2</version.jsr305>
     <version.mockito>3.5.7</version.mockito>
     <version.junit>4.13.1</version.junit>
+    <version.junit-jupiter>5.7.0</version.junit-jupiter>
     <!-- used for deployment to SonarSource Artifactory -->
     <gitRepositoryName>sonar-analyzer-commons</gitRepositoryName>
     <maven.compiler.release>8</maven.compiler.release>
@@ -110,6 +112,13 @@
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
         <version>${version.junit}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${version.junit-jupiter}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.assertj</groupId>
