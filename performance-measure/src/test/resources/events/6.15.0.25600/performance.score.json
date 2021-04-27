@@ -1,0 +1,18 @@
+{
+  "scoreOverstepThreshold": false,
+  "score": "93.5%",
+  "durationRatioCompareToRelease": 0.9353,
+  "comparedWithRelease": "6.14.0.25463",
+  "releaseAnalysisDuration": "0h30m55s",
+  "latestAnalysisDuration": "0h28m55s",
+  "releaseAnalysisDurationNanos": 1855362179841,
+  "latestAnalysisDurationNanos": 1735411533152,
+  "projectsMissingInRelease": [
+    "AltoroJ"
+  ],
+  "projectsMissingInLatest": [],
+  "comparedProjects": [
+    "apache-tika",
+    "buck"
+  ]
+}

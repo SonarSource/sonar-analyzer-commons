@@ -1,0 +1,20 @@
+{
+  "scoreOverstepThreshold": true,
+  "score": "105.1%",
+  "durationRatioCompareToRelease": 1.0507,
+  "comparedWithRelease": "6.15.0.25600",
+  "releaseAnalysisDuration": "0h28m55s",
+  "latestAnalysisDuration": "0h30m23s",
+  "releaseAnalysisDurationNanos": 1735411533152,
+  "latestAnalysisDurationNanos": 1823352565243,
+  "projectsMissingInRelease": [
+    "com.mpatric-mp3agic"
+  ],
+  "projectsMissingInLatest": [
+    "AltoroJ"
+  ],
+  "comparedProjects": [
+    "apache-tika",
+    "buck"
+  ]
+}
