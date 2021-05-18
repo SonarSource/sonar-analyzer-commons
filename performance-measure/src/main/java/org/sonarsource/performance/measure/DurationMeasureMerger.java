@@ -94,12 +94,12 @@ public class DurationMeasureMerger {
     return this;
   }
 
-  public void mergeProjectPerformances(Path latestAnalysisFolder, Path destDirectory) throws IOException {
+  public void mergeProjectPerformances(Path latestAnalysisFolder, Path destDirectory, List<String> namesToMergeOnUpperLevel) throws IOException {
     LOG.info(() -> "Merge Project Performances of " + latestAnalysisFolder.getFileName());
     DurationMeasure mergedMeasure = null;
     for (Path performanceFile : findPerformanceFiles(latestAnalysisFolder)) {
       DurationMeasure measure = DurationMeasureFiles.fromJsonWithoutObservationCost(performanceFile);
-      measure.recursiveMergeOnUpperLevel("RegexParser");
+      namesToMergeOnUpperLevel.forEach(measure::recursiveMergeOnUpperLevel);
       mergedMeasure = mergedMeasure == null ? measure : mergedMeasure.merge(measure);
     }
     if (mergedMeasure == null) {

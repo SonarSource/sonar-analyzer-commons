@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -56,7 +57,7 @@ class DurationMeasureMergerTest {
   @Test
   void merge_project_performances(@TempDir Path destDirectory) throws IOException {
     Path latestAnalysisFolder = Paths.get("src", "test", "resources", "events", "6.15.0.25780");
-    merger.mergeProjectPerformances(latestAnalysisFolder, destDirectory);
+    merger.mergeProjectPerformances(latestAnalysisFolder, destDirectory, Collections.singletonList("RegexParser"));
 
     Path expectedPerformanceFile = latestAnalysisFolder.resolve("sonar.java.performance.measure.json");
     Path actualPerformanceFile = destDirectory.resolve("sonar.java.performance.measure.json");
@@ -146,10 +147,10 @@ class DurationMeasureMergerTest {
     Path latestAnalysisFolder = Paths.get("src", "test", "resources", "events", "6.15.0.25780");
     merger
       .forPerformanceFileName("invalid.performance.measure.json")
-      .mergeProjectPerformances(latestAnalysisFolder, destDirectory);
+      .mergeProjectPerformances(latestAnalysisFolder, destDirectory, Collections.emptyList());
     assertThat(logger.logs().replaceAll("\\R", "\n")).isEqualTo("" +
       "[INFO] Merge Project Performances of 6.15.0.25780\n" +
-      "[WARNING] Can't find any 'invalid.performance.measure.json' in src/test/resources/events/6.15.0.25780\n");
+      "[WARNING] Can't find any 'invalid.performance.measure.json' in " + latestAnalysisFolder + "\n");
   }
 
   @Test
