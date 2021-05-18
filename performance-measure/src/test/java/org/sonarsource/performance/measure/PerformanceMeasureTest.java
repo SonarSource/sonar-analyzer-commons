@@ -67,7 +67,7 @@ class PerformanceMeasureTest {
   @BeforeEach
   void beforeEach() {
     PerformanceMeasure.overrideTimeSupplierForTest(() -> ++testTimeNanos);
-    PerformanceMeasure.clearCurrentMeasureGetterAndSetterForTest();
+    PerformanceMeasure.deactivateAndClearCurrentMeasureForTest();
   }
 
   @Test
@@ -131,27 +131,6 @@ class PerformanceMeasureTest {
       "        { \"name\": \"sub-cat-2\", \"calls\": 0, \"durationNanos\": 0 }\n" +
       "      ]\n" +
       "    }\n" +
-      "  ]\n" +
-      "}\n");
-  }
-
-  @Test
-  void single_thread_mode() {
-    logger.setLevel(StringLogger.Level.DEBUG);
-    PerformanceMeasure.Duration duration_1 = PerformanceMeasure.reportBuilder()
-      .activate(true)
-      .allowSingleThreadMode()
-      .start("root");
-    PerformanceMeasure.Duration duration_1_1 = PerformanceMeasure.start("cat-1");
-    duration_1_1.stop();
-    PerformanceMeasure.Duration duration_1_2 = PerformanceMeasure.start(arrayList);
-    duration_1_2.stop();
-    duration_1.stop();
-    assertThat(logger.logs()).isEqualTo("" +
-      "[DEBUG] Performance Measures:\n" +
-      "{ \"name\": \"root\", \"calls\": 1, \"durationNanos\": 5, \"children\": [\n" +
-      "    { \"name\": \"ArrayList\", \"calls\": 1, \"durationNanos\": 1 },\n" +
-      "    { \"name\": \"cat-1\", \"calls\": 1, \"durationNanos\": 1 }\n" +
       "  ]\n" +
       "}\n");
   }

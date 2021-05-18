@@ -25,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -38,19 +37,18 @@ public final class PerformanceMeasure {
 
   private static final Logger LOG = Logger.get(PerformanceMeasure.class);
 
-  private static final ThreadLocal<DurationMeasure> MULTI_THREAD_CURRENT_MEASURE = new ThreadLocal<>();
+  private static final ThreadLocal<DurationMeasure> THREAD_LOCAL_CURRENT_MEASURE = new ThreadLocal<>();
 
-  @Nullable
-  private static DurationMeasure singleThreadCurrentMeasure = null;
-  @Nullable
-  private static Supplier<DurationMeasure> currentMeasureGetter = null;
-  @Nullable
-  private static Consumer<DurationMeasure> currentMeasureSetter = null;
+  private static boolean globalDeactivation = true;
 
   private static Supplier<Long> nanoTimeSupplier = System::nanoTime;
 
   private PerformanceMeasure() {
     // utility class
+  }
+
+  private static void setGlobalDeactivation(boolean value) {
+    globalDeactivation = value;
   }
 
   public static Builder reportBuilder() {
@@ -64,17 +62,10 @@ public final class PerformanceMeasure {
     @Nullable
     private String performanceFile = null;
 
-    boolean allowSingleThreadMode = false;
-
     boolean appendMeasurementCost = false;
 
     public Builder activate(boolean active) {
       this.active = active;
-      return this;
-    }
-
-    public Builder allowSingleThreadMode() {
-      this.allowSingleThreadMode = true;
       return this;
     }
 
@@ -92,69 +83,37 @@ public final class PerformanceMeasure {
       if (!active) {
         return IgnoredDuration.INSTANCE;
       }
-      initializeCurrentMeasureGetterAndSetter(allowSingleThreadMode);
+      setGlobalDeactivation(false);
       Path performanceMeasureFile = null;
       if (performanceFile != null && !performanceFile.isEmpty()) {
         performanceMeasureFile = Paths.get(performanceFile.replace('\\', File.separatorChar).replace('/', File.separatorChar));
       }
-      DurationMeasure parentMeasure = currentMeasureGetter.get();
+      DurationMeasure parentMeasure = THREAD_LOCAL_CURRENT_MEASURE.get();
       DurationMeasure currentMeasure = new DurationMeasure(name);
-      currentMeasureSetter.accept(currentMeasure);
+      THREAD_LOCAL_CURRENT_MEASURE.set(currentMeasure);
       return new RecordedDurationReport(parentMeasure, currentMeasure, performanceMeasureFile, appendMeasurementCost);
     }
 
-    private static void initializeCurrentMeasureGetterAndSetter(boolean allowSingleThreadMode) {
-      if (currentMeasureGetter == null) {
-        if (allowSingleThreadMode) {
-          currentMeasureGetter = PerformanceMeasure::singleThreadGetCurrentMeasure;
-          currentMeasureSetter = PerformanceMeasure::singleThreadSetCurrentMeasure;
-        } else {
-          currentMeasureGetter = MULTI_THREAD_CURRENT_MEASURE::get;
-          currentMeasureSetter = PerformanceMeasure::multiThreadSetCurrentMeasure;
-        }
-      }
-    }
-
-  }
-
-  private static DurationMeasure singleThreadGetCurrentMeasure() {
-    return singleThreadCurrentMeasure;
-  }
-
-  private static void singleThreadSetCurrentMeasure(@Nullable DurationMeasure currentMeasure) {
-    singleThreadCurrentMeasure = currentMeasure;
-  }
-
-  private static void multiThreadSetCurrentMeasure(@Nullable DurationMeasure measure) {
-    if (measure == null) {
-      MULTI_THREAD_CURRENT_MEASURE.remove();
-    } else {
-      MULTI_THREAD_CURRENT_MEASURE.set(measure);
-    }
   }
 
   public static Duration start(Object object) {
-    if (currentMeasureGetter == null) {
+    if (globalDeactivation) {
       return IgnoredDuration.INSTANCE;
     }
     return start(object.getClass().getSimpleName());
   }
 
   public static Duration start(String name) {
-    if (currentMeasureGetter == null) {
+    if (globalDeactivation) {
       return IgnoredDuration.INSTANCE;
     }
-    DurationMeasure parentMeasure = currentMeasureGetter.get();
+    DurationMeasure parentMeasure = THREAD_LOCAL_CURRENT_MEASURE.get();
     if (parentMeasure == null) {
       return IgnoredDuration.INSTANCE;
     }
     DurationMeasure currentMeasure = parentMeasure.getOrCreateChild(name);
-    currentMeasureSetter.accept(currentMeasure);
+    THREAD_LOCAL_CURRENT_MEASURE.set(currentMeasure);
     return new RecordedDuration(parentMeasure, currentMeasure);
-  }
-
-  public static void setCurrent(@Nullable DurationMeasure measure) {
-    currentMeasureSetter.accept(measure);
   }
 
   private static class RecordedDuration implements Duration {
@@ -175,7 +134,11 @@ public final class PerformanceMeasure {
       if (startNanos != -1) {
         measure.addCalls(1, nanoTimeSupplier.get() - startNanos);
         startNanos = -1;
-        setCurrent(parentMeasure);
+        if (parentMeasure == null) {
+          THREAD_LOCAL_CURRENT_MEASURE.remove();
+        } else {
+          THREAD_LOCAL_CURRENT_MEASURE.set(parentMeasure);
+        }
       }
     }
 
@@ -201,7 +164,7 @@ public final class PerformanceMeasure {
     @Override
     public void stop() {
       if (appendMeasurementCost) {
-        setCurrent(measure);
+        THREAD_LOCAL_CURRENT_MEASURE.set(measure);
         appendMeasurementCost();
       }
       super.stop();
@@ -293,9 +256,9 @@ public final class PerformanceMeasure {
   }
 
   // Visible for testing
-  static void clearCurrentMeasureGetterAndSetterForTest() {
-    PerformanceMeasure.currentMeasureGetter = null;
-    PerformanceMeasure.currentMeasureSetter = null;
+  static void deactivateAndClearCurrentMeasureForTest() {
+    setGlobalDeactivation(true);
+    THREAD_LOCAL_CURRENT_MEASURE.remove();
   }
 
 }
