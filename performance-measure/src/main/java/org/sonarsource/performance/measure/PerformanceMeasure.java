@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import javax.annotation.Nullable;
+import org.sonar.api.internal.google.common.annotations.VisibleForTesting;
 import org.sonarsource.performance.measure.log.Logger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -144,19 +145,20 @@ public final class PerformanceMeasure {
 
   }
 
-  private static class RecordedDurationReport extends RecordedDuration {
+  private static class RecordedDurationReport implements Duration {
 
     private static final String PARENT_OF_THROWAWAY_MEASURES_TO_COMPUTE_OBSERVATION_COST = "#measures to compute observation cost";
     private static final int SAMPLING_COUNT_TO_EVALUATE_OBSERVATION_COST = 99;
     private static final Supplier<IntStream> SAMPLES = () -> IntStream.range(0, SAMPLING_COUNT_TO_EVALUATE_OBSERVATION_COST);
 
+    private final RecordedDuration duration;
     @Nullable
     private final Path performanceMeasureFile;
     private final boolean appendMeasurementCost;
 
     public RecordedDurationReport(@Nullable DurationMeasure parentMeasure, DurationMeasure measure,
       @Nullable Path performanceMeasureFile, boolean appendMeasurementCost) {
-      super(parentMeasure, measure);
+      duration = new RecordedDuration(parentMeasure, measure);
       this.performanceMeasureFile = performanceMeasureFile;
       this.appendMeasurementCost = appendMeasurementCost;
     }
@@ -164,13 +166,13 @@ public final class PerformanceMeasure {
     @Override
     public void stop() {
       if (appendMeasurementCost) {
-        THREAD_LOCAL_CURRENT_MEASURE.set(measure);
+        THREAD_LOCAL_CURRENT_MEASURE.set(duration.measure);
         appendMeasurementCost();
       }
-      super.stop();
-      LOG.debug(() -> "Performance Measures:\n" + DurationMeasureFiles.toJson(measure));
+      duration.stop();
+      LOG.debug(() -> "Performance Measures:\n" + DurationMeasureFiles.toJson(duration.measure));
       if (performanceMeasureFile != null) {
-        saveToFile(measure, performanceMeasureFile);
+        saveToFile(duration.measure, performanceMeasureFile);
       }
     }
 
@@ -242,7 +244,7 @@ public final class PerformanceMeasure {
 
   }
 
-  // VisibleForTesting
+  @VisibleForTesting
   static void ensureParentDirectoryExists(Path path) throws IOException {
     Path parentDirectory = path.getParent();
     if (parentDirectory != null && !Files.isDirectory(parentDirectory)) {
@@ -250,12 +252,12 @@ public final class PerformanceMeasure {
     }
   }
 
-  // Visible for testing
+  @VisibleForTesting
   static void overrideTimeSupplierForTest(Supplier<Long> nanoTimeSupplier) {
     PerformanceMeasure.nanoTimeSupplier = nanoTimeSupplier;
   }
 
-  // Visible for testing
+  @VisibleForTesting
   static void deactivateAndClearCurrentMeasureForTest() {
     setGlobalDeactivation(true);
     THREAD_LOCAL_CURRENT_MEASURE.remove();

@@ -73,7 +73,7 @@ public final class DurationMeasureFiles {
     jsonObject.addProperty("name", measure.name());
     jsonObject.addProperty("calls", measure.calls());
     jsonObject.addProperty("durationNanos", measure.durationNanos());
-    if (!measure.isEmpty()) {
+    if (!measure.hasChildren()) {
       jsonObject.add("children", measure.sortedChildren().stream()
         .map(DurationMeasureFiles::toJsonObject)
         .collect(JsonArray::new, JsonArray::add, JsonArray::addAll));
@@ -111,6 +111,16 @@ public final class DurationMeasureFiles {
     return new DurationMeasure(name, calls, durationNanos, childrenMap);
   }
 
+  /**
+   * @param path the destination statistics file
+   * @param measure the root of the measure hierarchy
+   * @param categoryNames Map defining categories for grouped measures, when a measure.name() matches
+   *                      a key of this map, the value of the map become the category of the measure
+   *                      and its descendents.
+   * @param groupedMeasurePredicate Predicate applied on each measure.name() to decide if the measure
+   *                                need to be extracted, grouped and categorised at the end of the
+   *                                statistics file.
+   */
   public static void writeStatistics(Path path, DurationMeasure measure, Map<String, String> categoryNames,
     Predicate<String> groupedMeasurePredicate) throws IOException {
     Files.write(path, toStatistics(measure, categoryNames, groupedMeasurePredicate).getBytes(UTF_8));
@@ -133,6 +143,12 @@ public final class DurationMeasureFiles {
     return stat.toString();
   }
 
+  /**
+   * Walk recursively through the measure hierarchy and assign a list of category to some measure names.
+   * If a measure.name() is a key in "categoryNames", then the related value in the "categoryNames" map become the measure category.
+   * The returned map, at the key matching the given measure.name(), will contains its measure category in addition to all
+   * the measure categories of its parent. The returned map will also contains the returned map of its children.
+   */
   private static Map<String, Set<String>> categorizeMeasures(DurationMeasure measure, Map<String, String> categoryNames, Set<String> parentCategories) {
     Map<String, Set<String>> categories = new HashMap<>();
     String newCategory = categoryNames.get(measure.name());
@@ -166,19 +182,19 @@ public final class DurationMeasureFiles {
       .map(child -> extractGroupedMeasure(child, groupedMeasurePredicate))
       .forEach(childMap -> childMap.values().forEach(child -> groupedMap.merge(child.name(), child.copy(), DurationMeasure::merge)));
 
-    DurationMeasure replacement = new DurationMeasure("[ 0 grouped measure(s) ]");
+    DurationMeasure substitutedChild = new DurationMeasure("[ 0 grouped measure(s) ]");
     long groupedCount = 0;
     for (DurationMeasure child : new ArrayList<>(measure.children())) {
       if (groupedMeasurePredicate.test(child.name())) {
         groupedCount++;
         measure.remove(child.name());
-        replacement.addCalls(child.calls(), child.durationNanos());
+        substitutedChild.addCalls(child.calls(), child.durationNanos());
         groupedMap.merge(child.name(), child.copy(), DurationMeasure::merge);
       }
     }
     if (groupedCount > 0) {
-      replacement.rename("[ " + groupedCount + " grouped measure(s) ]");
-      measure.addOrMerge(replacement);
+      substitutedChild.rename("[ " + groupedCount + " grouped measure(s) ]");
+      measure.addOrMerge(substitutedChild);
     }
     return groupedMap;
   }

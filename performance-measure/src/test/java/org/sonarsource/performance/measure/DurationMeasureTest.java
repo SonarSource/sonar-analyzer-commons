@@ -38,7 +38,7 @@ class DurationMeasureTest {
     assertThat(child.name()).isEqualTo("foo");
     assertThat(child.calls()).isEqualTo(2L);
     assertThat(child.durationNanos()).isEqualTo(123L);
-    assertThat(child.isEmpty()).isTrue();
+    assertThat(child.hasChildren()).isTrue();
     assertThat(child.get("a")).isNull();
     assertThat(child.children()).isEmpty();
 
@@ -46,7 +46,7 @@ class DurationMeasureTest {
     assertThat(parent.name()).isEqualTo("bar");
     assertThat(parent.calls()).isEqualTo(5L);
     assertThat(parent.durationNanos()).isEqualTo(435L);
-    assertThat(parent.isEmpty()).isFalse();
+    assertThat(parent.hasChildren()).isFalse();
     assertThat(parent.get("foo")).isSameAs(child);
   }
 
@@ -66,7 +66,7 @@ class DurationMeasureTest {
     assertThat(measure1Child.name()).isEqualTo(measure1ChildCopy.name());
     assertThat(measure1Child.calls()).isEqualTo(measure1ChildCopy.calls());
     assertThat(measure1Child.durationNanos()).isEqualTo(measure1ChildCopy.durationNanos());
-    assertThat(measure1Child.isEmpty()).isTrue();
+    assertThat(measure1Child.hasChildren()).isTrue();
   }
 
   @Test

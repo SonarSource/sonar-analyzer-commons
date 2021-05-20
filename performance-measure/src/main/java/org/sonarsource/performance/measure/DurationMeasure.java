@@ -113,15 +113,12 @@ public class DurationMeasure {
   }
 
   public Collection<DurationMeasure> sortedChildren() {
-    if (childrenMap == null) {
-      return Collections.emptyList();
-    }
-    List<DurationMeasure> sortedList = new ArrayList<>(childrenMap.values());
+    List<DurationMeasure> sortedList = new ArrayList<>(children());
     sortedList.sort(Comparator.comparing(DurationMeasure::name));
     return sortedList;
   }
 
-  public boolean isEmpty() {
+  public boolean hasChildren() {
     return childrenMap == null || childrenMap.isEmpty();
   }
 
