@@ -1,0 +1,12 @@
+{ "name": "JavaSquidSensor", "calls": 1, "durationNanos": 0, "children": [
+    { "name": "#MeasurementCost_v1", "calls": 1, "durationNanos": 0, "children": [
+        { "name": "createChild", "calls": 1, "durationNanos": 0 },
+        { "name": "incrementChild", "calls": 1, "durationNanos": 0 },
+        { "name": "nanoTime", "calls": 1, "durationNanos": 0 },
+        { "name": "observationCost", "calls": 1, "durationNanos": 0 }
+      ]
+    },
+    { "name": "Main", "calls": 1, "durationNanos": 0 },
+    { "name": "Test", "calls": 1, "durationNanos": 0 }
+  ]
+}

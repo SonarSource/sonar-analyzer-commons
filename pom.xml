@@ -62,6 +62,7 @@
     <module>xml-parsing</module>
     <module>test-xml-parsing</module>
     <module>regex-parsing</module>
+    <module>performance-measure</module>
   </modules>
 
   <scm>
