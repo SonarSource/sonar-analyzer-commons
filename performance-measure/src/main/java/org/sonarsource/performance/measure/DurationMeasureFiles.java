@@ -115,10 +115,10 @@ public final class DurationMeasureFiles {
    * @param path the destination statistics file
    * @param measure the root of the measure hierarchy
    * @param categoryNames Map defining categories for grouped measures, when a measure.name() matches
-   *                      a key of this map, the value of the map become the category of the measure
+   *                      a key of this map, the value of the map becomes the category of the measure
    *                      and its descendents.
    * @param groupedMeasurePredicate Predicate applied on each measure.name() to decide if the measure
-   *                                need to be extracted, grouped and categorised at the end of the
+   *                                needs to be extracted, grouped and categorised at the end of the
    *                                statistics file.
    */
   public static void writeStatistics(Path path, DurationMeasure measure, Map<String, String> categoryNames,
@@ -145,8 +145,8 @@ public final class DurationMeasureFiles {
 
   /**
    * Walk recursively through the measure hierarchy and assign a list of category to some measure names.
-   * If a measure.name() is a key in "categoryNames", then the related value in the "categoryNames" map become the measure category.
-   * The returned map, at the key matching the given measure.name(), will contains its measure category in addition to all
+   * If a measure.name() is a key in "categoryNames", then the related value in the "categoryNames" map becomes the measure category.
+   * The returned map, at the key matching the given measure.name(), will contain its measure category in addition to all
    * the measure categories of its parent. The returned map will also contains the returned map of its children.
    */
   private static Map<String, Set<String>> categorizeMeasures(DurationMeasure measure, Map<String, String> categoryNames, Set<String> parentCategories) {
