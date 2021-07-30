@@ -20,5 +20,6 @@
 package org.sonarsource.analyzer.commons.regex;
 
 public enum RegexDialect {
-  JAVA
+  JAVA,
+  PHP
 }

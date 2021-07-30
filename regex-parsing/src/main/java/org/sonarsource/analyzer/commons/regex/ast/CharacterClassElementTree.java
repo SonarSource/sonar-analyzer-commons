@@ -32,7 +32,8 @@ public interface CharacterClassElementTree extends RegexSyntaxElement {
     PLAIN_CHARACTER,
     UNICODE_CODE_POINT,
     MISC_ESCAPE_SEQUENCE,
-    NESTED_CHARACTER_CLASS
+    NESTED_CHARACTER_CLASS,
+    POSIX_CLASS
   }
 
   @Nonnull

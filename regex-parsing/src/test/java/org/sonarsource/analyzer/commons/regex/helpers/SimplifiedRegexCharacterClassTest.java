@@ -79,6 +79,8 @@ class SimplifiedRegexCharacterClassTest {
     assertIntersects("a", ".", true, NO_FLAGS).isTrue();
     assertIntersects(".", "[a-z]", false, NO_FLAGS).isTrue();
     assertIntersects("[a-z]", ".", false, NO_FLAGS).isTrue();
+    assertIntersects("[0-73-9]", ".", false, NO_FLAGS).isTrue();
+    assertIntersects("[0-93-57]", ".", false, NO_FLAGS).isTrue();
 
     // by default [\r\n\u0085\u2028\u2029] excluded from DotTree
     assertIntersects(".", "[\r\n\u0085\u2028\u2029]", false, NO_FLAGS).isFalse();
@@ -362,6 +364,9 @@ class SimplifiedRegexCharacterClassTest {
     simplifiedRegexCharacterClass = SimplifiedRegexCharacterClass.of(supersetResult);
     assertThat(simplifiedRegexCharacterClass).isNotNull();
     assertThat(simplifiedRegexCharacterClass.matchesAnyCharacter()).isTrue();
+
+    SimplifiedRegexCharacterClass characterClass = new SimplifiedRegexCharacterClass();
+    assertThat(characterClass.matchesAnyCharacter()).isFalse();
   }
 
   @Test
@@ -379,6 +384,20 @@ class SimplifiedRegexCharacterClassTest {
     CharacterRangeTree characterRangeTree = (CharacterRangeTree) regexSyntaxElement;
     assertThat(characterRangeTree.getLowerBound().codePointOrUnit()).isEqualTo(52);
     assertThat(characterRangeTree.getUpperBound().codePointOrUnit()).isEqualTo(53);
+  }
+
+  @Test
+  void test_reverse_addRange() {
+    RegexSyntaxElement element = mock(RegexSyntaxElement.class);
+    SimplifiedRegexCharacterClass characterClass = new SimplifiedRegexCharacterClass();
+    characterClass.addRange(1, 2, element);
+    characterClass.addRange(2, 3, element);
+
+    SimplifiedRegexCharacterClass characterClassReverse = new SimplifiedRegexCharacterClass();
+    characterClassReverse.addRange(2, 3, element);
+    characterClassReverse.addRange(1, 2, element);
+
+    assertThat(characterClass.intersects(characterClassReverse, false)).isTrue();
   }
 
   private static AbstractBooleanAssert<?> assertIntersects(String regex1, String regex2, boolean defaultAnswer, int flags) {
