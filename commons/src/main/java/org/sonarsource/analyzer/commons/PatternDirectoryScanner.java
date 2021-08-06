@@ -38,7 +38,7 @@ public class PatternDirectoryScanner {
     this.pattern = pattern;
   }
 
-  public List<File> getIncludedFiles() {
+  public List<File> getMatchingFiles() {
     final String baseDirAbsolutePath = baseDir.getAbsolutePath();
     IOFileFilter fileFilter = new IOFileFilter() {
 

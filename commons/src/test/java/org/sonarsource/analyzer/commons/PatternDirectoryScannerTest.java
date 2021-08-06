@@ -77,7 +77,7 @@ public class PatternDirectoryScannerTest {
 
   private static List<File> scan(String pattern, File dir) {
     PatternDirectoryScanner scanner = new PatternDirectoryScanner(dir, WildcardPattern.create(pattern));
-    return scanner.getIncludedFiles();
+    return scanner.getMatchingFiles();
   }
 
 }
