@@ -37,7 +37,7 @@ public class PatternDirectoryScannerTest {
 
   private static final String F_1_TXT = "dir/f1.txt";
 
-  private final File baseDir = new File("src/test/resources/org/sonarsource/analyzer/commons/scanner").getAbsoluteFile();
+  private static final File baseDir = new File("src/test/resources/org/sonarsource/analyzer/commons/scanner").getAbsoluteFile();
 
   @Test
   public void noMatchedFile() {
