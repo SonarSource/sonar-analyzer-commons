@@ -38,6 +38,7 @@ public class PatternDirectoryScannerTest {
   private static final String F_1_TXT = "dir/f1.txt";
 
   private static final File baseDir = new File("src/test/resources/org/sonarsource/analyzer/commons/scanner").getAbsoluteFile();
+  private static final File file = new File(baseDir, F_1_TXT);
 
   @Test
   public void noMatchedFile() {
@@ -46,13 +47,13 @@ public class PatternDirectoryScannerTest {
 
   @Test
   public void simpleFile() {
-    assertThat(getMatchingFiles("dir/f1.txt")).containsOnly(new File(baseDir, F_1_TXT));
+    assertThat(getMatchingFiles("dir/f1.txt")).containsOnly(file);
   }
 
   @Test
   public void wildCard() {
-    assertThat(getMatchingFiles("*/f1.txt")).containsOnly(new File(baseDir, F_1_TXT));
-    assertThat(getMatchingFiles("**/f1.txt")).containsOnly(new File(baseDir, F_1_TXT), new File(baseDir, "dir/subdir/f1.txt"));
+    assertThat(getMatchingFiles("*/f1.txt")).containsOnly(file);
+    assertThat(getMatchingFiles("**/f1.txt")).containsOnly(file, new File(baseDir, "dir/subdir/f1.txt"));
   }
 
   @Test
