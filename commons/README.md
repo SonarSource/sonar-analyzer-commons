@@ -10,7 +10,7 @@ Logic useful for an average language plugin
 * [`ExternalRuleLoader`](./src/main/java/org/sonarsource/analyzer/commons/ExternalRuleLoader.java) - to load external rules descriptions from `json` file
 * [`ExternalReportProvider`](./src/main/java/org/sonarsource/analyzer/commons/ExternalReportProvider.java) - to get the list of io.File with external reports
 * [`ProgressReport`](./src/main/java/org/sonarsource/analyzer/commons/ProgressReport.java) - to produce logs with number of analyzed files
-* [`PatternDirectoryScanner`](./src/main/java/org/sonarsource/analyzer/commons/PatternDirectoryScanner.java) - to scan the directory based on patterns
+* [`PatternDirectoryScanner`](./src/main/java/org/sonarsource/analyzer/commons/PatternDirectoryScanner.java) - to get files matching given pattern in the given directory
 
 ### License
 Copyright 2009-2021 SonarSource.
