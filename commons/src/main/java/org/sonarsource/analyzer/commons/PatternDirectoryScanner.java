@@ -33,9 +33,9 @@ public class PatternDirectoryScanner {
   private final File baseDir;
   private final WildcardPattern pattern;
 
-  public PatternDirectoryScanner(File baseDir, WildcardPattern pattern) {
+  public PatternDirectoryScanner(File baseDir, String pattern) {
     this.baseDir = baseDir;
-    this.pattern = pattern;
+    this.pattern = WildcardPattern.create(pattern);
   }
 
   public List<File> getMatchingFiles() {

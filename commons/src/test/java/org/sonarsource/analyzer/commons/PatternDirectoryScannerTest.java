@@ -25,7 +25,6 @@ import java.util.List;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.sonar.api.utils.WildcardPattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -76,7 +75,7 @@ public class PatternDirectoryScannerTest {
   }
 
   private static List<File> scan(String pattern, File dir) {
-    PatternDirectoryScanner scanner = new PatternDirectoryScanner(dir, WildcardPattern.create(pattern));
+    PatternDirectoryScanner scanner = new PatternDirectoryScanner(dir, pattern);
     return scanner.getMatchingFiles();
   }
 
