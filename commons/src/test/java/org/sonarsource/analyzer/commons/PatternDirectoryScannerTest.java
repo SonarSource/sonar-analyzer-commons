@@ -46,7 +46,7 @@ public class PatternDirectoryScannerTest {
 
   @Test
   public void simpleFile() {
-    assertThat(getMatchingFiles(F_1_TXT)).containsOnly(new File(baseDir, F_1_TXT));
+    assertThat(getMatchingFiles("dir/f1.txt")).containsOnly(new File(baseDir, F_1_TXT));
   }
 
   @Test
