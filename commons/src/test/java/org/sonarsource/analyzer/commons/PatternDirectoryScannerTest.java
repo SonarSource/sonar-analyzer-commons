@@ -22,6 +22,8 @@ package org.sonarsource.analyzer.commons;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.List;
+
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -62,8 +64,8 @@ public class PatternDirectoryScannerTest {
     when(dir.listFiles(any(FileFilter.class))).thenAnswer(new Answer<File[]>() {
       @Override
       public File[] answer(InvocationOnMock invocation) throws Throwable {
-        FileFilter filter = (FileFilter) invocation.getArguments()[0];
-        filter.accept(new File("/short/path"));
+        IOFileFilter filter = (IOFileFilter) invocation.getArguments()[0];
+        filter.accept(new File("/short"), "path");
         return new File[] {matchingFile};
       }
     });
