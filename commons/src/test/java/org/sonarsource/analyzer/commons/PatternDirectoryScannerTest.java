@@ -41,18 +41,18 @@ public class PatternDirectoryScannerTest {
 
   @Test
   public void noMatchedFile() {
-    assertThat(scan("dir/xxx")).isEmpty();
+    assertThat(getMatchingFiles("dir/xxx")).isEmpty();
   }
 
   @Test
   public void simpleFile() {
-    assertThat(scan(F_1_TXT)).containsOnly(new File(baseDir, F_1_TXT));
+    assertThat(getMatchingFiles(F_1_TXT)).containsOnly(new File(baseDir, F_1_TXT));
   }
 
   @Test
   public void wildCard() {
-    assertThat(scan("*/f1.txt")).containsOnly(new File(baseDir, F_1_TXT));
-    assertThat(scan("**/f1.txt")).containsOnly(new File(baseDir, F_1_TXT), new File(baseDir, "dir/subdir/f1.txt"));
+    assertThat(getMatchingFiles("*/f1.txt")).containsOnly(new File(baseDir, F_1_TXT));
+    assertThat(getMatchingFiles("**/f1.txt")).containsOnly(new File(baseDir, F_1_TXT), new File(baseDir, "dir/subdir/f1.txt"));
   }
 
   @Test
@@ -72,7 +72,7 @@ public class PatternDirectoryScannerTest {
     assertThat(scan("xxx", dir)).containsOnly(matchingFile);
   }
 
-  private List<File> scan(String pattern) {
+  private List<File> getMatchingFiles(String pattern) {
     return scan(pattern, baseDir);
   }
 
