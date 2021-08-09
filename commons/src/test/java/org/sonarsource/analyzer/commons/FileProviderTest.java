@@ -33,7 +33,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class PatternDirectoryScannerTest {
+public class FileProviderTest {
 
   private static final File baseDir = new File("src/test/resources/org/sonarsource/analyzer/commons/scanner").getAbsoluteFile();
   private static final File file = new File(baseDir, "dir/f1.txt");
@@ -76,7 +76,7 @@ public class PatternDirectoryScannerTest {
   }
 
   private static List<File> scan(String pattern, File dir) {
-    PatternDirectoryScanner scanner = new PatternDirectoryScanner(dir, pattern);
+    FileProvider scanner = new FileProvider(dir, pattern);
     return scanner.getMatchingFiles();
   }
 

@@ -28,12 +28,12 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.sonar.api.utils.WildcardPattern;
 
-public class PatternDirectoryScanner {
+public class FileProvider {
 
   private final File baseDir;
   private final WildcardPattern pattern;
 
-  public PatternDirectoryScanner(File baseDir, String pattern) {
+  public FileProvider(File baseDir, String pattern) {
     this.baseDir = baseDir;
     this.pattern = WildcardPattern.create(pattern);
   }
