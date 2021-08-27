@@ -20,6 +20,7 @@
 package org.sonarsource.analyzer.commons;
 
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.StreamSupport;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
@@ -36,7 +37,18 @@ public class ProgressReport implements Runnable {
   private final String adjective;
   private boolean success = false;
 
+  /**
+   * The report loop can not rely only on Thread.interrupted() to end, according to
+   * interrupted() javadoc, a thread interruption can be ignored because a thread was
+   * not alive at the time of the interrupt. This could happen if stop() is being called
+   * before ProgressReport's thread becomes alive.
+   * So this boolean flag ensures that ProgressReport never enter an infinite loop when
+   * Thread.interrupted() failed to be set to true.
+   */
+  private final AtomicBoolean interrupted = new AtomicBoolean();
+
   public ProgressReport(String threadName, long period, Logger logger, String adjective) {
+    interrupted.set(false);
     this.period = period;
     this.logger = logger;
     this.adjective = adjective;
@@ -56,11 +68,12 @@ public class ProgressReport implements Runnable {
   @Override
   public void run() {
     log(count + " source " + pluralizeFile(count) + " to be " + adjective);
-    while (!Thread.interrupted()) {
+    while (!(interrupted.get() || Thread.interrupted())) {
       try {
         Thread.sleep(period);
         log(currentFileNumber + "/" + count + " " + pluralizeFile(currentFileNumber) + " " + adjective + ", current file: " + currentFilename);
       } catch (InterruptedException e) {
+        interrupted.set(true);
         thread.interrupt();
         break;
       }
@@ -101,12 +114,14 @@ public class ProgressReport implements Runnable {
   }
 
   public synchronized void stop() {
+    interrupted.set(true);
     success = true;
     thread.interrupt();
     join();
   }
 
   public synchronized void cancel() {
+    interrupted.set(true);
     thread.interrupt();
     join();
   }

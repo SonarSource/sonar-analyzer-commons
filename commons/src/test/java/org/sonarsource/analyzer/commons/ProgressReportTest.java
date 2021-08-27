@@ -20,6 +20,7 @@
 package org.sonarsource.analyzer.commons;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Rule;
@@ -153,6 +154,23 @@ public class ProgressReportTest {
 
     List<String> messages = captor.getAllValues();
     assertThat(messages).contains("1/1" + " source file has been analyzed");
+  }
+
+  @Test(timeout = 1000)
+  public void interrupting_the_thread_should_never_create_a_deadlock() throws InterruptedException {
+    Logger logger = mock(Logger.class);
+    ProgressReport report = new ProgressReport(ProgressReport.class.getName(), 500, logger, "analyzed");
+
+    long start = System.currentTimeMillis();
+    report.start(Collections.emptyList());
+    report.stop();
+    long end = System.currentTimeMillis();
+
+    // stopping the report too soon could fail to interrupt the thread that was not yet alive,
+    // and fail to set the proper state for Thread.interrupted()
+    // this test ensures that the report does not loop once or is interrupted when stop() is
+    // called just after start()
+    assertThat(end - start).isLessThan(300);
   }
 
   private static void waitForMessage(Logger logger) throws InterruptedException {
