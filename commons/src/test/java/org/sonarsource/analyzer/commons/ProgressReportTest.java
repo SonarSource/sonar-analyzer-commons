@@ -20,8 +20,10 @@
 package org.sonarsource.analyzer.commons;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -153,6 +155,40 @@ public class ProgressReportTest {
 
     List<String> messages = captor.getAllValues();
     assertThat(messages).contains("1/1" + " source file has been analyzed");
+  }
+
+  @Test(timeout = 1000)
+  public void interrupting_the_thread_should_never_create_a_deadlock() {
+    ProgressReport report = new ProgressReport(ProgressReport.class.getName(), 500);
+
+    long start = System.currentTimeMillis();
+    report.start(Collections.emptyList());
+    report.stop();
+    long end = System.currentTimeMillis();
+
+    // stopping the report too soon could fail to interrupt the thread that was not yet alive,
+    // and fail to set the proper state for Thread.interrupted()
+    // this test ensures that the report does not loop once or is interrupted when stop() is
+    // called just after start()
+    assertThat(end - start).isLessThan(300);
+  }
+
+  @Test(timeout = 1000)
+  public void interrupted_thread_should_exit_immediately() throws InterruptedException {
+    ProgressReport report = new ProgressReport(ProgressReport.class.getName(), 500);
+    AtomicLong time = new AtomicLong(10000);
+    Thread selfInterruptedThread = new Thread(() -> {
+      // set the thread as interrupted
+      Thread.currentThread().interrupt();
+      long start = System.currentTimeMillis();
+      // execute run, while the thread is interrupted
+      report.run();
+      long end = System.currentTimeMillis();
+      time.set(end - start);
+    });
+    selfInterruptedThread.start();
+    selfInterruptedThread.join();
+    assertThat(time.get()).isLessThan(300);
   }
 
   private static void waitForMessage(Logger logger) throws InterruptedException {
