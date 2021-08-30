@@ -68,7 +68,7 @@ public class ProgressReport implements Runnable {
   @Override
   public void run() {
     log(count + " source " + pluralizeFile(count) + " to be " + adjective);
-    while (!(interrupted.get() || Thread.interrupted())) {
+    while (!(interrupted.get() || Thread.currentThread().isInterrupted())) {
       try {
         Thread.sleep(period);
         log(currentFileNumber + "/" + count + " " + pluralizeFile(currentFileNumber) + " " + adjective + ", current file: " + currentFilename);
