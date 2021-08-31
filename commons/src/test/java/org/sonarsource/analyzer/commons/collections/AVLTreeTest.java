@@ -30,6 +30,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class AVLTreeTest {
 
@@ -200,6 +201,9 @@ public class AVLTreeTest {
       .hasSameHashCodeAs(t3)
       .isNotEqualTo(t3);
     assertThat(t3).isNotEqualTo(t1);
+
+    assertThat(t1.equals(t1)).isTrue();
+    assertThat(t1.equals("a")).isFalse();
   }
 
   @Test
@@ -210,6 +214,15 @@ public class AVLTreeTest {
     assertThat(t.remove("anything")).isSameAs(t);
     assertThat(t).hasToString("");
     assertThat(t.hashCode()).isZero();
+    assertThat(t.contains("a")).isFalse();
+    assertThat(t.equals(t)).isTrue();
+    assertThat(t.equals("a")).isFalse();
+
+    assertThatThrownBy(t::left).isInstanceOf(UnsupportedOperationException.class);
+    assertThatThrownBy(t::right).isInstanceOf(UnsupportedOperationException.class);
+    assertThatThrownBy(t::nextInBucket).isInstanceOf(UnsupportedOperationException.class);
+    assertThatThrownBy(t::key).isInstanceOf(UnsupportedOperationException.class);
+    assertThatThrownBy(t::value).isInstanceOf(UnsupportedOperationException.class);
   }
 
   @Test

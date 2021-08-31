@@ -67,6 +67,14 @@ public final class ListUtilsTest {
       .hasMessage("Expected list of size 1, but was list of size 2.");
   }
 
+  @Test
+  public void test_reverse() {
+    List<SomeType> list1 = Arrays.asList(new SomeType("value1"), new SomeType("value2"));
+
+    assertThat(ListUtils.reverse(list1))
+      .containsExactly(new SomeType("value2"), new SomeType("value1"));
+  }
+
 
   @Test
   public void test_concat_any_list() {
