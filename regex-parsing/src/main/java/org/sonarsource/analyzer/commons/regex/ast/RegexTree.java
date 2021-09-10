@@ -38,6 +38,7 @@ public abstract class RegexTree extends AbstractRegexSyntaxElement implements Au
     REPETITION,
     SEQUENCE,
     MISC_ESCAPE_SEQUENCE,
+    CONDITIONAL_SUBPATTERNS
   }
 
   private final FlagSet activeFlags;
