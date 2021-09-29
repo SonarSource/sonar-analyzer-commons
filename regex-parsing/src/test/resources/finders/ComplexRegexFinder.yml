@@ -1,0 +1,41 @@
+# character_classes
+- '[a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t]'
+# Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 21 to the 20 allowed.}}
+- '[a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u]'
+
+# disjunction
+# Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 21 to the 20 allowed.}}
+- '(a|(b|(c|(d|(e|(f|(gh)))))))' # 1+2+3+4+5+6=21
+# Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 21 to the 20 allowed.}}
+- '(a|(b|(c|(d|(e|(((f|(gh)))))))))' # 1+2+3+4+5+6=21
+# Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 23 to the 20 allowed.}}
+- '(a|(b|(c|(d|(e|(f|g|h|i))))))' # 1+2+3+4+5+8=23
+# Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 28 to the 20 allowed.}}
+- '(a|(b|(c|(d|(e|(f|(g|(hi))))))))' # 1+2+3+4+5+6+7=28
+
+# repetition
+# Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 21 to the 20 allowed.}}
+- '(a(b(c(d(ef+)+)+)+)+)+' # 6+5+4+3+2+1=21
+# Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 21 to the 20 allowed.}}
+- '(a(b(c(d(ef*)*)*)*)*)*' # 6+5+4+3+2+1=21
+
+# nonCapturingGroup
+- '(?:a(?:b(?:c(?:d(?:e(?:f))))))' # 0
+# Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 21 to the 20 allowed.}}
+- '(?i:a(?i:b(?i:c(?i:d(?i:e(?i:f))))))' # 1+2+3+4+5+6=21
+# Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 21 to the 20 allowed.}}
+- '(?i:a(?i:b(?i:c(?i:d(?i:e((?i)f))))))' # 1+2+3+4+5+6=21
+# Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 21 to the 20 allowed.}}
+- '(?-i:a(?-i:b(?-i:c(?-i:d(?-i:e(?-i:f))))))' # 1+2+3+4+5+6=21
+
+# backReference
+# Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 21 to the 20 allowed.}}
+- '(abc)(a|(b|(c|(d|(e|(f|gh))))))' # 1+2+3+4+5+6=21
+# Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 22 to the 20 allowed.}}
+- '(abc)(a|(b|(c|(d|(e|(f|\\1))))))' # 1+2+3+4+5+6+1=22
+
+# lookAround
+# Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 21 to the 20 allowed.}}
+- '(a|(b|(c|(d|(e|(f(?!g)))))))' # 1+2+3+4+5+6=21
+# Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 21 to the 20 allowed.}}
+- '(a|(b|(c|(d|(e(?!(f|g)))))))' # 1+2+3+4+5+6=21

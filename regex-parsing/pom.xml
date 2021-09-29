@@ -43,5 +43,17 @@
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>${parent.groupId}</groupId>
+      <artifactId>sonar-analyzer-test-commons</artifactId>
+      <version>${version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.snakeyaml</groupId>
+      <artifactId>snakeyaml-engine</artifactId>
+      <version>2.3</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

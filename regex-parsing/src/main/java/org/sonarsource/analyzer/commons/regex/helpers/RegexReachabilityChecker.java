@@ -94,7 +94,7 @@ public class RegexReachabilityChecker {
     }
   }
 
-  private boolean canReachWithConsumingInput(AutomatonState start, AutomatonState goal, Set<AutomatonState> visited) {
+  public boolean canReachWithConsumingInput(AutomatonState start, AutomatonState goal, Set<AutomatonState> visited) {
     if (start == goal || visited.contains(start)) {
       return false;
     }

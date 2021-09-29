@@ -1,0 +1,13 @@
+- 'a|b|c' # Noncompliant {{Replace this alternation with a character class.}}
+- 'a|(b|c)' # Noncompliant
+- 'abcd|(e|f)gh' # Noncompliant
+- '(a|b|c)*' # Noncompliant
+- '\\d|x' # Noncompliant
+- '\\u1234|\\x{12345}' # Noncompliant
+- '😂|😊' # Noncompliant
+- '\ud800\udc00|\udbff\udfff' # Noncompliant
+- '[abc]' # Compliant
+- '[a-c]' # Compliant
+- 'ab|cd' # Compliant
+- '^|$' # Compliant
+- '|' # Compliant

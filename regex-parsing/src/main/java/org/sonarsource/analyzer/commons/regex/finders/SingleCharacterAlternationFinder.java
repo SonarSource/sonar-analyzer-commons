@@ -17,28 +17,28 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex.checks.finders;
+package org.sonarsource.analyzer.commons.regex.finders;
 
 import java.util.Collections;
+import org.sonarsource.analyzer.commons.regex.RegexCheck;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
-import org.sonarsource.analyzer.commons.regex.checks.RegexCheck;
 
 public class SingleCharacterAlternationFinder extends RegexBaseVisitor {
 
   public static final String MESSAGE = "Replace this alternation with a character class.";
 
-  private final RegexCheck check;
+  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
 
-  public SingleCharacterAlternationFinder(RegexCheck check) {
-    this.check = check;
+  public SingleCharacterAlternationFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod) {
+    this.reportRegexTreeMethod = reportRegexTreeMethod;
   }
 
   @Override
   public void visitDisjunction(DisjunctionTree tree) {
     if (tree.getAlternatives().stream().allMatch(CharacterClassElementTree.class::isInstance)) {
-      check.reportIssue(tree, MESSAGE, null, Collections.emptyList());
+      reportRegexTreeMethod.apply(tree, MESSAGE, null, Collections.emptyList());
     }
     super.visitDisjunction(tree);
   }

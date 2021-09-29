@@ -23,6 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
+import org.sonarsource.analyzer.commons.regex.java.JavaCharacterParser;
+import org.sonarsource.analyzer.commons.regex.java.JavaRegexSource;
+import org.sonarsource.analyzer.commons.regex.java.JavaUnicodeEscapeParser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

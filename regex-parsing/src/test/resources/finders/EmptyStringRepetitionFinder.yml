@@ -1,0 +1,40 @@
+- '(?:)*' # Noncompliant {{Rework this part of the regex to not match the empty string.}}
+- '(?:)?' # Noncompliant
+- '(?:)+' # Noncompliant
+- '()*' # Noncompliant
+- '()?' # Noncompliant
+- '()+' # Noncompliant
+- 'xyz|(?:)*' # Noncompliant
+- '(?:|x)*' # Noncompliant
+- '(?:x|)*' # Noncompliant
+- '(?:x|y*)*' # Noncompliant
+- '(?:x*|y*)*' # Noncompliant
+- '(?:x?|y*)*' # Noncompliant
+- '(?:x*)*' # Noncompliant
+- '(?:x?)*' # Noncompliant
+- '(?:x*)?' # Noncompliant
+- '(?:x?)?' # Noncompliant
+- '(?:x*)+' # Noncompliant
+- '(?:x?)+' # Noncompliant
+- '(x*)*' # Noncompliant
+- '((x*))*' # Noncompliant
+- '(?:x*y*)*' # Noncompliant
+- '(?:())*' # Noncompliant
+- '(?:(?:))*' # Noncompliant
+- '((?i))*' # Noncompliant
+- '(())*' # Noncompliant
+- '(()x*)*' # Noncompliant
+- '(()|x)*' # Noncompliant
+- '($)*' # Noncompliant
+- '(\b)*' # Noncompliant
+- '((?!x))*' # Noncompliant
+
+- 'x*|'
+- 'x*|'
+- 'x*'
+- 'x?'
+- '(?:x|y)*'
+- '(?:x+)+'
+- '(?:x+)*'
+- '(?:x+)?'
+- '((x+))*'

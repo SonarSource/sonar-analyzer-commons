@@ -17,12 +17,13 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex.checks.finders;
+package org.sonarsource.analyzer.commons.regex.finders;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import org.sonarsource.analyzer.commons.regex.RegexCheck;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassTree;
 import org.sonarsource.analyzer.commons.regex.ast.EscapedCharacterClassTree;
@@ -33,17 +34,16 @@ import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
 import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
 import org.sonarsource.analyzer.commons.regex.ast.SimpleQuantifier;
-import org.sonarsource.analyzer.commons.regex.checks.RegexCheck;
 import org.sonarsource.analyzer.commons.regex.helpers.SimplifiedRegexCharacterClass;
 
 public class ReluctantQuantifierFinder extends RegexBaseVisitor {
 
   private static final String MESSAGE = "Replace this use of a reluctant quantifier with \"%s%s\".";
 
-  private final RegexCheck check;
+  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
 
-  public ReluctantQuantifierFinder(RegexCheck check) {
-    this.check = check;
+  public ReluctantQuantifierFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod) {
+    this.reportRegexTreeMethod = reportRegexTreeMethod;
   }
 
   @Override
@@ -62,12 +62,12 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
         .ifPresent(negatedClass -> {
           String newQuantifier = makePossessive(repetition.getQuantifier());
           String message = String.format(MESSAGE, negatedClass, newQuantifier);
-          check.reportIssue(repetition, message, null, Collections.emptyList());
+          reportRegexTreeMethod.apply(repetition, message, null, Collections.emptyList());
         });
     }
   }
 
-  private Optional<RegexTree> getReluctantlyQuantifiedElement(RepetitionTree repetition) {
+  private static Optional<RegexTree> getReluctantlyQuantifiedElement(RepetitionTree repetition) {
     RegexTree element = repetition.getElement();
     while (element.is(RegexTree.Kind.NON_CAPTURING_GROUP)) {
       element = ((NonCapturingGroupTree) element).getElement();
@@ -81,7 +81,7 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
       : Optional.empty();
   }
 
-  private String makePossessive(Quantifier quantifier) {
+  private static String makePossessive(Quantifier quantifier) {
     if (quantifier instanceof SimpleQuantifier) {
       return ((SimpleQuantifier) quantifier).getKind() + "+";
     } else {
@@ -90,7 +90,7 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
     }
   }
 
-  private Optional<String> findNegatedCharacterClassFor(RegexTree tree, @Nullable EscapedCharacterClassTree base) {
+  private static Optional<String> findNegatedCharacterClassFor(RegexTree tree, @Nullable EscapedCharacterClassTree base) {
     if (tree instanceof CharacterClassElementTree && hasNoIntersection(((CharacterClassElementTree) tree), base)) {
       return Optional.empty();
     }
@@ -122,11 +122,11 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
   }
 
   @Nullable
-  private EscapedCharacterClassTree getBaseCharacter(RegexTree tree) {
+  private static EscapedCharacterClassTree getBaseCharacter(RegexTree tree) {
     return tree.is(RegexTree.Kind.DOT) ? null : (EscapedCharacterClassTree) tree;
   }
 
-  private boolean hasNoIntersection(CharacterClassElementTree tree, @Nullable CharacterClassElementTree base) {
+  private static boolean hasNoIntersection(CharacterClassElementTree tree, @Nullable CharacterClassElementTree base) {
     if (base == null) {
       return false;
     }
@@ -135,24 +135,24 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
     return !baseSimplifiedCharacterClass.intersects(treeSimplifiedCharacterClass, false);
   }
 
-  private String escapedCharacterFollowedByEscapedCharacter(EscapedCharacterClassTree escapedClass, String ignoredSymbol) {
+  private static String escapedCharacterFollowedByEscapedCharacter(EscapedCharacterClassTree escapedClass, String ignoredSymbol) {
     String negatedCharacter = "\\\\" + negateEscapedCharacterClassType(escapedClass.getType()) + getProperty(escapedClass);
     return ignoredSymbol.isEmpty() ? negatedCharacter : String.format("[%s%s]", negatedCharacter, ignoredSymbol);
   }
 
-  private String getProperty(EscapedCharacterClassTree escapedClass) {
+  private static String getProperty(EscapedCharacterClassTree escapedClass) {
     return escapedClass.isProperty() ? ("{" + escapedClass.property() + "}") : "";
   }
 
-  private char negateEscapedCharacterClassType(char type) {
+  private static char negateEscapedCharacterClassType(char type) {
     return Character.isLowerCase(type) ? Character.toUpperCase(type) : Character.toLowerCase(type);
   }
 
-  private String negateEscapedCharacter(@Nullable EscapedCharacterClassTree escapedClass) {
+  private static String negateEscapedCharacter(@Nullable EscapedCharacterClassTree escapedClass) {
     return (escapedClass == null) ? "" : escapedCharacterFollowedByEscapedCharacter(escapedClass, "");
   }
 
-  private String escapedCharacterToString(@Nullable EscapedCharacterClassTree escapedClass) {
+  private static String escapedCharacterToString(@Nullable EscapedCharacterClassTree escapedClass) {
     return (escapedClass == null) ? "" : ("\\\\" + escapedClass.getType() + getProperty(escapedClass));
   }
 }

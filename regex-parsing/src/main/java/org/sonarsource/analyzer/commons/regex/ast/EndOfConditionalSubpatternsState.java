@@ -17,29 +17,27 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex;
+package org.sonarsource.analyzer.commons.regex.ast;
 
-public class JavaRegexSource implements RegexSource {
+import javax.annotation.Nonnull;
 
-  private final String sourceText;
+public class EndOfConditionalSubpatternsState extends ActiveFlagsState {
+  private final ConditionalSubpatternTree parent;
 
-  public JavaRegexSource(String sourceText) {
-    this.sourceText = sourceText;
+  public EndOfConditionalSubpatternsState(ConditionalSubpatternTree parent, FlagSet activeFlags) {
+    super(activeFlags);
+    this.parent = parent;
   }
 
+  @Nonnull
   @Override
-  public String getSourceText() {
-    return sourceText;
+  public AutomatonState continuation() {
+    return parent.continuation();
   }
 
+  @Nonnull
   @Override
-  public CharacterParser createCharacterParser() {
-    return new JavaCharacterParser(this);
+  public TransitionType incomingTransitionType() {
+    return TransitionType.EPSILON;
   }
-
-  @Override
-  public RegexDialect dialect() {
-    return RegexDialect.JAVA;
-  }
-
 }

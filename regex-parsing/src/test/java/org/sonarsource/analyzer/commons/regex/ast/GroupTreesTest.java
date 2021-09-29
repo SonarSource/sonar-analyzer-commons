@@ -21,6 +21,7 @@ package org.sonarsource.analyzer.commons.regex.ast;
 
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.SyntaxError;
 
@@ -38,6 +39,7 @@ import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assert
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertPlainString;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSingleEdge;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParse;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParseResult;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertToken;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertType;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.parseRegex;
@@ -276,6 +278,17 @@ class GroupTreesTest {
     assertKind(RegexTree.Kind.ATOMIC_GROUP, group);
     assertNotNull(group.getElement());
     assertCharacter('x', group.getElement());
+  }
+
+  @Test
+  void testRecursion() {
+    RegexTree regex = assertSuccessfulParse("(?R)", RegexFeature.RECURSION);
+    NonCapturingGroupTree recursion = assertType(NonCapturingGroupTree.class, regex);
+    assertKind(RegexTree.Kind.NON_CAPTURING_GROUP, recursion);
+    assertNull(recursion.getElement());
+
+    // Raise parsing error when recursion is not provided
+    assertFailParsing("(?R)", "Expected flag or ':' or ')', but found 'R'");
   }
 
 }

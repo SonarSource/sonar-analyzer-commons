@@ -1,0 +1,70 @@
+- '$[a-z]^' # Noncompliant 2
+- '$[a-z]' # Noncompliant
+- '$(abc)' # Noncompliant
+- '[a-z]^' # Noncompliant
+- '\\Z[a-z]' # Noncompliant
+- '\\z[a-z]' # Noncompliant
+- '[a-z]\\A' # Noncompliant
+- '($)a' # Noncompliant
+- 'a$|$a' # Noncompliant
+- '^a|a^' # Noncompliant
+- 'a(b|^)' # Noncompliant
+- '(?=abc^)' # Noncompliant
+- '(?!abc^)' # Noncompliant
+- 'abc(?=^abc)' # Noncompliant
+- 'abc(?<=$abc)' # Noncompliant
+- 'abc(?<=abc$)def' # Noncompliant
+- '(?:abc(X|^))*Y?' # Noncompliant
+
+- 'a\Z\nb': 'm' # Noncompliant
+- 'a\zb': 'm' # Noncompliant
+- 'a\n\\Ab': 'm' # Noncompliant
+
+# False positives because the end delimiter does not capture the newlines (SONARPHP-1238)
+- 'a$(\n)' # Noncompliant
+- 'a$.': 's' # Noncompliant
+- 'a\Z(\n)' # Noncompliant
+
+- '$.*' # Noncompliant {{Remove or replace this boundary that can only match if the previous part matched the empty string because it appears before mandatory input.}}
+- '$.?' # Noncompliant
+
+- '$a*' # Noncompliant
+- '$a?' # Noncompliant
+- '$[abc]*' # Noncompliant
+- '$[abc]?' # Noncompliant
+
+- '.*^' # Noncompliant {{Remove or replace this boundary that can only match if the previous part matched the empty string because it appears after mandatory input.}}
+- '.?^' # Noncompliant
+
+- 'a*^' # Noncompliant
+- 'a?^' # Noncompliant
+- '[abc]*^' # Noncompliant
+- '[abc]?^' # Noncompliant
+
+- '$.*^' # Noncompliant 2
+- '$.?^' # Noncompliant 2
+- '$a*^' # Noncompliant 2
+- '$a?^' # Noncompliant 2
+- '$[abc]*^' # Noncompliant 2
+- '$[abc]?^' # Noncompliant 2
+
+- '^[a-z]$'
+- '^$'
+- '^(?i)$'
+- '^$(?i)'
+- '^abc$|^def$'
+- '(?i)^abc$'
+- '()^abc$'
+- '^abc$()'
+- '^abc$\\b'
+- '(?=abc)^abc$'
+- '(?=^abc$)abc'
+- '(?!^abc$)abc'
+- 'abc(?<=^abc$)'
+- '^\\d$(?<!3)'
+- '(?=$)'
+- "(?i)(true)(?=(?:[^']|'[^']*')*$)"
+- '(?:abc(X|$))*Y?'
+- '(?:x*(Xab|^)abc)*Y?'
+- 'a$\nb': 'm'
+- 'a\n^b': 'm'

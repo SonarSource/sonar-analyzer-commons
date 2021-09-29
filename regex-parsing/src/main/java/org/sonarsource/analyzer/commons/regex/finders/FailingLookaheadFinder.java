@@ -17,14 +17,14 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex.checks.finders;
+package org.sonarsource.analyzer.commons.regex.finders;
 
 import java.util.Collections;
+import org.sonarsource.analyzer.commons.regex.RegexCheck;
 import org.sonarsource.analyzer.commons.regex.ast.FinalState;
 import org.sonarsource.analyzer.commons.regex.ast.LookAroundTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
-import org.sonarsource.analyzer.commons.regex.checks.RegexCheck;
 import org.sonarsource.analyzer.commons.regex.helpers.RegexTreeHelper;
 import org.sonarsource.analyzer.commons.regex.helpers.SubAutomaton;
 
@@ -32,18 +32,18 @@ public class FailingLookaheadFinder extends RegexBaseVisitor {
 
   private static final String MESSAGE = "Remove or fix this lookahead assertion that can never be true.";
 
-  private final RegexCheck check;
+  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
   private final FinalState finalState;
 
-  public FailingLookaheadFinder(RegexCheck check, FinalState finalState) {
-    this.check = check;
+  public FailingLookaheadFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod, FinalState finalState) {
+    this.reportRegexTreeMethod = reportRegexTreeMethod;
     this.finalState = finalState;
   }
 
   @Override
   public void visitLookAround(LookAroundTree tree) {
     if (tree.getDirection() == LookAroundTree.Direction.AHEAD && doesLookaheadContinuationAlwaysFail(tree)) {
-      check.reportIssue(tree, MESSAGE, null, Collections.emptyList());
+      reportRegexTreeMethod.apply(tree, MESSAGE, null, Collections.emptyList());
     }
     super.visitLookAround(tree);
   }

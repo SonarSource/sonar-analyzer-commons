@@ -1,0 +1,19 @@
+- '[aaaèaaa]' # Noncompliant {{Extract 1 Grapheme Cluster(s) from this character class.}}
+- '[0Ṩ0]' # Noncompliant {{Extract 1 Grapheme Cluster(s) from this character class.}}
+- 'aaa[è]aaa' # Noncompliant
+  # two secondary per line: one for the regex location, and one for the cluster location
+- '[èaaèaaè]' # Noncompliant {{Extract 3 Grapheme Cluster(s) from this character class.}}
+- '[èa-dä]' # Noncompliant
+- '[èa]aaa[dè]' # Noncompliant 2
+- '[ä]' # Noncompliant
+- '[c̈]' # Noncompliant
+- '[e⃝]' # Noncompliant
+
+- '[é]' # Compliant, a single char
+- '[e\u0300]' # Compliant, escaped unicode
+- '[e\x{0300}]' # Compliant, escaped unicode
+- '[e\u20DD̀]' # Compliant, (letter, escaped unicode, mark) can not be combined
+- '[\u0300e]' # Compliant, escaped unicode, letter
+- '[̀̀]' # Compliant, two marks
+- '[̀̀]' # Compliant, one mark
+- 'ä' # Compliant, not in a class

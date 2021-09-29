@@ -1,0 +1,15 @@
+- '(?=a)b' # Noncompliant {{Remove or fix this lookahead assertion that can never be true.}}
+- '(?=ac)ab' # Noncompliant
+- '(?=a)bc' # Noncompliant
+- '(?!a)a' # Noncompliant
+- '(?!ab)ab' # Noncompliant
+- '(?=a)[^ba]' # Noncompliant
+- '(?!.)ab' # Noncompliant
+
+- '(?=a)a'
+- '(?=a)..'
+- '(?=a)ab'
+- '(?!ab)..'
+- '(?<=a)b'
+- 'a(?=b)'
+- '(?=abc)ab'

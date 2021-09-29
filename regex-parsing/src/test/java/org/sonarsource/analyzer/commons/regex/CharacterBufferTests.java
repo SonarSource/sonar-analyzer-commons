@@ -23,6 +23,7 @@ import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
 import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
+import org.sonarsource.analyzer.commons.regex.java.JavaRegexSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

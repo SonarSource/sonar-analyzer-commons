@@ -17,31 +17,24 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex;
+package org.sonarsource.analyzer.commons.regex.finders;
 
-import java.util.Set;
-import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
+import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 
-public interface RegexSource {
-  String getSourceText();
+class GraphemeInClassFinderTest {
 
-  default String substringAt(IndexRange range) {
-    return getSourceText().substring(range.getBeginningOffset(), Math.min(range.getEndingOffset(), length()));
+  @Test
+  void test() {
+    Verifier.verify(new GraphemeInClassFinderCheck(), "GraphemeInClassFinder.yml");
   }
 
-  default int length() {
-    return getSourceText().length();
+  static class GraphemeInClassFinderCheck extends FinderCheck {
+    @Override
+    public void checkRegex(RegexParseResult parseResult, RegexCheck.ReportRegexTreeMethod reportRegexTree, RegexCheck.ReportInvocationTreeMethod reportInvocationTree) {
+      new GraphemeInClassFinder(reportRegexTree).visit(parseResult);
+    }
   }
 
-  CharacterParser createCharacterParser();
-
-  default RegexLexer createLexer() {
-    return new RegexLexer(this, createCharacterParser());
-  }
-
-  RegexDialect dialect();
-
-  Set<RegexFeature> features();
-
-  boolean supportFeature(RegexFeature feature);
 }

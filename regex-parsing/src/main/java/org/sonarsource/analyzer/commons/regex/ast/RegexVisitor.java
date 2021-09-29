@@ -59,4 +59,6 @@ public interface RegexVisitor {
 
   void visitMiscEscapeSequence(MiscEscapeSequenceTree tree);
 
+  void visitConditionalSubpattern(ConditionalSubpatternTree tree);
+
 }

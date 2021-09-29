@@ -17,16 +17,16 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex.checks.finders;
+package org.sonarsource.analyzer.commons.regex.finders;
 
 import java.util.Collections;
+import org.sonarsource.analyzer.commons.regex.RegexCheck;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.Quantifier;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
 import org.sonarsource.analyzer.commons.regex.ast.StartState;
-import org.sonarsource.analyzer.commons.regex.checks.RegexCheck;
 import org.sonarsource.analyzer.commons.regex.helpers.RegexReachabilityChecker;
 import org.sonarsource.analyzer.commons.regex.helpers.RegexTreeHelper;
 
@@ -35,11 +35,11 @@ public class ReluctantQuantifierWithEmptyContinuationFinder extends RegexBaseVis
   private static final String MESSAGE_FIX = "Fix this reluctant quantifier that will only ever match %s repetition%s.";
   private static final String MESSAGE_UNNECESSARY = "Remove the '?' from this unnecessarily reluctant quantifier.";
 
-  private final RegexCheck check;
+  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
   private AutomatonState endState;
 
-  public ReluctantQuantifierWithEmptyContinuationFinder(RegexCheck check) {
-    this.check = check;
+  public ReluctantQuantifierWithEmptyContinuationFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod) {
+    this.reportRegexTreeMethod = reportRegexTreeMethod;
   }
 
   @Override
@@ -53,11 +53,11 @@ public class ReluctantQuantifierWithEmptyContinuationFinder extends RegexBaseVis
     if (tree.getQuantifier().getModifier() == Quantifier.Modifier.RELUCTANT) {
       if (RegexTreeHelper.isAnchoredAtEnd(tree.continuation())) {
         if (RegexTreeHelper.onlyMatchesEmptySuffix(tree.continuation())) {
-          check.reportIssue(tree, MESSAGE_UNNECESSARY, null, Collections.emptyList());
+          reportRegexTreeMethod.apply(tree, MESSAGE_UNNECESSARY, null, Collections.emptyList());
         }
       } else if (RegexReachabilityChecker.canReachWithoutConsumingInput(new StartState(tree.continuation(), tree.activeFlags()), endState)) {
         int minimumRepetitions = tree.getQuantifier().getMinimumRepetitions();
-        check.reportIssue(tree, String.format(MESSAGE_FIX, minimumRepetitions, minimumRepetitions == 1 ? "" : "s"), null, Collections.emptyList());
+        reportRegexTreeMethod.apply(tree, String.format(MESSAGE_FIX, minimumRepetitions, minimumRepetitions == 1 ? "" : "s"), null, Collections.emptyList());
       }
     }
   }

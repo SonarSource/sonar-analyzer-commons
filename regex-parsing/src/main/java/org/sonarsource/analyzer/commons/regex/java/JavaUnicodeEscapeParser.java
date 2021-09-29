@@ -17,9 +17,10 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex;
+package org.sonarsource.analyzer.commons.regex.java;
 
 import javax.annotation.CheckForNull;
+import org.sonarsource.analyzer.commons.regex.RegexSource;
 import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
 import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
 

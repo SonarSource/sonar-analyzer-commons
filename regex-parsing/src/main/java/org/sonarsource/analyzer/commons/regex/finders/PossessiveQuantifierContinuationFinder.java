@@ -17,17 +17,16 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex.checks.finders;
+package org.sonarsource.analyzer.commons.regex.finders;
 
 import java.util.Collections;
+import org.sonarsource.analyzer.commons.regex.RegexCheck;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.FinalState;
 import org.sonarsource.analyzer.commons.regex.ast.Quantifier;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
 import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
-import org.sonarsource.analyzer.commons.regex.checks.RegexCheck;
-import org.sonarsource.analyzer.commons.regex.checks.RegexIssueLocation;
 import org.sonarsource.analyzer.commons.regex.helpers.RegexTreeHelper;
 import org.sonarsource.analyzer.commons.regex.helpers.SubAutomaton;
 
@@ -35,11 +34,11 @@ public class PossessiveQuantifierContinuationFinder extends RegexBaseVisitor {
 
   private static final String MESSAGE = "Change this impossible to match sub-pattern that conflicts with the previous possessive quantifier.";
 
-  private final RegexCheck check;
+  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
   private final FinalState finalState;
 
-  public PossessiveQuantifierContinuationFinder(RegexCheck check, FinalState finalState) {
-    this.check = check;
+  public PossessiveQuantifierContinuationFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod, FinalState finalState) {
+    this.reportRegexTreeMethod = reportRegexTreeMethod;
     this.finalState = finalState;
   }
 
@@ -50,7 +49,8 @@ public class PossessiveQuantifierContinuationFinder extends RegexBaseVisitor {
       continuation = continuation.continuation();
     }
     if (continuation != null && doesRepetitionContinuationAlwaysFail(repetitionTree)) {
-      check.reportIssue((RegexSyntaxElement) continuation, MESSAGE, null, Collections.singletonList(new RegexIssueLocation(repetitionTree, "Previous possessive repetition")));
+      reportRegexTreeMethod.apply((RegexSyntaxElement) continuation, MESSAGE, null,
+        Collections.singletonList(new RegexCheck.RegexIssueLocation(repetitionTree, "Previous possessive repetition")));
     }
     super.visitRepetition(repetitionTree);
   }

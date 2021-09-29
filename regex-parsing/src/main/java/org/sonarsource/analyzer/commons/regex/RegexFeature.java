@@ -19,29 +19,8 @@
  */
 package org.sonarsource.analyzer.commons.regex;
 
-import java.util.Set;
-import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
-
-public interface RegexSource {
-  String getSourceText();
-
-  default String substringAt(IndexRange range) {
-    return getSourceText().substring(range.getBeginningOffset(), Math.min(range.getEndingOffset(), length()));
-  }
-
-  default int length() {
-    return getSourceText().length();
-  }
-
-  CharacterParser createCharacterParser();
-
-  default RegexLexer createLexer() {
-    return new RegexLexer(this, createCharacterParser());
-  }
-
-  RegexDialect dialect();
-
-  Set<RegexFeature> features();
-
-  boolean supportFeature(RegexFeature feature);
+public enum RegexFeature {
+  RECURSION,
+  CONDITIONAL_SUBPATTERN,
+  POSIX_CHARACTER_CLASS
 }

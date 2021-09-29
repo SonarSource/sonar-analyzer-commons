@@ -20,11 +20,16 @@
 package org.sonarsource.analyzer.commons.regex;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonar.api.utils.log.Logger;
@@ -39,6 +44,7 @@ import org.sonarsource.analyzer.commons.regex.ast.CharacterClassTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassUnionTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterRangeTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterTree;
+import org.sonarsource.analyzer.commons.regex.ast.ConditionalSubpatternTree;
 import org.sonarsource.analyzer.commons.regex.ast.CurlyBraceQuantifier;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
 import org.sonarsource.analyzer.commons.regex.ast.DotTree;
@@ -47,6 +53,8 @@ import org.sonarsource.analyzer.commons.regex.ast.FinalState;
 import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
 import org.sonarsource.analyzer.commons.regex.ast.GroupTree;
 import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
+import org.sonarsource.analyzer.commons.regex.ast.PosixCharacterClassElementTree;
+import org.sonarsource.analyzer.commons.regex.ast.ReferenceConditionTree;
 import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
 import org.sonarsource.analyzer.commons.regex.ast.LookAroundTree;
 import org.sonarsource.analyzer.commons.regex.ast.MiscEscapeSequenceTree;
@@ -67,6 +75,21 @@ public class RegexParser {
   private static final Logger LOG = Loggers.get(RegexParser.class);
 
   private static final String HEX_DIGIT = "hexadecimal digit";
+
+  private static final String POSIX_CHARACTER_CLASS_PATTERN = "[:%s%s:]";
+
+  private static final Set<String> POSIX_CHARACTER_CLASSES = new HashSet<>(Arrays.asList(
+    "alnum", "alpha", "ascii", "blank", "cntrl", "digit", "graph", "lower", "print", "punct", "space", "upper", "word", "xdigit", "<", ">"
+  ));
+
+  private static final Map<String, String> POSIX_CHARACTER_CLASS_LOOKUP = posixCharacterClassMap(false);
+
+  private static final Map<String, String> POSIX_CHARACTER_CLASS_NEGATION_LOOKUP = posixCharacterClassMap(true);
+
+  private static Map<String, String> posixCharacterClassMap(boolean negative) {
+    return POSIX_CHARACTER_CLASSES.stream()
+      .collect(Collectors.toMap(posix -> String.format(POSIX_CHARACTER_CLASS_PATTERN, negative ? "^" : "", posix), posix -> posix));
+  }
 
   protected final RegexSource source;
 
@@ -341,6 +364,13 @@ public class RegexParser {
   protected GroupTree parseNonCapturingGroup(SourceCharacter openingParen) {
     // Discard '?'
     characters.moveNext();
+    if (characters.currentIs("R)") && source.supportFeature(RegexFeature.RECURSION)) {
+      return parseRecursion(openingParen);
+    }
+    if (characters.currentIs("(") && source.supportFeature(RegexFeature.CONDITIONAL_SUBPATTERN)) {
+      return parseConditionalSubpattern(openingParen);
+    }
+
     FlagSet enabledFlags = parseFlags();
     FlagSet disabledFlags;
     if (characters.currentIs('-')) {
@@ -379,6 +409,75 @@ public class RegexParser {
     );
     activeFlags = previousFlags;
     return group;
+  }
+
+  private GroupTree parseConditionalSubpattern(SourceCharacter openingParen) {
+    GroupTree condition = parseCondition();
+    RegexTree subpattern = parseDisjunction();
+    SourceCharacter closingParen = characters.getCurrent();
+    characters.moveNext();
+    if (subpattern.is(RegexTree.Kind.DISJUNCTION)) {
+      if (((DisjunctionTree) subpattern).getAlternatives().size() > 2) {
+        error("More than two alternatives in the subpattern");
+      }
+      DisjunctionTree disjunction = (DisjunctionTree) subpattern;
+      return new ConditionalSubpatternTree(source, openingParen, closingParen, condition, disjunction.getAlternatives().get(0),
+        disjunction.getOrOperators().get(0), disjunction.getAlternatives().get(1), activeFlags);
+    } else {
+      return new ConditionalSubpatternTree(source, openingParen, closingParen, condition, subpattern, activeFlags);
+    }
+  }
+
+  private GroupTree parseCondition() {
+    SourceCharacter openingParen = characters.getCurrent();
+    characters.moveNext();
+    if (characters.currentIs("?=")) {
+      characters.moveNext(2);
+      return finishGroup(openingParen, (range, inner) -> LookAroundTree.positiveLookAhead(source, range, inner, activeFlags));
+    } else if (characters.currentIs("?<=")) {
+      characters.moveNext(3);
+      return finishGroup(openingParen, (range, inner) -> LookAroundTree.positiveLookBehind(source, range, inner, activeFlags));
+    } else if (characters.currentIs("?!")) {
+      characters.moveNext(2);
+      return finishGroup(openingParen, (range, inner) -> LookAroundTree.negativeLookAhead(source, range, inner, activeFlags));
+    } else if (characters.currentIs("?<!")) {
+      characters.moveNext(3);
+      return finishGroup(openingParen, (range, inner) -> LookAroundTree.negativeLookBehind(source, range, inner, activeFlags));
+    } else if (characters.currentIs("+")) {
+      // Skip '+' as first character since it would be identified as quantifier at the beginning of a sequence
+      CharacterTree plus = readCharacter();
+      return finishGroup(openingParen, (range, inner) -> conditionGroupReference(source, range, plus, inner, activeFlags));
+    } else {
+      // TODO Allow only valid conditions: signed sequence of digits or 'R'
+      return finishGroup(openingParen, (range, inner) -> conditionGroupReference(source, range, null, inner, activeFlags));
+    }
+  }
+
+  public ReferenceConditionTree conditionGroupReference(RegexSource source, IndexRange range, @Nullable CharacterTree plus, RegexTree inner, FlagSet activeFlags) {
+    StringBuilder reference = new StringBuilder();
+    if (plus != null) {
+      reference.append('+');
+    }
+    if (inner.is(RegexTree.Kind.CHARACTER)) {
+      reference.append(((CharacterTree) inner).characterAsString());
+    } else if (inner.is(RegexTree.Kind.SEQUENCE)){
+      ((SequenceTree) inner).getItems().stream()
+        .filter(CharacterTree.class::isInstance)
+        .map(i -> ((CharacterTree) i).characterAsString())
+        .forEach(reference::append);
+    } else {
+      error("Conditional subpattern has invalid condition.");
+    }
+    return new ReferenceConditionTree(source, range, reference.toString(), activeFlags);
+  }
+
+  private GroupTree parseRecursion(SourceCharacter openingParen) {
+    // Discard 'R'
+    characters.moveNext();
+    SourceCharacter closingParen = characters.getCurrent();
+    characters.moveNext();
+    IndexRange range = openingParen.getRange().merge(closingParen.getRange());
+    return new NonCapturingGroupTree(source, range, new FlagSet(), new FlagSet(), null, activeFlags);
   }
 
   protected FlagSet parseFlags() {
@@ -787,6 +886,10 @@ public class RegexParser {
 
   @CheckForNull
   protected CharacterClassElementTree parseCharacterClassElement(boolean isAtBeginning) {
+    if (characters.lookAhead(1) == ':' && source.supportFeature(RegexFeature.POSIX_CHARACTER_CLASS)) {
+      PosixCharacterClassElementTree tree = parsePosixCharacterClass();
+      if (tree != null) return tree;
+    }
     if (characters.isInQuotingMode() && characters.isNotAtEnd()) {
       return readCharacter();
     }
@@ -820,6 +923,20 @@ public class RegexParser {
         characters.moveNext();
         return parseCharacterRange(characterTree(startCharacter));
     }
+  }
+
+  @CheckForNull
+  protected PosixCharacterClassElementTree parsePosixCharacterClass() {
+    SourceCharacter openingBracket = characters.getCurrent();
+    boolean isNegation = characters.lookAhead(2) == '^';
+    Map<String, String> posixLookup = isNegation ? POSIX_CHARACTER_CLASS_NEGATION_LOOKUP : POSIX_CHARACTER_CLASS_LOOKUP;
+    Optional<Map.Entry<String, String>> posixClass = posixLookup.entrySet().stream()
+      .filter(posix -> characters.currentIs(posix.getKey())).findFirst();
+    if (posixClass.isPresent()) {
+      characters.moveNext(posixClass.get().getKey().length());
+      return new PosixCharacterClassElementTree(source, openingBracket, characters.getCurrent(), isNegation, posixClass.get().getValue(), activeFlags);
+    }
+    return null;
   }
 
   protected CharacterClassElementTree parseCharacterRange(CharacterTree startCharacter) {
