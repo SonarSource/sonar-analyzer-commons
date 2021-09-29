@@ -64,12 +64,12 @@ public class RegexTreeHelper {
     if (isEndBoundary(start)) {
       return true;
     }
-    if (start instanceof FinalState || visited.contains(start)) {
+    if (start instanceof FinalState) {
       return false;
     }
     visited.add(start);
     for (AutomatonState successor : start.successors()) {
-      if (!isAnchoredAtEnd(successor, visited)) {
+      if (!visited.contains(successor) && !isAnchoredAtEnd(successor, visited)) {
         return false;
       }
     }

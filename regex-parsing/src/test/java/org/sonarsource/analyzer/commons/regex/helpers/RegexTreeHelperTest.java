@@ -417,6 +417,7 @@ class RegexTreeHelperTest {
     assertThat(RegexTreeHelper.isAnchoredAtEnd(parseRegex("^hello", new FlagSet(0)).getResult())).isFalse();
     assertThat(RegexTreeHelper.isAnchoredAtEnd(parseRegex("hello$", new FlagSet(0)).getResult())).isTrue();
     assertThat(RegexTreeHelper.isAnchoredAtEnd(parseRegex("^hello$", new FlagSet(0)).getResult())).isTrue();
+    assertThat(RegexTreeHelper.isAnchoredAtEnd(parseRegex("a?$", new FlagSet(0)).getResult())).isTrue();
   }
 
   @Test
