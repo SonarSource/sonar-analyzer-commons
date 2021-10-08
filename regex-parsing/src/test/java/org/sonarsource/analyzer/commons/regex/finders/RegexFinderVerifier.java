@@ -161,7 +161,7 @@ public final class RegexFinderVerifier {
     public void reportInvocationTreeIssue(Node regexNode, String message, @Nullable Integer cost, List<RegexIssueLocation> secondaries) {
       Mark startMark = regexNode.getStartMark().get();
       Mark endMark = regexNode.getEndMark().get();
-      IssueLocation.Range range = new IssueLocation.Range(null, startMark.getLine(), startMark.getColumn(), endMark.getLine(), endMark.getColumn());
+      IssueLocation.Range range = new IssueLocation.Range(null, startMark.getLine() + 1, startMark.getColumn(), endMark.getLine() + 1, endMark.getColumn());
       reportIssue(range, message, secondaries);
     }
 

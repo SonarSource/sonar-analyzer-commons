@@ -1,5 +1,5 @@
 - '(?:)*' # Noncompliant {{Rework this part of the regex to not match the empty string.}}
-#  ^^^^
+#  ^^^^^
 - '(?:)?' # Noncompliant
 - '(?:)+' # Noncompliant
 - '()*' # Noncompliant
