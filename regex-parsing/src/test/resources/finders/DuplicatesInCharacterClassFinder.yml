@@ -1,4 +1,5 @@
 - '[0-99]' # Noncompliant {{Remove duplicates in this character class.}}
+#   ^^^^
 - '[90-9]' # Noncompliant
 - '[0-73-9]' # Noncompliant
 - '[0-93-57]' # Noncompliant
@@ -44,6 +45,7 @@
 - '[0-9\\\\\d]' # Noncompliant
 - '(?(?=1)[0-99])' # Noncompliant
 - '(?(?=1)1|[0-99])' # Noncompliant
+#            ^^^^
 
 - 'a-z\d'
 - '[0-9][0-9]?'

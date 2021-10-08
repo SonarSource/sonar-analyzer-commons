@@ -24,7 +24,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.annotation.Nullable;
 import junit.framework.AssertionFailedError;
 import org.snakeyaml.engine.v2.api.LoadSettings;
@@ -42,6 +47,7 @@ import org.snakeyaml.engine.v2.parser.ParserImpl;
 import org.snakeyaml.engine.v2.scanner.ScannerImpl;
 import org.snakeyaml.engine.v2.scanner.StreamReader;
 import org.sonarsource.analyzer.commons.checks.verifier.SingleFileVerifier;
+import org.sonarsource.analyzer.commons.checks.verifier.internal.IssueLocation;
 import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.RegexParser;
@@ -56,7 +62,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class RegexFinderVerifier {
 
   private SingleFileVerifier verifier;
-  private int currentRegexLine;
 
   public void verify(FinderCheck check, Path path) {
     List<Node> nodes = parse(readFile(path));
@@ -69,9 +74,11 @@ public final class RegexFinderVerifier {
     SingleFileVerifier verifier = SingleFileVerifier.create(path, StandardCharsets.UTF_8);
     CommentVisitor commentVisitor = new CommentVisitor();
     commentVisitor.visit(nodes);
-    commentVisitor.comments.forEach(comment ->
-      comment.getStartMark().ifPresent(mark ->
-        verifier.addComment(mark.getLine() + 1, mark.getColumn() + 1, comment.getValue(), 1, 0)));
+    commentVisitor.comments.stream()
+      .sorted(Comparator.comparingInt(commentLine -> commentLine.getStartMark().get().getLine()))
+      .forEach(comment ->
+        comment.getStartMark().ifPresent(mark ->
+          verifier.addComment(mark.getLine() + 1, mark.getColumn() + 1, comment.getValue(), 1, 0)));
     return verifier;
   }
 
@@ -147,17 +154,26 @@ public final class RegexFinderVerifier {
     }
 
     public void reportRegexTreeIssue(RegexSyntaxElement syntaxElement, String message, @Nullable Integer cost, List<RegexIssueLocation> secondaries) {
-      IndexRange indexRange = syntaxElement.getRange();
-      verifier.reportIssue(message).onRange(currentRegexLine, indexRange.getBeginningOffset() + 1,
-        currentRegexLine, indexRange.getEndingOffset() + 1);
+      VerifierRegexSource source = (VerifierRegexSource) syntaxElement.getSource();
+      reportIssue(source.issueLocationInFile(syntaxElement.getRange()), message, secondaries);
     }
 
     public void reportInvocationTreeIssue(Node regexNode, String message, @Nullable Integer cost, List<RegexIssueLocation> secondaries) {
       Mark startMark = regexNode.getStartMark().get();
       Mark endMark = regexNode.getEndMark().get();
+      IssueLocation.Range range = new IssueLocation.Range(null, startMark.getLine(), startMark.getColumn(), endMark.getLine(), endMark.getColumn());
+      reportIssue(range, message, secondaries);
+    }
 
-      verifier.reportIssue(message).onRange(currentRegexLine, startMark.getColumn(),
-        currentRegexLine, endMark.getColumn());
+    private void reportIssue(IssueLocation.Range range, String message, List<RegexIssueLocation> secondaries) {
+      SingleFileVerifier.Issue issue = verifier
+        .reportIssue(message)
+        .onRange(range.getLine(), range.getColumn(), range.getEndLine(), range.getEndColumn());
+      secondaries.forEach(location -> {
+        IssueLocation.Range secondaryRange = issueLocationInFile(location);
+        issue.addSecondary(secondaryRange.getLine(), secondaryRange.getColumn(), secondaryRange.getEndLine(),
+          secondaryRange.getEndColumn(), location.message());
+      });
     }
 
     @Override
@@ -173,27 +189,15 @@ public final class RegexFinderVerifier {
     }
 
     private void checkRegex(ScalarNode regexNode, @Nullable ScalarNode flagNode) {
-      validateRegex(regexNode);
       RegexParseResult parseResult = parseRegex(regexNode, flagNode);
       check.checkRegex(parseResult, this::reportRegexTreeIssue, (message, cost, secondaries) -> reportInvocationTreeIssue(regexNode, message, cost, secondaries));
-    }
-  }
-
-  private void validateRegex(ScalarNode node) {
-    if (node.getStartMark().isPresent() && node.getEndMark().isPresent() && node.getStartMark().get().getLine() == node.getEndMark().get().getLine()) {
-      currentRegexLine = node.getStartMark().get().getLine() + 1;
-    } else {
-      throw new AssertionFailedError("Regex is not a single line string");
-    }
-    if (node.isPlain()) {
-      throw new AssertionFailedError(String.format("The regular expression string in line %s should not be a plain string.", node.getStartMark().get().getLine() + 1));
     }
   }
 
   private static RegexParseResult parseRegex(ScalarNode regexNode, @Nullable ScalarNode flagNode) {
     char quote = regexNode.getScalarStyle() == ScalarStyle.SINGLE_QUOTED ? '\'' : '"';
     FlagSet flagSet = flagNode != null ? PhpRegexFlags.parseFlags(flagNode.getValue()) : new FlagSet();
-    return new RegexParser(new PhpRegexSource(regexNode.getValue(), quote), flagSet).parse();
+    return new RegexParser(new VerifierRegexSource(regexNode, quote), flagSet).parse();
   }
 
 
@@ -210,5 +214,40 @@ public final class RegexFinderVerifier {
       }
       super.visit(node);
     }
+  }
+
+  static class VerifierRegexSource extends PhpRegexSource {
+    final int sourceLine;
+    final int sourceStartOffset;
+
+    VerifierRegexSource(ScalarNode node, char quote) {
+      super(getRegex(node), quote);
+      Mark startMark = node.getStartMark().get();
+      sourceLine = startMark.getLine() + 1;
+      sourceStartOffset = startMark.getColumn() + 1;
+    }
+
+    static String getRegex(ScalarNode node) {
+      if (node.getStartMark().get().getLine() != node.getEndMark().get().getLine()) {
+        throw new AssertionFailedError("Regex is not a single line string");
+      }
+      if (node.isPlain()) {
+        throw new AssertionFailedError(String.format("The regular expression string in line %s should not be a plain string.", node.getStartMark().get().getLine() + 1));
+      }
+      return node.getValue();
+    }
+
+    IssueLocation.Range issueLocationInFile(IndexRange range) {
+      return new IssueLocation.Range(null, sourceLine, sourceStartOffset + range.getBeginningOffset(),
+        sourceLine, sourceStartOffset + range.getEndingOffset());
+    }
+  }
+
+  IssueLocation.Range issueLocationInFile(RegexIssueLocation location) {
+    RegexSyntaxElement firstElement = location.syntaxElements().get(0);
+    IndexRange range = firstElement.getRange();
+    location.syntaxElements().stream().skip(1).map(RegexSyntaxElement::getRange).forEach(range::merge);
+    VerifierRegexSource source = (VerifierRegexSource) firstElement.getSource();
+    return source.issueLocationInFile(range);
   }
 }
