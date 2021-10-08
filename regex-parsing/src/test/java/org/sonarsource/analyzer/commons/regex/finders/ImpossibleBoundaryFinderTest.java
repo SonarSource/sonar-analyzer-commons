@@ -17,31 +17,24 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex;
+package org.sonarsource.analyzer.commons.regex.finders;
 
-import java.util.Set;
-import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
+import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
+import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 
-public interface RegexSource {
-  String getSourceText();
+class ImpossibleBoundaryFinderTest {
 
-  default String substringAt(IndexRange range) {
-    return getSourceText().substring(range.getBeginningOffset(), Math.min(range.getEndingOffset(), length()));
+  @Test
+  void test() {
+    Verifier.verify(new ImpossibleBoundaryFinderCheck(), "ImpossibleBoundaryFinder.yml");
   }
 
-  default int length() {
-    return getSourceText().length();
+  static class ImpossibleBoundaryFinderCheck extends FinderCheck {
+    @Override
+    public void checkRegex(RegexParseResult parseResult, RegexIssueReporter.ElementIssue regexElementIssueReporter, RegexIssueReporter.InvocationIssue invocationIssueReporter) {
+      new ImpossibleBoundaryFinder(regexElementIssueReporter).visit(parseResult);
+    }
   }
 
-  CharacterParser createCharacterParser();
-
-  default RegexLexer createLexer() {
-    return new RegexLexer(this, createCharacterParser());
-  }
-
-  RegexDialect dialect();
-
-  Set<RegexFeature> features();
-
-  boolean supportFeature(RegexFeature feature);
 }

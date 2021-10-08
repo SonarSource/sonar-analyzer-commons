@@ -17,29 +17,24 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex;
+package org.sonarsource.analyzer.commons.regex.finders;
 
-public class JavaRegexSource implements RegexSource {
+import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
+import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 
-  private final String sourceText;
+class ComplexRegexFinderTest {
 
-  public JavaRegexSource(String sourceText) {
-    this.sourceText = sourceText;
+  @Test
+  void test() {
+    Verifier.verify(new ComplexityCalculatorCheck(), "ComplexRegexFinder.yml");
   }
 
-  @Override
-  public String getSourceText() {
-    return sourceText;
-  }
-
-  @Override
-  public CharacterParser createCharacterParser() {
-    return new JavaCharacterParser(this);
-  }
-
-  @Override
-  public RegexDialect dialect() {
-    return RegexDialect.JAVA;
+  static class ComplexityCalculatorCheck extends FinderCheck {
+    @Override
+    public void checkRegex(RegexParseResult parseResult, RegexIssueReporter.ElementIssue regexElementIssueReporter, RegexIssueReporter.InvocationIssue invocationIssueReporter) {
+      new ComplexRegexFinder(regexElementIssueReporter, 20).visit(parseResult);
+    }
   }
 
 }

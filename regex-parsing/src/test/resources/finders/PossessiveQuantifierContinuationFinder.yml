@@ -1,0 +1,19 @@
+- 'a++abc' # Noncompliant  {{Change this impossible to match sub-pattern that conflicts with the previous possessive quantifier.}}
+- '\d*+[02468]' # Noncompliant
+- '(\d)*+([02468])' # Noncompliant
+- '\d++(?:[eE][+-]?\d++)?[fFdD]?'
+- '(xx++)+x' # Noncompliant
+- '(?:xx++)+x' # Noncompliant
+- '(xx++)x' # Noncompliant
+- '.*+\w' # Noncompliant
+- '.*+\w+' # Noncompliant
+- '(a|b|c)*+(a|b)' # Noncompliant
+
+- 'a+abc'
+- 'a+?abc'
+- 'a*+\s'
+- 'aa++bc'
+- '\d*+(?<=[02468])'
+- '(:[0-9])?+(:[0-9])?+'
+- '(bx++)+x' # FN because limitation of the algorithm when there's infinite loop
+- '(?(1)(.*)|())'

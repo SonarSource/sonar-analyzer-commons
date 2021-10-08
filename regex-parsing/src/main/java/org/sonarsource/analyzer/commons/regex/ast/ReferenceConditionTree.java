@@ -17,31 +17,26 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex;
+package org.sonarsource.analyzer.commons.regex.ast;
 
-import java.util.Set;
-import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
+import org.sonarsource.analyzer.commons.regex.RegexSource;
 
-public interface RegexSource {
-  String getSourceText();
+// TODO should be merged this BackReferenceTree
+public class ReferenceConditionTree extends GroupTree {
 
-  default String substringAt(IndexRange range) {
-    return getSourceText().substring(range.getBeginningOffset(), Math.min(range.getEndingOffset(), length()));
+  private final String reference;
+
+  public ReferenceConditionTree(RegexSource source, IndexRange range, String reference,  FlagSet activeFlags) {
+    super(source, Kind.BACK_REFERENCE, null, range, activeFlags);
+    this.reference = reference;
   }
 
-  default int length() {
-    return getSourceText().length();
+  @Override
+  public void accept(RegexVisitor visitor) {
+    // do nothing
   }
 
-  CharacterParser createCharacterParser();
-
-  default RegexLexer createLexer() {
-    return new RegexLexer(this, createCharacterParser());
+  public String getReference() {
+    return reference;
   }
-
-  RegexDialect dialect();
-
-  Set<RegexFeature> features();
-
-  boolean supportFeature(RegexFeature feature);
 }

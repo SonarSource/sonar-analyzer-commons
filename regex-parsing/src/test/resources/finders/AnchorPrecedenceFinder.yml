@@ -1,0 +1,30 @@
+- '^a|b|c$' # Noncompliant {{Group parts of the regex together to make the intended operator precedence explicit.}}
+- '^a|b|cd' # Noncompliant
+- '(?i)^a|b|cd' # Noncompliant
+- '(?i:^a|b|cd)' # Noncompliant
+- 'a|b|c$' # Noncompliant
+- '\\Aa|b|c\\Z' # Noncompliant
+- '\\Aa|b|c\\z' # Noncompliant
+
+- '^(?:a|b|c)$'
+- '(?:^a)|b|(?:c$)'
+- '^abc$'
+- 'a|b|c'
+- '^a$|^b$|^c$'
+- '^a$|b|c'
+- 'a|b|^c$'
+- '^a|^b$|c$'
+- '^a|^b|c$'
+- '^a|b$|c$'
+  # Only beginning and end of line/input boundaries are considered - not word boundaries
+- '\\ba|b|c\\b'
+- '\\ba\\b|\\bb\\b|\\bc\\b'
+  # If multiple alternatives are anchored, but not all, that's more likely to be intentional than if only the first
+  # one were anchored, so we won't report an issue for the following line:
+- '^a|^b|c'
+- 'aa|bb|cc'
+- '^'
+- '^[abc]$'
+- '|'
+- '['
+- '(?i:^)a|b|c' # False negative; we don't find the anchor if it's hidden inside a sub-expression

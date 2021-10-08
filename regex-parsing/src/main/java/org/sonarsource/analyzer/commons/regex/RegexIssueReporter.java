@@ -19,29 +19,19 @@
  */
 package org.sonarsource.analyzer.commons.regex;
 
-import java.util.Set;
-import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
+import java.util.List;
+import javax.annotation.Nullable;
+import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
 
-public interface RegexSource {
-  String getSourceText();
+public final class RegexIssueReporter {
 
-  default String substringAt(IndexRange range) {
-    return getSourceText().substring(range.getBeginningOffset(), Math.min(range.getEndingOffset(), length()));
+  @FunctionalInterface
+  public interface ElementIssue {
+    void report(RegexSyntaxElement syntaxElement, String message, @Nullable Integer cost, List<RegexIssueLocation> secondaries);
   }
 
-  default int length() {
-    return getSourceText().length();
+  @FunctionalInterface
+  public interface InvocationIssue {
+    void report(String message, @Nullable Integer cost, List<RegexIssueLocation> secondaries);
   }
-
-  CharacterParser createCharacterParser();
-
-  default RegexLexer createLexer() {
-    return new RegexLexer(this, createCharacterParser());
-  }
-
-  RegexDialect dialect();
-
-  Set<RegexFeature> features();
-
-  boolean supportFeature(RegexFeature feature);
 }

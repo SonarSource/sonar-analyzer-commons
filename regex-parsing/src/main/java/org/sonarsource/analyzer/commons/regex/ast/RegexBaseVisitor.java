@@ -151,4 +151,16 @@ public class RegexBaseVisitor implements RegexVisitor {
     // no children to visit
   }
 
+  public void visitConditionalSubpattern(ConditionalSubpatternTree tree) {
+    RegexTree condition = tree.getCondition();
+    if (condition.is(RegexTree.Kind.LOOK_AROUND)) {
+      visit(condition);
+    }
+    visit(tree.getYesPattern());
+    RegexTree noPattern = tree.getNoPattern();
+    if (noPattern != null) {
+      visit(noPattern);
+    }
+  }
+
 }

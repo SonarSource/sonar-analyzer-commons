@@ -1,0 +1,9 @@
+- '.*?x?' # Noncompliant {{Fix this reluctant quantifier that will only ever match 0 repetitions.}}
+- '.+?x?' # Noncompliant {{Fix this reluctant quantifier that will only ever match 1 repetition.}}
+- '.{2,4}?x?' # Noncompliant {{Fix this reluctant quantifier that will only ever match 2 repetitions.}}
+- '.*?$' # Noncompliant {{Remove the '?' from this unnecessarily reluctant quantifier.}}
+- '.*?()$' # Noncompliant {{Remove the '?' from this unnecessarily reluctant quantifier.}}
+
+- '.*?x'
+- '.*?x$'
+- '.*?[abc]'

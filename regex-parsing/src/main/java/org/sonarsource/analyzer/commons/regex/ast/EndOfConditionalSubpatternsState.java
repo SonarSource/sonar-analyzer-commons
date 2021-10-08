@@ -17,31 +17,27 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex;
+package org.sonarsource.analyzer.commons.regex.ast;
 
-import java.util.Set;
-import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
+import javax.annotation.Nonnull;
 
-public interface RegexSource {
-  String getSourceText();
+public class EndOfConditionalSubpatternsState extends ActiveFlagsState {
+  private final ConditionalSubpatternTree parent;
 
-  default String substringAt(IndexRange range) {
-    return getSourceText().substring(range.getBeginningOffset(), Math.min(range.getEndingOffset(), length()));
+  public EndOfConditionalSubpatternsState(ConditionalSubpatternTree parent, FlagSet activeFlags) {
+    super(activeFlags);
+    this.parent = parent;
   }
 
-  default int length() {
-    return getSourceText().length();
+  @Nonnull
+  @Override
+  public AutomatonState continuation() {
+    return parent.continuation();
   }
 
-  CharacterParser createCharacterParser();
-
-  default RegexLexer createLexer() {
-    return new RegexLexer(this, createCharacterParser());
+  @Nonnull
+  @Override
+  public TransitionType incomingTransitionType() {
+    return TransitionType.EPSILON;
   }
-
-  RegexDialect dialect();
-
-  Set<RegexFeature> features();
-
-  boolean supportFeature(RegexFeature feature);
 }

@@ -19,7 +19,10 @@
  */
 package org.sonarsource.analyzer.commons.regex;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import org.opentest4j.AssertionFailedError;
@@ -36,6 +39,7 @@ import org.sonarsource.analyzer.commons.regex.ast.RegexToken;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
 import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
+import org.sonarsource.analyzer.commons.regex.java.JavaRegexSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -48,20 +52,20 @@ public class RegexParserTestUtils {
 
   private RegexParserTestUtils() {}
 
-  public static RegexTree assertSuccessfulParse(String regex) {
-    return assertSuccessfulParse(regex, 0);
+  public static RegexTree assertSuccessfulParse(String regex, RegexFeature... features) {
+    return assertSuccessfulParse(regex, 0, features);
   }
 
-  public static RegexTree assertSuccessfulParse(String regex, int initialFlags) {
-    return assertSuccessfulParseResult(regex, initialFlags).getResult();
+  public static RegexTree assertSuccessfulParse(String regex, int initialFlags, RegexFeature... features) {
+    return assertSuccessfulParseResult(regex, initialFlags, features).getResult();
   }
 
-  public static RegexParseResult assertSuccessfulParseResult(String regex) {
-    return assertSuccessfulParseResult(regex, 0);
+  public static RegexParseResult assertSuccessfulParseResult(String regex, RegexFeature... features) {
+    return assertSuccessfulParseResult(regex, 0, features);
   }
 
-  public static RegexParseResult assertSuccessfulParseResult(String regex, int initialFlags) {
-    RegexParseResult result = parseRegex(regex, initialFlags);
+  public static RegexParseResult assertSuccessfulParseResult(String regex, int initialFlags, RegexFeature... features) {
+    RegexParseResult result = parseRegex(regex, initialFlags, features);
     if (!result.getSyntaxErrors().isEmpty()) {
       throw new AssertionFailedError("Parsing should complete with no errors.", "no errors", result.getSyntaxErrors());
     }
@@ -80,15 +84,15 @@ public class RegexParserTestUtils {
     return result;
   }
 
-  public static RegexParseResult parseRegex(String regex, int initialFlags) {
-    RegexSource source = makeSource(regex);
+  public static RegexParseResult parseRegex(String regex, int initialFlags, RegexFeature... features) {
+    RegexSource source = makeSource(regex, features);
     RegexParseResult result = new RegexParser(source, new FlagSet(initialFlags)).parse();
     assertEquals(initialFlags, result.getInitialFlags().getMask(), "The initial flags in result should match those passed in.");
     return result;
   }
 
-  public static RegexParseResult parseRegex(String regex) {
-    return parseRegex(regex, 0);
+  public static RegexParseResult parseRegex(String regex, RegexFeature... features) {
+    return parseRegex(regex, 0, features);
   }
 
   public static void assertFailParsing(String regex, String expectedError) {
@@ -230,7 +234,19 @@ public class RegexParserTestUtils {
     assertEquals(expectedEnd, element.getRange().getEndingOffset(), "Element should end at the given index.");
   }
 
-  public static RegexSource makeSource(String content) {
-    return new JavaRegexSource(content);
+  public static RegexSource makeSource(String content, RegexFeature... features) {
+    return new JavaRegexSource(content) {
+      final Set<RegexFeature> featureSet = new HashSet<>(Arrays.asList(features));
+
+      @Override
+      public Set<RegexFeature> features() {
+        return featureSet;
+      }
+
+      @Override
+      public boolean supportFeature(RegexFeature feature) {
+        return featureSet.contains(feature);
+      }
+    };
   }
 }

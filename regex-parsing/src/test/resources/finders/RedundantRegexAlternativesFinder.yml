@@ -1,0 +1,21 @@
+- '[ab]|    a': 'x' # Noncompliant {{Remove or rework this redundant alternative.}}
+- '.|a' # Noncompliant
+- 'a|.' # Noncompliant
+- '(.)|(a)' # Noncompliant
+- 'a|b|bc?' # Noncompliant
+- 'a|b|bc*' # Noncompliant
+- 'a|b|bb*' # Noncompliant
+- 'a|b|a|b|a|b|a|b' # Noncompliant 2
+- '[1-2]|[1-4]|[1-8]|[1-3]' # Noncompliant
+- '1|[1-2]' # Noncompliant
+
+- '(a)|(.)' # Compliant
+- 'a|(.)' # Compliant
+- '(a)|.' # Compliant
+- 'a|b|bc+' # Compliant
+- '|a' # Compliant
+- '[ab]' # Compliant
+- '.*' # Compliant
+- '[[:space:]]|x' # Compliant
+- 'x|[[:space:]]' # Compliant
+- '[[:space:]]|\n' # Compliant, false negative

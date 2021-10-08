@@ -1,0 +1,36 @@
+#noncompliantCharRanges
+- '[a-z]' # Noncompliant {{Replace this character range with a Unicode-aware character class.}}
+- '[A-Z]' # Noncompliant
+- '[0-9a-z]' # Noncompliant
+- '[abcA-Zdef]' # Noncompliant
+- '[\\x{61}-\\x{7A}]' # Noncompliant
+- '[a-zA-Z]' # Noncompliant {{Replace these character ranges with Unicode-aware character classes.}}
+
+#noncompliantPredefinedPosixClasses
+- '\\p{Lower}' # Noncompliant {{Enable the "u" flag or use a Unicode-aware alternative.}}
+- '\\p{Alnum}' # Noncompliant
+- '\\p{Space}' # Noncompliant
+- '\\s' # Noncompliant
+- '\\S' # Noncompliant
+- '\\w' # Noncompliant
+- '\\W' # Noncompliant
+- '\\s\\w\\p{Lower}' # Noncompliant
+- '\\S\\p{Upper}\\w' # Noncompliant
+
+#compliantCharRanges
+- '[0-9]' # Compliant: we do not consider digits
+- '[a-y]' # Compliant: It appears a more restrictive range than simply 'all letters'
+- '[D-Z]'
+- '[\\x{1F600}-\\x{1F637}]'
+
+#compliantPredefinedPosixClasses
+- '\\p{ASCII}'
+- '\\p{Cntrl}'
+- '\\p{Lower}': 'u'
+- '(?U)\\p{Lower}'
+- '\\w': 'u'
+- '(?U)\\w'
+- '(?U:\\w)'
+- '\\w': 'iu'
+- '\\w((?U)\\w)\\w'
+- '\\w(?U:[a-y])\\w' # Compliant. We assume the developer knows what they are doing if they are using unicode flags somewhere.
