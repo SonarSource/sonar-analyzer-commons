@@ -20,7 +20,7 @@
 package org.sonarsource.analyzer.commons.regex.finders;
 
 import java.util.Collections;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
@@ -29,16 +29,16 @@ public class SingleCharacterAlternationFinder extends RegexBaseVisitor {
 
   public static final String MESSAGE = "Replace this alternation with a character class.";
 
-  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
+  private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
 
-  public SingleCharacterAlternationFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod) {
-    this.reportRegexTreeMethod = reportRegexTreeMethod;
+  public SingleCharacterAlternationFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter) {
+    this.regexElementIssueReporter = regexElementIssueReporter;
   }
 
   @Override
   public void visitDisjunction(DisjunctionTree tree) {
     if (tree.getAlternatives().stream().allMatch(CharacterClassElementTree.class::isInstance)) {
-      reportRegexTreeMethod.apply(tree, MESSAGE, null, Collections.emptyList());
+      regexElementIssueReporter.report(tree, MESSAGE, null, Collections.emptyList());
     }
     super.visitDisjunction(tree);
   }

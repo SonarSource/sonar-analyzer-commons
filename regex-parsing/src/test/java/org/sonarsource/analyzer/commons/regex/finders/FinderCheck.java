@@ -19,11 +19,9 @@
  */
 package org.sonarsource.analyzer.commons.regex.finders;
 
-import javax.annotation.Nullable;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
-import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
 
 public abstract class FinderCheck {
-  abstract void checkRegex(RegexParseResult parseResult, RegexCheck.ReportRegexTreeMethod reportRegexTree, RegexCheck.ReportInvocationTreeMethod reportInvocationTree);
+  abstract void checkRegex(RegexParseResult parseResult, RegexIssueReporter.ElementIssue regexElementIssueReporter, RegexIssueReporter.InvocationIssue invocationIssueReporter);
 }

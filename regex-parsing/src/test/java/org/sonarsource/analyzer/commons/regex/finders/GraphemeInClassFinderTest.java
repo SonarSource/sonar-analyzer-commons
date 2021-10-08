@@ -20,7 +20,7 @@
 package org.sonarsource.analyzer.commons.regex.finders;
 
 import org.junit.jupiter.api.Test;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 
 class GraphemeInClassFinderTest {
@@ -32,8 +32,8 @@ class GraphemeInClassFinderTest {
 
   static class GraphemeInClassFinderCheck extends FinderCheck {
     @Override
-    public void checkRegex(RegexParseResult parseResult, RegexCheck.ReportRegexTreeMethod reportRegexTree, RegexCheck.ReportInvocationTreeMethod reportInvocationTree) {
-      new GraphemeInClassFinder(reportRegexTree).visit(parseResult);
+    public void checkRegex(RegexParseResult parseResult, RegexIssueReporter.ElementIssue regexElementIssueReporter, RegexIssueReporter.InvocationIssue invocationIssueReporter) {
+      new GraphemeInClassFinder(regexElementIssueReporter).visit(parseResult);
     }
   }
 

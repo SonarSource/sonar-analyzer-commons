@@ -27,7 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.CapturingGroupTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
@@ -42,10 +43,10 @@ public class RedundantRegexAlternativesFinder extends RegexBaseVisitor {
   public static final String MESSAGE_KEEP = "Alternative to keep";
   public static final String MESSAGE_REDUNDANT = "Other redundant alternative";
 
-  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
+  private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
 
-  public RedundantRegexAlternativesFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod) {
-    this.reportRegexTreeMethod = reportRegexTreeMethod;
+  public RedundantRegexAlternativesFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter) {
+    this.regexElementIssueReporter = regexElementIssueReporter;
   }
 
   @Override
@@ -67,12 +68,12 @@ public class RedundantRegexAlternativesFinder extends RegexBaseVisitor {
     List<RegexTree> redundantAlternatives = new ArrayList<>(redundantSubsetAlternatives);
     redundantAlternatives.sort(Comparator.comparing(element -> element.getRange().getBeginningOffset()));
     RegexTree firstRedundantAlternatives = redundantAlternatives.get(0);
-    List<RegexCheck.RegexIssueLocation> secondaries = new ArrayList<>();
-    secondaries.add(new RegexCheck.RegexIssueLocation(supersetAlternative, MESSAGE_KEEP));
+    List<RegexIssueLocation> secondaries = new ArrayList<>();
+    secondaries.add(new RegexIssueLocation(supersetAlternative, MESSAGE_KEEP));
     redundantAlternatives.stream().skip(1)
-      .map(otherRedundantAlternatives -> new RegexCheck.RegexIssueLocation(otherRedundantAlternatives, MESSAGE_REDUNDANT))
+      .map(otherRedundantAlternatives -> new RegexIssueLocation(otherRedundantAlternatives, MESSAGE_REDUNDANT))
       .forEach(secondaries::add);
-    reportRegexTreeMethod.apply(firstRedundantAlternatives, MESSAGE, null, secondaries);
+    regexElementIssueReporter.report(firstRedundantAlternatives, MESSAGE, null, secondaries);
   }
 
   private static class RedundantAlternativeCollector {

@@ -20,8 +20,7 @@
 package org.sonarsource.analyzer.commons.regex.finders;
 
 import org.junit.jupiter.api.Test;
-import org.sonarsource.analyzer.commons.regex.RegexCheck.ReportInvocationTreeMethod;
-import org.sonarsource.analyzer.commons.regex.RegexCheck.ReportRegexTreeMethod;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 
 class AnchorPrecedenceFinderTest {
@@ -33,8 +32,8 @@ class AnchorPrecedenceFinderTest {
 
   static class AnchorPrecedenceFinderCheck extends FinderCheck {
     @Override
-    public void checkRegex(RegexParseResult parseResult, ReportRegexTreeMethod reportRegexTree, ReportInvocationTreeMethod reportInvocationTree) {
-      new AnchorPrecedenceFinder(reportRegexTree).visit(parseResult);
+    public void checkRegex(RegexParseResult parseResult, RegexIssueReporter.ElementIssue regexElementIssueReporter, RegexIssueReporter.InvocationIssue invocationIssueReporter) {
+      new AnchorPrecedenceFinder(regexElementIssueReporter).visit(parseResult);
     }
   }
 }

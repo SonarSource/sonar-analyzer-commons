@@ -20,7 +20,7 @@
 package org.sonarsource.analyzer.commons.regex.finders;
 
 import org.junit.jupiter.api.Test;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 
 class ImpossibleBoundaryFinderTest {
@@ -32,8 +32,8 @@ class ImpossibleBoundaryFinderTest {
 
   static class ImpossibleBoundaryFinderCheck extends FinderCheck {
     @Override
-    public void checkRegex(RegexParseResult parseResult, RegexCheck.ReportRegexTreeMethod reportRegexTree, RegexCheck.ReportInvocationTreeMethod reportInvocationTree) {
-      new ImpossibleBoundaryFinder(reportRegexTree).visit(parseResult);
+    public void checkRegex(RegexParseResult parseResult, RegexIssueReporter.ElementIssue regexElementIssueReporter, RegexIssueReporter.InvocationIssue invocationIssueReporter) {
+      new ImpossibleBoundaryFinder(regexElementIssueReporter).visit(parseResult);
     }
   }
 

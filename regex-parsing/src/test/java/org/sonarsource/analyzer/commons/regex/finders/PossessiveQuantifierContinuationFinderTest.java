@@ -20,7 +20,7 @@
 package org.sonarsource.analyzer.commons.regex.finders;
 
 import org.junit.jupiter.api.Test;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 
 class PossessiveQuantifierContinuationFinderTest {
@@ -32,8 +32,8 @@ class PossessiveQuantifierContinuationFinderTest {
 
   static class PossessiveQuantifierContinuationFinderCheck extends FinderCheck {
     @Override
-    public void checkRegex(RegexParseResult parseResult, RegexCheck.ReportRegexTreeMethod reportRegexTree, RegexCheck.ReportInvocationTreeMethod reportInvocationTree) {
-      new PossessiveQuantifierContinuationFinder(reportRegexTree, parseResult.getFinalState()).visit(parseResult);
+    public void checkRegex(RegexParseResult parseResult, RegexIssueReporter.ElementIssue regexElementIssueReporter, RegexIssueReporter.InvocationIssue invocationIssueReporter) {
+      new PossessiveQuantifierContinuationFinder(regexElementIssueReporter, parseResult.getFinalState()).visit(parseResult);
     }
   }
 

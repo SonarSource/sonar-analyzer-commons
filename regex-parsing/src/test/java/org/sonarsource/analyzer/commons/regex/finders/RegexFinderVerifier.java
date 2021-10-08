@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -43,10 +42,9 @@ import org.snakeyaml.engine.v2.parser.ParserImpl;
 import org.snakeyaml.engine.v2.scanner.ScannerImpl;
 import org.snakeyaml.engine.v2.scanner.StreamReader;
 import org.sonarsource.analyzer.commons.checks.verifier.SingleFileVerifier;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.RegexParser;
-import org.sonarsource.analyzer.commons.regex.RegexSource;
 import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
 import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
 import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
@@ -54,7 +52,6 @@ import org.sonarsource.analyzer.commons.regex.php.PhpRegexFlags;
 import org.sonarsource.analyzer.commons.regex.php.PhpRegexSource;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.makeSource;
 
 public final class RegexFinderVerifier {
 
@@ -149,13 +146,13 @@ public final class RegexFinderVerifier {
       this.check = check;
     }
 
-    public void reportRegexTreeIssue(RegexSyntaxElement syntaxElement, String message, @Nullable Integer cost, List<RegexCheck.RegexIssueLocation> secondaries) {
+    public void reportRegexTreeIssue(RegexSyntaxElement syntaxElement, String message, @Nullable Integer cost, List<RegexIssueLocation> secondaries) {
       IndexRange indexRange = syntaxElement.getRange();
       verifier.reportIssue(message).onRange(currentRegexLine, indexRange.getBeginningOffset() + 1,
         currentRegexLine, indexRange.getEndingOffset() + 1);
     }
 
-    public void reportInvocationTreeIssue(Node regexNode, String message, @Nullable Integer cost, List<RegexCheck.RegexIssueLocation> secondaries) {
+    public void reportInvocationTreeIssue(Node regexNode, String message, @Nullable Integer cost, List<RegexIssueLocation> secondaries) {
       Mark startMark = regexNode.getStartMark().get();
       Mark endMark = regexNode.getEndMark().get();
 

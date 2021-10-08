@@ -22,7 +22,7 @@ package org.sonarsource.analyzer.commons.regex.finders;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.BoundaryTree;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
 import org.sonarsource.analyzer.commons.regex.ast.NonCapturingGroupTree;
@@ -34,14 +34,14 @@ public class AnchorPrecedenceFinder extends RegexBaseVisitor {
 
   public static final String MESSAGE = "Group parts of the regex together to make the intended operator precedence explicit.";
 
-  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
+  private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
 
   private enum Position {
     BEGINNING, END
   }
 
-  public AnchorPrecedenceFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod) {
-    this.reportRegexTreeMethod = reportRegexTreeMethod;
+  public AnchorPrecedenceFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter) {
+    this.regexElementIssueReporter = regexElementIssueReporter;
   }
 
   @Override
@@ -49,7 +49,7 @@ public class AnchorPrecedenceFinder extends RegexBaseVisitor {
     List<RegexTree> alternatives = tree.getAlternatives();
     if ((anchoredAt(alternatives, Position.BEGINNING) || anchoredAt(alternatives, Position.END))
       && notAnchoredElseWhere(alternatives)) {
-      reportRegexTreeMethod.apply(tree, MESSAGE, null, Collections.emptyList());
+      regexElementIssueReporter.report(tree, MESSAGE, null, Collections.emptyList());
     }
     super.visitDisjunction(tree);
   }

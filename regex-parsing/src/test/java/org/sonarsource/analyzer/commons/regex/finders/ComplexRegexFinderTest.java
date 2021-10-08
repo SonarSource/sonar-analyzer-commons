@@ -20,7 +20,7 @@
 package org.sonarsource.analyzer.commons.regex.finders;
 
 import org.junit.jupiter.api.Test;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 
 class ComplexRegexFinderTest {
@@ -32,8 +32,8 @@ class ComplexRegexFinderTest {
 
   static class ComplexityCalculatorCheck extends FinderCheck {
     @Override
-    public void checkRegex(RegexParseResult parseResult, RegexCheck.ReportRegexTreeMethod reportRegexTree, RegexCheck.ReportInvocationTreeMethod reportInvocationTree) {
-      new ComplexRegexFinder(reportRegexTree, 20).visit(parseResult);
+    public void checkRegex(RegexParseResult parseResult, RegexIssueReporter.ElementIssue regexElementIssueReporter, RegexIssueReporter.InvocationIssue invocationIssueReporter) {
+      new ComplexRegexFinder(regexElementIssueReporter, 20).visit(parseResult);
     }
   }
 

@@ -21,7 +21,8 @@ package org.sonarsource.analyzer.commons.regex.finders;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.ast.BackReferenceTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassIntersectionTree;
@@ -39,15 +40,15 @@ public class ComplexRegexFinder extends RegexBaseVisitor {
 
   private static final String MESSAGE = "Simplify this regular expression to reduce its complexity from %d to the %d allowed.";
 
-  private RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
+  private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
   private final int max;
 
   private int complexity = 0;
   private int nesting = 1;
-  private List<RegexCheck.RegexIssueLocation> components = new ArrayList<>();
+  private final List<RegexIssueLocation> components = new ArrayList<>();
 
-  public ComplexRegexFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod, int max) {
-    this.reportRegexTreeMethod = reportRegexTreeMethod;
+  public ComplexRegexFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter, int max) {
+    this.regexElementIssueReporter = regexElementIssueReporter;
     this.max = max;
   }
 
@@ -57,7 +58,7 @@ public class ComplexRegexFinder extends RegexBaseVisitor {
     if (increment > 1) {
       message += " (incl " + (increment - 1) + " for nesting)";
     }
-    components.add(new RegexCheck.RegexIssueLocation(syntaxElement, message));
+    components.add(new RegexIssueLocation(syntaxElement, message));
   }
 
   @Override
@@ -139,7 +140,7 @@ public class ComplexRegexFinder extends RegexBaseVisitor {
   protected void after(RegexParseResult regexParseResult) {
     if (complexity > max) {
       int cost = complexity - max;
-      reportRegexTreeMethod.apply(regexParseResult.getResult(), String.format(MESSAGE, complexity, max), cost, components);
+      regexElementIssueReporter.report(regexParseResult.getResult(), String.format(MESSAGE, complexity, max), cost, components);
     }
   }
 }

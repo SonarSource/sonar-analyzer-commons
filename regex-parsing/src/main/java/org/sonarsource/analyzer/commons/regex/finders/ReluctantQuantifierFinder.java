@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassTree;
 import org.sonarsource.analyzer.commons.regex.ast.EscapedCharacterClassTree;
@@ -40,10 +40,10 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
 
   private static final String MESSAGE = "Replace this use of a reluctant quantifier with \"%s%s\".";
 
-  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
+  private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
 
-  public ReluctantQuantifierFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod) {
-    this.reportRegexTreeMethod = reportRegexTreeMethod;
+  public ReluctantQuantifierFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter) {
+    this.regexElementIssueReporter = regexElementIssueReporter;
   }
 
   @Override
@@ -62,7 +62,7 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
         .ifPresent(negatedClass -> {
           String newQuantifier = makePossessive(repetition.getQuantifier());
           String message = String.format(MESSAGE, negatedClass, newQuantifier);
-          reportRegexTreeMethod.apply(repetition, message, null, Collections.emptyList());
+          regexElementIssueReporter.report(repetition, message, null, Collections.emptyList());
         });
     }
   }

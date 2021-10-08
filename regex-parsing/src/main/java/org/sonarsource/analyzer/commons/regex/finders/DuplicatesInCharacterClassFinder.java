@@ -23,7 +23,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassUnionTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
@@ -34,10 +35,10 @@ public class DuplicatesInCharacterClassFinder extends RegexBaseVisitor {
 
   private static final String MESSAGE = "Remove duplicates in this character class.";
 
-  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
+  private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
 
-  public DuplicatesInCharacterClassFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod) {
-    this.reportRegexTreeMethod = reportRegexTreeMethod;
+  public DuplicatesInCharacterClassFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter) {
+    this.regexElementIssueReporter = regexElementIssueReporter;
   }
 
   @Override
@@ -62,11 +63,11 @@ public class DuplicatesInCharacterClassFinder extends RegexBaseVisitor {
       characterClass.add(element);
     }
     if (!duplicates.isEmpty()) {
-      List<RegexCheck.RegexIssueLocation> secondaries = duplicates.stream()
+      List<RegexIssueLocation> secondaries = duplicates.stream()
         .skip(1)
-        .map(duplicate -> new RegexCheck.RegexIssueLocation(duplicate, "Additional duplicate"))
+        .map(duplicate -> new RegexIssueLocation(duplicate, "Additional duplicate"))
         .collect(Collectors.toList());
-      reportRegexTreeMethod.apply(duplicates.iterator().next(), MESSAGE, null, secondaries);
+      regexElementIssueReporter.report(duplicates.iterator().next(), MESSAGE, null, secondaries);
     }
     super.visitCharacterClassUnion(tree);
   }

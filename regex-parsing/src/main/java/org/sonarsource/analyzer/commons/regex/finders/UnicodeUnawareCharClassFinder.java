@@ -29,7 +29,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterRangeTree;
 import org.sonarsource.analyzer.commons.regex.ast.EscapedCharacterClassTree;
@@ -49,16 +50,16 @@ public class UnicodeUnawareCharClassFinder extends RegexBaseVisitor {
     unicodeUnawareCharacterRanges.put('A', 'Z');
   }
 
-  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
-  private final RegexCheck.ReportInvocationTreeMethod reportInvocationTreeMethod;
+  private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
+  private final RegexIssueReporter.InvocationIssue invocationIssueReporter;
 
   private final List<CharacterRangeTree> unicodeUnawareRanges = new ArrayList<>();
   private final List<RegexTree> unicodeAwareWithFlag = new ArrayList<>();
   private boolean containsUnicodeCharacterFlag = false;
 
-  public UnicodeUnawareCharClassFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod, RegexCheck.ReportInvocationTreeMethod reportInvocationTreeMethod) {
-    this.reportRegexTreeMethod = reportRegexTreeMethod;
-    this.reportInvocationTreeMethod = reportInvocationTreeMethod;
+  public UnicodeUnawareCharClassFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter, RegexIssueReporter.InvocationIssue invocationIssueReporter) {
+    this.regexElementIssueReporter = regexElementIssueReporter;
+    this.invocationIssueReporter = invocationIssueReporter;
   }
 
   @Override
@@ -70,20 +71,20 @@ public class UnicodeUnawareCharClassFinder extends RegexBaseVisitor {
   protected void after(RegexParseResult regexParseResult) {
     int unicodeUnawareRangeSize = unicodeUnawareRanges.size();
     if (unicodeUnawareRangeSize == 1) {
-      reportRegexTreeMethod.apply(unicodeUnawareRanges.get(0), "Replace this character range with a Unicode-aware character class.", null, Collections.emptyList());
+      regexElementIssueReporter.report(unicodeUnawareRanges.get(0), "Replace this character range with a Unicode-aware character class.", null, Collections.emptyList());
     } else if (unicodeUnawareRangeSize > 1) {
-      List<RegexCheck.RegexIssueLocation> secondaries = unicodeUnawareRanges.stream()
-        .map(tree -> new RegexCheck.RegexIssueLocation(tree, "Character range"))
+      List<RegexIssueLocation> secondaries = unicodeUnawareRanges.stream()
+        .map(tree -> new RegexIssueLocation(tree, "Character range"))
         .collect(Collectors.toList());
-      reportRegexTreeMethod.apply(regexParseResult.getResult(), "Replace these character ranges with Unicode-aware character classes.", null, secondaries);
+      regexElementIssueReporter.report(regexParseResult.getResult(), "Replace these character ranges with Unicode-aware character classes.", null, secondaries);
     }
 
 
     if (!unicodeAwareWithFlag.isEmpty() && !containsUnicodeCharacterFlag) {
-      List<RegexCheck.RegexIssueLocation> secondaries = unicodeAwareWithFlag.stream()
-        .map(tree -> new RegexCheck.RegexIssueLocation(tree, "Predefined/POSIX character class"))
+      List<RegexIssueLocation> secondaries = unicodeAwareWithFlag.stream()
+        .map(tree -> new RegexIssueLocation(tree, "Predefined/POSIX character class"))
         .collect(Collectors.toList());
-      reportInvocationTreeMethod.apply("Enable the \"u\" flag or use a Unicode-aware alternative.", null, secondaries);
+      invocationIssueReporter.report("Enable the \"u\" flag or use a Unicode-aware alternative.", null, secondaries);
     }
   }
 

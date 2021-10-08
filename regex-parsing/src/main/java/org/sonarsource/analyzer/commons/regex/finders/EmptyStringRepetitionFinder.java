@@ -20,7 +20,7 @@
 package org.sonarsource.analyzer.commons.regex.finders;
 
 import java.util.Collections;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
 import org.sonarsource.analyzer.commons.regex.ast.GroupTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
@@ -32,17 +32,17 @@ public class EmptyStringRepetitionFinder extends RegexBaseVisitor {
 
   private static final String MESSAGE = "Rework this part of the regex to not match the empty string.";
 
-  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
+  private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
 
-  public EmptyStringRepetitionFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod) {
-    this.reportRegexTreeMethod = reportRegexTreeMethod;
+  public EmptyStringRepetitionFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter) {
+    this.regexElementIssueReporter = regexElementIssueReporter;
   }
 
   @Override
   public void visitRepetition(RepetitionTree tree) {
     RegexTree element = tree.getElement();
     if (matchEmptyString(element)) {
-      reportRegexTreeMethod.apply(element, MESSAGE, null, Collections.emptyList());
+      regexElementIssueReporter.report(element, MESSAGE, null, Collections.emptyList());
     }
   }
 

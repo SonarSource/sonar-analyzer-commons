@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.BoundaryTree;
@@ -41,13 +41,13 @@ public class ImpossibleBoundaryFinder extends RegexBaseVisitor {
   private final Set<RegexTree> excluded = new HashSet<>();
   private final RegexReachabilityChecker regexReachabilityChecker = new RegexReachabilityChecker(false);
 
-  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
+  private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
 
   private AutomatonState start;
   private AutomatonState end;
 
-  public ImpossibleBoundaryFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod) {
-    this.reportRegexTreeMethod = reportRegexTreeMethod;
+  public ImpossibleBoundaryFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter) {
+    this.regexElementIssueReporter = regexElementIssueReporter;
   }
 
   @Override
@@ -111,17 +111,17 @@ public class ImpossibleBoundaryFinder extends RegexBaseVisitor {
 
   private void checkStartBoundary(BoundaryTree boundaryTree) {
     if (!RegexReachabilityChecker.canReachWithoutConsumingInput(start, boundaryTree)) {
-      reportRegexTreeMethod.apply(boundaryTree, String.format(MESSAGE, "after"), null, Collections.emptyList());
+      regexElementIssueReporter.report(boundaryTree, String.format(MESSAGE, "after"), null, Collections.emptyList());
     } else if (!excluded.contains(boundaryTree) && probablyShouldConsumeInput(start, boundaryTree)) {
-      reportRegexTreeMethod.apply(boundaryTree, String.format(SOFT_MESSAGE, "after"), null, Collections.emptyList());
+      regexElementIssueReporter.report(boundaryTree, String.format(SOFT_MESSAGE, "after"), null, Collections.emptyList());
     }
   }
 
   private void checkEndBoundary(BoundaryTree boundaryTree) {
     if (!RegexReachabilityChecker.canReachWithoutConsumingInput(boundaryTree, end)) {
-      reportRegexTreeMethod.apply(boundaryTree, String.format(MESSAGE, "before"), null, Collections.emptyList());
+      regexElementIssueReporter.report(boundaryTree, String.format(MESSAGE, "before"), null, Collections.emptyList());
     } else if (!excluded.contains(boundaryTree) && probablyShouldConsumeInput(boundaryTree, end)) {
-      reportRegexTreeMethod.apply(boundaryTree, String.format(SOFT_MESSAGE, "before"), null, Collections.emptyList());
+      regexElementIssueReporter.report(boundaryTree, String.format(SOFT_MESSAGE, "before"), null, Collections.emptyList());
     }
   }
 

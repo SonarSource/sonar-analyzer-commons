@@ -20,7 +20,7 @@
 package org.sonarsource.analyzer.commons.regex.finders;
 
 import org.junit.jupiter.api.Test;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 
 class UnicodeUnawareCharClassFinderTest {
@@ -32,8 +32,8 @@ class UnicodeUnawareCharClassFinderTest {
 
   static class UnicodeUnawareCharClassFinderCheck extends FinderCheck {
     @Override
-    public void checkRegex(RegexParseResult parseResult, RegexCheck.ReportRegexTreeMethod reportRegexTree, RegexCheck.ReportInvocationTreeMethod reportInvocationTree) {
-      new UnicodeUnawareCharClassFinder(reportRegexTree, reportInvocationTree).visit(parseResult);
+    public void checkRegex(RegexParseResult parseResult, RegexIssueReporter.ElementIssue regexElementIssueReporter, RegexIssueReporter.InvocationIssue invocationIssueReporter) {
+      new UnicodeUnawareCharClassFinder(regexElementIssueReporter, invocationIssueReporter).visit(parseResult);
     }
   }
 

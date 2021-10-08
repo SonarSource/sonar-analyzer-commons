@@ -20,7 +20,7 @@
 package org.sonarsource.analyzer.commons.regex.finders;
 
 import java.util.Collections;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.Quantifier;
@@ -35,11 +35,11 @@ public class ReluctantQuantifierWithEmptyContinuationFinder extends RegexBaseVis
   private static final String MESSAGE_FIX = "Fix this reluctant quantifier that will only ever match %s repetition%s.";
   private static final String MESSAGE_UNNECESSARY = "Remove the '?' from this unnecessarily reluctant quantifier.";
 
-  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
+  private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
   private AutomatonState endState;
 
-  public ReluctantQuantifierWithEmptyContinuationFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod) {
-    this.reportRegexTreeMethod = reportRegexTreeMethod;
+  public ReluctantQuantifierWithEmptyContinuationFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter) {
+    this.regexElementIssueReporter = regexElementIssueReporter;
   }
 
   @Override
@@ -53,11 +53,11 @@ public class ReluctantQuantifierWithEmptyContinuationFinder extends RegexBaseVis
     if (tree.getQuantifier().getModifier() == Quantifier.Modifier.RELUCTANT) {
       if (RegexTreeHelper.isAnchoredAtEnd(tree.continuation())) {
         if (RegexTreeHelper.onlyMatchesEmptySuffix(tree.continuation())) {
-          reportRegexTreeMethod.apply(tree, MESSAGE_UNNECESSARY, null, Collections.emptyList());
+          regexElementIssueReporter.report(tree, MESSAGE_UNNECESSARY, null, Collections.emptyList());
         }
       } else if (RegexReachabilityChecker.canReachWithoutConsumingInput(new StartState(tree.continuation(), tree.activeFlags()), endState)) {
         int minimumRepetitions = tree.getQuantifier().getMinimumRepetitions();
-        reportRegexTreeMethod.apply(tree, String.format(MESSAGE_FIX, minimumRepetitions, minimumRepetitions == 1 ? "" : "s"), null, Collections.emptyList());
+        regexElementIssueReporter.report(tree, String.format(MESSAGE_FIX, minimumRepetitions, minimumRepetitions == 1 ? "" : "s"), null, Collections.emptyList());
       }
     }
   }

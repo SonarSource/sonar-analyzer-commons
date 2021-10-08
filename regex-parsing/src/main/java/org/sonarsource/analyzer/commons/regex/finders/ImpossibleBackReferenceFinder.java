@@ -26,7 +26,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.sonarsource.analyzer.commons.regex.RegexCheck;
+import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.BackReferenceTree;
@@ -39,13 +40,13 @@ import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
 
 public class ImpossibleBackReferenceFinder extends RegexBaseVisitor {
 
-  private final RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod;
+  private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
 
   private Set<BackReferenceTree> impossibleBackReferences = new LinkedHashSet<>();
   private Map<String, CapturingGroupTree> capturingGroups = new HashMap<>();
 
-  public ImpossibleBackReferenceFinder(RegexCheck.ReportRegexTreeMethod reportRegexTreeMethod) {
-    this.reportRegexTreeMethod = reportRegexTreeMethod;
+  public ImpossibleBackReferenceFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter) {
+    this.regexElementIssueReporter = regexElementIssueReporter;
   }
 
   @Override
@@ -115,15 +116,15 @@ public class ImpossibleBackReferenceFinder extends RegexBaseVisitor {
   protected void after(RegexParseResult regexParseResult) {
     for (BackReferenceTree backReference : impossibleBackReferences) {
       String message;
-      List<RegexCheck.RegexIssueLocation> secondaries = new ArrayList<>();
+      List<RegexIssueLocation> secondaries = new ArrayList<>();
       if (capturingGroups.containsKey(backReference.groupName())) {
         message = "Fix this backreference, so that it refers to a group that can be matched before it.";
         CapturingGroupTree group = capturingGroups.get(backReference.groupName());
-        secondaries.add(new RegexCheck.RegexIssueLocation(group, "This group is used in a backreference before it is defined"));
+        secondaries.add(new RegexIssueLocation(group, "This group is used in a backreference before it is defined"));
       } else {
         message = "Fix this backreference - it refers to a capturing group that doesn't exist.";
       }
-      reportRegexTreeMethod.apply(backReference, message, null, secondaries);
+      regexElementIssueReporter.report(backReference, message, null, secondaries);
     }
   }
 }
