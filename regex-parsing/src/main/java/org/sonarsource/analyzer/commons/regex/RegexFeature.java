@@ -22,5 +22,6 @@ package org.sonarsource.analyzer.commons.regex;
 public enum RegexFeature {
   RECURSION,
   CONDITIONAL_SUBPATTERN,
-  POSIX_CHARACTER_CLASS
+  POSIX_CHARACTER_CLASS,
+  EXTENDED_CAPTURING_GROUP_NAMING
 }

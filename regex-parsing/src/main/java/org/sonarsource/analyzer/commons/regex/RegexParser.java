@@ -327,19 +327,27 @@ public class RegexParser {
       characters.moveNext(2);
       return finishGroup(openingParen, (range, inner) -> new AtomicGroupTree(source, range, inner, activeFlags));
     } else if (characters.currentIs("?<")) {
-      characters.moveNext(2);
-      String name = parseGroupName();
-      if (characters.currentIs('>')) {
-        characters.moveNext();
-      } else {
-        expected("'>'");
-      }
-      return finishGroup(openingParen, newCapturingGroup(name));
+      return finishGroup(openingParen, newNamedCapturingGroup(2, '>'));
+    } else if (source.supportFeature(RegexFeature.EXTENDED_CAPTURING_GROUP_NAMING) && characters.currentIs("?'")) {
+      return finishGroup(openingParen, newNamedCapturingGroup(2, '\''));
+    } else if (source.supportFeature(RegexFeature.EXTENDED_CAPTURING_GROUP_NAMING) && characters.currentIs("?P<")) {
+      return finishGroup(openingParen, newNamedCapturingGroup(3, '>'));
     } else if (characters.currentIs("?")) {
       return parseNonCapturingGroup(openingParen);
     } else {
       return finishGroup(openingParen, newCapturingGroup(null));
     }
+  }
+
+  protected GroupConstructor newNamedCapturingGroup(int namePrefixLength, char nameDelimiter) {
+    characters.moveNext(namePrefixLength);
+    String name = parseGroupName(nameDelimiter);
+    if (characters.currentIs(nameDelimiter)) {
+      characters.moveNext();
+    } else {
+      expected("'" + nameDelimiter + "'");
+    }
+    return newCapturingGroup(name);
   }
 
   protected GroupConstructor newCapturingGroup(@Nullable String name) {
@@ -348,9 +356,9 @@ public class RegexParser {
     return (range, inner) -> index(new CapturingGroupTree(source, range, name, index, inner, activeFlags));
   }
 
-  protected String parseGroupName() {
+  protected String parseGroupName(char nameDelimiter) {
     StringBuilder sb = new StringBuilder();
-    while (characters.isNotAtEnd() && !characters.currentIs('>')) {
+    while (characters.isNotAtEnd() && !characters.currentIs(nameDelimiter)) {
       sb.append(characters.getCurrent().getCharacter());
       characters.moveNext();
     }
