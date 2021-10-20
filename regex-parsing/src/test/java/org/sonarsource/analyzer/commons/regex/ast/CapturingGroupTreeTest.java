@@ -21,6 +21,7 @@ package org.sonarsource.analyzer.commons.regex.ast;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexFeature;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertKind;
@@ -66,6 +67,21 @@ class CapturingGroupTreeTest {
     assertThat(c.getName()).hasValue("groupC");
 
     testAutomaton(abc, abcItems, a, bc, bcItems, c);
+  }
+
+  @Test
+  void pcre_named_groups() {
+    RegexTree tree = assertSuccessfulParse("(?'groupA'A)(?P<groupB>B)", RegexFeature.EXTENDED_CAPTURING_GROUP_NAMING);
+    assertKind(RegexTree.Kind.SEQUENCE, tree);
+    List<RegexTree> abItems = ((SequenceTree) tree).getItems();
+    assertThat(abItems).hasSize(2);
+    assertThat(abItems.stream().map(RegexTree::kind)).containsExactly(RegexTree.Kind.CAPTURING_GROUP, RegexTree.Kind.CAPTURING_GROUP);
+    CapturingGroupTree a = ((CapturingGroupTree) abItems.get(0));
+    assertThat(a.getGroupNumber()).isEqualTo(1);
+    assertThat(a.getName()).hasValue("groupA");
+    CapturingGroupTree b = ((CapturingGroupTree) abItems.get(1));
+    assertThat(b.getGroupNumber()).isEqualTo(2);
+    assertThat(b.getName()).hasValue("groupB");
   }
 
   private void testAutomaton(CapturingGroupTree abc, List<RegexTree> abcItems, CapturingGroupTree a, CapturingGroupTree bc, List<RegexTree> bcItems, CapturingGroupTree c) {
