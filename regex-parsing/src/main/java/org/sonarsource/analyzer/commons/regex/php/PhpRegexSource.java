@@ -28,7 +28,12 @@ import org.sonarsource.analyzer.commons.regex.RegexSource;
 
 public class PhpRegexSource implements RegexSource {
 
-  private static final Set<RegexFeature> FEATURES = EnumSet.of(RegexFeature.RECURSION, RegexFeature.CONDITIONAL_SUBPATTERN, RegexFeature.POSIX_CHARACTER_CLASS);
+  private static final Set<RegexFeature> FEATURES = EnumSet.of(
+    RegexFeature.RECURSION,
+    RegexFeature.CONDITIONAL_SUBPATTERN,
+    RegexFeature.POSIX_CHARACTER_CLASS,
+    RegexFeature.EXTENDED_CAPTURING_GROUP_NAMING
+  );
   private final String source;
   private final char quote;
 
