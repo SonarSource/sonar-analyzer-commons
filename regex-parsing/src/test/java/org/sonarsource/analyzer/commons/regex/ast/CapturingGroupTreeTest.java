@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.sonarsource.analyzer.commons.regex.RegexFeature;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertFailParsing;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertKind;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSingleEdge;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParse;
@@ -91,6 +92,13 @@ class CapturingGroupTreeTest {
     CapturingGroupTree a = ((CapturingGroupTree) tree);
     assertThat(a.getGroupNumber()).isEqualTo(1);
     assertThat(a.getName()).hasValue("groupA");
+  }
+
+  @Test
+  void parsingErrorWhenFeatureNotSupported() {
+    assertFailParsing("(?<name>)", "Expected flag or ':' or ')', but found '<'");
+    assertFailParsing("(?'name')", "Expected flag or ':' or ')', but found '''");
+    assertFailParsing("(?P<name>)", "Expected flag or ':' or ')', but found 'P'");
   }
 
   private void testAutomaton(CapturingGroupTree abc, List<RegexTree> abcItems, CapturingGroupTree a, CapturingGroupTree bc, List<RegexTree> bcItems, CapturingGroupTree c) {
