@@ -130,14 +130,14 @@ class BackReferenceTreeTest {
   }
 
   @Test
-  void noParsingErrorWhenWrongFeatureIsSupported() {
+  void failingInvalidWhenWrongFeatureIsSupported() {
     assertFailParsing(escapeJava("\\k<name>"), "Expected '{', but found '<'", RegexFeature.PERL_SYNTAX_GROUP_NAME);
     assertFailParsing(escapeJava("\\k'name'"), "Expected '<', but found '''", RegexFeature.JAVA_SYNTAX_GROUP_NAME);
     assertFailParsing(escapeJava("\\k{name}"), "Expected '<', but found '{'", RegexFeature.JAVA_SYNTAX_GROUP_NAME);
   }
 
   @Test
-  void noParsingErrorWhenFeatureNotSupported() {
+  void noFailingWhenFeatureNotSupported() {
     assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\ko")));
     assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\k<")));
     assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\k<o")));
