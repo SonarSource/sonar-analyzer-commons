@@ -32,8 +32,8 @@ import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assert
 class CapturingGroupTreeTest {
 
   @Test
-  void numbering() {
-    RegexTree tree = assertSuccessfulParse("((A)(?:N)(B(?<groupC>C)))");
+  void java_syntax_named_groups() {
+    RegexTree tree = assertSuccessfulParse("((A)(?:N)(B(?<groupC>C)))", RegexFeature.JAVA_SYNTAX_GROUP_NAME);
     assertKind(RegexTree.Kind.CAPTURING_GROUP, tree);
     CapturingGroupTree abc = ((CapturingGroupTree) tree);
     assertThat(abc.getGroupNumber()).isEqualTo(1);
@@ -70,8 +70,8 @@ class CapturingGroupTreeTest {
   }
 
   @Test
-  void pcre_named_groups() {
-    RegexTree tree = assertSuccessfulParse("(?'groupA'A)(?P<groupB>B)", RegexFeature.EXTENDED_CAPTURING_GROUP_NAMING);
+  void dotnet_syntax_named_groups() {
+    RegexTree tree = assertSuccessfulParse("(?'groupA'A)(?<groupB>B)", RegexFeature.DOTNET_SYNTAX_GROUP_NAME);
     assertKind(RegexTree.Kind.SEQUENCE, tree);
     List<RegexTree> abItems = ((SequenceTree) tree).getItems();
     assertThat(abItems).hasSize(2);
@@ -82,6 +82,15 @@ class CapturingGroupTreeTest {
     CapturingGroupTree b = ((CapturingGroupTree) abItems.get(1));
     assertThat(b.getGroupNumber()).isEqualTo(2);
     assertThat(b.getName()).hasValue("groupB");
+  }
+
+  @Test
+  void python_syntax_named_groups() {
+    RegexTree tree = assertSuccessfulParse("(?P<groupA>A)", RegexFeature.PYTHON_SYNTAX_GROUP_NAME);
+    assertKind(RegexTree.Kind.CAPTURING_GROUP, tree);
+    CapturingGroupTree a = ((CapturingGroupTree) tree);
+    assertThat(a.getGroupNumber()).isEqualTo(1);
+    assertThat(a.getName()).hasValue("groupA");
   }
 
   private void testAutomaton(CapturingGroupTree abc, List<RegexTree> abcItems, CapturingGroupTree a, CapturingGroupTree bc, List<RegexTree> bcItems, CapturingGroupTree c) {

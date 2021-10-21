@@ -34,7 +34,8 @@ public class BackReferenceTree extends RegexTree {
   public BackReferenceTree(RegexSource source, SourceCharacter backslash, @Nullable SourceCharacter key, SourceCharacter start, SourceCharacter end, FlagSet activeFlags) {
     super(source, backslash.getRange().merge(end.getRange()), activeFlags);
     this.key = key;
-    if (start.getCharacter() != '<') {
+    char startCharacter = start.getCharacter();
+    if (startCharacter != '<' && startCharacter != '\'' && startCharacter != '{' && startCharacter != '=') {
       // numerical case
       this.groupName = source.substringAt(start.getRange().merge(end.getRange()));
     } else {

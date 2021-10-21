@@ -20,6 +20,7 @@
 package org.sonarsource.analyzer.commons.regex.java;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Set;
 import org.sonarsource.analyzer.commons.regex.CharacterParser;
 import org.sonarsource.analyzer.commons.regex.RegexDialect;
@@ -28,6 +29,9 @@ import org.sonarsource.analyzer.commons.regex.RegexSource;
 
 public class JavaRegexSource implements RegexSource {
 
+  private static final Set<RegexFeature> FEATURES = EnumSet.of(
+    RegexFeature.JAVA_SYNTAX_GROUP_NAME
+  );
   private final String sourceText;
 
   public JavaRegexSource(String sourceText) {
@@ -51,11 +55,11 @@ public class JavaRegexSource implements RegexSource {
 
   @Override
   public Set<RegexFeature> features() {
-    return Collections.emptySet();
+    return FEATURES;
   }
 
   @Override
   public boolean supportFeature(RegexFeature feature) {
-    return false;
+    return FEATURES.contains(feature);
   }
 }

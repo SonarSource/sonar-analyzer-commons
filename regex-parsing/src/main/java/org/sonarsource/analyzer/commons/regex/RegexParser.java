@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -276,6 +277,9 @@ public class RegexParser {
     }
     switch (characters.getCurrentChar()) {
       case '(':
+        if (characters.currentIs("(?P=") && supportFeatures(RegexFeature.PYTHON_SYNTAX_GROUP_NAME)) {
+          return parsePythonBackReference();
+        }
         return parseGroup();
       case '\\':
         return parseEscapeSequence();
@@ -302,6 +306,14 @@ public class RegexParser {
     }
   }
 
+  private RegexTree parsePythonBackReference() {
+    SourceCharacter openingParen = characters.getCurrent();
+    // Discard '(?'
+    characters.moveNext(2);
+    return parseEscapedSequence('=', ')', "a group name",
+      dh -> collect(new BackReferenceTree(source, openingParen, null, dh.opener, dh.closer, activeFlags)));
+  }
+
   protected CharacterTree readCharacter() {
     SourceCharacter character = characters.getCurrent();
     characters.moveNext();
@@ -326,11 +338,11 @@ public class RegexParser {
     } else if (characters.currentIs("?>")) {
       characters.moveNext(2);
       return finishGroup(openingParen, (range, inner) -> new AtomicGroupTree(source, range, inner, activeFlags));
-    } else if (characters.currentIs("?<")) {
+    } else if (characters.currentIs("?<") && supportFeatures(RegexFeature.JAVA_SYNTAX_GROUP_NAME, RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
       return finishGroup(openingParen, newNamedCapturingGroup(2, '>'));
-    } else if (source.supportFeature(RegexFeature.EXTENDED_CAPTURING_GROUP_NAMING) && characters.currentIs("?'")) {
+    } else if (characters.currentIs("?'") && supportFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
       return finishGroup(openingParen, newNamedCapturingGroup(2, '\''));
-    } else if (source.supportFeature(RegexFeature.EXTENDED_CAPTURING_GROUP_NAMING) && characters.currentIs("?P<")) {
+    } else if (characters.currentIs("?P<") && supportFeatures(RegexFeature.PYTHON_SYNTAX_GROUP_NAME)) {
       return finishGroup(openingParen, newNamedCapturingGroup(3, '>'));
     } else if (characters.currentIs("?")) {
       return parseNonCapturingGroup(openingParen);
@@ -547,6 +559,8 @@ public class RegexParser {
     if (characters.isAtEnd()) {
       expected("any character");
       return characterTree(backslash);
+    } else if (isEscapedBackReference()) {
+      return parseNamedBackReference(backslash);
     } else {
       SourceCharacter character = characters.getCurrent();
       switch (character.getCharacter()) {
@@ -565,8 +579,6 @@ public class RegexParser {
         case '8':
         case '9':
           return parseNumericalBackReference(backslash);
-        case 'k':
-          return parseNamedBackReference(backslash);
         case 'b':
         case 'B':
         case 'A':
@@ -616,6 +628,11 @@ public class RegexParser {
             character.isEscapeSequence(), activeFlags);
       }
     }
+  }
+
+  private boolean isEscapedBackReference() {
+    return (characters.currentIs('k') && supportFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME, RegexFeature.JAVA_SYNTAX_GROUP_NAME, RegexFeature.PERL_SYNTAX_GROUP_NAME))
+      || (characters.currentIs('g') && supportFeatures(RegexFeature.PERL_SYNTAX_GROUP_NAME));
   }
 
   protected RegexTree parseNamedUnicodeCharacter(SourceCharacter backslash) {
@@ -727,8 +744,36 @@ public class RegexParser {
   }
 
   protected RegexTree parseNamedBackReference(SourceCharacter backslash) {
-    return parseEscapedSequence('<', '>', "a group name",
+    if(characters.currentIs("k<") && supportFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME, RegexFeature.JAVA_SYNTAX_GROUP_NAME)) {
+      return parseNamedBackReference(backslash, '<', '>');
+    } else if(characters.currentIs("k'") && supportFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
+      return parseNamedBackReference(backslash, '\'', '\'');
+    } else if((characters.currentIs("k{") || characters.currentIs("g{")) && supportFeatures(RegexFeature.PERL_SYNTAX_GROUP_NAME)) {
+      return parseNamedBackReference(backslash, '{', '}');
+    }
+    characters.moveNext();
+    expectedNamedBackReferenceOpener();
+    return characterTree(backslash);
+  }
+
+  protected RegexTree parseNamedBackReference(SourceCharacter backslash, char opener, char closer) {
+    return parseEscapedSequence(opener, closer, "a group name",
       dh -> collect(new BackReferenceTree(source, backslash, dh.marker, dh.opener, dh.closer, activeFlags)));
+  }
+
+  private void expectedNamedBackReferenceOpener() {
+    StringJoiner joiner = new StringJoiner(" or ");
+    joiner.setEmptyValue("valid name opener");
+    if (source.supportFeature(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
+      joiner.add("'<'");
+      joiner.add("'''");
+    } else if (source.supportFeature(RegexFeature.JAVA_SYNTAX_GROUP_NAME)) {
+      joiner.add("'<'");
+    }
+    if (source.supportFeature(RegexFeature.PERL_SYNTAX_GROUP_NAME)) {
+      joiner.add("'{'");
+    }
+    expected(joiner.toString());
   }
 
   protected BackReferenceTree collect(BackReferenceTree backReference) {
@@ -1023,6 +1068,10 @@ public class RegexParser {
     IndexRange range = characters.getCurrentIndexRange();
     RegexToken offendingToken = new RegexToken(source, range);
     errors.add(new SyntaxError(offendingToken, message));
+  }
+
+  protected boolean supportFeatures(RegexFeature... features) {
+    return Arrays.stream(features).anyMatch(source::supportFeature);
   }
 
   protected static <T extends RegexSyntaxElement> T combineTrees(List<T> elements, TreeConstructor<T> treeConstructor) {
