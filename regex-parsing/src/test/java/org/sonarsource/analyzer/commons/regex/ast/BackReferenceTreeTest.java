@@ -27,6 +27,7 @@ import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import static org.apache.commons.lang.StringEscapeUtils.escapeJava;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertFailParsing;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertKind;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParse;
 
 class BackReferenceTreeTest {
@@ -124,6 +125,19 @@ class BackReferenceTreeTest {
     assertFailParsing(escapeJava("\\ko"), "Expected '<' or ''', but found 'o'", RegexFeature.DOTNET_SYNTAX_GROUP_NAME);
     assertFailParsing(escapeJava("\\go"), "Expected '{', but found 'o'", RegexFeature.PERL_SYNTAX_GROUP_NAME);
     assertFailParsing(escapeJava("\\ko"), "Expected '{', but found 'o'", RegexFeature.PERL_SYNTAX_GROUP_NAME);
+    assertFailParsing("(?P=)", "Expected a group name, but found ')'", RegexFeature.PYTHON_SYNTAX_GROUP_NAME);
+    assertFailParsing("(?P=name)", "Expected flag or ':' or ')', but found 'P'");
+  }
+
+  @Test
+  void noParsingErrorWhenFeatureNotSupported() {
+    assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\ko")));
+    assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\k<")));
+    assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\k<o")));
+    assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\k<>")));
+    assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\ko")));
+    assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\go")));
+    assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\ko")));
   }
 
   private static void assertBackReference(String regex, String expectedGroupName) {
