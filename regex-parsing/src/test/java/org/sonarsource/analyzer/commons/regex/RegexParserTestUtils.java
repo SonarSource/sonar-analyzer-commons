@@ -95,8 +95,8 @@ public class RegexParserTestUtils {
     return parseRegex(regex, 0, features);
   }
 
-  public static void assertFailParsing(String regex, String expectedError) {
-    RegexParseResult result = parseRegex(regex);
+  public static void assertFailParsing(String regex, String expectedError, RegexFeature... features) {
+    RegexParseResult result = parseRegex(regex, 0, features);
     List<SyntaxError> errors = result.getSyntaxErrors();
     if (errors.isEmpty()) {
       throw new AssertionFailedError("Expected error in parsing");

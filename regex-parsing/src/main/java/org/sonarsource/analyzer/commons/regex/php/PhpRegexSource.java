@@ -32,7 +32,10 @@ public class PhpRegexSource implements RegexSource {
     RegexFeature.RECURSION,
     RegexFeature.CONDITIONAL_SUBPATTERN,
     RegexFeature.POSIX_CHARACTER_CLASS,
-    RegexFeature.EXTENDED_CAPTURING_GROUP_NAMING
+    RegexFeature.JAVA_SYNTAX_GROUP_NAME,
+    RegexFeature.DOTNET_SYNTAX_GROUP_NAME,
+    RegexFeature.PERL_SYNTAX_GROUP_NAME,
+    RegexFeature.PYTHON_SYNTAX_GROUP_NAME
   );
   private final String source;
   private final char quote;

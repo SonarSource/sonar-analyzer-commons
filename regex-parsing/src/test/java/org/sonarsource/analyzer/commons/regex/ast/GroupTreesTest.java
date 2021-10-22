@@ -155,7 +155,7 @@ class GroupTreesTest {
 
   @Test
   void testNamedGroup() {
-    RegexTree regex = assertSuccessfulParse("(?<foo>x)");
+    RegexTree regex = assertSuccessfulParse("(?<foo>x)", RegexFeature.JAVA_SYNTAX_GROUP_NAME);
     CapturingGroupTree group = assertType(CapturingGroupTree.class, regex);
     assertNotNull(group.getGroupHeader());
     assertToken(0, "(?<foo>", group.getGroupHeader());
@@ -167,7 +167,7 @@ class GroupTreesTest {
 
   @Test
   void testIncompleteNamedGroup() {
-    assertFailParsing("(?<", "Expected '>', but found the end of the regex");
+    assertFailParsing("(?<", "Expected '>', but found the end of the regex", RegexFeature.JAVA_SYNTAX_GROUP_NAME);
   }
 
   @Test

@@ -22,10 +22,12 @@ package org.sonarsource.analyzer.commons.regex.ast;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexFeature;
 
 import static org.apache.commons.lang.StringEscapeUtils.escapeJava;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertFailParsing;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertKind;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParse;
 
 class BackReferenceTreeTest {
@@ -65,7 +67,7 @@ class BackReferenceTreeTest {
 
   @Test
   void backReferenceNumericGroup() {
-    RegexTree regex = assertSuccessfulParse("(a)(b)\\\\k<foo>\\\\1\\\\2\\\\3");
+    RegexTree regex = assertSuccessfulParse("(a)(b)\\\\k<foo>\\\\1\\\\2\\\\3", RegexFeature.JAVA_SYNTAX_GROUP_NAME);
     assertThat(regex.is(RegexTree.Kind.SEQUENCE)).isTrue();
     List<RegexTree> items = ((SequenceTree) regex).getItems();
     assertThat(items).hasSize(6);
@@ -81,8 +83,27 @@ class BackReferenceTreeTest {
   }
 
   @Test
-  void backReferenceNameGroup() {
-    RegexTree regex = assertSuccessfulParse("(?<foo>a)\\\\k<foo>\\\\k<bar>\\\\1\\\\2");
+  void javaSyntaxBackReferenceNameGroup() {
+    assertBackReferenceGroupAssignment("(?<foo>a)\\\\k<foo>\\\\k<bar>\\\\1\\\\2", RegexFeature.JAVA_SYNTAX_GROUP_NAME);
+  }
+
+  @Test
+  void pythonSyntaxBackReferenceNameGroup() {
+    assertBackReferenceGroupAssignment("(?P<foo>a)(?P=foo)(?P=bar)\\\\1\\\\2", RegexFeature.PYTHON_SYNTAX_GROUP_NAME);
+  }
+
+  @Test
+  void perlSyntaxBackReferenceNameGroup() {
+    assertBackReferenceGroupAssignment("(?<foo>a)\\\\k{foo}\\\\k{bar}\\\\g{foo}\\\\g{bar}", RegexFeature.DOTNET_SYNTAX_GROUP_NAME, RegexFeature.PERL_SYNTAX_GROUP_NAME);
+  }
+
+  @Test
+  void dotnetSyntaxBackReferenceNameGroup() {
+    assertBackReferenceGroupAssignment("(?<foo>a)\\\\k<foo>\\\\k<bar>\\\\k'foo'\\\\k'bar'", RegexFeature.DOTNET_SYNTAX_GROUP_NAME);
+  }
+
+  private void assertBackReferenceGroupAssignment(String pattern, RegexFeature... features) {
+    RegexTree regex = assertSuccessfulParse(pattern, features);
     assertThat(regex.is(RegexTree.Kind.SEQUENCE)).isTrue();
     List<RegexTree> items = ((SequenceTree) regex).getItems();
     assertThat(items).hasSize(5);
@@ -97,10 +118,33 @@ class BackReferenceTreeTest {
 
   @Test
   void failingInvalidBackReferences() {
-    assertFailParsing(escapeJava("\\ko"), "Expected '<', but found 'o'");
-    assertFailParsing(escapeJava("\\k<"), "Expected a group name, but found the end of the regex");
-    assertFailParsing(escapeJava("\\k<o"), "Expected '>', but found the end of the regex");
-    assertFailParsing(escapeJava("\\k<>"), "Expected a group name, but found '>'");
+    assertFailParsing(escapeJava("\\ko"), "Expected '<', but found 'o'", RegexFeature.JAVA_SYNTAX_GROUP_NAME);
+    assertFailParsing(escapeJava("\\k<"), "Expected a group name, but found the end of the regex", RegexFeature.JAVA_SYNTAX_GROUP_NAME);
+    assertFailParsing(escapeJava("\\k<o"), "Expected '>', but found the end of the regex", RegexFeature.JAVA_SYNTAX_GROUP_NAME);
+    assertFailParsing(escapeJava("\\k<>"), "Expected a group name, but found '>'", RegexFeature.JAVA_SYNTAX_GROUP_NAME);
+    assertFailParsing(escapeJava("\\ko"), "Expected '<' or ''', but found 'o'", RegexFeature.DOTNET_SYNTAX_GROUP_NAME);
+    assertFailParsing(escapeJava("\\go"), "Expected '{', but found 'o'", RegexFeature.PERL_SYNTAX_GROUP_NAME);
+    assertFailParsing(escapeJava("\\ko"), "Expected '{', but found 'o'", RegexFeature.PERL_SYNTAX_GROUP_NAME);
+    assertFailParsing("(?P=)", "Expected a group name, but found ')'", RegexFeature.PYTHON_SYNTAX_GROUP_NAME);
+    assertFailParsing("(?P=name)", "Expected flag or ':' or ')', but found 'P'");
+  }
+
+  @Test
+  void failingInvalidWhenWrongFeatureIsSupported() {
+    assertFailParsing(escapeJava("\\k<name>"), "Expected '{', but found '<'", RegexFeature.PERL_SYNTAX_GROUP_NAME);
+    assertFailParsing(escapeJava("\\k'name'"), "Expected '<', but found '''", RegexFeature.JAVA_SYNTAX_GROUP_NAME);
+    assertFailParsing(escapeJava("\\k{name}"), "Expected '<', but found '{'", RegexFeature.JAVA_SYNTAX_GROUP_NAME);
+  }
+
+  @Test
+  void noFailingWhenFeatureNotSupported() {
+    assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\ko")));
+    assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\k<")));
+    assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\k<o")));
+    assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\k<>")));
+    assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\ko")));
+    assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\go")));
+    assertKind(RegexTree.Kind.SEQUENCE, assertSuccessfulParse(escapeJava("\\ko")));
   }
 
   private static void assertBackReference(String regex, String expectedGroupName) {
@@ -121,7 +165,7 @@ class BackReferenceTreeTest {
   }
 
   private static BackReferenceTree assertSuccessfulParseBackReference(String regex) {
-    RegexTree tree = assertSuccessfulParse(regex);
+    RegexTree tree = assertSuccessfulParse(regex, RegexFeature.JAVA_SYNTAX_GROUP_NAME);
     BackReferenceCollector backReferenceCollector = new BackReferenceCollector();
     tree.accept(backReferenceCollector);
     assertThat(backReferenceCollector.backReferences).hasSize(1);
