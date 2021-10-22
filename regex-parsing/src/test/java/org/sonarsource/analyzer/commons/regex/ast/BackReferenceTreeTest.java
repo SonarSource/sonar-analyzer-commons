@@ -93,7 +93,7 @@ class BackReferenceTreeTest {
   }
 
   @Test
-  void pearlSyntaxBackReferenceNameGroup() {
+  void perlSyntaxBackReferenceNameGroup() {
     assertBackReferenceGroupAssignment("(?<foo>a)\\\\k{foo}\\\\k{bar}\\\\g{foo}\\\\g{bar}", RegexFeature.DOTNET_SYNTAX_GROUP_NAME, RegexFeature.PERL_SYNTAX_GROUP_NAME);
   }
 
