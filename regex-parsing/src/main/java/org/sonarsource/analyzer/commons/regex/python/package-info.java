@@ -17,10 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex;
+@ParametersAreNonnullByDefault
+package org.sonarsource.analyzer.commons.regex.python;
 
-public enum RegexDialect {
-  JAVA,
-  PHP,
-  PYTHON;
-}
+import javax.annotation.ParametersAreNonnullByDefault;
