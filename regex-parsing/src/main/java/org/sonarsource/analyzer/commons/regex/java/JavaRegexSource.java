@@ -19,7 +19,6 @@
  */
 package org.sonarsource.analyzer.commons.regex.java;
 
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 import org.sonarsource.analyzer.commons.regex.CharacterParser;
