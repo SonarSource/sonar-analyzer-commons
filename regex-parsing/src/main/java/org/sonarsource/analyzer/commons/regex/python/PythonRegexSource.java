@@ -29,7 +29,6 @@ public abstract class PythonRegexSource implements RegexSource {
   private static final Set<RegexFeature> FEATURES = EnumSet.of(
     RegexFeature.RECURSION,
     RegexFeature.CONDITIONAL_SUBPATTERN,
-    RegexFeature.POSIX_CHARACTER_CLASS,
     RegexFeature.PYTHON_SYNTAX_GROUP_NAME
   );
   private final String source;
