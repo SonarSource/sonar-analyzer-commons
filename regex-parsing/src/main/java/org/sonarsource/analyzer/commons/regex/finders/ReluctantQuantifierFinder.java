@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import org.sonarsource.analyzer.commons.regex.RegexDialect;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassTree;
@@ -136,7 +137,7 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
   }
 
   private static String escapedCharacterFollowedByEscapedCharacter(EscapedCharacterClassTree escapedClass, String ignoredSymbol) {
-    String negatedCharacter = "\\\\" + negateEscapedCharacterClassType(escapedClass.getType()) + getProperty(escapedClass);
+    String negatedCharacter = backslash(escapedClass) + negateEscapedCharacterClassType(escapedClass.getType()) + getProperty(escapedClass);
     return ignoredSymbol.isEmpty() ? negatedCharacter : String.format("[%s%s]", negatedCharacter, ignoredSymbol);
   }
 
@@ -153,6 +154,10 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
   }
 
   private static String escapedCharacterToString(@Nullable EscapedCharacterClassTree escapedClass) {
-    return (escapedClass == null) ? "" : ("\\\\" + escapedClass.getType() + getProperty(escapedClass));
+    return (escapedClass == null) ? "" : (backslash(escapedClass) + escapedClass.getType() + getProperty(escapedClass));
+  }
+
+  private static String backslash(RegexTree tree) {
+    return tree.getSource().dialect() == RegexDialect.JAVA ? "\\\\" : "\\";
   }
 }
