@@ -29,7 +29,10 @@ import org.sonarsource.analyzer.commons.regex.RegexSource;
 public class JavaRegexSource implements RegexSource {
 
   private static final Set<RegexFeature> FEATURES = EnumSet.of(
-    RegexFeature.JAVA_SYNTAX_GROUP_NAME
+    RegexFeature.JAVA_SYNTAX_GROUP_NAME,
+    RegexFeature.ATOMIC_GROUP,
+    RegexFeature.POSSESSIVE_QUANTIFIER,
+    RegexFeature.ESCAPED_CHARACTER_CLASS
   );
   private final String sourceText;
 

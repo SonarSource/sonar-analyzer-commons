@@ -20,6 +20,7 @@
 package org.sonarsource.analyzer.commons.regex.ast;
 
 import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.SyntaxError;
 
@@ -81,7 +82,7 @@ class QuantifierTest {
 
   @Test
   void testReluctantStar() {
-    RegexTree regex = assertSuccessfulParse("x*?");
+    RegexTree regex = assertSuccessfulParse("x*?", RegexFeature.POSSESSIVE_QUANTIFIER);
     RepetitionTree repetition = assertType(RepetitionTree.class, regex);
     assertCharacter('x', repetition.getElement());
     SimpleQuantifier quantifier = assertType(SimpleQuantifier.class, repetition.getQuantifier());
@@ -95,7 +96,7 @@ class QuantifierTest {
 
   @Test
   void testPossessiveStar() {
-    RegexTree regex = assertSuccessfulParse("x*+");
+    RegexTree regex = assertSuccessfulParse("x*+", RegexFeature.POSSESSIVE_QUANTIFIER);
     RepetitionTree repetition = assertType(RepetitionTree.class, regex);
     assertCharacter('x', repetition.getElement());
     SimpleQuantifier quantifier = assertType(SimpleQuantifier.class, repetition.getQuantifier());
@@ -105,6 +106,9 @@ class QuantifierTest {
     assertFalse(repetition.isReluctant());
 
     testStarAutomaton(repetition, false);
+
+    // Raise parsing error when possessive quantifier is not provided
+    assertFailParsing("x*+", "Unexpected quantifier '+'");
   }
 
   @Test

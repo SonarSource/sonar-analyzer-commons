@@ -245,15 +245,14 @@ public class RegexParser {
   }
 
   Quantifier.Modifier parseQuantifierModifier() {
-    switch (characters.getCurrentChar()) {
-      case '+':
-        characters.moveNext();
-        return Quantifier.Modifier.POSSESSIVE;
-      case '?':
-        characters.moveNext();
-        return Quantifier.Modifier.RELUCTANT;
-      default:
-        return Quantifier.Modifier.GREEDY;
+    if (characters.currentIs('?')) {
+      characters.moveNext();
+      return Quantifier.Modifier.RELUCTANT;
+    } else if (characters.currentIs('+') && supportFeatures(RegexFeature.POSSESSIVE_QUANTIFIER)) {
+      characters.moveNext();
+      return Quantifier.Modifier.POSSESSIVE;
+    } else {
+      return Quantifier.Modifier.GREEDY;
     }
   }
 
@@ -335,7 +334,7 @@ public class RegexParser {
     } else if (characters.currentIs("?<!")) {
       characters.moveNext(3);
       return finishGroup(openingParen, (range, inner) -> LookAroundTree.negativeLookBehind(source, range, inner, activeFlags));
-    } else if (characters.currentIs("?>")) {
+    } else if (characters.currentIs("?>") && supportFeatures(RegexFeature.ATOMIC_GROUP)) {
       characters.moveNext(2);
       return finishGroup(openingParen, (range, inner) -> new AtomicGroupTree(source, range, inner, activeFlags));
     } else if (characters.currentIs("?<") && supportFeatures(RegexFeature.JAVA_SYNTAX_GROUP_NAME, RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
@@ -559,14 +558,13 @@ public class RegexParser {
     if (characters.isAtEnd()) {
       expected("any character");
       return characterTree(backslash);
+    } else if (isEscapedCharacterClass()) {
+      return parseEscapedProperty(backslash);
     } else if (isEscapedBackReference()) {
       return parseNamedBackReference(backslash);
     } else {
       SourceCharacter character = characters.getCurrent();
       switch (character.getCharacter()) {
-        case 'p':
-        case 'P':
-          return parseEscapedProperty(backslash);
         case '0':
           return parseOctalEscape(backslash);
         case '1':
@@ -628,6 +626,10 @@ public class RegexParser {
             character.isEscapeSequence(), activeFlags);
       }
     }
+  }
+
+  private boolean isEscapedCharacterClass() {
+    return (characters.currentIs('p') || characters.currentIs('P')) &&supportFeatures(RegexFeature.ESCAPED_CHARACTER_CLASS);
   }
 
   private boolean isEscapedBackReference() {

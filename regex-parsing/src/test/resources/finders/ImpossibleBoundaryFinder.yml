@@ -68,3 +68,6 @@
 - '(?:x*(Xab|^)abc)*Y?'
 - 'a$\nb': 'm'
 - 'a\n^b': 'm'
+
+
+- '(\d+)(\s+.*)$                         # score, vulgar components': 'x'

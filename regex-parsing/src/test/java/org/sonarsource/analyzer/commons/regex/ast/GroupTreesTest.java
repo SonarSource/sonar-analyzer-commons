@@ -273,11 +273,14 @@ class GroupTreesTest {
 
   @Test
   void testAtomicGroup() {
-    RegexTree regex = assertSuccessfulParse("(?>x)");
+    RegexTree regex = assertSuccessfulParse("(?>x)", RegexFeature.ATOMIC_GROUP);
     AtomicGroupTree group = assertType(AtomicGroupTree.class, regex);
     assertKind(RegexTree.Kind.ATOMIC_GROUP, group);
     assertNotNull(group.getElement());
     assertCharacter('x', group.getElement());
+
+    // Raise parsing error when atomic group is not provided
+    assertFailParsing("(?>x)", "Expected flag or ':' or ')', but found '>'");
   }
 
   @Test

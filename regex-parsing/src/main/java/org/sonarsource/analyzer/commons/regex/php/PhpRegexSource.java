@@ -35,7 +35,10 @@ public class PhpRegexSource implements RegexSource {
     RegexFeature.JAVA_SYNTAX_GROUP_NAME,
     RegexFeature.DOTNET_SYNTAX_GROUP_NAME,
     RegexFeature.PERL_SYNTAX_GROUP_NAME,
-    RegexFeature.PYTHON_SYNTAX_GROUP_NAME
+    RegexFeature.PYTHON_SYNTAX_GROUP_NAME,
+    RegexFeature.ATOMIC_GROUP,
+    RegexFeature.POSSESSIVE_QUANTIFIER,
+    RegexFeature.ESCAPED_CHARACTER_CLASS
   );
   private final String source;
   private final char quote;

@@ -23,9 +23,12 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.sonarsource.analyzer.commons.regex.RegexFeature.ESCAPED_CHARACTER_CLASS;
+import static org.sonarsource.analyzer.commons.regex.RegexFeature.POSSESSIVE_QUANTIFIER;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParseResult;
 
 class AutomatonStateTest {
@@ -33,7 +36,7 @@ class AutomatonStateTest {
   @Test
   void active_flags() {
     String regex = "(?m:^)(?i:a)(?s:.)(?u:(\\\\d\\\\X))(?d:$)(?U:\\\\x{F6})(?x:[b](?=\\\\p{Lu})|\\\\1)";
-    assertThat(allStates(assertSuccessfulParseResult(regex)).stream()
+    assertThat(allStates(assertSuccessfulParseResult(regex, RegexFeature.ESCAPED_CHARACTER_CLASS)).stream()
       .map(AutomatonStateTest::printClassAndFlags)
       .collect(Collectors.joining("\n")))
         .isEqualTo("" +
@@ -102,7 +105,7 @@ class AutomatonStateTest {
   @Test
   void active_flags_scope_with_different_types_of_groups() {
     String regex = "(?i)a(?:(?u)b)|[c](?>(?-i)d)(?u)e(?=(?-U)f)g(?U)h(?-u)i";
-    assertThat(allStates(assertSuccessfulParseResult(regex)).stream()
+    assertThat(allStates(assertSuccessfulParseResult(regex, RegexFeature.ATOMIC_GROUP)).stream()
       .map(AutomatonStateTest::printClassAndFlags)
       .collect(Collectors.joining("\n")))
         .isEqualTo("" +
