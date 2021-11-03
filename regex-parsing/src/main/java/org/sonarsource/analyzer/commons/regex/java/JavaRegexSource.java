@@ -59,9 +59,4 @@ public class JavaRegexSource implements RegexSource {
   public Set<RegexFeature> features() {
     return FEATURES;
   }
-
-  @Override
-  public boolean supportFeature(RegexFeature feature) {
-    return FEATURES.contains(feature);
-  }
 }

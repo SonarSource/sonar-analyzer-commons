@@ -69,18 +69,20 @@
 - '<\d{2,5}?>'
 - '<\w{2,5}?>'
 
-- '\d+?[abc]'
-- '\s+?[abc]'
-- '\W+?[abc]'
-
-- '\W*?[abc]'
-- '\s*?[abc]'
-- '\d*?[abc]'
-
-- '\d*?\p{L}'
-- '\d*?\P{L}' # There is an intersection but we currently do not support p{.} and P{.}
-
-- '\d*?[[:digit:]]' # There is an intersection but we currently do not support posix character classes
-
-- '\p{L}*?\D' # There is an intersection but we currently do not support p{.} and P{.}
-- '\P{L}*?\d' # There is an intersection but we currently do not support p{.} and P{.}
+# Test rule for dialects without positive quantifiers
+- 'features': ALL | ^POSSESSIVE_QUANTIFIER
+- '<.+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>]+".}}
+- '<\S+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\s]+".}}
+- '<\D+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\d]+".}}
+- '<\W+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\w]+".}}
+- '<.{2,}?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>]{2,}".}}
+- '\".*?\"' # Noncompliant {{Replace this use of a reluctant quantifier with "[^\"]*".}}
+- '.*?\w' # Noncompliant {{Replace this use of a reluctant quantifier with "\W*".}}
+- '.*?\W' # Noncompliant {{Replace this use of a reluctant quantifier with "\w*".}}
+- '.*?\p{L}' # Noncompliant {{Replace this use of a reluctant quantifier with "\P{L}*".}}
+- '.*?\P{L}' # Noncompliant {{Replace this use of a reluctant quantifier with "\p{L}*".}}
+- '\[.*?\]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^\]]*".}}
+- '.+?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc]+".}}
+- '(?U:\s)*?\S' # Noncompliant {{Replace this use of a reluctant quantifier with "[\s\S]*".}}
+- '\S*?(?U:\s)' # Noncompliant {{Replace this use of a reluctant quantifier with "[\S\s]*".}}
+- '\S*?(?U)\s' # Noncompliant {{Replace this use of a reluctant quantifier with "[\S\s]*".}}

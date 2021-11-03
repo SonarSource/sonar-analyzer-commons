@@ -43,5 +43,7 @@ public interface RegexSource {
 
   Set<RegexFeature> features();
 
-  boolean supportFeature(RegexFeature feature);
+  default boolean supportsFeature(RegexFeature feature) {
+    return features().contains(feature);
+  }
 }

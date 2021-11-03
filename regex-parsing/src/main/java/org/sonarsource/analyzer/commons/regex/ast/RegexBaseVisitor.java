@@ -19,8 +19,11 @@
  */
 package org.sonarsource.analyzer.commons.regex.ast;
 
+import java.util.Arrays;
 import java.util.List;
+import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
+import org.sonarsource.analyzer.commons.regex.RegexSource;
 
 public class RegexBaseVisitor implements RegexVisitor {
 
@@ -161,6 +164,11 @@ public class RegexBaseVisitor implements RegexVisitor {
     if (noPattern != null) {
       visit(noPattern);
     }
+  }
+
+  protected boolean supportsFeatures(RegexTree tree, RegexFeature... features) {
+    RegexSource source = tree.getSource();
+    return Arrays.stream(features).anyMatch(source::supportsFeature);
   }
 
 }
