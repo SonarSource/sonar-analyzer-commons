@@ -26,17 +26,16 @@ import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexSource;
 
 public abstract class PythonRegexSource implements RegexSource {
+
   private static final Set<RegexFeature> FEATURES = EnumSet.of(
     RegexFeature.RECURSION,
     RegexFeature.CONDITIONAL_SUBPATTERN,
     RegexFeature.PYTHON_SYNTAX_GROUP_NAME
   );
   private final String source;
-  protected final char quote;
 
-  public PythonRegexSource(String source, char quote) {
+  protected PythonRegexSource(String source) {
     this.source = source;
-    this.quote = quote;
   }
 
   @Override
