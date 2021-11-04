@@ -29,7 +29,8 @@ public abstract class PythonRegexSource extends RegexSource {
   private static final Set<RegexFeature> FEATURES = EnumSet.of(
     RegexFeature.RECURSION,
     RegexFeature.CONDITIONAL_SUBPATTERN,
-    RegexFeature.PYTHON_SYNTAX_GROUP_NAME
+    RegexFeature.PYTHON_SYNTAX_GROUP_NAME,
+    RegexFeature.UNESCAPED_CURLY_BRACKET
   );
 
   protected PythonRegexSource(String source) {
