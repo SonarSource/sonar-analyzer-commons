@@ -21,6 +21,7 @@ package org.sonarsource.analyzer.commons.regex.ast;
 
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexFeature;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertFailParsing;
@@ -103,6 +104,33 @@ class SequenceTreeTest {
   void illegalQuotedString() {
     assertFailParsing("abc\\\\E", "\\E used without \\Q");
     assertFailParsing("\\\\Qabc", "Expected '\\E', but found the end of the regex");
+  }
+
+  @Test
+  void unescapedCurlyBrace() {
+    assertSequenceWithUnescapedCurlyBrace("x{");
+    assertSequenceWithUnescapedCurlyBrace("x{}");
+    assertSequenceWithUnescapedCurlyBrace("x{1");
+    assertSequenceWithUnescapedCurlyBrace("x{a");
+    assertSequenceWithUnescapedCurlyBrace("x{a}");
+    assertSequenceWithUnescapedCurlyBrace("x{a}");
+    assertSequenceWithUnescapedCurlyBrace("x{1a}");
+    assertSequenceWithUnescapedCurlyBrace("x{1,a}");
+    assertSequenceWithUnescapedCurlyBrace("{1}");
+    assertSequenceWithUnescapedCurlyBrace("{1");
+
+    assertFailParsing("x{", "Expected integer, but found the end of the regex");
+    assertFailParsing("x{1", "Expected ',' or '}', but found the end of the regex");
+    assertFailParsing("x{}", "Expected integer, but found '}'");
+    assertFailParsing("x{a", "Expected integer, but found 'a'");
+    assertFailParsing("x{1,a", "Expected integer or '}', but found 'a'");
+    assertFailParsing("x{1a", "Expected ',' or '}', but found 'a'");
+    assertFailParsing("{1}", "Unexpected quantifier '{1}'");
+    assertFailParsing("{1", "Expected ',' or '}', but found the end of the regex");
+  }
+
+  private void assertSequenceWithUnescapedCurlyBrace(String regex) {
+    assertType(SequenceTree.class, assertSuccessfulParse(regex, RegexFeature.UNESCAPED_CURLY_BRACKET));
   }
 
 }

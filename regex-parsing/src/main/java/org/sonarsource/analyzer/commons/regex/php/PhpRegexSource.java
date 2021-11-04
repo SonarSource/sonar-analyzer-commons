@@ -37,7 +37,8 @@ public class PhpRegexSource extends RegexSource {
     RegexFeature.PYTHON_SYNTAX_GROUP_NAME,
     RegexFeature.ATOMIC_GROUP,
     RegexFeature.POSSESSIVE_QUANTIFIER,
-    RegexFeature.ESCAPED_CHARACTER_CLASS
+    RegexFeature.ESCAPED_CHARACTER_CLASS,
+    RegexFeature.UNESCAPED_CURLY_BRACKET
   );
   private final char quote;
 
