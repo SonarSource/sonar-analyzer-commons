@@ -24,6 +24,7 @@ import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.SyntaxError;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -133,21 +134,6 @@ class QuantifierTest {
     assertFailParsing("+", "Unexpected quantifier '+'");
     assertFailParsing("?", "Unexpected quantifier '?'");
     assertFailParsing("{1,10}", "Unexpected quantifier '{1,10}'");
-  }
-
-  @Test
-  void nonSimpleQuantifiers() {
-    assertRepetition("x{1}");
-    assertRepetition("x{1,}");
-    assertRepetition("x{1,2}");
-    assertRepetition("x{12}");
-    assertRepetition("x{12,}");
-    assertRepetition("x{12,13}");
-  }
-
-  private void assertRepetition(String regex) {
-    assertType(RepetitionTree.class, assertSuccessfulParse(regex));
-    assertType(RepetitionTree.class, assertSuccessfulParse(regex, RegexFeature.UNESCAPED_CURLY_BRACKET));
   }
 
   private void assertXWithKleeneStar(String regexSource) {

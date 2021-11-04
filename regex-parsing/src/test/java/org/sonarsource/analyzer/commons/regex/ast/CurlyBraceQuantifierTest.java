@@ -26,6 +26,7 @@ import org.sonarsource.analyzer.commons.regex.SyntaxError;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -48,6 +49,9 @@ class CurlyBraceQuantifierTest {
     assertKind(RegexTree.Kind.REPETITION, repetition);
     assertCharacter('x', repetition.getElement());
     CurlyBraceQuantifier quantifier = assertType(CurlyBraceQuantifier.class, repetition.getQuantifier());
+    assertNotNull(quantifier.getMinimumRepetitionsToken());
+    assertNotNull(quantifier.getCommaToken());
+    assertNotNull(quantifier.getMaximumRepetitionsToken());
     assertLocation(2, 4, quantifier.getMinimumRepetitionsToken());
     assertLocation(4, 5, quantifier.getCommaToken());
     assertLocation(5, 7, quantifier.getMaximumRepetitionsToken());
@@ -219,6 +223,28 @@ class CurlyBraceQuantifierTest {
     assertEquals(error.getMessage(), error.toString(), "SyntaxError.toString() should equal the error message.");
     assertEquals("{1,2}", error.getOffendingSyntaxElement().getText(), "Error should complain about the correct part of the regex.");
     assertEquals(new IndexRange(1, 6), error.range(), "Error should have the right location.");
+  }
+
+  @Test
+  void testCurlyBraceWithUnescapedCurlyBraceFeature() {
+    assertKind(RegexTree.Kind.REPETITION, "x{1}", RegexFeature.UNESCAPED_CURLY_BRACKET);
+    assertKind(RegexTree.Kind.REPETITION, "x{1,}", RegexFeature.UNESCAPED_CURLY_BRACKET);
+    assertKind(RegexTree.Kind.REPETITION, "x{1,2}", RegexFeature.UNESCAPED_CURLY_BRACKET);
+    assertKind(RegexTree.Kind.REPETITION, "x{12}", RegexFeature.UNESCAPED_CURLY_BRACKET);
+    assertKind(RegexTree.Kind.REPETITION, "x{12,}", RegexFeature.UNESCAPED_CURLY_BRACKET);
+    assertKind(RegexTree.Kind.REPETITION, "x{12,13}", RegexFeature.UNESCAPED_CURLY_BRACKET);
+  }
+
+  @Test
+  void onlyUpperBoundQuantifier() {
+    RegexTree tree = assertSuccessfulParse("x{,1}", RegexFeature.UNESCAPED_CURLY_BRACKET, RegexFeature.ONLY_UPPER_BOUND_QUANTIFIER);
+    RepetitionTree repetition = assertType(RepetitionTree.class, tree);
+    CurlyBraceQuantifier quantifier = assertType(CurlyBraceQuantifier.class, repetition.getQuantifier());
+    assertNull(quantifier.getMinimumRepetitionsToken());
+    assertNotNull(quantifier.getCommaToken());
+    assertNotNull(quantifier.getMaximumRepetitionsToken());
+    assertEquals(0, quantifier.getMinimumRepetitions());
+    assertEquals(1, quantifier.getMaximumRepetitions());
   }
 
   static void testAutomaton(RepetitionTree repetition, boolean reluctant) {

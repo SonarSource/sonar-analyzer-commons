@@ -39,13 +39,13 @@ public class CurlyBraceQuantifier extends Quantifier {
     RegexSource source,
     IndexRange range,
     Modifier modifier,
-    RegexToken minimumRepetitionsToken,
+    @Nullable RegexToken minimumRepetitionsToken,
     @Nullable RegexToken commaToken,
     @Nullable RegexToken maximumRepetitionsToken
   ) {
     super(source, range, modifier);
     this.minimumRepetitionsToken = minimumRepetitionsToken;
-    this.minimumRepetitions = Integer.parseInt(minimumRepetitionsToken.getText());
+    this.minimumRepetitions = minimumRepetitionsToken == null ? 0 : Integer.parseInt(minimumRepetitionsToken.getText());
     this.commaToken = commaToken;
     this.maximumRepetitionsToken = maximumRepetitionsToken;
     if (maximumRepetitionsToken == null) {
@@ -70,14 +70,17 @@ public class CurlyBraceQuantifier extends Quantifier {
     }
   }
 
+  @CheckForNull
   public RegexToken getMinimumRepetitionsToken() {
     return minimumRepetitionsToken;
   }
 
+  @CheckForNull
   public RegexToken getCommaToken() {
     return commaToken;
   }
 
+  @CheckForNull
   public RegexToken getMaximumRepetitionsToken() {
     return maximumRepetitionsToken;
   }

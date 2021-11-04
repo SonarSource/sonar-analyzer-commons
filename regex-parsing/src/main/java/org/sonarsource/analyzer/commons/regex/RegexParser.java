@@ -219,7 +219,7 @@ public class RegexParser {
     SourceCharacter openingBrace = characters.getCurrent();
     characters.moveNext();
     RegexToken lowerBound = parseInteger();
-    if (lowerBound == null) {
+    if (lowerBound == null && !supportsAnyOfFeatures(RegexFeature.ONLY_UPPER_BOUND_QUANTIFIER)) {
       expected("integer");
       return null;
     }
@@ -249,7 +249,7 @@ public class RegexParser {
 
   private boolean isCurlyBraceQuantifier() {
     int index = 1;
-    if (!isAsciiDigit(characters.lookAhead(index))) {
+    if (!isAsciiDigit(characters.lookAhead(index)) && !supportsAnyOfFeatures(RegexFeature.ONLY_UPPER_BOUND_QUANTIFIER)) {
       return false;
     }
     do {
