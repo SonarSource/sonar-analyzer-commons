@@ -48,8 +48,6 @@ public abstract class RegexSource {
     return new RegexLexer(this, createCharacterParser());
   }
 
-  public abstract RegexDialect dialect();
-
   public abstract Set<RegexFeature> features();
 
   public boolean supportsFeature(RegexFeature feature) {

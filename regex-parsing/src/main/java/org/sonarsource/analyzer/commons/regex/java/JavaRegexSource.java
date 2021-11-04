@@ -22,7 +22,6 @@ package org.sonarsource.analyzer.commons.regex.java;
 import java.util.EnumSet;
 import java.util.Set;
 import org.sonarsource.analyzer.commons.regex.CharacterParser;
-import org.sonarsource.analyzer.commons.regex.RegexDialect;
 import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexSource;
 
@@ -43,11 +42,6 @@ public class JavaRegexSource extends RegexSource {
   @Override
   public CharacterParser createCharacterParser() {
     return new JavaCharacterParser(this);
-  }
-
-  @Override
-  public RegexDialect dialect() {
-    return RegexDialect.JAVA;
   }
 
   @Override

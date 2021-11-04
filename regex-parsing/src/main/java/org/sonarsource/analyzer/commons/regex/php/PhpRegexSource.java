@@ -22,7 +22,6 @@ package org.sonarsource.analyzer.commons.regex.php;
 import java.util.EnumSet;
 import java.util.Set;
 import org.sonarsource.analyzer.commons.regex.CharacterParser;
-import org.sonarsource.analyzer.commons.regex.RegexDialect;
 import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexSource;
 
@@ -53,11 +52,6 @@ public class PhpRegexSource extends RegexSource {
       return PhpStringCharacterParser.forSingleQuotedString(this);
     }
     return PhpStringCharacterParser.forDoubleQuotedString(this);
-  }
-
-  @Override
-  public RegexDialect dialect() {
-    return RegexDialect.PHP;
   }
 
   @Override

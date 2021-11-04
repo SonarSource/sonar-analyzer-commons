@@ -21,7 +21,6 @@ package org.sonarsource.analyzer.commons.regex.python;
 
 import java.util.EnumSet;
 import java.util.Set;
-import org.sonarsource.analyzer.commons.regex.RegexDialect;
 import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexSource;
 
@@ -35,11 +34,6 @@ public abstract class PythonRegexSource extends RegexSource {
 
   protected PythonRegexSource(String source) {
     super(source);
-  }
-
-  @Override
-  public RegexDialect dialect() {
-    return RegexDialect.PYTHON;
   }
 
   @Override
