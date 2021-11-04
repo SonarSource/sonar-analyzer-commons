@@ -22,6 +22,7 @@ package org.sonarsource.analyzer.commons.regex.ast;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexFeature;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -190,6 +191,23 @@ class CharacterClassTreeTest {
       first -> assertCharacterUnion("A-Z", first),
       second -> assertCharacterUnion("", second)
     );
+  }
+
+  @Test
+  void nestedCharacterClass() {
+    RegexTree regex = assertSuccessfulParse("[a[bc]]", RegexFeature.NESTED_CHARTER_CLASS);
+    CharacterClassElementTree characterClass = assertCharacterClass(false, regex);
+    CharacterClassUnionTree union = assertType(CharacterClassUnionTree.class, characterClass);
+    List<CharacterClassElementTree> elements = union.getCharacterClasses();
+    assertListSize(2, elements);
+    assertCharacter('a', elements.get(0));
+    CharacterClassTree nestedUnion = assertType(CharacterClassTree.class, elements.get(1));
+    assertCharacterUnion("bc", nestedUnion.getContents());
+
+    assertFailParsing("[a[bc]", "Expected ']', but found the end of the regex", RegexFeature.NESTED_CHARTER_CLASS);
+
+    CharacterClassElementTree contents = assertCharacterClass(false, assertSuccessfulParse("[a[bc]"));
+    assertCharacterUnion("a[bc", contents);
   }
 
   @Test
