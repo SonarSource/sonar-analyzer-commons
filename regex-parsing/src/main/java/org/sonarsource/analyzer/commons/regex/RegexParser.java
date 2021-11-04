@@ -213,6 +213,9 @@ public class RegexParser {
   }
 
   CurlyBraceQuantifier parseCurlyBraceQuantifier() {
+    if (supportsAnyOfFeatures(RegexFeature.UNESCAPED_CURLY_BRACKET) && !isCurlyBraceQuantifier()) {
+      return null;
+    }
     SourceCharacter openingBrace = characters.getCurrent();
     characters.moveNext();
     RegexToken lowerBound = parseInteger();
@@ -242,6 +245,26 @@ public class RegexParser {
     modifier = parseQuantifierModifier();
     IndexRange range = openingBrace.getRange().extendTo(characters.getCurrentStartIndex());
     return new CurlyBraceQuantifier(source, range, modifier, lowerBound, comma, upperBound);
+  }
+
+  private boolean isCurlyBraceQuantifier() {
+    int index = 1;
+    if (!isAsciiDigit(characters.lookAhead(index))) {
+      return false;
+    }
+    do {
+      index++;
+    } while (isAsciiDigit(characters.lookAhead(index)));
+    if (characters.lookAhead(index) == '}') {
+      return true;
+    }
+    if (characters.lookAhead(index) != ',') {
+      return false;
+    }
+    do {
+      index++;
+    } while (isAsciiDigit(characters.lookAhead(index)));
+    return characters.lookAhead(index) == '}';
   }
 
   Quantifier.Modifier parseQuantifierModifier() {
@@ -1105,12 +1128,15 @@ public class RegexParser {
     return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
   }
 
-  protected static boolean isPlainTextCharacter(int c) {
+  protected boolean isPlainTextCharacter(int c) {
+    if (c == '{') {
+      return supportsAnyOfFeatures(RegexFeature.UNESCAPED_CURLY_BRACKET);
+    }
+
     switch (c) {
       case EOF:
       case '(':
       case ')':
-      case '{':
       case '\\':
       case '*':
       case '+':

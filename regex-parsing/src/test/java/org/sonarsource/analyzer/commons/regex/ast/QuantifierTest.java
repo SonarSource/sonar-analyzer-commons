@@ -135,6 +135,21 @@ class QuantifierTest {
     assertFailParsing("{1,10}", "Unexpected quantifier '{1,10}'");
   }
 
+  @Test
+  void nonSimpleQuantifiers() {
+    assertRepetition("x{1}");
+    assertRepetition("x{1,}");
+    assertRepetition("x{1,2}");
+    assertRepetition("x{12}");
+    assertRepetition("x{12,}");
+    assertRepetition("x{12,13}");
+  }
+
+  private void assertRepetition(String regex) {
+    assertType(RepetitionTree.class, assertSuccessfulParse(regex));
+    assertType(RepetitionTree.class, assertSuccessfulParse(regex, RegexFeature.UNESCAPED_CURLY_BRACKET));
+  }
+
   private void assertXWithKleeneStar(String regexSource) {
     RegexTree regex = assertSuccessfulParse(regexSource);
     RepetitionTree repetition = assertType(RepetitionTree.class, regex);
