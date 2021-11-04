@@ -26,36 +26,28 @@ import org.sonarsource.analyzer.commons.regex.RegexDialect;
 import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexSource;
 
-public class JavaRegexSource implements RegexSource {
+public class JavaRegexSource extends RegexSource {
 
   private static final Set<RegexFeature> FEATURES = EnumSet.of(
     RegexFeature.JAVA_SYNTAX_GROUP_NAME,
     RegexFeature.ATOMIC_GROUP,
     RegexFeature.POSSESSIVE_QUANTIFIER,
-    RegexFeature.ESCAPED_CHARACTER_CLASS
+    RegexFeature.ESCAPED_CHARACTER_CLASS,
+    RegexFeature.JAVA_ESCAPING
   );
-  private final String sourceText;
 
   public JavaRegexSource(String sourceText) {
-    this.sourceText = sourceText;
+    super(sourceText);
   }
 
-  @Override
-  public String getSourceText() {
-    return sourceText;
-  }
-
-  @Override
   public CharacterParser createCharacterParser() {
     return new JavaCharacterParser(this);
   }
 
-  @Override
   public RegexDialect dialect() {
     return RegexDialect.JAVA;
   }
 
-  @Override
   public Set<RegexFeature> features() {
     return FEATURES;
   }

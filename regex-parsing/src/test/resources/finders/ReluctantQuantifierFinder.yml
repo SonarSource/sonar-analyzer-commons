@@ -1,3 +1,4 @@
+- 'features': ALL | ^JAVA_ESCAPING
 - '<.+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>]++".}}
 - '<\S+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\s]++".}}
 - '<\D+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\d]++".}}
@@ -70,7 +71,7 @@
 - '<\w{2,5}?>'
 
 # Test rule for dialects without positive quantifiers
-- 'features': ALL | ^POSSESSIVE_QUANTIFIER
+- 'features': ALL | ^POSSESSIVE_QUANTIFIER | ^JAVA_ESCAPING
 - '<.+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>]+".}}
 - '<\S+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\s]+".}}
 - '<\D+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\d]+".}}
@@ -83,3 +84,10 @@
 - '.*?\P{L}' # Noncompliant {{Replace this use of a reluctant quantifier with "\p{L}*".}}
 - '\[.*?\]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^\]]*".}}
 - '.+?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc]+".}}
+
+
+# Test rule for dialects with Java backslash escaping
+- 'features': ALL
+- '<\S+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\\s]++".}}
+- '<\D+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\\d]++".}}
+- '<\W+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\\w]++".}}

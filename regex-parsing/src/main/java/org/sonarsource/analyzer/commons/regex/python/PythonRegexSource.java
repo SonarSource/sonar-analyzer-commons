@@ -25,30 +25,22 @@ import org.sonarsource.analyzer.commons.regex.RegexDialect;
 import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexSource;
 
-public abstract class PythonRegexSource implements RegexSource {
+public abstract class PythonRegexSource extends RegexSource {
 
   private static final Set<RegexFeature> FEATURES = EnumSet.of(
     RegexFeature.RECURSION,
     RegexFeature.CONDITIONAL_SUBPATTERN,
     RegexFeature.PYTHON_SYNTAX_GROUP_NAME
   );
-  private final String source;
 
   protected PythonRegexSource(String source) {
-    this.source = source;
+    super(source);
   }
 
-  @Override
-  public String getSourceText() {
-    return source;
-  }
-
-  @Override
   public RegexDialect dialect() {
     return RegexDialect.PYTHON;
   }
 
-  @Override
   public Set<RegexFeature> features() {
     return FEATURES;
   }

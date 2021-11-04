@@ -26,7 +26,7 @@ import org.sonarsource.analyzer.commons.regex.RegexDialect;
 import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexSource;
 
-public class PhpRegexSource implements RegexSource {
+public class PhpRegexSource extends RegexSource {
 
   private static final Set<RegexFeature> FEATURES = EnumSet.of(
     RegexFeature.RECURSION,
@@ -40,20 +40,13 @@ public class PhpRegexSource implements RegexSource {
     RegexFeature.POSSESSIVE_QUANTIFIER,
     RegexFeature.ESCAPED_CHARACTER_CLASS
   );
-  private final String source;
   private final char quote;
 
   public PhpRegexSource(String source, char quote) {
-    this.source = source;
+    super(source);
     this.quote = quote;
   }
 
-  @Override
-  public String getSourceText() {
-    return source;
-  }
-
-  @Override
   public CharacterParser createCharacterParser() {
     if (quote == '\'') {
       return PhpStringCharacterParser.forSingleQuotedString(this);
@@ -61,12 +54,10 @@ public class PhpRegexSource implements RegexSource {
     return PhpStringCharacterParser.forDoubleQuotedString(this);
   }
 
-  @Override
   public RegexDialect dialect() {
     return RegexDialect.PHP;
   }
 
-  @Override
   public Set<RegexFeature> features() {
     return FEATURES;
   }

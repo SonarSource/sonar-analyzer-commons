@@ -50,6 +50,7 @@ import org.snakeyaml.engine.v2.scanner.ScannerImpl;
 import org.snakeyaml.engine.v2.scanner.StreamReader;
 import org.sonarsource.analyzer.commons.checks.verifier.SingleFileVerifier;
 import org.sonarsource.analyzer.commons.checks.verifier.internal.IssueLocation;
+import org.sonarsource.analyzer.commons.regex.RegexDialect;
 import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
@@ -152,6 +153,7 @@ public final class RegexFinderVerifier {
 
     final FinderCheck check;
     Set<RegexFeature> features = new HashSet<>();
+    RegexDialect dialect = RegexDialect.PHP;
 
     public RegexVisitor(FinderCheck check) {
       this.check = check;
@@ -188,10 +190,12 @@ public final class RegexFinderVerifier {
     @Override
     protected void visitTuple(NodeTuple node) {
       if (node.getKeyNode() instanceof ScalarNode && node.getValueNode() instanceof ScalarNode) {
-        if ("features".equals(((ScalarNode) node.getKeyNode()).getValue())) {
-          setFeatures(((ScalarNode) node.getValueNode()).getValue());
+        ScalarNode keyNode = (ScalarNode) node.getKeyNode();
+        ScalarNode valueNode = ((ScalarNode) node.getValueNode());
+        if ("features".equals(keyNode.getValue())) {
+          setFeatures(valueNode.getValue());
         } else {
-          checkRegex((ScalarNode) node.getKeyNode(), (ScalarNode) node.getValueNode());
+          checkRegex(keyNode, valueNode);
         }
       }
     }

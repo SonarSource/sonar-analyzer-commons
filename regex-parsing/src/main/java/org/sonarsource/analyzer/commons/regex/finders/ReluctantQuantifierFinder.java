@@ -160,6 +160,6 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
   }
 
   private static String backslash(RegexTree tree) {
-    return tree.getSource().dialect() == RegexDialect.JAVA ? "\\\\" : "\\";
+    return supportsFeatures(tree, RegexFeature.JAVA_ESCAPING) ? "\\\\" : "\\";
   }
 }
