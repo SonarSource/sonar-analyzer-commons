@@ -17,9 +17,27 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex;
+package org.sonarsource.analyzer.commons.regex.python;
 
-public enum RegexDialect {
-  JAVA,
-  PHP
+import java.util.EnumSet;
+import java.util.Set;
+import org.sonarsource.analyzer.commons.regex.RegexFeature;
+import org.sonarsource.analyzer.commons.regex.RegexSource;
+
+public abstract class PythonRegexSource extends RegexSource {
+
+  private static final Set<RegexFeature> FEATURES = EnumSet.of(
+    RegexFeature.RECURSION,
+    RegexFeature.CONDITIONAL_SUBPATTERN,
+    RegexFeature.PYTHON_SYNTAX_GROUP_NAME
+  );
+
+  protected PythonRegexSource(String source) {
+    super(source);
+  }
+
+  @Override
+  public Set<RegexFeature> features() {
+    return FEATURES;
+  }
 }

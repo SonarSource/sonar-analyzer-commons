@@ -244,7 +244,7 @@ public class RegexParserTestUtils {
       }
 
       @Override
-      public boolean supportFeature(RegexFeature feature) {
+      public boolean supportsFeature(RegexFeature feature) {
         return featureSet.contains(feature);
       }
     };

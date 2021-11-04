@@ -1,28 +1,29 @@
+- 'features': ALL | ^JAVA_ESCAPING
 - '<.+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>]++".}}
-- '<\\S+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\\s]++".}}
-- '<\\D+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\\d]++".}}
-- '<\\W+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\\w]++".}}
+- '<\S+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\s]++".}}
+- '<\D+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\d]++".}}
+- '<\W+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\w]++".}}
 
 - '<.{2,5}?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>]{2,5}+".}}
-- '<\\S{2,5}?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\\s]{2,5}+".}}
-- '<\\D{2,5}?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\\d]{2,5}+".}}
-- '<\\W{2,5}?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\\w]{2,5}+".}}
+- '<\S{2,5}?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\s]{2,5}+".}}
+- '<\D{2,5}?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\d]{2,5}+".}}
+- '<\W{2,5}?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\w]{2,5}+".}}
 
 - '<.{2,}?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>]{2,}+".}}
 - '\".*?\"' # Noncompliant {{Replace this use of a reluctant quantifier with "[^\"]*+".}}
-- '.*?\\w' # Noncompliant {{Replace this use of a reluctant quantifier with "\\W*+".}}
-- '.*?\\W' # Noncompliant {{Replace this use of a reluctant quantifier with "\\w*+".}}
-- '.*?\\p{L}' # Noncompliant {{Replace this use of a reluctant quantifier with "\\P{L}*+".}}
-- '.*?\\P{L}' # Noncompliant {{Replace this use of a reluctant quantifier with "\\p{L}*+".}}
-- '\\[.*?\\]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^\\]]*+".}}
+- '.*?\w' # Noncompliant {{Replace this use of a reluctant quantifier with "\W*+".}}
+- '.*?\W' # Noncompliant {{Replace this use of a reluctant quantifier with "\w*+".}}
+- '.*?\p{L}' # Noncompliant {{Replace this use of a reluctant quantifier with "\P{L}*+".}}
+- '.*?\P{L}' # Noncompliant {{Replace this use of a reluctant quantifier with "\p{L}*+".}}
+- '\[.*?\]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^\]]*+".}}
 - '.+?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc]++".}}
-- '(?-U:\\s)*?\\S'
-- '(?U:\\s)*?\\S' # Noncompliant {{Replace this use of a reluctant quantifier with "[\\s\\S]*+".}}
-- '(?U:a|\\s)*?\\S'
-- '\\S*?\\s'
-- '\\S*?(?-U:\\s)'
-- '\\S*?(?U:\\s)' # Noncompliant {{Replace this use of a reluctant quantifier with "[\\S\\s]*+".}}
-- '\\S*?(?U)\\s' # Noncompliant {{Replace this use of a reluctant quantifier with "[\\S\\s]*+".}}
+- '(?-U:\s)*?\S'
+- '(?U:\s)*?\S' # Noncompliant {{Replace this use of a reluctant quantifier with "[\s\S]*+".}}
+- '(?U:a|\s)*?\S'
+- '\S*?\s'
+- '\S*?(?-U:\s)'
+- '\S*?(?U:\s)' # Noncompliant {{Replace this use of a reluctant quantifier with "[\S\s]*+".}}
+- '\S*?(?U)\s' # Noncompliant {{Replace this use of a reluctant quantifier with "[\S\s]*+".}}
 
 # coverage
 - '(?:(?m))*?a'
@@ -31,21 +32,21 @@
 # This replacement might not be equivalent in case of full match, but is equivalent in case of split
 - '.+?[^abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[abc]++".}}
 
-- '.+?\\x{1F4A9}' # Noncompliant {{Replace this use of a reluctant quantifier with "[^\\x{1F4A9}]++".}}
+- '.+?\x{1F4A9}' # Noncompliant {{Replace this use of a reluctant quantifier with "[^\x{1F4A9}]++".}}
 - '<abc.*?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>]*+".}}
 - '<.+?>|otherstuff' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>]++".}}
 - '(<.+?>)*' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>]++".}}
 
-- '\\S+?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc\\s]++".}}
-- '\\D+?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc\\d]++".}}
-- '\\w+?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc\\W]++".}}
+- '\S+?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc\s]++".}}
+- '\D+?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc\d]++".}}
+- '\w+?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc\W]++".}}
 
-- '\\S*?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc\\s]*+".}}
-- '\\D*?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc\\d]*+".}}
-- '\\w*?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc\\W]*+".}}
+- '\S*?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc\s]*+".}}
+- '\D*?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc\d]*+".}}
+- '\w*?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc\W]*+".}}
 
-- '\\S+?[^abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[abc\\S]++".}}
-- '\\s+?[^abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[abc\\s]++".}}
+- '\S+?[^abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[abc\S]++".}}
+- '\s+?[^abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[abc\s]++".}}
 
 - '<[^>]++>'
 - '<[^>]+>'
@@ -56,31 +57,37 @@
 - '<--.?-->'
 - '<--.+?-->'
 - '<--.*?-->'
-- '/\\*.?\\*/'
+- '/\*.?\*/'
 - '<[^>]+>?'
 - ''
 - '.*?(?:a|b|c)' # Alternatives are currently not covered even if they contain only single characters
 
-- '<\\d+?>'
-- '<\\s+?>'
-- '<\\w+?>'
+- '<\d+?>'
+- '<\s+?>'
+- '<\w+?>'
 
-- '<\\s{2,5}?>'
-- '<\\d{2,5}?>'
-- '<\\w{2,5}?>'
+- '<\s{2,5}?>'
+- '<\d{2,5}?>'
+- '<\w{2,5}?>'
 
-- '\\d+?[abc]'
-- '\\s+?[abc]'
-- '\\W+?[abc]'
+# Test rule for dialects without positive quantifiers
+- 'features': ALL | ^POSSESSIVE_QUANTIFIER | ^JAVA_ESCAPING
+- '<.+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>]+".}}
+- '<\S+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\s]+".}}
+- '<\D+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\d]+".}}
+- '<\W+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\w]+".}}
+- '<.{2,}?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>]{2,}".}}
+- '\".*?\"' # Noncompliant {{Replace this use of a reluctant quantifier with "[^\"]*".}}
+- '.*?\w' # Noncompliant {{Replace this use of a reluctant quantifier with "\W*".}}
+- '.*?\W' # Noncompliant {{Replace this use of a reluctant quantifier with "\w*".}}
+- '.*?\p{L}' # Noncompliant {{Replace this use of a reluctant quantifier with "\P{L}*".}}
+- '.*?\P{L}' # Noncompliant {{Replace this use of a reluctant quantifier with "\p{L}*".}}
+- '\[.*?\]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^\]]*".}}
+- '.+?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc]+".}}
 
-- '\\W*?[abc]'
-- '\\s*?[abc]'
-- '\\d*?[abc]'
 
-- '\\d*?\\p{L}'
-- '\\d*?\\P{L}' # There is an intersection but we currently do not support p{.} and P{.}
-
-- '\\d*?[[:digit:]]' # There is an intersection but we currently do not support posix character classes
-
-- '\\p{L}*?\\D' # There is an intersection but we currently do not support p{.} and P{.}
-- '\\P{L}*?\\d' # There is an intersection but we currently do not support p{.} and P{.}
+# Test rule for dialects with Java backslash escaping
+- 'features': ALL
+- '<\S+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\\s]++".}}
+- '<\D+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\\d]++".}}
+- '<\W+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\\w]++".}}

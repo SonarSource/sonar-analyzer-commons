@@ -22,6 +22,7 @@ package org.sonarsource.analyzer.commons.regex.ast;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexLexer;
 import org.sonarsource.analyzer.commons.regex.RegexSource;
 
@@ -73,7 +74,8 @@ class EscapedCharacterClassTreeTest {
       assertEscapedProperty("\\\\p{Lu}", "Lu", false);
       assertEscapedProperty("\\\\p{IsAlphabetic}", "IsAlphabetic", false);
       assertEscapedProperty("\\\\p{Sc}", "Sc", false);
-      assertEscapedProperty(assertCharacterClass(false, assertSuccessfulParse("[\\\\p{IsLatin}]")), "IsLatin", false);
+      assertEscapedProperty(assertCharacterClass(false, assertSuccessfulParse("[\\\\p{IsLatin}]", RegexFeature.ESCAPED_CHARACTER_CLASS)),
+        "IsLatin", false);
     }
 
     @Test
@@ -92,14 +94,15 @@ class EscapedCharacterClassTreeTest {
 
     @Test
     void failingInvalidEscapedProperties() {
-      assertFailParsing("\\\\p", "Expected '{', but found the end of the regex");
-      assertFailParsing("\\\\p{", "Expected a property name, but found the end of the regex");
-      assertFailParsing("\\\\p{foo", "Expected '}', but found the end of the regex");
-      assertFailParsing("\\\\p{}", "Expected a property name, but found '}'");
+      assertFailParsing("\\\\p", "Expected '{', but found the end of the regex", RegexFeature.ESCAPED_CHARACTER_CLASS);
+      assertFailParsing("\\\\p{", "Expected a property name, but found the end of the regex", RegexFeature.ESCAPED_CHARACTER_CLASS);
+      assertFailParsing("\\\\p{foo", "Expected '}', but found the end of the regex", RegexFeature.ESCAPED_CHARACTER_CLASS);
+      assertFailParsing("\\\\p{}", "Expected a property name, but found '}'", RegexFeature.ESCAPED_CHARACTER_CLASS);
+      assertFailParsing("\\\\p{Lower}", "Expected integer, but found 'L'");
     }
 
     private void assertEscapedProperty(String regex, String expectedProperty, boolean isNegation) {
-      RegexTree tree = assertSuccessfulParse(regex);
+      RegexTree tree = assertSuccessfulParse(regex, RegexFeature.ESCAPED_CHARACTER_CLASS);
       assertEscapedProperty(tree, expectedProperty, isNegation);
     }
 

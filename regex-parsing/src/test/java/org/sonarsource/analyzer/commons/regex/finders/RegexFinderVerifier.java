@@ -24,12 +24,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import junit.framework.AssertionFailedError;
 import org.snakeyaml.engine.v2.api.LoadSettings;
@@ -48,6 +48,7 @@ import org.snakeyaml.engine.v2.scanner.ScannerImpl;
 import org.snakeyaml.engine.v2.scanner.StreamReader;
 import org.sonarsource.analyzer.commons.checks.verifier.SingleFileVerifier;
 import org.sonarsource.analyzer.commons.checks.verifier.internal.IssueLocation;
+import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.RegexParser;
@@ -148,6 +149,7 @@ public final class RegexFinderVerifier {
   class RegexVisitor extends NodeVisitor {
 
     final FinderCheck check;
+    Set<RegexFeature> features = new HashSet<>();
 
     public RegexVisitor(FinderCheck check) {
       this.check = check;
@@ -184,7 +186,13 @@ public final class RegexFinderVerifier {
     @Override
     protected void visitTuple(NodeTuple node) {
       if (node.getKeyNode() instanceof ScalarNode && node.getValueNode() instanceof ScalarNode) {
-        checkRegex((ScalarNode) node.getKeyNode(), (ScalarNode) node.getValueNode());
+        ScalarNode keyNode = (ScalarNode) node.getKeyNode();
+        ScalarNode valueNode = ((ScalarNode) node.getValueNode());
+        if ("features".equals(keyNode.getValue())) {
+          setFeatures(valueNode.getValue());
+        } else {
+          checkRegex(keyNode, valueNode);
+        }
       }
     }
 
@@ -192,12 +200,40 @@ public final class RegexFinderVerifier {
       RegexParseResult parseResult = parseRegex(regexNode, flagNode);
       check.checkRegex(parseResult, this::reportRegexTreeIssue, (message, cost, secondaries) -> reportInvocationTreeIssue(regexNode, message, cost, secondaries));
     }
-  }
 
-  private static RegexParseResult parseRegex(ScalarNode regexNode, @Nullable ScalarNode flagNode) {
-    char quote = regexNode.getScalarStyle() == ScalarStyle.SINGLE_QUOTED ? '\'' : '"';
-    FlagSet flagSet = flagNode != null ? PhpRegexFlags.parseFlags(flagNode.getValue()) : new FlagSet();
-    return new RegexParser(new VerifierRegexSource(regexNode, quote), flagSet).parse();
+    private void setFeatures(String features) {
+      this.features.clear();
+      features = features.replaceAll("\\s+", "");
+      Arrays.stream(features.split("\\|")).forEach(f -> {
+        if (f.startsWith("^")) {
+          processFeature(f.substring(1), this.features::remove);
+        } else {
+          processFeature(f, this.features::add);
+        }
+      });
+    }
+
+    private void processFeature(String feature, Consumer<RegexFeature> consumer) {
+      if ("ALL".equals(feature)) {
+        Arrays.asList(RegexFeature.values()).forEach(consumer);
+      } else {
+        consumer.accept(getFeature(feature));
+      }
+    }
+
+    private RegexFeature getFeature(String feature) {
+      try {
+        return RegexFeature.valueOf(feature);
+      } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException(String.format("Feature '%s' is not supported or misspelled", feature), e.getCause());
+      }
+    }
+
+    private RegexParseResult parseRegex(ScalarNode regexNode, @Nullable ScalarNode flagNode) {
+      char quote = regexNode.getScalarStyle() == ScalarStyle.SINGLE_QUOTED ? '\'' : '"';
+      FlagSet flagSet = flagNode != null ? PhpRegexFlags.parseFlags(flagNode.getValue()) : new FlagSet();
+      return new RegexParser(new VerifierRegexSource(regexNode, quote, features), flagSet).parse();
+    }
   }
 
 
@@ -219,9 +255,11 @@ public final class RegexFinderVerifier {
   static class VerifierRegexSource extends PhpRegexSource {
     final int sourceLine;
     final int sourceStartOffset;
+    final Set<RegexFeature> features;
 
-    VerifierRegexSource(ScalarNode node, char quote) {
+    VerifierRegexSource(ScalarNode node, char quote, Set<RegexFeature> features) {
       super(getRegex(node), quote);
+      this.features = features;
       Mark startMark = node.getStartMark().get();
       sourceLine = startMark.getLine() + 1;
       sourceStartOffset = startMark.getColumn() + 1;
@@ -240,6 +278,14 @@ public final class RegexFinderVerifier {
     IssueLocation.Range issueLocationInFile(IndexRange range) {
       return new IssueLocation.Range(null, sourceLine, sourceStartOffset + range.getBeginningOffset(),
         sourceLine, sourceStartOffset + range.getEndingOffset());
+    }
+
+    @Override
+    public Set<RegexFeature> features() {
+      if (features.isEmpty()) {
+        return super.features();
+      }
+      return features;
     }
   }
 

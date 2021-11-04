@@ -148,7 +148,7 @@ class RegexBaseVisitorTest {
 
     @Test
     void trackingFlagsInRegexWithDifferentTypesOfGroups() {
-      testFlags("(?i)a(?:(?u)b)|[c](?>(?-i)d)(?u)e(?=(?-U)f)g(?U)h(?-u)i");
+      testFlags("(?i)a(?:(?u)b)|[c](?>(?-i)d)(?u)e(?=(?-U)f)g(?U)h(?-u)i", RegexFeature.ATOMIC_GROUP);
     }
 
     @Test
@@ -169,9 +169,9 @@ class RegexBaseVisitorTest {
       assertThat(visitor.visitedCharacters()).isEmpty();
     }
 
-    private void testFlags(String regex) {
+    private void testFlags(String regex, RegexFeature... features) {
       FlagChecker visitor = new FlagChecker();
-      RegexParseResult parseResult = RegexParserTestUtils.assertSuccessfulParseResult(regex);
+      RegexParseResult parseResult = RegexParserTestUtils.assertSuccessfulParseResult(regex, features);
       visitor.visit(parseResult);
       assertThat(visitor.visitedCharacters()).isEqualTo("abcdefghi");
       List<RegexTree> items = ((SequenceTree) ((DisjunctionTree) parseResult.getResult()).getAlternatives().get(1)).getItems();

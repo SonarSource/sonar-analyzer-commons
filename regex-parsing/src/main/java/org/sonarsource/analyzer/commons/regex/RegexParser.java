@@ -54,19 +54,19 @@ import org.sonarsource.analyzer.commons.regex.ast.FinalState;
 import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
 import org.sonarsource.analyzer.commons.regex.ast.GroupTree;
 import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
-import org.sonarsource.analyzer.commons.regex.ast.PosixCharacterClassElementTree;
-import org.sonarsource.analyzer.commons.regex.ast.ReferenceConditionTree;
-import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
 import org.sonarsource.analyzer.commons.regex.ast.LookAroundTree;
 import org.sonarsource.analyzer.commons.regex.ast.MiscEscapeSequenceTree;
 import org.sonarsource.analyzer.commons.regex.ast.NonCapturingGroupTree;
+import org.sonarsource.analyzer.commons.regex.ast.PosixCharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.Quantifier;
+import org.sonarsource.analyzer.commons.regex.ast.ReferenceConditionTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
 import org.sonarsource.analyzer.commons.regex.ast.RegexToken;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
 import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
 import org.sonarsource.analyzer.commons.regex.ast.SimpleQuantifier;
+import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
 import org.sonarsource.analyzer.commons.regex.ast.StartState;
 
 import static org.sonarsource.analyzer.commons.regex.RegexLexer.EOF;
@@ -245,15 +245,14 @@ public class RegexParser {
   }
 
   Quantifier.Modifier parseQuantifierModifier() {
-    switch (characters.getCurrentChar()) {
-      case '+':
-        characters.moveNext();
-        return Quantifier.Modifier.POSSESSIVE;
-      case '?':
-        characters.moveNext();
-        return Quantifier.Modifier.RELUCTANT;
-      default:
-        return Quantifier.Modifier.GREEDY;
+    if (characters.currentIs('?')) {
+      characters.moveNext();
+      return Quantifier.Modifier.RELUCTANT;
+    } else if (characters.currentIs('+') && supportsAnyOfFeatures(RegexFeature.POSSESSIVE_QUANTIFIER)) {
+      characters.moveNext();
+      return Quantifier.Modifier.POSSESSIVE;
+    } else {
+      return Quantifier.Modifier.GREEDY;
     }
   }
 
@@ -277,7 +276,7 @@ public class RegexParser {
     }
     switch (characters.getCurrentChar()) {
       case '(':
-        if (characters.currentIs("(?P=") && supportFeatures(RegexFeature.PYTHON_SYNTAX_GROUP_NAME)) {
+        if (characters.currentIs("(?P=") && supportsAnyOfFeatures(RegexFeature.PYTHON_SYNTAX_GROUP_NAME)) {
           return parsePythonBackReference();
         }
         return parseGroup();
@@ -335,14 +334,14 @@ public class RegexParser {
     } else if (characters.currentIs("?<!")) {
       characters.moveNext(3);
       return finishGroup(openingParen, (range, inner) -> LookAroundTree.negativeLookBehind(source, range, inner, activeFlags));
-    } else if (characters.currentIs("?>")) {
+    } else if (characters.currentIs("?>") && supportsAnyOfFeatures(RegexFeature.ATOMIC_GROUP)) {
       characters.moveNext(2);
       return finishGroup(openingParen, (range, inner) -> new AtomicGroupTree(source, range, inner, activeFlags));
-    } else if (characters.currentIs("?<") && supportFeatures(RegexFeature.JAVA_SYNTAX_GROUP_NAME, RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
+    } else if (characters.currentIs("?<") && supportsAnyOfFeatures(RegexFeature.JAVA_SYNTAX_GROUP_NAME, RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
       return finishGroup(openingParen, newNamedCapturingGroup(2, '>'));
-    } else if (characters.currentIs("?'") && supportFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
+    } else if (characters.currentIs("?'") && supportsAnyOfFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
       return finishGroup(openingParen, newNamedCapturingGroup(2, '\''));
-    } else if (characters.currentIs("?P<") && supportFeatures(RegexFeature.PYTHON_SYNTAX_GROUP_NAME)) {
+    } else if (characters.currentIs("?P<") && supportsAnyOfFeatures(RegexFeature.PYTHON_SYNTAX_GROUP_NAME)) {
       return finishGroup(openingParen, newNamedCapturingGroup(3, '>'));
     } else if (characters.currentIs("?")) {
       return parseNonCapturingGroup(openingParen);
@@ -384,10 +383,10 @@ public class RegexParser {
   protected GroupTree parseNonCapturingGroup(SourceCharacter openingParen) {
     // Discard '?'
     characters.moveNext();
-    if (characters.currentIs("R)") && source.supportFeature(RegexFeature.RECURSION)) {
+    if (characters.currentIs("R)") && source.supportsFeature(RegexFeature.RECURSION)) {
       return parseRecursion(openingParen);
     }
-    if (characters.currentIs("(") && source.supportFeature(RegexFeature.CONDITIONAL_SUBPATTERN)) {
+    if (characters.currentIs("(") && source.supportsFeature(RegexFeature.CONDITIONAL_SUBPATTERN)) {
       return parseConditionalSubpattern(openingParen);
     }
 
@@ -559,14 +558,13 @@ public class RegexParser {
     if (characters.isAtEnd()) {
       expected("any character");
       return characterTree(backslash);
+    } else if (isEscapedCharacterClass()) {
+      return parseEscapedProperty(backslash);
     } else if (isEscapedBackReference()) {
       return parseNamedBackReference(backslash);
     } else {
       SourceCharacter character = characters.getCurrent();
       switch (character.getCharacter()) {
-        case 'p':
-        case 'P':
-          return parseEscapedProperty(backslash);
         case '0':
           return parseOctalEscape(backslash);
         case '1':
@@ -630,9 +628,13 @@ public class RegexParser {
     }
   }
 
+  private boolean isEscapedCharacterClass() {
+    return (characters.currentIs('p') || characters.currentIs('P')) && supportsAnyOfFeatures(RegexFeature.ESCAPED_CHARACTER_CLASS);
+  }
+
   private boolean isEscapedBackReference() {
-    return (characters.currentIs('k') && supportFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME, RegexFeature.JAVA_SYNTAX_GROUP_NAME, RegexFeature.PERL_SYNTAX_GROUP_NAME))
-      || (characters.currentIs('g') && supportFeatures(RegexFeature.PERL_SYNTAX_GROUP_NAME));
+    return (characters.currentIs('k') && supportsAnyOfFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME, RegexFeature.JAVA_SYNTAX_GROUP_NAME, RegexFeature.PERL_SYNTAX_GROUP_NAME))
+      || (characters.currentIs('g') && supportsAnyOfFeatures(RegexFeature.PERL_SYNTAX_GROUP_NAME));
   }
 
   protected RegexTree parseNamedUnicodeCharacter(SourceCharacter backslash) {
@@ -744,11 +746,11 @@ public class RegexParser {
   }
 
   protected RegexTree parseNamedBackReference(SourceCharacter backslash) {
-    if(characters.currentIs("k<") && supportFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME, RegexFeature.JAVA_SYNTAX_GROUP_NAME)) {
+    if(characters.currentIs("k<") && supportsAnyOfFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME, RegexFeature.JAVA_SYNTAX_GROUP_NAME)) {
       return parseNamedBackReference(backslash, '<', '>');
-    } else if(characters.currentIs("k'") && supportFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
+    } else if(characters.currentIs("k'") && supportsAnyOfFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
       return parseNamedBackReference(backslash, '\'', '\'');
-    } else if((characters.currentIs("k{") || characters.currentIs("g{")) && supportFeatures(RegexFeature.PERL_SYNTAX_GROUP_NAME)) {
+    } else if((characters.currentIs("k{") || characters.currentIs("g{")) && supportsAnyOfFeatures(RegexFeature.PERL_SYNTAX_GROUP_NAME)) {
       return parseNamedBackReference(backslash, '{', '}');
     }
     characters.moveNext();
@@ -764,13 +766,13 @@ public class RegexParser {
   private void expectedNamedBackReferenceOpener() {
     StringJoiner joiner = new StringJoiner(" or ");
     joiner.setEmptyValue("valid name opener");
-    if (source.supportFeature(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
+    if (source.supportsFeature(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
       joiner.add("'<'");
       joiner.add("'''");
-    } else if (source.supportFeature(RegexFeature.JAVA_SYNTAX_GROUP_NAME)) {
+    } else if (source.supportsFeature(RegexFeature.JAVA_SYNTAX_GROUP_NAME)) {
       joiner.add("'<'");
     }
-    if (source.supportFeature(RegexFeature.PERL_SYNTAX_GROUP_NAME)) {
+    if (source.supportsFeature(RegexFeature.PERL_SYNTAX_GROUP_NAME)) {
       joiner.add("'{'");
     }
     expected(joiner.toString());
@@ -939,7 +941,7 @@ public class RegexParser {
 
   @CheckForNull
   protected CharacterClassElementTree parseCharacterClassElement(boolean isAtBeginning) {
-    if (characters.lookAhead(1) == ':' && source.supportFeature(RegexFeature.POSIX_CHARACTER_CLASS)) {
+    if (characters.lookAhead(1) == ':' && source.supportsFeature(RegexFeature.POSIX_CHARACTER_CLASS)) {
       PosixCharacterClassElementTree tree = parsePosixCharacterClass();
       if (tree != null) return tree;
     }
@@ -1070,8 +1072,8 @@ public class RegexParser {
     errors.add(new SyntaxError(offendingToken, message));
   }
 
-  protected boolean supportFeatures(RegexFeature... features) {
-    return Arrays.stream(features).anyMatch(source::supportFeature);
+  protected boolean supportsAnyOfFeatures(RegexFeature... features) {
+    return Arrays.stream(features).anyMatch(source::supportsFeature);
   }
 
   protected static <T extends RegexSyntaxElement> T combineTrees(List<T> elements, TreeConstructor<T> treeConstructor) {

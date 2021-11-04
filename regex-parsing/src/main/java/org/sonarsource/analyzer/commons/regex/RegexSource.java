@@ -22,26 +22,35 @@ package org.sonarsource.analyzer.commons.regex;
 import java.util.Set;
 import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
 
-public interface RegexSource {
-  String getSourceText();
+public abstract class RegexSource {
 
-  default String substringAt(IndexRange range) {
+  protected final String source;
+
+  protected RegexSource(String source) {
+    this.source = source;
+  }
+
+  public String getSourceText() {
+    return this.source;
+  }
+
+  public String substringAt(IndexRange range) {
     return getSourceText().substring(range.getBeginningOffset(), Math.min(range.getEndingOffset(), length()));
   }
 
-  default int length() {
+  public int length() {
     return getSourceText().length();
   }
 
-  CharacterParser createCharacterParser();
+  public abstract CharacterParser createCharacterParser();
 
-  default RegexLexer createLexer() {
+  public RegexLexer createLexer() {
     return new RegexLexer(this, createCharacterParser());
   }
 
-  RegexDialect dialect();
+  public abstract Set<RegexFeature> features();
 
-  Set<RegexFeature> features();
-
-  boolean supportFeature(RegexFeature feature);
+  public boolean supportsFeature(RegexFeature feature) {
+    return features().contains(feature);
+  }
 }

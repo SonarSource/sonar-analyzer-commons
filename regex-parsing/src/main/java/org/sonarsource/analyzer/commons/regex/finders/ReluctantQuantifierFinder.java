@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassTree;
@@ -60,7 +61,7 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
       getReluctantlyQuantifiedElement(repetition).flatMap(element ->
           findNegatedCharacterClassFor(items.get(items.size() - 1), getBaseCharacter(element)))
         .ifPresent(negatedClass -> {
-          String newQuantifier = makePossessive(repetition.getQuantifier());
+          String newQuantifier = makePossessiveOrGreedy(repetition.getQuantifier(), supportsAnyOfFeatures(tree, RegexFeature.POSSESSIVE_QUANTIFIER));
           String message = String.format(MESSAGE, negatedClass, newQuantifier);
           regexElementIssueReporter.report(repetition, message, null, Collections.emptyList());
         });
@@ -81,12 +82,13 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
       : Optional.empty();
   }
 
-  private static String makePossessive(Quantifier quantifier) {
+  private static String makePossessiveOrGreedy(Quantifier quantifier, boolean possessive) {
+    String possessiveAddition = possessive ? "+" : "";
     if (quantifier instanceof SimpleQuantifier) {
-      return ((SimpleQuantifier) quantifier).getKind() + "+";
+      return ((SimpleQuantifier) quantifier).getKind() + possessiveAddition;
     } else {
       String max = Optional.ofNullable(quantifier.getMaximumRepetitions()).map(Object::toString).orElse("");
-      return String.format("{%d,%s}+", quantifier.getMinimumRepetitions(), max);
+      return String.format("{%d,%s}%s", quantifier.getMinimumRepetitions(), max, possessiveAddition);
     }
   }
 
@@ -136,7 +138,7 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
   }
 
   private static String escapedCharacterFollowedByEscapedCharacter(EscapedCharacterClassTree escapedClass, String ignoredSymbol) {
-    String negatedCharacter = "\\\\" + negateEscapedCharacterClassType(escapedClass.getType()) + getProperty(escapedClass);
+    String negatedCharacter = backslash(escapedClass) + negateEscapedCharacterClassType(escapedClass.getType()) + getProperty(escapedClass);
     return ignoredSymbol.isEmpty() ? negatedCharacter : String.format("[%s%s]", negatedCharacter, ignoredSymbol);
   }
 
@@ -153,6 +155,10 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
   }
 
   private static String escapedCharacterToString(@Nullable EscapedCharacterClassTree escapedClass) {
-    return (escapedClass == null) ? "" : ("\\\\" + escapedClass.getType() + getProperty(escapedClass));
+    return (escapedClass == null) ? "" : (backslash(escapedClass) + escapedClass.getType() + getProperty(escapedClass));
+  }
+
+  private static String backslash(RegexTree tree) {
+    return supportsAnyOfFeatures(tree, RegexFeature.JAVA_ESCAPING) ? "\\\\" : "\\";
   }
 }
