@@ -5,6 +5,7 @@
 - '(?!ab)ab' # Noncompliant
 - '(?=a)[^ba]' # Noncompliant
 - '(?!.)ab' # Noncompliant
+- 'a(?!:abc):ab'
 
 - '(?=a)a'
 - '(?=a)..'
