@@ -22,6 +22,8 @@ package org.sonarsource.analyzer.commons.regex.ast;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.analyzer.commons.regex.RegexFeature;
+import org.sonarsource.analyzer.commons.regex.RegexParserTestUtils;
+import org.sonarsource.analyzer.commons.regex.helpers.RegexTreeHelper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.spy;
@@ -106,13 +108,7 @@ class PosixCharacterClassElementTreeTest {
 
   private void assertNonPosixClass(String regex) {
     RegexTree tree = assertSuccessfulParse(regex, RegexFeature.POSIX_CHARACTER_CLASS);
-    assertNonPosixClass(tree);
-  }
-
-  private void assertNonPosixClass(RegexSyntaxElement tree) {
-    assertThat(tree).isInstanceOf(CharacterClassTree.class);
-    CharacterClassElementTree classElementTree = ((CharacterClassTree)tree).getContents();
-    assertThat(classElementTree).isNotInstanceOf(PosixCharacterClassElementTree.class);
+    assertThat(tree).isNotInstanceOf(CharacterClassTree.class);
   }
 
 }

@@ -106,7 +106,7 @@ class CharacterClassTreeTest {
 
   @Test
   void intersection() {
-    RegexTree regex = assertSuccessfulParse("[a-z&&[^g-i]&]", Pattern.MULTILINE);
+    RegexTree regex = assertSuccessfulParse("[a-z&&[^g-i]&]", Pattern.MULTILINE, RegexFeature.NESTED_CHARTER_CLASS);
     CharacterClassIntersectionTree intersection = assertType(CharacterClassIntersectionTree.class, assertCharacterClass(false, regex));
     assertKind(CharacterClassElementTree.Kind.INTERSECTION, intersection);
     assertThat(intersection.is(CharacterClassElementTree.Kind.UNION)).isFalse();

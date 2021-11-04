@@ -964,7 +964,7 @@ public class RegexParser {
 
   @CheckForNull
   protected CharacterClassElementTree parseCharacterClassElement(boolean isAtBeginning) {
-    if (characters.lookAhead(1) == ':' && source.supportsFeature(RegexFeature.POSIX_CHARACTER_CLASS)) {
+    if (characters.currentIs("[:") && source.supportsFeature(RegexFeature.POSIX_CHARACTER_CLASS)) {
       PosixCharacterClassElementTree tree = parsePosixCharacterClass();
       if (tree != null) return tree;
     }
