@@ -85,6 +85,7 @@ class PosixCharacterClassElementTreeTest {
   void nonPosixCharacterClassElements() {
     assertNonPosixClass("[[:alpha]]");
     assertNonPosixClass("[[alpha]]");
+    assertNonPosixClass("[al[pha]]");
   }
 
   private void assertPosixClass(String regex, String expectedProperty, boolean isNegation) {
