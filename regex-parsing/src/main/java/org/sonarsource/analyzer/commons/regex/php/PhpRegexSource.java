@@ -47,6 +47,7 @@ public class PhpRegexSource extends RegexSource {
     this.quote = quote;
   }
 
+  @Override
   public CharacterParser createCharacterParser() {
     if (quote == '\'') {
       return PhpStringCharacterParser.forSingleQuotedString(this);
@@ -54,10 +55,12 @@ public class PhpRegexSource extends RegexSource {
     return PhpStringCharacterParser.forDoubleQuotedString(this);
   }
 
+  @Override
   public RegexDialect dialect() {
     return RegexDialect.PHP;
   }
 
+  @Override
   public Set<RegexFeature> features() {
     return FEATURES;
   }

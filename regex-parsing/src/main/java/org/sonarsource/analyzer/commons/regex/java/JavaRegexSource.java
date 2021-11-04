@@ -40,14 +40,17 @@ public class JavaRegexSource extends RegexSource {
     super(sourceText);
   }
 
+  @Override
   public CharacterParser createCharacterParser() {
     return new JavaCharacterParser(this);
   }
 
+  @Override
   public RegexDialect dialect() {
     return RegexDialect.JAVA;
   }
 
+  @Override
   public Set<RegexFeature> features() {
     return FEATURES;
   }

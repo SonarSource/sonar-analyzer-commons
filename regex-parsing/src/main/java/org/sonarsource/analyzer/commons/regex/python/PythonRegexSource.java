@@ -37,10 +37,12 @@ public abstract class PythonRegexSource extends RegexSource {
     super(source);
   }
 
+  @Override
   public RegexDialect dialect() {
     return RegexDialect.PYTHON;
   }
 
+  @Override
   public Set<RegexFeature> features() {
     return FEATURES;
   }
