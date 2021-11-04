@@ -83,6 +83,3 @@
 - '.*?\P{L}' # Noncompliant {{Replace this use of a reluctant quantifier with "\p{L}*".}}
 - '\[.*?\]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^\]]*".}}
 - '.+?[abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^abc]+".}}
-- '(?U:\s)*?\S' # Noncompliant {{Replace this use of a reluctant quantifier with "[\s\S]*".}}
-- '\S*?(?U:\s)' # Noncompliant {{Replace this use of a reluctant quantifier with "[\S\s]*".}}
-- '\S*?(?U)\s' # Noncompliant {{Replace this use of a reluctant quantifier with "[\S\s]*".}}
