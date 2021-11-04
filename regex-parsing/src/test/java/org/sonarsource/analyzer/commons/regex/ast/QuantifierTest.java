@@ -82,7 +82,7 @@ class QuantifierTest {
 
   @Test
   void testReluctantStar() {
-    RegexTree regex = assertSuccessfulParse("x*?", RegexFeature.POSSESSIVE_QUANTIFIER);
+    RegexTree regex = assertSuccessfulParse("x*?");
     RepetitionTree repetition = assertType(RepetitionTree.class, regex);
     assertCharacter('x', repetition.getElement());
     SimpleQuantifier quantifier = assertType(SimpleQuantifier.class, repetition.getQuantifier());

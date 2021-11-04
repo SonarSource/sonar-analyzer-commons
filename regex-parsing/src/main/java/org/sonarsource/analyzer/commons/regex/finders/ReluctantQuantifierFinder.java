@@ -61,7 +61,7 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
       getReluctantlyQuantifiedElement(repetition).flatMap(element ->
           findNegatedCharacterClassFor(items.get(items.size() - 1), getBaseCharacter(element)))
         .ifPresent(negatedClass -> {
-          String newQuantifier = makePossessiveOrGreedy(repetition.getQuantifier(), supportsFeatures(tree, RegexFeature.POSSESSIVE_QUANTIFIER));
+          String newQuantifier = makePossessiveOrGreedy(repetition.getQuantifier(), supportsAnyOfFeatures(tree, RegexFeature.POSSESSIVE_QUANTIFIER));
           String message = String.format(MESSAGE, negatedClass, newQuantifier);
           regexElementIssueReporter.report(repetition, message, null, Collections.emptyList());
         });
@@ -159,6 +159,6 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
   }
 
   private static String backslash(RegexTree tree) {
-    return supportsFeatures(tree, RegexFeature.JAVA_ESCAPING) ? "\\\\" : "\\";
+    return supportsAnyOfFeatures(tree, RegexFeature.JAVA_ESCAPING) ? "\\\\" : "\\";
   }
 }

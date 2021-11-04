@@ -30,8 +30,6 @@ import org.sonarsource.analyzer.commons.regex.RegexParserTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.sonarsource.analyzer.commons.regex.RegexFeature.ESCAPED_CHARACTER_CLASS;
-import static org.sonarsource.analyzer.commons.regex.RegexFeature.POSSESSIVE_QUANTIFIER;
 
 class RegexBaseVisitorTest {
 

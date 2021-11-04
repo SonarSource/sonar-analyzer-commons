@@ -27,8 +27,6 @@ import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.sonarsource.analyzer.commons.regex.RegexFeature.ESCAPED_CHARACTER_CLASS;
-import static org.sonarsource.analyzer.commons.regex.RegexFeature.POSSESSIVE_QUANTIFIER;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertSuccessfulParseResult;
 
 class AutomatonStateTest {

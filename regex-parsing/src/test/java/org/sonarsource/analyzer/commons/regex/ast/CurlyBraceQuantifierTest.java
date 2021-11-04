@@ -20,6 +20,7 @@
 package org.sonarsource.analyzer.commons.regex.ast;
 
 import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.SyntaxError;
 
@@ -28,9 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.sonarsource.analyzer.commons.regex.RegexFeature.ATOMIC_GROUP;
-import static org.sonarsource.analyzer.commons.regex.RegexFeature.ESCAPED_CHARACTER_CLASS;
-import static org.sonarsource.analyzer.commons.regex.RegexFeature.POSSESSIVE_QUANTIFIER;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertEdge;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertKind;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertListElements;
@@ -108,7 +106,7 @@ class CurlyBraceQuantifierTest {
 
   @Test
   void testPossessiveCurlyBracedQuantifier() {
-    RegexTree regex = assertSuccessfulParse("x{23,42}+", POSSESSIVE_QUANTIFIER);
+    RegexTree regex = assertSuccessfulParse("x{23,42}+", RegexFeature.POSSESSIVE_QUANTIFIER);
     RepetitionTree repetition = assertType(RepetitionTree.class, regex);
     assertCharacter('x', repetition.getElement());
     CurlyBraceQuantifier quantifier = assertType(CurlyBraceQuantifier.class, repetition.getQuantifier());

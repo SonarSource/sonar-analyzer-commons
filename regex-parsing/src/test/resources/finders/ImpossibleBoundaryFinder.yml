@@ -70,4 +70,4 @@
 - 'a\n^b': 'm'
 
 
-- '(\d+)(\s+.*)$                         # score, vulgar components': 'x'
+- '(\d+)(\s+.*)$                         # some comment': 'x'

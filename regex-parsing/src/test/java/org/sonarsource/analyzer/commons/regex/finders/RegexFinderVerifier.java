@@ -153,7 +153,6 @@ public final class RegexFinderVerifier {
 
     final FinderCheck check;
     Set<RegexFeature> features = new HashSet<>();
-    RegexDialect dialect = RegexDialect.PHP;
 
     public RegexVisitor(FinderCheck check) {
       this.check = check;

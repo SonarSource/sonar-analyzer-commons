@@ -166,7 +166,7 @@ public class RegexBaseVisitor implements RegexVisitor {
     }
   }
 
-  protected static boolean supportsFeatures(RegexTree tree, RegexFeature... features) {
+  protected static boolean supportsAnyOfFeatures(RegexTree tree, RegexFeature... features) {
     RegexSource source = tree.getSource();
     return Arrays.stream(features).anyMatch(source::supportsFeature);
   }

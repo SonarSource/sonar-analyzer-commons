@@ -248,7 +248,7 @@ public class RegexParser {
     if (characters.currentIs('?')) {
       characters.moveNext();
       return Quantifier.Modifier.RELUCTANT;
-    } else if (characters.currentIs('+') && supportsFeatures(RegexFeature.POSSESSIVE_QUANTIFIER)) {
+    } else if (characters.currentIs('+') && supportsAnyOfFeatures(RegexFeature.POSSESSIVE_QUANTIFIER)) {
       characters.moveNext();
       return Quantifier.Modifier.POSSESSIVE;
     } else {
@@ -276,7 +276,7 @@ public class RegexParser {
     }
     switch (characters.getCurrentChar()) {
       case '(':
-        if (characters.currentIs("(?P=") && supportsFeatures(RegexFeature.PYTHON_SYNTAX_GROUP_NAME)) {
+        if (characters.currentIs("(?P=") && supportsAnyOfFeatures(RegexFeature.PYTHON_SYNTAX_GROUP_NAME)) {
           return parsePythonBackReference();
         }
         return parseGroup();
@@ -334,14 +334,14 @@ public class RegexParser {
     } else if (characters.currentIs("?<!")) {
       characters.moveNext(3);
       return finishGroup(openingParen, (range, inner) -> LookAroundTree.negativeLookBehind(source, range, inner, activeFlags));
-    } else if (characters.currentIs("?>") && supportsFeatures(RegexFeature.ATOMIC_GROUP)) {
+    } else if (characters.currentIs("?>") && supportsAnyOfFeatures(RegexFeature.ATOMIC_GROUP)) {
       characters.moveNext(2);
       return finishGroup(openingParen, (range, inner) -> new AtomicGroupTree(source, range, inner, activeFlags));
-    } else if (characters.currentIs("?<") && supportsFeatures(RegexFeature.JAVA_SYNTAX_GROUP_NAME, RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
+    } else if (characters.currentIs("?<") && supportsAnyOfFeatures(RegexFeature.JAVA_SYNTAX_GROUP_NAME, RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
       return finishGroup(openingParen, newNamedCapturingGroup(2, '>'));
-    } else if (characters.currentIs("?'") && supportsFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
+    } else if (characters.currentIs("?'") && supportsAnyOfFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
       return finishGroup(openingParen, newNamedCapturingGroup(2, '\''));
-    } else if (characters.currentIs("?P<") && supportsFeatures(RegexFeature.PYTHON_SYNTAX_GROUP_NAME)) {
+    } else if (characters.currentIs("?P<") && supportsAnyOfFeatures(RegexFeature.PYTHON_SYNTAX_GROUP_NAME)) {
       return finishGroup(openingParen, newNamedCapturingGroup(3, '>'));
     } else if (characters.currentIs("?")) {
       return parseNonCapturingGroup(openingParen);
@@ -629,12 +629,12 @@ public class RegexParser {
   }
 
   private boolean isEscapedCharacterClass() {
-    return (characters.currentIs('p') || characters.currentIs('P')) && supportsFeatures(RegexFeature.ESCAPED_CHARACTER_CLASS);
+    return (characters.currentIs('p') || characters.currentIs('P')) && supportsAnyOfFeatures(RegexFeature.ESCAPED_CHARACTER_CLASS);
   }
 
   private boolean isEscapedBackReference() {
-    return (characters.currentIs('k') && supportsFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME, RegexFeature.JAVA_SYNTAX_GROUP_NAME, RegexFeature.PERL_SYNTAX_GROUP_NAME))
-      || (characters.currentIs('g') && supportsFeatures(RegexFeature.PERL_SYNTAX_GROUP_NAME));
+    return (characters.currentIs('k') && supportsAnyOfFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME, RegexFeature.JAVA_SYNTAX_GROUP_NAME, RegexFeature.PERL_SYNTAX_GROUP_NAME))
+      || (characters.currentIs('g') && supportsAnyOfFeatures(RegexFeature.PERL_SYNTAX_GROUP_NAME));
   }
 
   protected RegexTree parseNamedUnicodeCharacter(SourceCharacter backslash) {
@@ -746,11 +746,11 @@ public class RegexParser {
   }
 
   protected RegexTree parseNamedBackReference(SourceCharacter backslash) {
-    if(characters.currentIs("k<") && supportsFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME, RegexFeature.JAVA_SYNTAX_GROUP_NAME)) {
+    if(characters.currentIs("k<") && supportsAnyOfFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME, RegexFeature.JAVA_SYNTAX_GROUP_NAME)) {
       return parseNamedBackReference(backslash, '<', '>');
-    } else if(characters.currentIs("k'") && supportsFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
+    } else if(characters.currentIs("k'") && supportsAnyOfFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
       return parseNamedBackReference(backslash, '\'', '\'');
-    } else if((characters.currentIs("k{") || characters.currentIs("g{")) && supportsFeatures(RegexFeature.PERL_SYNTAX_GROUP_NAME)) {
+    } else if((characters.currentIs("k{") || characters.currentIs("g{")) && supportsAnyOfFeatures(RegexFeature.PERL_SYNTAX_GROUP_NAME)) {
       return parseNamedBackReference(backslash, '{', '}');
     }
     characters.moveNext();
@@ -1072,7 +1072,7 @@ public class RegexParser {
     errors.add(new SyntaxError(offendingToken, message));
   }
 
-  protected boolean supportsFeatures(RegexFeature... features) {
+  protected boolean supportsAnyOfFeatures(RegexFeature... features) {
     return Arrays.stream(features).anyMatch(source::supportsFeature);
   }
 
