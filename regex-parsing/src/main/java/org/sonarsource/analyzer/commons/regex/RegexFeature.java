@@ -20,17 +20,18 @@
 package org.sonarsource.analyzer.commons.regex;
 
 public enum RegexFeature {
-  RECURSION,
-  CONDITIONAL_SUBPATTERN,
-  POSIX_CHARACTER_CLASS,
-  PYTHON_SYNTAX_GROUP_NAME,
-  DOTNET_SYNTAX_GROUP_NAME,
-  PERL_SYNTAX_GROUP_NAME,
-  JAVA_SYNTAX_GROUP_NAME,
-  JAVA_ESCAPING,
-  ATOMIC_GROUP,
-  POSSESSIVE_QUANTIFIER,
-  ESCAPED_CHARACTER_CLASS,
-  UNESCAPED_CURLY_BRACKET,
-  NESTED_CHARTER_CLASS
+  RECURSION,                                          // (?R)
+  CONDITIONAL_SUBPATTERN,                             // (?(\1)a|b)
+  POSIX_CHARACTER_CLASS,                              // [[:alpha:]]
+  PYTHON_SYNTAX_GROUP_NAME,                           // (P<name>)
+  DOTNET_SYNTAX_GROUP_NAME,                           // (?<name>) and (?'name')
+  PERL_SYNTAX_GROUP_NAME,                             // \k{name} and \g{name}
+  JAVA_SYNTAX_GROUP_NAME,                             // (?<name>)
+  JAVA_ESCAPING,                                      // //// vs //
+  ATOMIC_GROUP,                                       // (?>a)
+  POSSESSIVE_QUANTIFIER,                              // x++k
+  ESCAPED_CHARACTER_CLASS,                            // \p{Lower}
+  UNESCAPED_CURLY_BRACKET,                            // x{1a
+  ONLY_UPPER_BOUND_QUANTIFIER,                        // x{,3}
+  NESTED_CHARTER_CLASS                                // [a[bc]]
 }

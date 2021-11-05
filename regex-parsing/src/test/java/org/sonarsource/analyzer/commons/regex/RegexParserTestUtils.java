@@ -217,6 +217,10 @@ public class RegexParserTestUtils {
     }
   }
 
+  public static void assertKind(RegexTree.Kind expected, String regex, RegexFeature... features) {
+    assertKind(expected, assertSuccessfulParse(regex, features));
+  }
+
   public static void assertKind(RegexTree.Kind expected, RegexTree actual) {
     assertEquals(expected, actual.kind(), "Regex should have kind " + expected);
     assertTrue(actual.is(expected), "`is` should return true when the kinds match.");
