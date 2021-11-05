@@ -32,6 +32,6 @@ public enum RegexFeature {
   POSSESSIVE_QUANTIFIER,                              // x++k
   ESCAPED_CHARACTER_CLASS,                            // \p{Lower}
   UNESCAPED_CURLY_BRACKET,                            // x{1a
-  ONLY_UPPER_BOUND_QUANTIFIER                         // x{,3}
+  ONLY_UPPER_BOUND_QUANTIFIER,                        // x{,3}
   NESTED_CHARTER_CLASS                                // [a[bc]]
 }
