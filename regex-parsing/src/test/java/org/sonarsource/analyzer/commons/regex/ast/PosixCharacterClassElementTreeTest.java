@@ -22,8 +22,11 @@ package org.sonarsource.analyzer.commons.regex.ast;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.analyzer.commons.regex.RegexFeature;
+import org.sonarsource.analyzer.commons.regex.RegexParserTestUtils;
+import org.sonarsource.analyzer.commons.regex.helpers.RegexTreeHelper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.CHARACTER;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertKind;
@@ -85,6 +88,22 @@ class PosixCharacterClassElementTreeTest {
     assertNonPosixClass("[[alpha]]");
   }
 
+  @Test
+  void posixCharacterClassWithoutFeatureSupport() {
+    // Java
+    RegexTree tree = assertSuccessfulParse("[[:alpha:]]", RegexFeature.NESTED_CHARTER_CLASS);
+    CharacterClassTree characterClass = assertType(CharacterClassTree.class, tree);
+    assertThat(characterClass.characterClassElementKind()).isEqualTo(CharacterClassElementTree.Kind.NESTED_CHARACTER_CLASS);
+
+    // Python
+    tree = assertSuccessfulParse("[[:alpha:]]");
+    SequenceTree sequence = assertType(SequenceTree.class, tree);
+    List<RegexTree> items = sequence.getItems();
+    assertThat(items).hasSize(2);
+    assertKind(RegexTree.Kind.CHARACTER_CLASS, items.get(0));
+    assertKind(RegexTree.Kind.CHARACTER, items.get(1));
+  }
+
   private void assertPosixClass(String regex, String expectedProperty, boolean isNegation) {
     RegexTree tree = assertSuccessfulParse(regex, RegexFeature.POSIX_CHARACTER_CLASS);
     assertPosixClass(tree, expectedProperty, isNegation);
@@ -106,13 +125,7 @@ class PosixCharacterClassElementTreeTest {
 
   private void assertNonPosixClass(String regex) {
     RegexTree tree = assertSuccessfulParse(regex, RegexFeature.POSIX_CHARACTER_CLASS);
-    assertNonPosixClass(tree);
-  }
-
-  private void assertNonPosixClass(RegexSyntaxElement tree) {
-    assertThat(tree).isInstanceOf(CharacterClassTree.class);
-    CharacterClassElementTree classElementTree = ((CharacterClassTree)tree).getContents();
-    assertThat(classElementTree).isNotInstanceOf(PosixCharacterClassElementTree.class);
+    assertThat(tree).isNotInstanceOf(CharacterClassTree.class);
   }
 
 }

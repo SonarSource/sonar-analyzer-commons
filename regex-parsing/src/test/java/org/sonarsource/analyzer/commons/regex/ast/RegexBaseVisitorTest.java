@@ -155,7 +155,7 @@ class RegexBaseVisitorTest {
     void visitingRegexWithVariousFeatures() {
       LeafCollector visitor = new LeafCollector();
       visitor.visit(RegexParserTestUtils.assertSuccessfulParseResult(
-        "^[ab&&[^c]]+|(?<x>d)[e-f][\\\\x01-\\\\x02].\\\\1\\\\k<x>\\\\w\\\\x0A\\\\R$", RegexFeature.JAVA_SYNTAX_GROUP_NAME)
+        "^[ab&&[^c]]+|(?<x>d)[e-f][\\\\x01-\\\\x02].\\\\1\\\\k<x>\\\\w\\\\x0A\\\\R$", RegexFeature.JAVA_SYNTAX_GROUP_NAME, RegexFeature.NESTED_CHARTER_CLASS)
       );
       assertThat(visitor.visitedCharacters()).isEqualTo(
         "<boundary:^>abcd<range:e-f><range:\u0001-\u0002><dot><backref:1><backref:x><char-class-escape:\\\\w>\n<boundary:$>"
