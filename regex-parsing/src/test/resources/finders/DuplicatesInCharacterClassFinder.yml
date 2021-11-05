@@ -1,3 +1,4 @@
+- 'features': ALL
 - '[0-99]' # Noncompliant {{Remove duplicates in this character class.}}
 #   ^^^^
 - '[90-9]' # Noncompliant
@@ -88,3 +89,6 @@
 
 - '[😂😊]'
 - '[^\ud800\udc00-\udbff\udfff]'
+
+- 'features' : ALL | ^NESTED_CHARTER_CLASS
+- '[[[]'  # Noncompliant

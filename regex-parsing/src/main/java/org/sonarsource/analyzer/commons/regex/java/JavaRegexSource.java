@@ -32,7 +32,8 @@ public class JavaRegexSource extends RegexSource {
     RegexFeature.ATOMIC_GROUP,
     RegexFeature.POSSESSIVE_QUANTIFIER,
     RegexFeature.ESCAPED_CHARACTER_CLASS,
-    RegexFeature.JAVA_ESCAPING
+    RegexFeature.JAVA_ESCAPING,
+    RegexFeature.NESTED_CHARTER_CLASS
   );
 
   public JavaRegexSource(String sourceText) {

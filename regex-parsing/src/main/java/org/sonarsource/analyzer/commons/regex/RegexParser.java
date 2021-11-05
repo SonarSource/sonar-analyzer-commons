@@ -964,7 +964,7 @@ public class RegexParser {
 
   @CheckForNull
   protected CharacterClassElementTree parseCharacterClassElement(boolean isAtBeginning) {
-    if (characters.lookAhead(1) == ':' && source.supportsFeature(RegexFeature.POSIX_CHARACTER_CLASS)) {
+    if (characters.currentIs("[:") && source.supportsFeature(RegexFeature.POSIX_CHARACTER_CLASS)) {
       PosixCharacterClassElementTree tree = parsePosixCharacterClass();
       if (tree != null) return tree;
     }
@@ -988,8 +988,6 @@ public class RegexParser {
           // The 'x' here doesn't matter because we're not going to actually use the AST when there are syntax errors.
           return characterTree(new SourceCharacter(source, escape.getRange(), 'x'));
         }
-      case '[':
-        return parseCharacterClass();
       case ']':
         if (isAtBeginning) {
           characters.moveNext();
@@ -997,6 +995,11 @@ public class RegexParser {
         } else {
           return null;
         }
+      case '[':
+        if (supportsAnyOfFeatures(RegexFeature.NESTED_CHARTER_CLASS)) {
+          return parseCharacterClass();
+        }
+        // no break is expected
       default:
         characters.moveNext();
         return parseCharacterRange(characterTree(startCharacter));
