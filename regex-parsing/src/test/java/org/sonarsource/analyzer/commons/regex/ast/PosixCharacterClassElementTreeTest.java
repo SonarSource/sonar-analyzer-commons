@@ -26,6 +26,7 @@ import org.sonarsource.analyzer.commons.regex.RegexParserTestUtils;
 import org.sonarsource.analyzer.commons.regex.helpers.RegexTreeHelper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.CHARACTER;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertKind;
@@ -85,7 +86,22 @@ class PosixCharacterClassElementTreeTest {
   void nonPosixCharacterClassElements() {
     assertNonPosixClass("[[:alpha]]");
     assertNonPosixClass("[[alpha]]");
-    assertNonPosixClass("[al[pha]]");
+  }
+
+  @Test
+  void posixCharacterClassWithoutFeatureSupport() {
+    // Java
+    RegexTree tree = assertSuccessfulParse("[[:alpha:]]", RegexFeature.NESTED_CHARTER_CLASS);
+    CharacterClassTree characterClass = assertType(CharacterClassTree.class, tree);
+    assertThat(characterClass.characterClassElementKind()).isEqualTo(CharacterClassElementTree.Kind.NESTED_CHARACTER_CLASS);
+
+    // Python
+    tree = assertSuccessfulParse("[[:alpha:]]");
+    SequenceTree sequence = assertType(SequenceTree.class, tree);
+    List<RegexTree> items = sequence.getItems();
+    assertThat(items).hasSize(2);
+    assertKind(RegexTree.Kind.CHARACTER_CLASS, items.get(0));
+    assertKind(RegexTree.Kind.CHARACTER, items.get(1));
   }
 
   private void assertPosixClass(String regex, String expectedProperty, boolean isNegation) {
