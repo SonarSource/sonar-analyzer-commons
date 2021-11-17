@@ -106,9 +106,11 @@ class XmlParser {
 
   private void parseXml() throws XMLStreamException {
     XMLStreamReader xmlReader = SafeStaxParserFactory.createXMLInputFactory().createXMLStreamReader(new StringReader(content));
+    boolean emptyCdata = false;
 
     while (xmlReader.hasNext()) {
-      previousEventIsText = xmlReader.getEventType() == XMLStreamConstants.CHARACTERS;
+      previousEventIsText = (emptyCdata && previousEventIsText) || (xmlReader.getEventType() == XMLStreamConstants.CHARACTERS);
+      emptyCdata = false;
       xmlReader.next();
       XmlFilePosition startLocation = new XmlFilePosition(content, xmlReader.getLocation());
 
@@ -135,7 +137,9 @@ class XmlParser {
           break;
 
         case XMLStreamConstants.CDATA:
-          if (!xmlReader.getText().isEmpty()) {
+          if (xmlReader.getText().isEmpty()) {
+            emptyCdata = true;
+          } else {
             // Empty CDATA are not detected by the xerces DocumentBuilder
             visitCdata(startLocation);
           }
@@ -150,7 +154,8 @@ class XmlParser {
       }
 
       if (xmlReader.getEventType() != XMLStreamConstants.START_ELEMENT
-        && xmlReader.getEventType() != XMLStreamConstants.END_ELEMENT) {
+        && xmlReader.getEventType() != XMLStreamConstants.END_ELEMENT
+        && !emptyCdata) {
         // as no end event for non-element nodes, consider them closed
         currentNodeIsClosed = true;
       }
