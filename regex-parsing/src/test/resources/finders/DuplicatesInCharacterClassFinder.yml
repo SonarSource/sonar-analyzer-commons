@@ -79,8 +79,9 @@
 - '(?U)[[^\W]a]' # False negative because once we negate a character class whose contents we don't
   # fully understand, we ignore it to avoid false positives
 - '[[a-z&&b-e]c]' # FN because we don't support intersections
-- '(?i)[A-_d-{]' # FN because we ignore case insensitivity unless both ends of the ranges are letters
-- '(?i)[A-z_]' # FN because A-z gets misinterpreted as A-Za-z due to the way we handle case insensitivity
+- '(?i)[A-_d-{]' # Noncompliant
+- '(?i)[A-z_]' # Noncompliant
+- '(?iu)[Ä-Üä]' # Noncompliant
 - '[\p{Armenian}x]' # FN because we don't support \p at the moment
 - '[\\\\abc]'
 - '[\s"\:\{\}\[\],&\*\#\?]'
