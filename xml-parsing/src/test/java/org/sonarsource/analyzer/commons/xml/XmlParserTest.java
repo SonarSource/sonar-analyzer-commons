@@ -359,6 +359,86 @@ public class XmlParserTest {
   }
 
   @Test
+  public void testEmptyCdataPrefixedByCharacters() {
+    Document document = XmlFile.create("<tag>abc<![CDATA[]]></tag>").getDocument();
+    Node topTag = document.getFirstChild();
+    assertThat(topTag.getChildNodes().getLength()).isEqualTo(1);
+    assertRange(topTag, Location.START, 1, 0, 1, 5);
+    assertRange(topTag, Location.END, 1, 20, 1, 26);
+    assertThat(topTag.getChildNodes().item(0).getTextContent()).isEqualTo("abc");
+  }
+
+  @Test
+  public void testEmptyCdataFollowedByCharacters() {
+    Document document = XmlFile.create("<tag><![CDATA[]]>def</tag>").getDocument();
+    Node topTag = document.getFirstChild();
+    assertThat(topTag.getChildNodes().getLength()).isEqualTo(1);
+    assertRange(topTag, Location.START, 1, 0, 1, 5);
+    assertRange(topTag, Location.END, 1, 20, 1, 26);
+    assertThat(topTag.getChildNodes().item(0).getTextContent()).isEqualTo("def");
+  }
+
+  @Test
+  public void testEmptyCdataWrappedByCharacters() {
+    Document document = XmlFile.create("<tag>abc<![CDATA[]]>def</tag>").getDocument();
+    Node topTag = document.getFirstChild();
+    assertThat(topTag.getChildNodes().getLength()).isEqualTo(1);
+    assertRange(topTag, Location.START, 1, 0, 1, 5);
+    assertRange(topTag, Location.END, 1, 23, 1, 29);
+    assertThat(topTag.getChildNodes().item(0).getTextContent()).isEqualTo("abcdef");
+  }
+
+  @Test
+  public void testMultipleEmptyCdataWrappedByCharacters() {
+    Document document = XmlFile.create("<tag>abc<![CDATA[]]><![CDATA[]]>def</tag>").getDocument();
+    Node topTag = document.getFirstChild();
+    assertThat(topTag.getChildNodes().getLength()).isEqualTo(1);
+    assertRange(topTag, Location.START, 1, 0, 1, 5);
+    assertRange(topTag, Location.END, 1, 35, 1, 41);
+    assertThat(topTag.getChildNodes().item(0).getTextContent()).isEqualTo("abcdef");
+  }
+
+  @Test
+  public void testEmptyCdataFollowedByTag() {
+    Document document = XmlFile.create("<tag><![CDATA[]]><int /></tag>").getDocument();
+    Node topTag = document.getFirstChild();
+    assertThat(topTag.getChildNodes().getLength()).isEqualTo(1);
+    assertRange(topTag, Location.START, 1, 0, 1, 5);
+    assertRange(topTag, Location.END, 1, 24, 1, 30);
+    assertThat(topTag.getChildNodes().item(0).getNodeName()).isEqualTo("int");
+  }
+
+  @Test
+  public void testEmptyCdataPrefixedByTag() {
+    Document document = XmlFile.create("<tag><int /><![CDATA[]]></tag>").getDocument();
+    Node topTag = document.getFirstChild();
+    assertThat(topTag.getChildNodes().getLength()).isEqualTo(1);
+    assertRange(topTag, Location.START, 1, 0, 1, 5);
+    assertRange(topTag, Location.END, 1, 24, 1, 30);
+    assertThat(topTag.getChildNodes().item(0).getNodeName()).isEqualTo("int");
+  }
+
+  @Test
+  public void testEmptyCdataWrappedByMix() {
+    Document document = XmlFile.create("<tag><int /><![CDATA[]]>def</tag>").getDocument();
+    Node topTag = document.getFirstChild();
+    assertThat(topTag.getChildNodes().getLength()).isEqualTo(2);
+    assertRange(topTag, Location.START, 1, 0, 1, 5);
+    assertRange(topTag, Location.END, 1, 27, 1, 33);
+    assertThat(topTag.getChildNodes().item(0).getNodeName()).isEqualTo("int");
+    assertThat(topTag.getChildNodes().item(1).getTextContent()).isEqualTo("def");
+  }
+
+  @Test
+  public void testEmptyCdataInTag() {
+    Document document = XmlFile.create("<tag><![CDATA[]]></tag>").getDocument();
+    Node topTag = document.getFirstChild();
+    assertThat(topTag.getChildNodes().getLength()).isZero();
+    assertRange(topTag, Location.START, 1, 0, 1, 5);
+    assertRange(topTag, Location.END, 1, 17, 1, 23);
+  }
+
+  @Test
   public void testCdataWithText() throws Exception {
     Document document = XmlFile.create("<tag>Text<![CDATA[<tag/><!-- Comment -->]]></tag>").getDocument();
     Node topTag = document.getFirstChild();
