@@ -28,7 +28,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import org.sonar.api.internal.google.common.annotations.VisibleForTesting;
 
 public class XPathBuilder {
 
@@ -60,12 +59,12 @@ public class XPathBuilder {
     }
   }
 
-  @VisibleForTesting
+  // Visible for testing
   static class XPathContext implements NamespaceContext {
 
     private final Map<String, String> namespaceByPrefixMap = new HashMap<>();
 
-    @VisibleForTesting
+    // Visible for testing
     void add(String prefix, String namespaceURI) {
       namespaceByPrefixMap.put(prefix, namespaceURI);
     }

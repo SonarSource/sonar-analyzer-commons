@@ -19,8 +19,6 @@
  */
 package org.sonarsource.analyzer.commons.collections;
 
-import org.sonar.api.internal.google.common.annotations.VisibleForTesting;
-
 import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.function.BiConsumer;
@@ -309,7 +307,7 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
     return new Node(AVLTree.EMPTY, AVLTree.EMPTY, key, value, bucket, 0);
   }
 
-  @VisibleForTesting
+  // Visible for testing
   static class Node extends AVLTree {
     private final AVLTree left;
     private final AVLTree right;
