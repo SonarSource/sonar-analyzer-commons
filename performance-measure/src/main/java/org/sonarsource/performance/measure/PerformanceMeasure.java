@@ -29,7 +29,6 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import javax.annotation.Nullable;
-import org.sonar.api.internal.google.common.annotations.VisibleForTesting;
 import org.sonarsource.performance.measure.log.Logger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -244,7 +243,7 @@ public final class PerformanceMeasure {
 
   }
 
-  @VisibleForTesting
+  // Visible for testing
   static void ensureParentDirectoryExists(Path path) throws IOException {
     Path parentDirectory = path.getParent();
     if (parentDirectory != null && !Files.isDirectory(parentDirectory)) {
@@ -252,12 +251,12 @@ public final class PerformanceMeasure {
     }
   }
 
-  @VisibleForTesting
+  // Visible for testing
   static void overrideTimeSupplierForTest(Supplier<Long> nanoTimeSupplier) {
     PerformanceMeasure.nanoTimeSupplier = nanoTimeSupplier;
   }
 
-  @VisibleForTesting
+  // Visible for testing
   static void deactivateAndClearCurrentMeasureForTest() {
     setGlobalDeactivation(true);
     THREAD_LOCAL_CURRENT_MEASURE.remove();

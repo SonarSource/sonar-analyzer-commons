@@ -21,7 +21,6 @@ package org.sonarsource.performance.measure.log;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.sonar.api.internal.google.common.annotations.VisibleForTesting;
 
 public abstract class Logger {
 
@@ -53,7 +52,7 @@ public abstract class Logger {
     return factory.apply(cls);
   }
 
-  @VisibleForTesting
+  // Visible for testing
   public static void overrideFactory(Function<Class<?>, Logger> factory, String sonarLoggerClass) {
     Logger.factory = factory;
     Logger.sonarApiLogger = sonarLoggerClass;

@@ -23,7 +23,6 @@ package org.sonarsource.analyzer.commons.regex.helpers;
 import java.util.HashMap;
 import java.util.Objects;
 import javax.annotation.CheckForNull;
-import org.sonar.api.internal.google.common.annotations.VisibleForTesting;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.BoundaryTree;
 import org.sonarsource.analyzer.commons.regex.ast.LookAroundTree;
@@ -118,7 +117,7 @@ public abstract class AbstractAutomataChecker {
     return false;
   }
 
-  @VisibleForTesting
+  // Visible for testing
   static class OrderedAutomataPairCache<T> extends HashMap<OrderedAutomataPair, T> {
 
     public static final int MAX_CACHE_SIZE = 5_000;
@@ -150,7 +149,7 @@ public abstract class AbstractAutomataChecker {
 
   }
 
-  @VisibleForTesting
+  // Visible for testing
   static class OrderedAutomataPair {
     public final SubAutomaton auto1;
     public final SubAutomaton auto2;
