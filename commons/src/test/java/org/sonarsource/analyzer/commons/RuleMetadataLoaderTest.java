@@ -24,12 +24,15 @@ import java.util.Collections;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonar.api.SonarRuntime;
+import org.sonar.api.internal.SonarRuntimeImpl;
 import org.sonar.api.rule.RuleKey;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.debt.DebtRemediationFunction;
 import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
+import org.sonar.api.utils.Version;
 import org.sonar.check.Rule;
 import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKey;
 
@@ -44,12 +47,15 @@ public class RuleMetadataLoaderTest {
   private RulesDefinition.Context context;
   private NewRepository newRepository;
   private RuleMetadataLoader ruleMetadataLoader;
+  // using SonarLint for simplicity (it requires less parameters)
+  private static final SonarRuntime SONAR_RUNTIME_9_2 = SonarRuntimeImpl.forSonarLint(Version.create(9, 2));
+  private static final SonarRuntime SONAR_RUNTIME_9_3 = SonarRuntimeImpl.forSonarLint(Version.create(9, 3));
 
   @Before
   public void setup() {
     context = new RulesDefinition.Context();
     newRepository = context.createRepository(RULE_REPOSITORY_KEY, "magic");
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_9_3);
   }
 
   @Test
@@ -187,7 +193,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "S100")
     class TestRule {
     }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_9_3);
     ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S100");
@@ -199,7 +205,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "S123")
     class TestRule {
     }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SONAR_RUNTIME_9_3);
     ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S123");
@@ -211,7 +217,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "S100")
     class TestRule {
     }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SONAR_RUNTIME_9_3);
     ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S100");
@@ -240,7 +246,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "S2092")
     class TestRule {
     }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SONAR_RUNTIME_9_3);
     ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
@@ -253,7 +259,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "S112")
     class TestRule {
     }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SONAR_RUNTIME_9_3);
     ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S112");
@@ -262,11 +268,39 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
+  public void test_security_standards_owasp_greater_9_3() {
+    @Rule(key = "S2092")
+    class TestRule {
+    }
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SONAR_RUNTIME_9_3);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
+    assertThat(rule.securityStandards()).containsExactlyInAnyOrder(
+      "cwe:311", "cwe:315", "cwe:614",
+      "owaspTop10-2021:a4", "owaspTop10-2021:a5",
+      "owaspTop10:a2", "owaspTop10:a3");
+  }
+
+  @Test
+  public void test_security_standards_owasp_before_9_3() {
+    @Rule(key = "S2092")
+    class TestRule {
+    }
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SONAR_RUNTIME_9_2);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
+    assertThat(rule.securityStandards()).containsExactlyInAnyOrder(
+      "cwe:311", "cwe:315", "cwe:614");
+  }
+
+  @Test
   public void test_invalid_json_string() {
     @Rule(key = "rule_missing_title")
     class TestRule {
     }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_9_3);
     try {
       ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
       fail("Should have failed");
@@ -281,7 +315,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "rule_wrong_tag")
     class TestRule {
     }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_9_3);
     try {
       ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
       fail("Should have failed");
@@ -296,7 +330,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "rule_wrong_cwe")
     class TestRule {
     }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, "org/sonarsource/analyzer/commons/profile_wrong_cwe.json");
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, "org/sonarsource/analyzer/commons/profile_wrong_cwe.json", SONAR_RUNTIME_9_3);
     try {
       ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
       fail("Should have failed");
