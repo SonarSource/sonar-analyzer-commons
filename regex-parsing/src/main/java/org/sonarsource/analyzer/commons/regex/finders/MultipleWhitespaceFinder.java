@@ -67,7 +67,7 @@ public class MultipleWhitespaceFinder extends RegexBaseVisitor {
   }
 
   private static boolean isWhitespace(RegexTree element) {
-    return element.is(RegexTree.Kind.CHARACTER) &&  Pattern.matches("\\s", ((CharacterTree) element).characterAsString());
+    return element.is(RegexTree.Kind.CHARACTER) && " ".equals(((CharacterTree) element).characterAsString());
   }
 
   private void reportMultipleWhitespaces(SequenceTree parentSequence, Deque<RegexTree> whitespaces) {

@@ -3,6 +3,7 @@
 - 'Hello,  world!'          # Noncompliant {{Replace spaces with quantifier `{1}`.}}
 - 'Hello, world!   '        # Noncompliant
 
+- '\r\n|\r': 'ms'
 - 'Hello , world!'
 - 'Hello, {3}world!'        # Compliant with quantifier
 - 'Hello,   world!' : 'x'   # Compliant with extended modifier
