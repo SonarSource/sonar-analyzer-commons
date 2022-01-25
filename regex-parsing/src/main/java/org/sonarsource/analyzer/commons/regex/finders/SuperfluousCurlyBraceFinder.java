@@ -28,7 +28,8 @@ import java.util.Collections;
 
 public class SuperfluousCurlyBraceFinder extends RegexBaseVisitor {
 
-  private static final String MESSAGE = "Rework this part of the regex to not match the empty string.";
+  public static final String REMOVE_UNNECESSARY_QUANTIFIER = "Remove this unnecessary quantifier.";
+  public static final String REMOVE_UNNECESSARILY_QUANTIFIED_EXPRESSION = "Remove this unnecessarily quantified expression.";
 
   private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
 
@@ -43,12 +44,15 @@ public class SuperfluousCurlyBraceFinder extends RegexBaseVisitor {
     int min = quantifier.getMinimumRepetitions();
     Integer max = quantifier.getMaximumRepetitions();
 
-    if (max != null && max == min) { // is it (xyz){N,N}
-      if (min == 1) { // is it (xyz){1}
+    // is it a (xyz){N} ? (or its equivalent (xyz){N,N})
+    if (max != null && max == min) {
+      // is it a (xyz){1} ?
+      if (min == 1) {
         super.visitRepetition(tree);
-        regexElementIssueReporter.report(quantifier, "Remove this unnecessary quantifier.", null, Collections.emptyList());
-      } else if (min == 0) {  // is it (xyz){0}
-        regexElementIssueReporter.report(tree, "Remove this unnecessarily quantified expression.", null, Collections.emptyList());
+        regexElementIssueReporter.report(quantifier, REMOVE_UNNECESSARY_QUANTIFIER, null, Collections.emptyList());
+        // is it a (xyz){0} ?
+      } else if (min == 0) {
+        regexElementIssueReporter.report(tree, REMOVE_UNNECESSARILY_QUANTIFIED_EXPRESSION, null, Collections.emptyList());
       }
     }
   }

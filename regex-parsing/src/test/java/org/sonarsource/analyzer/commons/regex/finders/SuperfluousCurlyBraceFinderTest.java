@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 
-public class SuperfluousCurlyBraceFinderTest {
+class SuperfluousCurlyBraceFinderTest {
 
   @Test
   void test() {
