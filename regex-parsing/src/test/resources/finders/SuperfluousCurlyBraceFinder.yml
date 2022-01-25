@@ -1,0 +1,14 @@
+- '(abc){1}' # Noncompliant {{Remove this unnecessary quantifier.}}
+- '(abc){1,1}' # Noncompliant {{Remove this unnecessary quantifier.}}
+
+- '(abc){0}' # Noncompliant {{Remove this unnecessarily quantified expression.}}
+- '(abc){0,0}' # Noncompliant {{Remove this unnecessarily quantified expression.}}
+
+- '{1}' # quantifier missing group
+- '{1,2,3}' # invalid quantifier
+
+- '(abc){0,}'
+- '(abc){1,}'
+- '(abc){2}'
+- '(abc){1,2}'
+- '(abc){0,1}'
