@@ -1,0 +1,8 @@
+---
+- 'Hello,   world!'         # Noncompliant {{Replace spaces with quantifier `{2}`.}}
+- 'Hello,  world!'          # Noncompliant {{Replace spaces with quantifier `{1}`.}}
+- 'Hello, world!   '        # Noncompliant
+
+- 'Hello , world!'
+- 'Hello, {3}world!'        # Compliant with quantifier
+- 'Hello,   world!' : 'x'   # Compliant with extended modifier
