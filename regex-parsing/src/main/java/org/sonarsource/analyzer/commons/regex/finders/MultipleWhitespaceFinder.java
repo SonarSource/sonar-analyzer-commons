@@ -52,6 +52,7 @@ public class MultipleWhitespaceFinder extends RegexBaseVisitor {
           whitespaces.add(item);
         } else if (whitespaces.size() > 1) {
           reportMultipleWhitespaces(sequence, whitespaces);
+          whitespaces.clear();
         } else {
           whitespaces.clear();
         }
@@ -73,7 +74,6 @@ public class MultipleWhitespaceFinder extends RegexBaseVisitor {
     // remove first whitespace to only report repeated whitespace
     whitespaces.removeFirst();
     regexElementIssueReporter.report(SubSequence.fromSequence(parentSequence, whitespaces), String.format(MESSAGE, whitespaces.size()), null, Collections.emptyList());
-    whitespaces.clear();
   }
 
   static class SubSequence implements RegexSyntaxElement {
