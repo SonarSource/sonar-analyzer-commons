@@ -157,8 +157,4 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
   private static String escapedCharacterToString(@Nullable EscapedCharacterClassTree escapedClass) {
     return (escapedClass == null) ? "" : (backslash(escapedClass) + escapedClass.getType() + getProperty(escapedClass));
   }
-
-  private static String backslash(RegexTree tree) {
-    return supportsAnyOfFeatures(tree, RegexFeature.JAVA_ESCAPING) ? "\\\\" : "\\";
-  }
 }

@@ -171,4 +171,10 @@ public class RegexBaseVisitor implements RegexVisitor {
     return Arrays.stream(features).anyMatch(source::supportsFeature);
   }
 
+  /**
+   * In some languages backslashes in strings must be escaped explicitly.
+   */
+  protected static String backslash(RegexTree tree) {
+    return supportsAnyOfFeatures(tree, RegexFeature.BACKSLASH_ESCAPING) ? "\\\\" : "\\";
+  }
 }

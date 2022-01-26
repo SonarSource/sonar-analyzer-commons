@@ -27,7 +27,7 @@ public enum RegexFeature {
   DOTNET_SYNTAX_GROUP_NAME,                           // (?<name>) and (?'name')
   PERL_SYNTAX_GROUP_NAME,                             // \k{name} and \g{name}
   JAVA_SYNTAX_GROUP_NAME,                             // (?<name>)
-  JAVA_ESCAPING,                                      // //// vs //
+  BACKSLASH_ESCAPING,                                      // //// vs //
   ATOMIC_GROUP,                                       // (?>a)
   POSSESSIVE_QUANTIFIER,                              // x++k
   ESCAPED_CHARACTER_CLASS,                            // \p{Lower}

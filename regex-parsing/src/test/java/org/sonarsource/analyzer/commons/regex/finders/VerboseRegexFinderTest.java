@@ -17,36 +17,24 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonarsource.analyzer.commons.regex.java;
+package org.sonarsource.analyzer.commons.regex.finders;
 
-import java.util.EnumSet;
-import java.util.Set;
-import org.sonarsource.analyzer.commons.regex.CharacterParser;
-import org.sonarsource.analyzer.commons.regex.RegexFeature;
-import org.sonarsource.analyzer.commons.regex.RegexSource;
+import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
+import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 
-public class JavaRegexSource extends RegexSource {
+class VerboseRegexFinderTest {
 
-  private static final Set<RegexFeature> FEATURES = EnumSet.of(
-    RegexFeature.JAVA_SYNTAX_GROUP_NAME,
-    RegexFeature.ATOMIC_GROUP,
-    RegexFeature.POSSESSIVE_QUANTIFIER,
-    RegexFeature.ESCAPED_CHARACTER_CLASS,
-    RegexFeature.BACKSLASH_ESCAPING,
-    RegexFeature.NESTED_CHARTER_CLASS
-  );
-
-  public JavaRegexSource(String sourceText) {
-    super(sourceText);
+  @Test
+  void test() {
+    Verifier.verify(new VerboseRegexFinderCheck(), "VerboseRegexFinder.yml");
   }
 
-  @Override
-  public CharacterParser createCharacterParser() {
-    return new JavaCharacterParser(this);
+  static class VerboseRegexFinderCheck extends FinderCheck {
+    @Override
+    public void checkRegex(RegexParseResult parseResult, RegexIssueReporter.ElementIssue regexElementIssueReporter, RegexIssueReporter.InvocationIssue invocationIssueReporter) {
+      new VerboseRegexFinder(regexElementIssueReporter).visit(parseResult);
+    }
   }
 
-  @Override
-  public Set<RegexFeature> features() {
-    return FEATURES;
-  }
 }
