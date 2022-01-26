@@ -22,14 +22,22 @@
 - '[x]'
 - '[12]'
 - '[1234]'
+- '[1-3]'
 - '[1-9abc]'
 - '[1-9a-bAB]'
 - '[1-9a-bA-Z!]'
+- '[1-2[a][b][c]]'
+- '[0-9[a][b][c]]'
+- '[0-9a-z[b][c]]'
+- '[0-9a-zA-Z[c]]'
 - 'x?'
 - 'x*'
 - 'x+'
 - 'x{2}'
 - '[\s\S]'
+- '[\w\S]'
+- '[\d\S]'
+- '[\s\d]'
 
 - 'features': ALL
 - '[0-9]'             # Noncompliant {{Use concise character class syntax '\\d' instead of '[0-9]'.}}
