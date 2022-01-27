@@ -46,7 +46,8 @@ public class UnquantifiedNonCapturingGroupFinder extends RegexBaseVisitor {
 
   @Override
   public void visitNonCapturingGroup(NonCapturingGroupTree tree) {
-    if (!quantifiedNonCapturingGroup && !tree.getElement().is(RegexTree.Kind.DISJUNCTION)) {
+    RegexTree groupElement = tree.getElement();
+    if (!(quantifiedNonCapturingGroup || groupElement == null || groupElement.is(RegexTree.Kind.DISJUNCTION))) {
       regexElementIssueReporter.report(tree, MESSAGE, null, Collections.emptyList());
     }
     quantifiedNonCapturingGroup = false;

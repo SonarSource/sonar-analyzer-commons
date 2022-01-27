@@ -3,8 +3,10 @@
 - '(?:number(?:two){2})'      # Noncompliant
 - '(?:number(?:two)){2}'      # Noncompliant
 - 'foo(?:number)bar'          # Noncompliant
+- '(?:)' # Noncompliant
 
 - '(?:number)?+'
 - 'number\d{2}'
 - '(?:number)?\d{2}'
 - '(?:number|string)'
+- '(?-x)'                     # Coverage, non capturing group with null as element
