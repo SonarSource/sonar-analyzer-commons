@@ -1,0 +1,17 @@
+- 'features': ALL
+- '[\\]'
+- '[^]'
+- '[$]'
+- '[*]'
+- '[+]'
+- '[?]'
+- '[.]'
+- '[|]'
+- '[(]'
+- '[{]'
+- '[[]'
+- '[0]' # Noncompliant  {{Replace this character class by the character itself.}}
+- '[[a]]' # Noncompliant  {{Replace this character class by the character itself.}}
+- '[1-2[3]4-5]' # Noncompliant  {{Replace this character class by the character itself.}}
+- '[0-1]'
+- '[^abc]'
