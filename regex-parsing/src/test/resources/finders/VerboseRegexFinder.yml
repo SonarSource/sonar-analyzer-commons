@@ -1,0 +1,47 @@
+- 'features': ALL | ^BACKSLASH_ESCAPING
+
+- '[\s\S]': 's'       # Noncompliant {{Use concise character class syntax '.' instead of '[\s\S]'.}}
+- '[\d\D]'            # Noncompliant {{Use concise character class syntax '.' instead of '[\d\D]'.}}
+- '[\w\W]'            # Noncompliant {{Use concise character class syntax '.' instead of '[\w\W]'.}}
+- '[0-9]'             # Noncompliant {{Use concise character class syntax '\d' instead of '[0-9]'.}}
+- '[^0-9]'            # Noncompliant {{Use concise character class syntax '\D' instead of '[^0-9]'.}}
+- '[A-Za-z0-9_]'      # Noncompliant {{Use concise character class syntax '\w' instead of '[A-Za-z0-9_]'.}}
+- '[0-9_A-Za-z]'      # Noncompliant
+- '[^A-Za-z0-9_]'     # Noncompliant {{Use concise character class syntax '\W' instead of '[^A-Za-z0-9_]'.}}
+- '[^0-9_A-Za-z]'     # Noncompliant
+- 'x{0,1}'            # Noncompliant {{Use concise quantifier syntax '?' instead of '{0,1}'.}}
+- 'x{0,1}?'           # Noncompliant
+- 'x{0,}'             # Noncompliant {{Use concise quantifier syntax '*' instead of '{0,}'.}}
+- 'x{0,}?'            # Noncompliant
+- 'x{1,}'             # Noncompliant {{Use concise quantifier syntax '+' instead of '{1,}'.}}
+- 'x{1,}?'            # Noncompliant
+- 'x{2,2}'            # Noncompliant {{Use concise quantifier syntax '{2}' instead of '{2,2}'.}}
+- 'x{2,2}?'           # Noncompliant
+
+
+- '[x]'
+- '[12]'
+- '[1234]'
+- '[1-3]'
+- '[1-9abc]'
+- '[1-9a-bAB]'
+- '[1-9a-bA-Z!]'
+- '[1-2[a][b][c]]'
+- '[0-9[a][b][c]]'
+- '[0-9a-z[b][c]]'
+- '[0-9a-zA-Z[c]]'
+- 'x?'
+- 'x*'
+- 'x+'
+- 'x{2}'
+- '[\s\S]'
+- '[\w\S]'
+- '[\d\S]'
+- '[\s\d]'
+
+- 'features': ALL
+- '[0-9]'             # Noncompliant {{Use concise character class syntax '\\d' instead of '[0-9]'.}}
+- '[^0-9]'            # Noncompliant {{Use concise character class syntax '\\D' instead of '[^0-9]'.}}
+- '[A-Za-z0-9_]'      # Noncompliant {{Use concise character class syntax '\\w' instead of '[A-Za-z0-9_]'.}}
+- '[0-9_A-Za-z]'      # Noncompliant
+- '[^A-Za-z0-9_]'     # Noncompliant {{Use concise character class syntax '\\W' instead of '[^A-Za-z0-9_]'.}}

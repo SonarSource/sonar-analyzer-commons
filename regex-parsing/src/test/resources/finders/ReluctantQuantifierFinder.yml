@@ -1,4 +1,4 @@
-- 'features': ALL | ^JAVA_ESCAPING
+- 'features': ALL | ^BACKSLASH_ESCAPING
 - '<.+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>]++".}}
 - '<\S+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\s]++".}}
 - '<\D+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\d]++".}}
@@ -71,7 +71,7 @@
 - '<\w{2,5}?>'
 
 # Test rule for dialects without positive quantifiers
-- 'features': ALL | ^POSSESSIVE_QUANTIFIER | ^JAVA_ESCAPING
+- 'features': ALL | ^POSSESSIVE_QUANTIFIER | ^BACKSLASH_ESCAPING
 - '<.+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>]+".}}
 - '<\S+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\s]+".}}
 - '<\D+?>' # Noncompliant {{Replace this use of a reluctant quantifier with "[^>\d]+".}}
