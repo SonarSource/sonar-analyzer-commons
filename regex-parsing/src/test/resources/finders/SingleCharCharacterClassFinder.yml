@@ -15,3 +15,8 @@
 - '[1-2[3]4-5]' # Noncompliant  {{Replace this character class by the character itself.}}
 - '[0-1]'
 - '[^abc]'
+- '[^a]'
+- 'features': ALL | ^NESTED_CHARTER_CLASS
+- '[[a]]' # Compliant in this mode
+- '[1-2[3]4-5]'
+

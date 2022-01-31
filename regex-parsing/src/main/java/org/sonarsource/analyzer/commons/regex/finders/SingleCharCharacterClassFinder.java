@@ -42,7 +42,9 @@ public class SingleCharCharacterClassFinder extends RegexBaseVisitor {
   @Override
   public void visitCharacterClass(CharacterClassTree tree) {
     CharacterClassElementTree charClass = tree.getContents();
-    checkElementTree(charClass);
+    if (!tree.isNegated()) {
+      checkElementTree(charClass);
+    }
     super.visitCharacterClass(tree);
   }
 
