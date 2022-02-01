@@ -236,9 +236,9 @@ public class RuleMetadataLoaderTest {
     RuleMetadataLoader.getStringArray(map, "key");
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void getStringArray_without_property() throws Exception {
-    RuleMetadataLoader.getStringArray(Collections.emptyMap(), "key");
+  @Test
+  public void getStringArray_without_property() {
+    assertThat(RuleMetadataLoader.getStringArray(Collections.emptyMap(), "key")).isEmpty();
   }
 
   @Test
@@ -293,7 +293,8 @@ public class RuleMetadataLoaderTest {
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
     assertThat(rule.securityStandards()).containsExactlyInAnyOrder(
-      "cwe:311", "cwe:315", "cwe:614");
+      "cwe:311", "cwe:315", "cwe:614",
+      "owaspTop10:a2", "owaspTop10:a3");
   }
 
   @Test

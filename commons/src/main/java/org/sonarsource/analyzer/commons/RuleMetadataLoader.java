@@ -185,16 +185,18 @@ public class RuleMetadataLoader {
 
   private void setSecurityStandardsFromJson(NewRule rule, Map<String, Object> securityStandards) {
     boolean isOwaspByVersionSupported = sonarRuntime.getApiVersion().isGreaterThanOrEqual(Version.create(9, 3));
-    if (isOwaspByVersionSupported) {
-      if (securityStandards.get(OWASP_2017) != null) {
-        for (String standard : getStringArray(securityStandards, OWASP_2017)) {
-          rule.addOwaspTop10(OwaspTop10Version.Y2017, RulesDefinition.OwaspTop10.valueOf(standard));
-        }
+
+    for (String standard : getStringArray(securityStandards, OWASP_2017)) {
+      if (isOwaspByVersionSupported) {
+        rule.addOwaspTop10(OwaspTop10Version.Y2017, RulesDefinition.OwaspTop10.valueOf(standard));
+      } else {
+        rule.addOwaspTop10(RulesDefinition.OwaspTop10.valueOf(standard));
       }
-      if (securityStandards.get(OWASP_2021) != null) {
-        for (String standard : getStringArray(securityStandards, OWASP_2021)) {
-          rule.addOwaspTop10(OwaspTop10Version.Y2021, RulesDefinition.OwaspTop10.valueOf(standard));
-        }
+    }
+
+    if (isOwaspByVersionSupported) {
+      for (String standard : getStringArray(securityStandards, OWASP_2021)) {
+        rule.addOwaspTop10(OwaspTop10Version.Y2021, RulesDefinition.OwaspTop10.valueOf(standard));
       }
     }
     if (securityStandards.get("CWE") != null) {
@@ -237,6 +239,9 @@ public class RuleMetadataLoader {
 
   static String[] getStringArray(Map<String, Object> map, String propertyName) {
     Object propertyValue = map.get(propertyName);
+    if (propertyValue == null) {
+      return new String[0];
+    }
     if (!(propertyValue instanceof List)) {
       throw new IllegalStateException(String.format(INVALID_PROPERTY_MESSAGE, propertyName));
     }
