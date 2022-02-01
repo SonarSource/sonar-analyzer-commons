@@ -19,6 +19,8 @@
  */
 package org.sonarsource.analyzer.commons.regex.php;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,6 +33,8 @@ import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
 import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
 
 public abstract class PhpStringCharacterParser implements CharacterParser {
+
+  private static final List<Character> COMMON_DELIMITER = Arrays.asList('/', '#', '~', '@', ';', '%', '`');
 
   final String sourceText;
   final int textLength;
@@ -118,6 +122,8 @@ public abstract class PhpStringCharacterParser implements CharacterParser {
         return createCharAndUpdateIndex('\'', 2);
       } else if (charAfterBackslash == '\\') {
         return createCharAndUpdateIndex('\\', 2);
+      } else if (COMMON_DELIMITER.contains(charAfterBackslash)) {
+        return createCharAndUpdateIndex(charAfterBackslash, 2);
       } else {
         return createCharAndUpdateIndex('\\', 1);
       }
@@ -161,22 +167,25 @@ public abstract class PhpStringCharacterParser implements CharacterParser {
             String hexValue = unicodeMatcher.group(1);
             return createCharAndUpdateIndex((char) Integer.parseInt(hexValue, 16), hexValue.length() + 4);
           }
-          return createCharAndUpdateIndex('\\', 1);
+          break;
         case 'x':
           Matcher hexMatcher = HEX_PATTERN.matcher(sourceText.substring(index + 1));
           if (hexMatcher.find()) {
             String hexValue = hexMatcher.group(1);
             return createCharAndUpdateIndex((char) Integer.parseInt(hexValue, 16), hexValue.length() + 2);
           }
-          return createCharAndUpdateIndex('\\', 1);
+          break;
         default:
+          if (COMMON_DELIMITER.contains(charAfterBackslash)) {
+            return createCharAndUpdateIndex(charAfterBackslash, 2);
+          }
           Matcher octalMatcher = OCTAL_PATTERN.matcher(sourceText.substring(index + 1));
           if (octalMatcher.find()) {
             String octalValue = octalMatcher.group(1);
             return createCharAndUpdateIndex((char) Integer.parseInt(octalValue, 8), octalValue.length() + 1);
           }
-          return createCharAndUpdateIndex('\\', 1);
       }
+      return createCharAndUpdateIndex('\\', 1);
     }
   }
 }
