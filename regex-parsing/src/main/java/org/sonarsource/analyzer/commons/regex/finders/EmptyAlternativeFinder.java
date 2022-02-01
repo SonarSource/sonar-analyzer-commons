@@ -41,15 +41,10 @@ public class EmptyAlternativeFinder extends RegexBaseVisitor {
   @Override
   public void visitDisjunction(DisjunctionTree tree) {
     List<RegexTree> alternatives = tree.getAlternatives();
-    for (int i = 0; i < alternatives.size(); ++i) {
-      RegexTree alternative = alternatives.get(i);
-      if (alternative.is(RegexTree.Kind.SEQUENCE)
-        && ((SequenceTree) alternative).getItems().isEmpty()
-        && i < alternatives.size() - 1) {
-        regexElementIssueReporter.report(alternative, MESSAGE, null, Collections.emptyList());
-      } else {
-        super.visit(alternative);
-      }
-    }
+    alternatives.stream().limit((alternatives.size() - 1))
+        .filter(alternative -> alternative.is(RegexTree.Kind.SEQUENCE))
+        .filter(alternative -> ((SequenceTree) alternative).getItems().isEmpty())
+        .forEach(alternative -> regexElementIssueReporter.report(alternative, MESSAGE, null, Collections.emptyList()));
+    super.visitDisjunction(tree);
   }
 }
