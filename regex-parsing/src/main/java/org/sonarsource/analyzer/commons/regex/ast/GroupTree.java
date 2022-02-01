@@ -30,7 +30,8 @@ public abstract class GroupTree extends RegexTree {
   private final RegexTree.Kind kind;
 
   /**
-   * Can only be null for non-capturing groups
+   * Can only be null for non-capturing groups (by design).
+   * If non-null - it represents an empty group iff `element` is a SequenceTree with empty `items` list.
    */
   @Nullable
   protected final RegexTree element;

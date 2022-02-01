@@ -1,0 +1,44 @@
+- 'foo()bar'   # Noncompliant {{Remove this empty group.}}
+- 'foo(?-)bar' # Noncompliant
+- 'foo(?-x)bar' # Noncompliant
+- 'foo(?:)bar' # Noncompliant
+- 'foo(?>)bar' # Noncompliant
+- 'foo(?=)bar' # Noncompliant
+- 'foo(?!)bar' # Noncompliant
+- 'foo(?<=)bar' # Noncompliant
+- 'foo(?<!)bar' # Noncompliant
+
+- '(foo()bar)'   # Noncompliant
+- '(foo(?-)bar)' # Noncompliant
+- '(foo(?:)bar)' # Noncompliant
+- '(foo(?>)bar)' # Noncompliant
+- '(foo(?=)bar)' # Noncompliant
+- '(foo(?!)bar)' # Noncompliant
+- '(foo(?<=)bar)' # Noncompliant
+- '(foo(?<!)bar)' # Noncompliant
+
+- 'foo(x)bar'   # Compliant
+- 'foo(?:x)bar' # Compliant
+- 'foo(?>x)bar' # Compliant
+- 'foo(?=x)bar' # Compliant
+- 'foo(?!x)bar' # Compliant
+- 'foo(?<=x)bar' # Compliant
+- 'foo(?<!x)bar' # Compliant
+
+- '[foo()bar]'   # Compliant
+- '[foo(?-)bar]' # Compliant
+- '[foo(?:)bar]' # Compliant
+- '[foo(?>)bar]' # Compliant
+- '[foo(?=x)bar]' # Compliant
+- '[foo(?!x)bar]' # Compliant
+- '[foo(?<=x)bar]' # Compliant
+- '[foo(?<!x)bar]' # Compliant
+
+- '(foo(|)bar)'   # Compliant
+- '(foo(?-|)bar)' # Compliant
+- '(foo(?:|)bar)' # Compliant
+- '(foo(?>|)bar)' # Compliant
+- '(foo(?=|)bar)' # Compliant
+- '(foo(?!|)bar)' # Compliant
+- '(foo(?<=|)bar)' # Compliant
+- '(foo(?<!|)bar)' # Compliant
