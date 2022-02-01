@@ -20,7 +20,14 @@
 package org.sonarsource.analyzer.commons.regex.finders;
 
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
-import org.sonarsource.analyzer.commons.regex.ast.*;
+import org.sonarsource.analyzer.commons.regex.ast.GroupTree;
+import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
+import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
+import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
+import org.sonarsource.analyzer.commons.regex.ast.AtomicGroupTree;
+import org.sonarsource.analyzer.commons.regex.ast.CapturingGroupTree;
+import org.sonarsource.analyzer.commons.regex.ast.NonCapturingGroupTree;
+import org.sonarsource.analyzer.commons.regex.ast.LookAroundTree;
 
 import java.util.Collections;
 
@@ -36,10 +43,8 @@ public class EmptyGroupFinder extends RegexBaseVisitor {
 
   private void visitGroupTree(GroupTree groupTree) {
     RegexTree element = groupTree.getElement();
-    // Question: Is SequenceTree the only Tree type that may be parsed from <empty> Regex literal?
-    //           If not - we should also handle the other possibilities here:
     if (element == null
-        || element instanceof SequenceTree && ((SequenceTree) element).getItems().isEmpty()) {
+      || (element instanceof SequenceTree && ((SequenceTree) element).getItems().isEmpty())) {
       regexElementIssueReporter.report(groupTree, MESSAGE, null, Collections.emptyList());
     } else {
       visit(element);
@@ -58,6 +63,11 @@ public class EmptyGroupFinder extends RegexBaseVisitor {
 
   @Override
   public void visitAtomicGroup(AtomicGroupTree tree) {
+    visitGroupTree(tree);
+  }
+
+  @Override
+  public void visitLookAround(LookAroundTree tree) {
     visitGroupTree(tree);
   }
 }
