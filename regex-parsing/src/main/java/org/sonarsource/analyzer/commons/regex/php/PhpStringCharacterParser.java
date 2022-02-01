@@ -34,7 +34,7 @@ import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
 
 public abstract class PhpStringCharacterParser implements CharacterParser {
 
-  private static final List<Character> COMMON_DELIMITER = Arrays.asList('/', '#', '~', '@', ';', '%', '`');
+  private static final List<Character> COMMON_DELIMITERS = Arrays.asList('/', '#', '~', '@', ';', '%', '`');
 
   final String sourceText;
   final int textLength;
@@ -97,12 +97,17 @@ public abstract class PhpStringCharacterParser implements CharacterParser {
       if (index + 1 >= textLength) {
         return createCharAndUpdateIndex('\\', 1);
       }
-      return parsePhpEscapeSequence();
+      char charAfterBackslash = sourceText.charAt(index + 1);
+      // escape possible delimiters
+      if (COMMON_DELIMITERS.contains(charAfterBackslash)) {
+        return createCharAndUpdateIndex(charAfterBackslash, 2);
+      }
+      return parsePhpEscapeSequence(charAfterBackslash);
     }
     return createCharAndUpdateIndex(ch, 1);
   }
 
-  abstract SourceCharacter parsePhpEscapeSequence();
+  abstract SourceCharacter parsePhpEscapeSequence(char charAfterBackslash);
 
   SourceCharacter createCharAndUpdateIndex(char ch, int length) {
     int startIndex = index;
@@ -116,14 +121,11 @@ public abstract class PhpStringCharacterParser implements CharacterParser {
       super(source);
     }
 
-    SourceCharacter parsePhpEscapeSequence() {
-      char charAfterBackslash = sourceText.charAt(index + 1);
+    SourceCharacter parsePhpEscapeSequence(char charAfterBackslash) {
       if (charAfterBackslash == '\'') {
         return createCharAndUpdateIndex('\'', 2);
       } else if (charAfterBackslash == '\\') {
         return createCharAndUpdateIndex('\\', 2);
-      } else if (COMMON_DELIMITER.contains(charAfterBackslash)) {
-        return createCharAndUpdateIndex(charAfterBackslash, 2);
       } else {
         return createCharAndUpdateIndex('\\', 1);
       }
@@ -140,8 +142,7 @@ public abstract class PhpStringCharacterParser implements CharacterParser {
       super(source);
     }
 
-    SourceCharacter parsePhpEscapeSequence() {
-      char charAfterBackslash = sourceText.charAt(index + 1);
+    SourceCharacter parsePhpEscapeSequence(char charAfterBackslash) {
       switch (charAfterBackslash) {
         case '\\':
           return createCharAndUpdateIndex('\\', 2);
@@ -176,9 +177,6 @@ public abstract class PhpStringCharacterParser implements CharacterParser {
           }
           break;
         default:
-          if (COMMON_DELIMITER.contains(charAfterBackslash)) {
-            return createCharAndUpdateIndex(charAfterBackslash, 2);
-          }
           Matcher octalMatcher = OCTAL_PATTERN.matcher(sourceText.substring(index + 1));
           if (octalMatcher.find()) {
             String octalValue = octalMatcher.group(1);

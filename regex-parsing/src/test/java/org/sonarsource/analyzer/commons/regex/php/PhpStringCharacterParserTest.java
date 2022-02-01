@@ -44,6 +44,9 @@ class PhpStringCharacterParserTest {
 
     assertThat(chars(singleQuoted("\\"))).containsExactly('\\');
 
+    assertThat(chars(singleQuoted("\\/"))).containsExactly('/');
+    assertThat(chars(singleQuoted("\\#\\`\\~\\%\\@\\;"))).containsExactly('#', '`', '~', '%', '@', ';');
+
     assertThat(chars(singleQuoted("\\n"))).containsExactly('\\', 'n');
     assertThat(chars(singleQuoted("\\r"))).containsExactly('\\', 'r');
     assertThat(chars(singleQuoted("\\t"))).containsExactly('\\', 't');
@@ -66,6 +69,9 @@ class PhpStringCharacterParserTest {
     assertThat(chars(doubleQuoted("\\'\\x\\\""))).containsExactly('\\', '\'', '\\', 'x', '"');
 
     assertThat(chars(doubleQuoted("\\"))).containsExactly('\\');
+
+    assertThat(chars(doubleQuoted("\\/"))).containsExactly('/');
+    assertThat(chars(doubleQuoted("\\#\\`\\~\\%\\@\\;"))).containsExactly('#', '`', '~', '%', '@', ';');
 
     assertThat(chars(doubleQuoted("\\\\n"))).containsExactly('\\', 'n');
     assertThat(chars(doubleQuoted("\\n"))).containsExactly('\n');
