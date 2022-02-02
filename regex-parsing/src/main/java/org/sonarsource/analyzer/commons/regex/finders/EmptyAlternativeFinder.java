@@ -26,6 +26,7 @@ import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
+import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
 
 
 public class EmptyAlternativeFinder extends RegexBaseVisitor {
@@ -41,10 +42,17 @@ public class EmptyAlternativeFinder extends RegexBaseVisitor {
   @Override
   public void visitDisjunction(DisjunctionTree tree) {
     List<RegexTree> alternatives = tree.getAlternatives();
-    alternatives.stream().limit((alternatives.size() - 1))
-        .filter(alternative -> alternative.is(RegexTree.Kind.SEQUENCE))
-        .filter(alternative -> ((SequenceTree) alternative).getItems().isEmpty())
-        .forEach(alternative -> regexElementIssueReporter.report(alternative, MESSAGE, null, Collections.emptyList()));
+    for (int i = 0; i < alternatives.size() - 1; i++) {
+      if (isEmptyAlternative(alternatives.get(i))) {
+        SourceCharacter orOperator = tree.getOrOperators().get(i);
+        regexElementIssueReporter.report(orOperator, MESSAGE, null, Collections.emptyList());
+      }
+    }
+
     super.visitDisjunction(tree);
+  }
+
+  private static boolean isEmptyAlternative(RegexTree alternative) {
+    return alternative.is(RegexTree.Kind.SEQUENCE) && ((SequenceTree) alternative).getItems().isEmpty();
   }
 }
