@@ -43,11 +43,12 @@ public class EmptyGroupFinder extends RegexBaseVisitor {
 
   private void visitGroupTree(GroupTree groupTree) {
     RegexTree element = groupTree.getElement();
-    if (element == null
-      || (element instanceof SequenceTree && ((SequenceTree) element).getItems().isEmpty())) {
-      regexElementIssueReporter.report(groupTree, MESSAGE, null, Collections.emptyList());
-    } else {
-      visit(element);
+    if (element != null) {
+      if (element instanceof SequenceTree && ((SequenceTree) element).getItems().isEmpty()) {
+        regexElementIssueReporter.report(groupTree, MESSAGE, null, Collections.emptyList());
+      } else {
+        super.visit(element);
+      }
     }
   }
 
