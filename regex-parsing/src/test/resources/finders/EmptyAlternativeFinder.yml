@@ -1,4 +1,6 @@
 - '(mandatory||optional)' # Noncompliant {{Remove this empty alternative.}}
-- 'mandatory(|-optional)' # Noncompliant {{Remove this empty alternative.}}
-- '(mandatory|optional|)' # Compliant
-- 'mandatory(-optional|)' # Compliant
+- 'mandatory(|-optional)' # Noncompliant
+
+- '(?:mandatory)|optional'
+- '(mandatory|optional|)'
+- 'mandatory(-optional|)'
