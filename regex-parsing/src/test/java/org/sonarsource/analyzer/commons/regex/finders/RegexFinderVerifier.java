@@ -168,14 +168,22 @@ public final class RegexFinderVerifier {
     }
 
     private void reportIssue(IssueLocation.Range range, String message, List<RegexIssueLocation> secondaries) {
+      verifyHighlightableRange(range);
       SingleFileVerifier.Issue issue = verifier
         .reportIssue(message)
         .onRange(range.getLine(), range.getColumn(), range.getEndLine(), range.getEndColumn());
       secondaries.forEach(location -> {
         IssueLocation.Range secondaryRange = issueLocationInFile(location);
+        verifyHighlightableRange(range);
         issue.addSecondary(secondaryRange.getLine(), secondaryRange.getColumn(), secondaryRange.getEndLine(),
           secondaryRange.getEndColumn(), location.message());
       });
+    }
+
+    private void verifyHighlightableRange(IssueLocation.Range range) {
+      if (range.getLine() == range.getEndLine() && range.getColumn() == range.getEndColumn()) {
+        throw new AssertionFailedError(String.format("Fail to report location on line %d which has no highlightable range", range.getLine()));
+      }
     }
 
     @Override
