@@ -73,7 +73,7 @@
 
   <properties>
     <!-- versions -->
-    <version.sonar>8.9.0.43852</version.sonar>
+    <version.sonar>9.3.0.51899</version.sonar>
     <version.assertj>3.17.1</version.assertj>
     <version.jsr305>3.0.2</version.jsr305>
     <version.mockito>3.5.7</version.mockito>

@@ -26,14 +26,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import org.sonar.api.SonarRuntime;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinition.DebtRemediationFunctions;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.server.rule.RulesDefinition.NewRule;
+import org.sonar.api.server.rule.RulesDefinition.OwaspTop10Version;
 import org.sonar.api.server.rule.RulesDefinitionAnnotationLoader;
 import org.sonar.api.utils.AnnotationUtils;
+import org.sonar.api.utils.Version;
 import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKey;
 import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKeys;
 
@@ -49,20 +52,25 @@ public class RuleMetadataLoader {
   private static final String SECURITY_HOTSPOT = "SECURITY_HOTSPOT";
   private final String resourceFolder;
   private final Set<String> activatedByDefault;
-  private JsonParser jsonParser;
+  private final JsonParser jsonParser;
+  private final SonarRuntime sonarRuntime;
 
-  public RuleMetadataLoader(String resourceFolder) {
-    this(resourceFolder, Collections.emptySet());
+  private static final String OWASP_2021 = "OWASP Top 10 2021";
+  private static final String OWASP_2017 = "OWASP";
+
+  public RuleMetadataLoader(String resourceFolder, SonarRuntime sonarRuntime) {
+    this(resourceFolder, Collections.emptySet(), sonarRuntime);
   }
 
-  public RuleMetadataLoader(String resourceFolder, String defaultProfilePath) {
-    this(resourceFolder, BuiltInQualityProfileJsonLoader.loadActiveKeysFromJsonProfile(defaultProfilePath));
+  public RuleMetadataLoader(String resourceFolder, String defaultProfilePath, SonarRuntime sonarRuntime) {
+    this(resourceFolder, BuiltInQualityProfileJsonLoader.loadActiveKeysFromJsonProfile(defaultProfilePath), sonarRuntime);
   }
 
-  private RuleMetadataLoader(String resourceFolder, Set<String> activatedByDefault) {
+  private RuleMetadataLoader(String resourceFolder, Set<String> activatedByDefault, SonarRuntime sonarRuntime) {
     this.resourceFolder = resourceFolder;
     this.jsonParser = new JsonParser();
     this.activatedByDefault = activatedByDefault;
+    this.sonarRuntime = sonarRuntime;
   }
 
   public void addRulesByAnnotatedClass(NewRepository repository, List<Class<?>> ruleClasses) {
@@ -77,12 +85,11 @@ public class RuleMetadataLoader {
     }
   }
 
-  private NewRule addRuleByAnnotatedClass(NewRepository repository, Class<?> ruleClass) {
+  private void addRuleByAnnotatedClass(NewRepository repository, Class<?> ruleClass) {
     NewRule rule = addAnnotatedRule(repository, ruleClass);
     setDescriptionFromHtml(rule);
     setMetadataFromJson(rule);
     setDefaultActivation(rule);
-    return rule;
   }
 
   private void setDefaultActivation(NewRule rule) {
@@ -126,7 +133,7 @@ public class RuleMetadataLoader {
     rule.addDeprecatedRuleKey(repoKey, deprecatedRuleKey.ruleKey());
   }
 
-  private NewRule addRuleByRuleKey(NewRepository repository, String ruleKey) {
+  private void addRuleByRuleKey(NewRepository repository, String ruleKey) {
     if (ruleKey.length() == 0) {
       throw new IllegalStateException("Empty key");
     }
@@ -134,7 +141,6 @@ public class RuleMetadataLoader {
     setDescriptionFromHtml(rule);
     setMetadataFromJson(rule);
     setDefaultActivation(rule);
-    return rule;
   }
 
   private void setDescriptionFromHtml(NewRule rule) {
@@ -177,10 +183,20 @@ public class RuleMetadataLoader {
     }
   }
 
-  private static void setSecurityStandardsFromJson(NewRule rule, Map<String, Object> securityStandards) {
-    if (securityStandards.get("OWASP") != null) {
-      for (String standard : getStringArray(securityStandards, "OWASP")) {
+  private void setSecurityStandardsFromJson(NewRule rule, Map<String, Object> securityStandards) {
+    boolean isOwaspByVersionSupported = sonarRuntime.getApiVersion().isGreaterThanOrEqual(Version.create(9, 3));
+
+    for (String standard : getStringArray(securityStandards, OWASP_2017)) {
+      if (isOwaspByVersionSupported) {
+        rule.addOwaspTop10(OwaspTop10Version.Y2017, RulesDefinition.OwaspTop10.valueOf(standard));
+      } else {
         rule.addOwaspTop10(RulesDefinition.OwaspTop10.valueOf(standard));
+      }
+    }
+
+    if (isOwaspByVersionSupported) {
+      for (String standard : getStringArray(securityStandards, OWASP_2021)) {
+        rule.addOwaspTop10(OwaspTop10Version.Y2021, RulesDefinition.OwaspTop10.valueOf(standard));
       }
     }
     if (securityStandards.get("CWE") != null) {
@@ -223,6 +239,9 @@ public class RuleMetadataLoader {
 
   static String[] getStringArray(Map<String, Object> map, String propertyName) {
     Object propertyValue = map.get(propertyName);
+    if (propertyValue == null) {
+      return new String[0];
+    }
     if (!(propertyValue instanceof List)) {
       throw new IllegalStateException(String.format(INVALID_PROPERTY_MESSAGE, propertyName));
     }
