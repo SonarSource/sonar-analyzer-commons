@@ -1,6 +1,19 @@
-- '(mandatory||optional)' # Noncompliant {{Remove this empty alternative.}}
-- 'mandatory(|-optional)' # Noncompliant
+- '(mandatory||optional)'  # Noncompliant {{Remove this empty alternative.}}
+- '(|mandatory|optional|)' # Noncompliant
+- 'mandatory|-optional|'   # Noncompliant
+- '|mandatory|-optional'   # Noncompliant
+- '(mandatory|(|O|o|)ptional|)'  # Noncompliant
 
 - '(?:mandatory)|optional'
 - '(mandatory|optional|)'
+- '(mandatory|(O|o)ptional|)'
+- '(mandatory|(O|o|)ptional|)'
+- '(mandatory|(|O|o)ptional|)'
+- '(|mandatory|optional)'
+- 'mandatory(|-optional)'
 - 'mandatory(-optional|)'
+
+- 'foo(?:)bar'
+- 'foo(?>)bar'
+- 'foo(?=)bar'
+
