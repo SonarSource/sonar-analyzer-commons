@@ -81,14 +81,11 @@ public class EmptyAlternativeFinder extends RegexBaseVisitor {
     boolean lastIsEmpty = false;
     for (int i = 0; i < nAlternatives; i++) {
       if (isEmptyAlternative(alternatives.get(i))) {
-        if (i == 0) {
-          firstIsEmpty = true;
-        } else if (i == nAlternatives -1) {
-          lastIsEmpty = true;
-        }
+        firstIsEmpty |= (i == 0);
+        lastIsEmpty |= (i == nAlternatives -1);
 
         if (nestedGroupLevel == 0 || (0 < i && i < nAlternatives - 1)) {
-          SourceCharacter orOperator = tree.getOrOperators().get(i < nAlternatives - 1 ? i : i - 1);
+          SourceCharacter orOperator = tree.getOrOperators().get(i < nAlternatives - 1 ? i : (i - 1));
           regexElementIssueReporter.report(orOperator, MESSAGE_REMOVE_THIS, null, Collections.emptyList());
         }
       }
