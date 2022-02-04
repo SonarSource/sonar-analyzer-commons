@@ -33,6 +33,9 @@ public interface RegexVisitor {
 
   void visitDisjunction(DisjunctionTree tree);
 
+  /** Generic for all 4 different kinds of GroupTree(s) */
+  void visitGroup(GroupTree tree);
+
   void visitCapturingGroup(CapturingGroupTree tree);
 
   void visitNonCapturingGroup(NonCapturingGroupTree tree);

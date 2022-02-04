@@ -22,11 +22,8 @@ package org.sonarsource.analyzer.commons.regex.finders;
 import java.util.Collections;
 import java.util.List;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
-import org.sonarsource.analyzer.commons.regex.ast.AtomicGroupTree;
-import org.sonarsource.analyzer.commons.regex.ast.CapturingGroupTree;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
-import org.sonarsource.analyzer.commons.regex.ast.LookAroundTree;
-import org.sonarsource.analyzer.commons.regex.ast.NonCapturingGroupTree;
+import org.sonarsource.analyzer.commons.regex.ast.GroupTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
@@ -46,30 +43,9 @@ public class EmptyAlternativeFinder extends RegexBaseVisitor {
   }
 
   @Override
-  public void visitCapturingGroup(CapturingGroupTree tree) {
+  public void visitGroup(GroupTree tree) {
     nestedGroupLevel++;
-    super.visitCapturingGroup(tree);
-    nestedGroupLevel--;
-  }
-
-  @Override
-  public void visitNonCapturingGroup(NonCapturingGroupTree tree) {
-    nestedGroupLevel++;
-    super.visitNonCapturingGroup(tree);
-    nestedGroupLevel--;
-  }
-
-  @Override
-  public void visitAtomicGroup(AtomicGroupTree tree) {
-    nestedGroupLevel++;
-    super.visitAtomicGroup(tree);
-    nestedGroupLevel--;
-  }
-
-  @Override
-  public void visitLookAround(LookAroundTree tree) {
-    nestedGroupLevel++;
-    super.visitLookAround(tree);
+    super.visitGroup(tree);
     nestedGroupLevel--;
   }
 

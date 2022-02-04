@@ -44,7 +44,12 @@ public class CapturingGroupTree extends GroupTree {
 
   @Override
   public void accept(RegexVisitor visitor) {
-    visitor.visitCapturingGroup(this);
+    try {
+      visitor.getClass().getDeclaredMethod("visitCapturingGroup", CapturingGroupTree.class);
+      visitor.visitCapturingGroup(this);
+    } catch (NoSuchMethodException e) {
+      visitor.visitGroup(this);
+    }
   }
 
   public Optional<String> getName() {
