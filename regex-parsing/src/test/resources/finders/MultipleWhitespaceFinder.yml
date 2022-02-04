@@ -1,6 +1,6 @@
 ---
-- 'Hello,   world!'         # Noncompliant {{Replace spaces with quantifier `{2}`.}}
-- 'Hello,  world!'          # Noncompliant {{Replace spaces with quantifier `{1}`.}}
+- 'Hello,   world!'         # Noncompliant {{Replace spaces with quantifier `{3}`.}}
+- 'Hello,  world!'          # Noncompliant {{Replace spaces with quantifier `{2}`.}}
 - 'Hello, world!   '        # Noncompliant
 
 - '\r\n|\r': 'ms'
