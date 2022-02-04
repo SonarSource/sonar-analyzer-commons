@@ -58,6 +58,11 @@ public class NonCapturingGroupTree extends GroupTree {
 
   @Override
   public void accept(RegexVisitor visitor) {
-    visitor.visitNonCapturingGroup(this);
+    try {
+      visitor.getClass().getDeclaredMethod("visitNonCapturingGroup", NonCapturingGroupTree.class);
+      visitor.visitNonCapturingGroup(this);
+    } catch (NoSuchMethodException e) {
+      visitor.visitGroup(this);
+    }
   }
 }

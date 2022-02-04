@@ -67,7 +67,12 @@ public class ConditionalSubpatternTree extends GroupTree {
 
   @Override
   public void accept(RegexVisitor visitor) {
-    visitor.visitConditionalSubpattern(this);
+    try {
+      visitor.getClass().getDeclaredMethod("visitConditionalSubpattern", ConditionalSubpatternTree.class);
+      visitor.visitConditionalSubpattern(this);
+    } catch (NoSuchMethodException e) {
+      visitor.visitGroup(this);
+    }
   }
 
   @Nonnull

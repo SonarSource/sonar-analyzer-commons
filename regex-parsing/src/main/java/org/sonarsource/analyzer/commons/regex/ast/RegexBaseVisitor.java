@@ -82,6 +82,11 @@ public class RegexBaseVisitor implements RegexVisitor {
   }
 
   @Override
+  public void visitGroup(GroupTree tree) {
+    visit(tree.getElement());
+  }
+
+  @Override
   public void visitCapturingGroup(CapturingGroupTree tree) {
     visit(tree.getElement());
   }

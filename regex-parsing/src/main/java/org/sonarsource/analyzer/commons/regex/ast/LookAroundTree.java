@@ -61,7 +61,12 @@ public class LookAroundTree extends GroupTree {
 
   @Override
   public void accept(RegexVisitor visitor) {
-    visitor.visitLookAround(this);
+    try {
+      visitor.getClass().getDeclaredMethod("visitLookAround", LookAroundTree.class);
+      visitor.visitLookAround(this);
+    } catch (NoSuchMethodException e) {
+      visitor.visitGroup(this);
+    }
   }
 
   @Nonnull
