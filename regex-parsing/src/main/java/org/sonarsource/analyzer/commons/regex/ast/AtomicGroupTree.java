@@ -30,12 +30,7 @@ public class AtomicGroupTree extends GroupTree {
 
   @Override
   public void accept(RegexVisitor visitor) {
-    try {
-      visitor.getClass().getDeclaredMethod("visitAtomicGroup", AtomicGroupTree.class);
-      visitor.visitAtomicGroup(this);
-    } catch (NoSuchMethodException e) {
-      visitor.visitGroup(this);
-    }
+    visitor.visitAtomicGroup(this);
   }
 
   @Nonnull

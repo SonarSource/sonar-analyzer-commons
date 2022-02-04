@@ -91,25 +91,22 @@ public class RegexBaseVisitor implements RegexVisitor {
 
   @Override
   public void visitCapturingGroup(CapturingGroupTree tree) {
-    visit(tree.getElement());
+    visitGroup(tree);
   }
 
   @Override
   public void visitNonCapturingGroup(NonCapturingGroupTree tree) {
-    RegexTree element = tree.getElement();
-    if (element != null) {
-      visit(element);
-    }
+    visitGroup(tree);
   }
 
   @Override
   public void visitAtomicGroup(AtomicGroupTree tree) {
-    visit(tree.getElement());
+    visitGroup(tree);
   }
 
   @Override
   public void visitLookAround(LookAroundTree tree) {
-    visit(tree.getElement());
+    visitGroup(tree);
   }
 
   @Override
