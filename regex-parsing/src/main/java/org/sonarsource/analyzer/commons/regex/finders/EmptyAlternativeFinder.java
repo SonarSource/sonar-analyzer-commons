@@ -22,7 +22,11 @@ package org.sonarsource.analyzer.commons.regex.finders;
 import java.util.Collections;
 import java.util.List;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
+import org.sonarsource.analyzer.commons.regex.ast.AtomicGroupTree;
+import org.sonarsource.analyzer.commons.regex.ast.CapturingGroupTree;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
+import org.sonarsource.analyzer.commons.regex.ast.LookAroundTree;
+import org.sonarsource.analyzer.commons.regex.ast.NonCapturingGroupTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
@@ -35,18 +39,60 @@ public class EmptyAlternativeFinder extends RegexBaseVisitor {
 
   private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
 
+  private int nestedGroupLevel = 0;
+
   public EmptyAlternativeFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter) {
     this.regexElementIssueReporter = regexElementIssueReporter;
   }
 
   @Override
+  public void visitCapturingGroup(CapturingGroupTree tree) {
+    nestedGroupLevel++;
+    super.visitCapturingGroup(tree);
+    nestedGroupLevel--;
+  }
+
+  @Override
+  public void visitNonCapturingGroup(NonCapturingGroupTree tree) {
+    nestedGroupLevel++;
+    super.visitNonCapturingGroup(tree);
+    nestedGroupLevel--;
+  }
+
+  @Override
+  public void visitAtomicGroup(AtomicGroupTree tree) {
+    nestedGroupLevel++;
+    super.visitAtomicGroup(tree);
+    nestedGroupLevel--;
+  }
+
+  @Override
+  public void visitLookAround(LookAroundTree tree) {
+    nestedGroupLevel++;
+    super.visitLookAround(tree);
+    nestedGroupLevel--;
+  }
+
+  @Override
   public void visitDisjunction(DisjunctionTree tree) {
     List<RegexTree> alternatives = tree.getAlternatives();
-    for (int i = 0; i < alternatives.size() - 1; i++) {
+    int nAlternatives = alternatives.size();
+    boolean firstIsEmpty = false;
+    boolean lastIsEmpty = false;
+    for (int i = 0; i < nAlternatives; i++) {
       if (isEmptyAlternative(alternatives.get(i))) {
-        SourceCharacter orOperator = tree.getOrOperators().get(i);
-        regexElementIssueReporter.report(orOperator, MESSAGE, null, Collections.emptyList());
+        firstIsEmpty |= (i == 0);
+        lastIsEmpty |= (i == nAlternatives - 1);
+
+        if (nestedGroupLevel == 0 || (0 < i && i < nAlternatives - 1)) {
+          SourceCharacter orOperator = tree.getOrOperators().get(i < nAlternatives - 1 ? i : (i - 1));
+          regexElementIssueReporter.report(orOperator, MESSAGE, null, Collections.emptyList());
+        }
       }
+    }
+
+    if (nestedGroupLevel > 0 && firstIsEmpty && lastIsEmpty) {
+      regexElementIssueReporter.report(tree.getOrOperators().get(0), MESSAGE, null, Collections.emptyList());
     }
 
     super.visitDisjunction(tree);
