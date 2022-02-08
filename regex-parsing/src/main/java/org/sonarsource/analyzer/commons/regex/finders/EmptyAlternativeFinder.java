@@ -20,12 +20,15 @@
 package org.sonarsource.analyzer.commons.regex.finders;
 
 import java.util.Collections;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
 import org.sonarsource.analyzer.commons.regex.ast.GroupTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
+import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
 import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
 import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
 
@@ -36,7 +39,7 @@ public class EmptyAlternativeFinder extends RegexBaseVisitor {
 
   private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
 
-  private int nestedGroupLevel = 0;
+  private final Deque<RegexTree> hierarchyStack = new LinkedList<>();
 
   public EmptyAlternativeFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter) {
     this.regexElementIssueReporter = regexElementIssueReporter;
@@ -44,9 +47,16 @@ public class EmptyAlternativeFinder extends RegexBaseVisitor {
 
   @Override
   public void visitGroup(GroupTree tree) {
-    nestedGroupLevel++;
+    hierarchyStack.addLast(tree);
     super.visitGroup(tree);
-    nestedGroupLevel--;
+    hierarchyStack.removeLast();
+  }
+
+  @Override
+  public void visitRepetition(RepetitionTree tree) {
+    hierarchyStack.addLast(tree);
+    super.visitRepetition(tree);
+    hierarchyStack.removeLast();
   }
 
   @Override
@@ -60,18 +70,29 @@ public class EmptyAlternativeFinder extends RegexBaseVisitor {
         firstIsEmpty |= (i == 0);
         lastIsEmpty |= (i == nAlternatives - 1);
 
-        if (nestedGroupLevel == 0 || (0 < i && i < nAlternatives - 1)) {
+        if (!parentIsGroup() || parentIsQuantified() || (0 < i && i < nAlternatives - 1)) {
           SourceCharacter orOperator = tree.getOrOperators().get(i < nAlternatives - 1 ? i : (i - 1));
           regexElementIssueReporter.report(orOperator, MESSAGE, null, Collections.emptyList());
         }
       }
     }
 
-    if (nestedGroupLevel > 0 && firstIsEmpty && lastIsEmpty) {
+    if (parentIsGroup() && firstIsEmpty && lastIsEmpty) {
       regexElementIssueReporter.report(tree.getOrOperators().get(0), MESSAGE, null, Collections.emptyList());
     }
 
     super.visitDisjunction(tree);
+  }
+
+  private boolean parentIsGroup() {
+    return hierarchyStack.peekLast() instanceof GroupTree;
+  }
+
+  private boolean parentIsQuantified() {
+    RegexTree lastElement = hierarchyStack.pollLast();
+    boolean parentIsQuantified = hierarchyStack.peekLast() instanceof RepetitionTree;
+    hierarchyStack.addLast(lastElement);
+    return parentIsQuantified;
   }
 
   private static boolean isEmptyAlternative(RegexTree alternative) {
