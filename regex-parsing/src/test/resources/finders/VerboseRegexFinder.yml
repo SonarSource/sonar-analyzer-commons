@@ -45,3 +45,6 @@
 - '[A-Za-z0-9_]'      # Noncompliant {{Use concise character class syntax '\\w' instead of '[A-Za-z0-9_]'.}}
 - '[0-9_A-Za-z]'      # Noncompliant
 - '[^A-Za-z0-9_]'     # Noncompliant {{Use concise character class syntax '\\W' instead of '[^A-Za-z0-9_]'.}}
+- '[\\s\\S]': 's'     # Noncompliant {{Use concise character class syntax '.' instead of '[\\s\\S]'.}}
+- '[\\d\\D]'          # Noncompliant {{Use concise character class syntax '.' instead of '[\\d\\D]'.}}
+- '[\\w\\W]'          # Noncompliant {{Use concise character class syntax '.' instead of '[\\w\\W]'.}}
