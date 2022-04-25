@@ -25,6 +25,7 @@ import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassUnionTree;
+import org.sonarsource.analyzer.commons.regex.ast.EscapedCharacterClassTree;
 import org.sonarsource.analyzer.commons.regex.ast.Quantifier;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
@@ -110,13 +111,13 @@ public class VerboseRegexFinder extends RegexBaseVisitor {
 
     for (CharacterClassElementTree subElement : ((CharacterClassUnionTree) element).getCharacterClasses()) {
       if (subElement.is(ESCAPED_CHARACTER_CLASS)) {
-        String raw = subElement.getText();
-        hasLowerEscapeW |= "\\w".equals(raw);
-        hasUpperEscapeW |= "\\W".equals(raw);
-        hasLowerEscapeD |= "\\d".equals(raw);
-        hasUpperEscapeD |= "\\D".equals(raw);
-        hasLowerEscapeS |= "\\s".equals(raw);
-        hasUpperEscapeS |= "\\S".equals(raw);
+        char type = ((EscapedCharacterClassTree) subElement).getType();
+        hasLowerEscapeW |= 'w' == type;
+        hasUpperEscapeW |= 'W' == type;
+        hasLowerEscapeD |= 'd' == type;
+        hasUpperEscapeD |= 'D' == type;
+        hasLowerEscapeS |= 's' == type;
+        hasUpperEscapeS |= 'S' == type;
       }
     }
 
