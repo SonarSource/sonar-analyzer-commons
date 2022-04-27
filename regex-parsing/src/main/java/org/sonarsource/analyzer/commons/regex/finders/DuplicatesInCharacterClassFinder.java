@@ -46,15 +46,7 @@ public class DuplicatesInCharacterClassFinder extends RegexBaseVisitor {
     Set<RegexSyntaxElement> duplicates = new LinkedHashSet<>();
     SimplifiedRegexCharacterClass characterClass = new SimplifiedRegexCharacterClass();
     for (CharacterClassElementTree element : tree.getCharacterClasses()) {
-      SimplifiedRegexCharacterClass elementCharacterClass;
-      try {
-        elementCharacterClass = new SimplifiedRegexCharacterClass(element);
-      } catch (IllegalArgumentException e) {
-        // TODO: remove exception catching once the underlying problem is fixed: https://github.com/SonarSource/sonar-analyzer-commons/issues/156
-        return;
-      }
-
-      List<RegexSyntaxElement> intersections = elementCharacterClass.findIntersections(characterClass);
+      List<RegexSyntaxElement> intersections = new SimplifiedRegexCharacterClass(element).findIntersections(characterClass);
       if (!intersections.isEmpty()) {
         // The element the current element is intersecting with should be included as well.
         duplicates.addAll(intersections);
