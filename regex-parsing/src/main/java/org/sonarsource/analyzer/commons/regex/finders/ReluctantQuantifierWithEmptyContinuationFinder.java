@@ -20,6 +20,8 @@
 package org.sonarsource.analyzer.commons.regex.finders;
 
 import java.util.Collections;
+import javax.annotation.Nullable;
+import org.sonarsource.analyzer.commons.regex.MatchType;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
@@ -36,10 +38,17 @@ public class ReluctantQuantifierWithEmptyContinuationFinder extends RegexBaseVis
   private static final String MESSAGE_UNNECESSARY = "Remove the '?' from this unnecessarily reluctant quantifier.";
 
   private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
+  @Nullable
+  private final MatchType matchType;
   private AutomatonState endState;
 
   public ReluctantQuantifierWithEmptyContinuationFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter) {
+    this(regexElementIssueReporter, null);
+  }
+
+  public ReluctantQuantifierWithEmptyContinuationFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter, @Nullable MatchType matchType) {
     this.regexElementIssueReporter = regexElementIssueReporter;
+    this.matchType = matchType;
   }
 
   @Override
@@ -51,14 +60,28 @@ public class ReluctantQuantifierWithEmptyContinuationFinder extends RegexBaseVis
   public void visitRepetition(RepetitionTree tree) {
     super.visitRepetition(tree);
     if (tree.getQuantifier().getModifier() == Quantifier.Modifier.RELUCTANT) {
-      if (RegexTreeHelper.isAnchoredAtEnd(tree.continuation())) {
+      if (isAnchoredAtEnd(tree.continuation())) {
         if (RegexTreeHelper.onlyMatchesEmptySuffix(tree.continuation())) {
           regexElementIssueReporter.report(tree, MESSAGE_UNNECESSARY, null, Collections.emptyList());
         }
-      } else if (RegexReachabilityChecker.canReachWithoutConsumingInput(new StartState(tree.continuation(), tree.activeFlags()), endState)) {
+      } else if (canBePartialMatch() &&
+        RegexReachabilityChecker.canReachWithoutConsumingInput(new StartState(tree.continuation(), tree.activeFlags()), endState)) {
         int minimumRepetitions = tree.getQuantifier().getMinimumRepetitions();
         regexElementIssueReporter.report(tree, String.format(MESSAGE_FIX, minimumRepetitions, minimumRepetitions == 1 ? "" : "s"), null, Collections.emptyList());
       }
     }
+  }
+
+  private boolean isAnchoredAtEnd(AutomatonState state) {
+    return matchType == MatchType.FULL || RegexTreeHelper.isAnchoredAtEnd(state);
+  }
+
+  private boolean canBePartialMatch() {
+    if (matchType == null) {
+      // If the match type is not set explicitly, continue anyway, taking a small risk to report erroneous issues.
+      return true;
+    }
+    // If we explicitly set the match type, we only want to continue if we are explicitly in PARTIAL mode, in order to avoid FP.
+    return matchType == MatchType.PARTIAL;
   }
 }

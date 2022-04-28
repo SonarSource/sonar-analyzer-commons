@@ -1,0 +1,11 @@
+- '.*?x?' # Compliant: Can not determine if the match is FULL or PARTIAL, do not report any issue
+- '.+?x?' # Compliant: Can not determine if the match is FULL or PARTIAL, do not report any issue
+- '.{2,4}?x?' # Compliant: Can not determine if the match is FULL or PARTIAL, do not report any issue
+- '.*?' # Compliant: Can not determine if the match is FULL or PARTIAL, do not report any issue
+# Even in case of FULL or PARTIAL, when the regex explicitly ends with "$", we report an issue.
+- '.*?$' # Noncompliant {{Remove the '?' from this unnecessarily reluctant quantifier.}}
+- '.*?()$' # Noncompliant {{Remove the '?' from this unnecessarily reluctant quantifier.}}
+
+- '.*?x'
+- '.*?x$'
+- '.*?[abc]'
