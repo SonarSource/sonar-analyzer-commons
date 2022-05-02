@@ -140,7 +140,7 @@ public class ComplexRegexFinder extends RegexBaseVisitor {
   protected void after(RegexParseResult regexParseResult) {
     if (complexity > max) {
       int cost = complexity - max;
-      regexElementIssueReporter.report(regexParseResult.getResult(), String.format(MESSAGE, complexity, max), cost, components);
+      regexElementIssueReporter.report(regexParseResult.openingQuote(), String.format(MESSAGE, complexity, max), cost, components);
     }
   }
 }
