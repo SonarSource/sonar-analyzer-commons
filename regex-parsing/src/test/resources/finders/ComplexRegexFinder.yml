@@ -2,6 +2,7 @@
 - '[a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t]'
 # Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 21 to the 20 allowed.}}
 - '[a][b][c][d][e][f][g][h][i][j][k][l][m][n][o][p][q][r][s][t][u]'
+# ^^
 
 # disjunction
 # Noncompliant@+1 {{Simplify this regular expression to reduce its complexity from 21 to the 20 allowed.}}
