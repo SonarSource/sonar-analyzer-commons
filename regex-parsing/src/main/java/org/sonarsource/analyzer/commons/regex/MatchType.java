@@ -20,5 +20,5 @@
 package org.sonarsource.analyzer.commons.regex;
 
 public enum MatchType {
-  FULL, PARTIAL, BOTH, UNKNOWN
+  FULL, PARTIAL, BOTH, UNKNOWN, NOT_SUPPORTED
 }
