@@ -1,0 +1,7 @@
+- '.*?x?' # Compliant: Full match, we have an implicit anchor at the end
+- '.+?x?' # Compliant: Full match, we have an implicit anchor at the end
+- '.{2,4}?x?' # Compliant: Full match, we have an implicit anchor at the end
+- '.*?' # Noncompliant {{Remove the '?' from this unnecessarily reluctant quantifier.}}
+- '.*?()' # Noncompliant {{Remove the '?' from this unnecessarily reluctant quantifier.}}
+
+- '.*?x'
