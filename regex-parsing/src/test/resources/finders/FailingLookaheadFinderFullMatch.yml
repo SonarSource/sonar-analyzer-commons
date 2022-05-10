@@ -12,6 +12,7 @@
 - '(?=a)ab'
 - '(?!ab)..'
 - '(?<=a)b'
-- 'a(?=b)'
-- '(?=abc)ab'
-- '(?!abc)ab'
+# Additional issue compared to other match type: this can never match because the "ab" can not be a prefix of the lookaround
+- 'a(?=b)' # Noncompliant
+- '(?=abc)ab' # Noncompliant
+- '(?!abc)ab' # Compliant: negative lookahead are not impacted by the match type
