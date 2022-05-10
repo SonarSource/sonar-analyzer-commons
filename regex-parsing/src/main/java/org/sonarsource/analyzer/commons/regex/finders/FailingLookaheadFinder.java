@@ -20,6 +20,7 @@
 package org.sonarsource.analyzer.commons.regex.finders;
 
 import java.util.Collections;
+import org.sonarsource.analyzer.commons.regex.MatchType;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.FinalState;
 import org.sonarsource.analyzer.commons.regex.ast.LookAroundTree;
@@ -34,10 +35,16 @@ public class FailingLookaheadFinder extends RegexBaseVisitor {
 
   private final RegexIssueReporter.ElementIssue regexElementIssueReporter;
   private final FinalState finalState;
+  private final MatchType matchType;
 
   public FailingLookaheadFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter, FinalState finalState) {
+    this(regexElementIssueReporter, finalState, MatchType.NOT_SUPPORTED);
+  }
+
+  public FailingLookaheadFinder(RegexIssueReporter.ElementIssue regexElementIssueReporter, FinalState finalState, MatchType matchType) {
     this.regexElementIssueReporter = regexElementIssueReporter;
     this.finalState = finalState;
+    this.matchType = matchType;
   }
 
   @Override
@@ -57,7 +64,8 @@ public class FailingLookaheadFinder extends RegexBaseVisitor {
       lookAroundSubAutomaton = new SubAutomaton(lookAroundElement, lookAroundElement.continuation(), false);
       return RegexTreeHelper.supersetOf(lookAroundSubAutomaton, continuationSubAutomaton, false);
     }
-    lookAroundSubAutomaton = new SubAutomaton(lookAroundElement, lookAroundElement.continuation(), true);
+    boolean canLookAroundBeAPrefix = matchType != MatchType.FULL;
+    lookAroundSubAutomaton = new SubAutomaton(lookAroundElement, lookAroundElement.continuation(), canLookAroundBeAPrefix);
     return !RegexTreeHelper.intersects(lookAroundSubAutomaton, continuationSubAutomaton, true);
   }
 }
