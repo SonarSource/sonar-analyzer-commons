@@ -118,6 +118,10 @@ public class RegexReachabilityChecker {
     return canReachWithoutConsumingInput(start, goal, false, new HashSet<>());
   }
 
+  public static boolean canReachWithoutConsumingInputOrGoingThroughBoundaries(AutomatonState start, AutomatonState goal) {
+    return canReachWithoutConsumingInput(start, goal, true, new HashSet<>());
+  }
+
   private static boolean canReachWithoutConsumingInput(AutomatonState start, AutomatonState goal, boolean stopAtBoundaries, Set<AutomatonState> visited) {
     if (start == goal) {
       return true;

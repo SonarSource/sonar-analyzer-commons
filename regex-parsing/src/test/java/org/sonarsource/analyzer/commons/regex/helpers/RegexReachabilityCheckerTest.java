@@ -21,11 +21,18 @@ package org.sonarsource.analyzer.commons.regex.helpers;
 
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexSource;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
+import org.sonarsource.analyzer.commons.regex.ast.BoundaryTree;
+import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
+import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.sonarsource.analyzer.commons.regex.ast.AutomatonState.TransitionType.EPSILON;
+import static org.sonarsource.analyzer.commons.regex.helpers.RegexReachabilityChecker.canReachWithoutConsumingInput;
+import static org.sonarsource.analyzer.commons.regex.helpers.RegexReachabilityChecker.canReachWithoutConsumingInputOrGoingThroughBoundaries;
 
 class RegexReachabilityCheckerTest {
 
@@ -90,6 +97,53 @@ class RegexReachabilityCheckerTest {
         // Cache is full: return defaultAnswer
         assertThat(regexReachabilityChecker.canReach(start, end)).isTrue();
       }
+    }
+  }
+
+  @Test
+  void can_reach_from_static_method() {
+    AutomatonState start = mock(AutomatonState.class);
+    AutomatonState end = mock(AutomatonState.class);
+    assertThat(canReachWithoutConsumingInput(start, end)).isFalse();
+
+    doReturn(Collections.singletonList(end)).when(start).successors();
+    doReturn(EPSILON).when(end).incomingTransitionType();
+    // Result is not cached
+    assertThat(canReachWithoutConsumingInput(start, end)).isTrue();
+  }
+
+
+  @Test
+  void can_reach_without_consuming_or_going_through_boundary() {
+    AutomatonState start = mock(AutomatonState.class);
+    AutomatonState intermediate = mock(AutomatonState.class);
+    AutomatonState end = mock(AutomatonState.class);
+
+    doReturn(Collections.singletonList(intermediate)).when(start).successors();
+    doReturn(EPSILON).when(intermediate).incomingTransitionType();
+    doReturn(Collections.singletonList(end)).when(intermediate).successors();
+    doReturn(EPSILON).when(end).incomingTransitionType();
+
+    assertThat(canReachWithoutConsumingInputOrGoingThroughBoundaries(start, end)).isTrue();
+  }
+
+  @Test
+  void can_reach_without_consuming_or_going_through_boundary_should_stop_at_boundary() {
+    AutomatonState start = mock(AutomatonState.class);
+    AutomatonState intermediate = mock(BoundaryAutomatonState.class);
+    AutomatonState end = mock(AutomatonState.class);
+
+    doReturn(Collections.singletonList(intermediate)).when(start).successors();
+    doReturn(EPSILON).when(intermediate).incomingTransitionType();
+    doReturn(Collections.singletonList(end)).when(intermediate).successors();
+    doReturn(EPSILON).when(end).incomingTransitionType();
+
+    assertThat(canReachWithoutConsumingInputOrGoingThroughBoundaries(start, end)).isFalse();
+  }
+
+  private static class BoundaryAutomatonState extends BoundaryTree implements AutomatonState {
+    public BoundaryAutomatonState(RegexSource source, Type type, IndexRange range, FlagSet activeFlags) {
+      super(source, type, range, activeFlags);
     }
   }
 }
