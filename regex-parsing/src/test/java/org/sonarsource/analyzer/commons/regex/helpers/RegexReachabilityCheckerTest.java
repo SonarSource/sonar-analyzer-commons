@@ -32,7 +32,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.sonarsource.analyzer.commons.regex.ast.AutomatonState.TransitionType.EPSILON;
 import static org.sonarsource.analyzer.commons.regex.helpers.RegexReachabilityChecker.canReachWithoutConsumingInput;
-import static org.sonarsource.analyzer.commons.regex.helpers.RegexReachabilityChecker.canReachWithoutConsumingInputOrGoingThroughBoundaries;
+import static org.sonarsource.analyzer.commons.regex.helpers.RegexReachabilityChecker.canReachWithoutConsumingInputNorCrossingBoundaries;
 
 class RegexReachabilityCheckerTest {
 
@@ -124,7 +124,7 @@ class RegexReachabilityCheckerTest {
     doReturn(Collections.singletonList(end)).when(intermediate).successors();
     doReturn(EPSILON).when(end).incomingTransitionType();
 
-    assertThat(canReachWithoutConsumingInputOrGoingThroughBoundaries(start, end)).isTrue();
+    assertThat(canReachWithoutConsumingInputNorCrossingBoundaries(start, end)).isTrue();
   }
 
   @Test
@@ -138,7 +138,7 @@ class RegexReachabilityCheckerTest {
     doReturn(Collections.singletonList(end)).when(intermediate).successors();
     doReturn(EPSILON).when(end).incomingTransitionType();
 
-    assertThat(canReachWithoutConsumingInputOrGoingThroughBoundaries(start, end)).isFalse();
+    assertThat(canReachWithoutConsumingInputNorCrossingBoundaries(start, end)).isFalse();
   }
 
   private static class BoundaryAutomatonState extends BoundaryTree implements AutomatonState {
