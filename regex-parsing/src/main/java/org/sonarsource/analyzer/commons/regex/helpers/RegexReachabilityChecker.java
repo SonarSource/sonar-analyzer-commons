@@ -114,8 +114,26 @@ public class RegexReachabilityChecker {
     return false;
   }
 
+  /**
+   * Check if the automaton can reach the goal state from start state, ignoring boundaries (see {@link BoundaryTree})
+   *
+   * @param start The start state
+   * @param goal the targeted state
+   * @return true if the goal state can be reached from start, ignoring boundaries
+   */
   public static boolean canReachWithoutConsumingInput(AutomatonState start, AutomatonState goal) {
     return canReachWithoutConsumingInput(start, goal, false, new HashSet<>());
+  }
+
+  /**
+   * Check if the automaton can reach the goal state from start state, taking into consideration boundaries (see {@link BoundaryTree})
+   *
+   * @param start The start state
+   * @param goal the targeted state
+   * @return true if the goal state can be reached from start, stopping if encountering boundaries
+   */
+  public static boolean canReachWithoutConsumingInputNorCrossingBoundaries(AutomatonState start, AutomatonState goal) {
+    return canReachWithoutConsumingInput(start, goal, true, new HashSet<>());
   }
 
   private static boolean canReachWithoutConsumingInput(AutomatonState start, AutomatonState goal, boolean stopAtBoundaries, Set<AutomatonState> visited) {
