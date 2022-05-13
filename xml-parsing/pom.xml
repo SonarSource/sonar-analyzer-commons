@@ -4,7 +4,7 @@
   <parent>
     <artifactId>sonar-analyzer-commons-parent</artifactId>
     <groupId>org.sonarsource.analyzer-commons</groupId>
-    <version>1.24-SNAPSHOT</version>
+    <version>1.25-SNAPSHOT</version>
   </parent>
 
   <artifactId>sonar-xml-parsing</artifactId>
