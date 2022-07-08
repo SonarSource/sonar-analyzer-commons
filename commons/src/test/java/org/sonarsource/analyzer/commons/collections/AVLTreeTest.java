@@ -31,6 +31,7 @@ import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 public class AVLTreeTest {
 
@@ -323,4 +324,11 @@ public class AVLTreeTest {
     }
   }
 
+  @Test
+  public void test_toArray() {
+    AVLTree<String, String> t0 = AVLTree.create();
+    AVLTree<String, String> t1 = t0.put("1", "a");
+    AVLTree<String, String> t2 = t1.put("2", "b");
+    assertThat(t2.toArray()).extracting("key", "value").containsExactlyInAnyOrder(tuple("1", "a"), tuple("2", "b"));
+  }
 }

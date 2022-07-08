@@ -19,10 +19,14 @@
  */
 package org.sonarsource.analyzer.commons.collections;
 
+import java.util.HashSet;
+import java.util.Set;
 import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import org.jetbrains.annotations.Debug;
+import org.jetbrains.annotations.VisibleForTesting;
 
 /**
  * AVL Tree.
@@ -31,6 +35,8 @@ import java.util.function.Consumer;
  *
  * @author Evgeny Mandrikov
  */
+// Annotation for IntelliJ renderer, to ease debugging: see https://www.jetbrains.com/help/idea/customizing-views.html#ba1e4878
+@Debug.Renderer(childrenArray = "toArray()", hasChildren = "toArray().isEmpty()")
 abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
 
   /**
@@ -121,6 +127,25 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
     while (t != null) {
       action.accept((K) t.key(), (V) t.value());
       t = t.nextInBucket();
+    }
+  }
+
+  // Used by IntelliJ renderer, to ease debugging
+  @VisibleForTesting
+  Object[] toArray() {
+    Set<NodeRenderer<K, V>> nodes = new HashSet<>();
+    forEach((k,v) -> nodes.add(new NodeRenderer<>(k,v)));
+    return nodes.toArray();
+  }
+
+  // Used by IntelliJ renderer, to ease debugging
+  private static class NodeRenderer<K, V> {
+    final K key;
+    final V value;
+
+    public NodeRenderer(K key, V value) {
+      this.key = key;
+      this.value = value;
     }
   }
 
