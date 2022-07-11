@@ -19,6 +19,8 @@
  */
 package org.sonarsource.analyzer.commons.collections;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import javax.annotation.Nullable;
 
 import java.util.Objects;
@@ -78,7 +80,36 @@ final class SinglyLinkedList<E> implements PStack<E> {
   }
 
   @Override
-  public void forEach(Consumer<E> action) {
+  public Iterator<E> iterator() {
+    return new ListIterator<>(this);
+  }
+
+  private static class ListIterator<E> implements Iterator<E> {
+
+    private SinglyLinkedList<E> current;
+
+    public ListIterator(SinglyLinkedList<E> root) {
+      current = root;
+    }
+
+    @Override
+    public boolean hasNext() {
+      return current != null;
+    }
+
+    @Override
+    public E next() {
+      if (!hasNext()) {
+        throw new NoSuchElementException();
+      }
+      SinglyLinkedList<E> c = current;
+      current = current.next;
+      return c.element;
+    }
+  }
+
+  @Override
+  public void forEach(Consumer<? super E> action) {
     SinglyLinkedList<E> c = this;
     while (c != null) {
       action.accept(c.element);
@@ -159,6 +190,21 @@ final class SinglyLinkedList<E> implements PStack<E> {
     @Override
     public boolean isEmpty() {
       return true;
+    }
+
+    @Override
+    public Iterator iterator() {
+      return new Iterator() {
+        @Override
+        public boolean hasNext() {
+          return false;
+        }
+
+        @Override
+        public Object next() {
+          throw new NoSuchElementException();
+        }
+      };
     }
 
     @Override
