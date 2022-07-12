@@ -19,7 +19,6 @@
  */
 package org.sonarsource.analyzer.commons.collections;
 
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -27,7 +26,7 @@ import java.util.function.Predicate;
  *
  * @param <E> the type of elements maintained by this stack
  */
-public interface PStack<E> {
+public interface PStack<E> extends Iterable<E> {
 
   /**
    * @return new stack with added element
@@ -58,11 +57,6 @@ public interface PStack<E> {
    * @return true if this stack contains no elements
    */
   boolean isEmpty();
-
-  /**
-   * Performs the given action for each element in this stack until all elements have been processed or the action throws an exception.
-   */
-  void forEach(Consumer<E> action);
 
   /**
    * Test given predicate on elements and return true if any of elements matches the predicate

@@ -19,12 +19,16 @@
  */
 package org.sonarsource.analyzer.commons.collections;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
-import java.util.Set;
-import javax.annotation.Nullable;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import javax.annotation.Nullable;
 import org.jetbrains.annotations.Debug;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -95,12 +99,12 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
   }
 
   @Override
-  public void forEach(Consumer<K> action) {
+  public void forEach(Consumer<? super K> action) {
     forEach(this, action);
   }
 
   @SuppressWarnings("unchecked")
-  private void forEach(AVLTree t, Consumer<K> action) {
+  private void forEach(AVLTree t, Consumer<? super K> action) {
     if (t.isEmpty()) {
       return;
     }
@@ -146,6 +150,42 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
     public NodeRenderer(K key, V value) {
       this.key = key;
       this.value = value;
+    }
+  }
+
+  @Override
+  public Iterator<K> iterator() {
+    return new TreeIterator<>(this);
+  }
+
+  private static class TreeIterator<E> implements Iterator<E> {
+
+    private final Deque<AVLTree> stack = new ArrayDeque<>();
+    private AVLTree current;
+
+    public TreeIterator(AVLTree root) {
+      current = root;
+    }
+
+    @Override
+    public boolean hasNext() {
+      return !stack.isEmpty() || !current.isEmpty();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public E next() {
+      if (!hasNext()) {
+        throw new NoSuchElementException();
+      }
+      while (!current.isEmpty()) {
+        stack.push(current);
+        current = current.left();
+      }
+      current = stack.pop();
+      AVLTree node = current;
+      current = current.right();
+      return (E) node.key();
     }
   }
 

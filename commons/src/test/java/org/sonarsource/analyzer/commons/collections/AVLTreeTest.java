@@ -19,19 +19,22 @@
  */
 package org.sonarsource.analyzer.commons.collections;
 
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.Assert.fail;
 
 public class AVLTreeTest {
 
@@ -330,5 +333,87 @@ public class AVLTreeTest {
     AVLTree<String, String> t1 = t0.put("1", "a");
     AVLTree<String, String> t2 = t1.put("2", "b");
     assertThat(t2.toArray()).extracting("key", "value").containsExactlyInAnyOrder(tuple("1", "a"), tuple("2", "b"));
+  }
+
+  @Test
+  public void test_iterator_non_empty_set() {
+    PSet<Integer> set = PCollections.emptySet();
+    set = set.add(0);
+    set = set.add(42);
+    set = set.add(99);
+
+    Set<Integer> elems = new HashSet<>();
+    for (Integer elem : set) {
+      elems.add(elem);
+    }
+    assertThat(elems).containsExactlyInAnyOrder(0, 42, 99);
+  }
+
+  @Test
+  public void test_iterator_non_empty_stack() {
+    PStack<Integer> stack = PCollections.emptyStack();
+    stack = stack.push(0);
+    stack = stack.push(42);
+    stack = stack.push(99);
+
+    Set<Integer> elems = new HashSet<>();
+    for (Integer elem : stack) {
+      elems.add(elem);
+    }
+    assertThat(elems).containsExactlyInAnyOrder(0, 42, 99);
+  }
+
+
+  @Test
+  public void test_iterator_empty_set() {
+    PSet<Integer> set = PCollections.emptySet();
+    Set<Integer> elems = new HashSet<>();
+    for (Integer elem : set) {
+      elems.add(elem);
+    }
+    assertThat(elems).isEmpty();
+  }
+
+  @Test
+  public void test_iterator_empty_stack() {
+    PStack<Integer> stack = PCollections.emptyStack();
+    Set<Integer> elems = new HashSet<>();
+    for (Integer elem : stack) {
+      elems.add(elem);
+    }
+    assertThat(elems).isEmpty();
+  }
+
+  @Test
+  public void test_iterator_set_no_element_exception() {
+    PSet<Integer> set = PCollections.emptySet();
+    Iterator<Integer> iterator = set.iterator();
+    try {
+      iterator.next();
+      fail("next() should throw NoSuchElementException on empty set");
+    }  catch (NoSuchElementException exception) {}
+  }
+
+  @Test
+  public void test_iterator_stack_no_element_exception() {
+    PStack<Integer> stack = PCollections.emptyStack();
+    Iterator<Integer> iterator = stack.iterator();
+    try {
+      iterator.next();
+      fail("next() should throw NoSuchElementException on empty stack");
+    }  catch (NoSuchElementException exception) {}
+  }
+
+  @Test
+  public void test_iterator_stack_no_element_exception_on_non_empty() {
+    PStack<Integer> stack = PCollections.emptyStack();
+    stack = stack.push(42);
+    Iterator<Integer> iterator = stack.iterator();
+    Integer next = iterator.next();
+    assertThat(next).isEqualTo(42);
+    try {
+      iterator.next();
+      fail("next() should throw NoSuchElementException on empty stack");
+    }  catch (NoSuchElementException exception) {}
   }
 }

@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  * @author Evgeny Mandrikov
  * @param <E> the type of elements maintained by this set
  */
-public interface PSet<E> {
+public interface PSet<E> extends Iterable<E> {
 
   /**
    * @return new set with added element, or this if element already in the set
@@ -43,11 +43,6 @@ public interface PSet<E> {
    * @return true if this set contains the specified element
    */
   boolean contains(E e);
-
-  /**
-   * Performs the given action for each entry in this set until all elements have been processed or the action throws an exception.
-   */
-  void forEach(Consumer<E> action);
 
   /**
    * @return true if this set contains no elements
