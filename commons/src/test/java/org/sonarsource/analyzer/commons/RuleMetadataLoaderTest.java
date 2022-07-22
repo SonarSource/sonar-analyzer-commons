@@ -22,6 +22,7 @@ package org.sonarsource.analyzer.commons;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonar.api.SonarRuntime;
@@ -50,6 +51,8 @@ public class RuleMetadataLoaderTest {
   // using SonarLint for simplicity (it requires less parameters)
   private static final SonarRuntime SONAR_RUNTIME_9_2 = SonarRuntimeImpl.forSonarLint(Version.create(9, 2));
   private static final SonarRuntime SONAR_RUNTIME_9_3 = SonarRuntimeImpl.forSonarLint(Version.create(9, 3));
+  private static final SonarRuntime SONAR_RUNTIME_9_5 = SonarRuntimeImpl.forSonarLint(Version.create(9, 5));
+  private static final SonarRuntime SONAR_RUNTIME_9_9 = SonarRuntimeImpl.forSonarLint(Version.create(9, 9));
 
   @Before
   public void setup() {
@@ -256,43 +259,41 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void test_security_standards() {
-    @Rule(key = "S112")
-    class TestRule {
-    }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SONAR_RUNTIME_9_3);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
-    newRepository.done();
-    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S112");
-    assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
-    assertThat(rule.securityStandards()).containsExactlyInAnyOrder("cwe:397");
-  }
-
-  @Test
-  public void test_security_standards_owasp_greater_9_3() {
-    @Rule(key = "S2092")
-    class TestRule {
-    }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SONAR_RUNTIME_9_3);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
-    newRepository.done();
-    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
-    assertThat(rule.securityStandards()).containsExactlyInAnyOrder(
+  public void test_security_standards_on_9_9_return_asvs() {
+    Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_9_9);
+    assertThat(securityStandards).containsExactlyInAnyOrder(
       "cwe:311", "cwe:315", "cwe:614",
+      "owaspTop10:a2", "owaspTop10:a3",
       "owaspTop10-2021:a4", "owaspTop10-2021:a5",
-      "owaspTop10:a2", "owaspTop10:a3");
+      "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2",
+      "owaspAsvs-4.0:2.1.1", "owaspAsvs-4.0:2.1.2"
+    );
   }
 
   @Test
-  public void test_security_standards_owasp_before_9_3() {
-    @Rule(key = "S2092")
-    class TestRule {
-    }
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SONAR_RUNTIME_9_2);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
-    newRepository.done();
-    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
-    assertThat(rule.securityStandards()).containsExactlyInAnyOrder(
+  public void test_security_standards_on_9_5_return_pci_dss() {
+    Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_9_5);
+    assertThat(securityStandards).containsExactlyInAnyOrder(
+      "cwe:311", "cwe:315", "cwe:614",
+      "owaspTop10:a2", "owaspTop10:a3",
+      "owaspTop10-2021:a4", "owaspTop10-2021:a5",
+      "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2"
+    );
+  }
+
+  @Test
+  public void test_security_standards_on_9_3_return_owasp_2021() {
+    Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_9_3);
+    assertThat(securityStandards).containsExactlyInAnyOrder(
+      "cwe:311", "cwe:315", "cwe:614",
+      "owaspTop10:a2", "owaspTop10:a3",
+      "owaspTop10-2021:a4", "owaspTop10-2021:a5");
+  }
+
+  @Test
+  public void test_security_standards_before_9_3() {
+    Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_9_2);
+    assertThat(securityStandards).containsExactlyInAnyOrder(
       "cwe:311", "cwe:315", "cwe:614",
       "owaspTop10:a2", "owaspTop10:a3");
   }
@@ -342,4 +343,14 @@ public class RuleMetadataLoaderTest {
     }
   }
 
+  private Set<String> getSecurityStandards(SonarRuntime sonarRuntime) {
+    @Rule(key = "S2092")
+    class TestRule {
+    }
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, sonarRuntime);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
+    return rule.securityStandards();
+  }
 }

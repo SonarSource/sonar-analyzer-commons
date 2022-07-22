@@ -33,7 +33,9 @@ import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinition.DebtRemediationFunctions;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.server.rule.RulesDefinition.NewRule;
+import org.sonar.api.server.rule.RulesDefinition.OwaspAsvsVersion;
 import org.sonar.api.server.rule.RulesDefinition.OwaspTop10Version;
+import org.sonar.api.server.rule.RulesDefinition.PciDssVersion;
 import org.sonar.api.server.rule.RulesDefinitionAnnotationLoader;
 import org.sonar.api.utils.AnnotationUtils;
 import org.sonar.api.utils.Version;
@@ -57,6 +59,8 @@ public class RuleMetadataLoader {
 
   private static final String OWASP_2021 = "OWASP Top 10 2021";
   private static final String OWASP_2017 = "OWASP";
+  private static final String PCI_DSS_PREFIX = "PCI DSS ";
+  private static final String ASVS_PREFIX = "ASVS ";
 
   public RuleMetadataLoader(String resourceFolder, SonarRuntime sonarRuntime) {
     this(resourceFolder, Collections.emptySet(), sonarRuntime);
@@ -184,7 +188,17 @@ public class RuleMetadataLoader {
   }
 
   private void setSecurityStandardsFromJson(NewRule rule, Map<String, Object> securityStandards) {
-    boolean isOwaspByVersionSupported = sonarRuntime.getApiVersion().isGreaterThanOrEqual(Version.create(9, 3));
+    if (securityStandards.get("CWE") != null) {
+      rule.addCwe(getIntArray(securityStandards, "CWE"));
+    }
+
+    addOwasp(rule, securityStandards);
+    addPciDss(rule, securityStandards);
+    addOwaspAsvs(rule, securityStandards);
+  }
+
+  private void addOwasp(NewRule rule, Map<String, Object> securityStandards) {
+    boolean isOwaspByVersionSupported = isSupported(9, 3);
 
     for (String standard : getStringArray(securityStandards, OWASP_2017)) {
       if (isOwaspByVersionSupported) {
@@ -199,9 +213,32 @@ public class RuleMetadataLoader {
         rule.addOwaspTop10(OwaspTop10Version.Y2021, RulesDefinition.OwaspTop10.valueOf(standard));
       }
     }
-    if (securityStandards.get("CWE") != null) {
-      rule.addCwe(getIntArray(securityStandards, "CWE"));
+  }
+
+  private void addPciDss(NewRule rule, Map<String, Object> securityStandards) {
+    if (!isSupported(9, 5)) {
+      return;
     }
+
+    for (PciDssVersion pciDssVersion : PciDssVersion.values()) {
+      String pciDssKey = PCI_DSS_PREFIX + pciDssVersion.label();
+      rule.addPciDss(pciDssVersion, getStringArray(securityStandards, pciDssKey));
+    }
+  }
+
+  private void addOwaspAsvs(NewRule rule, Map<String, Object> securityStandards) {
+    if (!isSupported(9, 9)) {
+      return;
+    }
+
+    for (OwaspAsvsVersion asvsVersion : OwaspAsvsVersion.values()) {
+      String asvsKey = ASVS_PREFIX + asvsVersion.label();
+      rule.addOwaspAsvs(asvsVersion, getStringArray(securityStandards, asvsKey));
+    }
+  }
+
+  private boolean isSupported(int minMajor, int minMinor) {
+    return sonarRuntime.getApiVersion().isGreaterThanOrEqual(Version.create(minMajor, minMinor));
   }
 
   private static void setRemediationFromJson(NewRule rule, Map<String, Object> remediation) {

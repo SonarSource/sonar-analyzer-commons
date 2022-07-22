@@ -73,7 +73,8 @@
 
   <properties>
     <!-- versions -->
-    <version.sonar>9.3.0.51899</version.sonar>
+    <version.sonar>9.9.0.229</version.sonar>
+    <sonarqube.api.impl.version>9.3.0.51899</sonarqube.api.impl.version>
     <version.assertj>3.17.1</version.assertj>
     <version.jsr305>3.0.2</version.jsr305>
     <version.mockito>3.5.7</version.mockito>
@@ -89,7 +90,7 @@
     <dependencies>
       <!-- PROVIDED -->
       <dependency>
-        <groupId>org.sonarsource.sonarqube</groupId>
+        <groupId>org.sonarsource.api.plugin</groupId>
         <artifactId>sonar-plugin-api</artifactId>
         <version>${version.sonar}</version>
         <scope>provided</scope>
@@ -97,7 +98,7 @@
       <dependency>
         <groupId>org.sonarsource.sonarqube</groupId>
         <artifactId>sonar-plugin-api-impl</artifactId>
-        <version>${version.sonar}</version>
+        <version>${sonarqube.api.impl.version}</version>
       </dependency>
 
       <!-- COMPILE -->
