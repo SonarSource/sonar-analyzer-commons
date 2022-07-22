@@ -212,6 +212,7 @@ public class RuleMetadataLoader {
 
     for (PciDssVersion pciDssVersion : PciDssVersion.values()) {
       String pciDssKey = PCI_DSS_PREFIX + pciDssVersion.label();
+
       if (securityStandards.get(pciDssKey) != null) {
         rule.addPciDss(pciDssVersion, getStringArray(securityStandards, pciDssKey));
       }
