@@ -50,6 +50,7 @@ public class RuleMetadataLoaderTest {
   // using SonarLint for simplicity (it requires less parameters)
   private static final SonarRuntime SONAR_RUNTIME_9_2 = SonarRuntimeImpl.forSonarLint(Version.create(9, 2));
   private static final SonarRuntime SONAR_RUNTIME_9_3 = SonarRuntimeImpl.forSonarLint(Version.create(9, 3));
+  private static final SonarRuntime SONAR_RUNTIME_9_5 = SonarRuntimeImpl.forSonarLint(Version.create(9, 5));
 
   @Before
   public void setup() {
@@ -266,6 +267,23 @@ public class RuleMetadataLoaderTest {
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S112");
     assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
     assertThat(rule.securityStandards()).containsExactlyInAnyOrder("cwe:397");
+  }
+
+  @Test
+  public void test_security_standards_pci_dss_greater_9_5() {
+    @Rule(key = "S2092")
+    class TestRule {
+    }
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SONAR_RUNTIME_9_5);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
+    assertThat(rule.securityStandards()).containsExactlyInAnyOrder(
+      "cwe:311", "cwe:315", "cwe:614",
+      "owaspTop10-2021:a4", "owaspTop10-2021:a5",
+      "owaspTop10:a2", "owaspTop10:a3",
+      "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2", "pciDss-4.0:1.1.3"
+    );
   }
 
   @Test

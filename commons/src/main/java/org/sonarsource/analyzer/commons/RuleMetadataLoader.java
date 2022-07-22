@@ -34,6 +34,7 @@ import org.sonar.api.server.rule.RulesDefinition.DebtRemediationFunctions;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.server.rule.RulesDefinition.NewRule;
 import org.sonar.api.server.rule.RulesDefinition.OwaspTop10Version;
+import org.sonar.api.server.rule.RulesDefinition.PciDssVersion;
 import org.sonar.api.server.rule.RulesDefinitionAnnotationLoader;
 import org.sonar.api.utils.AnnotationUtils;
 import org.sonar.api.utils.Version;
@@ -57,6 +58,7 @@ public class RuleMetadataLoader {
 
   private static final String OWASP_2021 = "OWASP Top 10 2021";
   private static final String OWASP_2017 = "OWASP";
+  private static final String PCI_DSS_PREFIX = "PCI DSS ";
 
   public RuleMetadataLoader(String resourceFolder, SonarRuntime sonarRuntime) {
     this(resourceFolder, Collections.emptySet(), sonarRuntime);
@@ -185,6 +187,7 @@ public class RuleMetadataLoader {
 
   private void setSecurityStandardsFromJson(NewRule rule, Map<String, Object> securityStandards) {
     boolean isOwaspByVersionSupported = sonarRuntime.getApiVersion().isGreaterThanOrEqual(Version.create(9, 3));
+    boolean isPciDssSupported = sonarRuntime.getApiVersion().isGreaterThanOrEqual(Version.create(9, 5));
 
     for (String standard : getStringArray(securityStandards, OWASP_2017)) {
       if (isOwaspByVersionSupported) {
@@ -201,6 +204,17 @@ public class RuleMetadataLoader {
     }
     if (securityStandards.get("CWE") != null) {
       rule.addCwe(getIntArray(securityStandards, "CWE"));
+    }
+
+    if (!isPciDssSupported) {
+      return;
+    }
+
+    for (PciDssVersion pciDssVersion : PciDssVersion.values()) {
+      String pciDssKey = PCI_DSS_PREFIX + pciDssVersion.label();
+      if (securityStandards.get(pciDssKey) != null) {
+        rule.addPciDss(pciDssVersion, getStringArray(securityStandards, pciDssKey));
+      }
     }
   }
 
