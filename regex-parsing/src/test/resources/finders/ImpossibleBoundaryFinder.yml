@@ -20,10 +20,16 @@
 - 'a\zb': 'm' # Noncompliant
 - 'a\n\\Ab': 'm' # Noncompliant
 
-# False positives because the end delimiter does not capture the newlines (SONARPHP-1238)
-- 'a$(\n)' # Noncompliant
-- 'a$.': 's' # Noncompliant
-- 'a\Z(\n)' # Noncompliant
+# The end delimiter captures the newlines thanks to SONARPHP-1238, SONARJAVA-3890
+- 'a$(\n)'
+- 'a$.': 's'
+- 'a\Z(\n)'
+- 'a\Z.': 's'
+- '^foo$\r?\n?'
+- '^foo$.*': 's'
+- '^foo$.*'  # Noncompliant
+- '^foo$\r?\n?bar': 'm'
+- '^foo$\r?\n?bar' # Noncompliant
 
 - '$.*' # Noncompliant {{Remove or replace this boundary that can only match if the previous part matched the empty string because it appears before mandatory input.}}
 - '$.?' # Noncompliant
