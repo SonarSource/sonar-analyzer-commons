@@ -20,10 +20,14 @@
 package org.sonarsource.analyzer.commons;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import javax.annotation.Nullable;
 import org.sonar.api.server.profile.BuiltInQualityProfilesDefinition.NewBuiltInQualityProfile;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -35,21 +39,67 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public final class BuiltInQualityProfileJsonLoader {
 
-  private BuiltInQualityProfileJsonLoader() {
+  public static class Builder {
+
+    private Builder() {
+    }
+
+    @Nullable
+    private Function<String, InputStream> resourceProvider;
+
+    public Builder withResourceProvider(Function<String, InputStream> resourceProvider) {
+      this.resourceProvider = Objects.requireNonNull(resourceProvider);
+      return this;
+    }
+
+    public BuiltInQualityProfileJsonLoader build() {
+      return new BuiltInQualityProfileJsonLoader(resourceProvider);
+    }
   }
 
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static BuiltInQualityProfileJsonLoader loader() {
+    return new BuiltInQualityProfileJsonLoader(null);
+  }
+
+  @Nullable
+  private final Function<String, InputStream> resourceProvider;
+
+  private BuiltInQualityProfileJsonLoader(@Nullable Function<String, InputStream> resourceProvider) {
+    this.resourceProvider = resourceProvider;
+  }
+
+  /**
+   * @deprecated since 1.27 - Use {@link #loader()}.{@link #loadProfile(NewBuiltInQualityProfile, String, String)} instead
+   */
+  @Deprecated(forRemoval = true)
   public static void load(NewBuiltInQualityProfile profile, String repositoryKey, String jsonProfilePath) {
-    Set<String> activeKeys = loadActiveKeysFromJsonProfile(jsonProfilePath);
+    new BuiltInQualityProfileJsonLoader(null).loadProfile(profile, repositoryKey, jsonProfilePath);
+  }
+
+  public void loadProfile(NewBuiltInQualityProfile profile, String repositoryKey, String jsonProfilePath) {
+    Set<String> activeKeys = activeKeysFromJsonProfile(jsonProfilePath);
     for (String activeKey : activeKeys) {
       profile.activateRule(repositoryKey, activeKey);
     }
   }
 
+  /**
+   * @deprecated since 1.27 - Use {@link #loader()}.{@link #activeKeysFromJsonProfile(String)} instead
+   */
+  @Deprecated(forRemoval = true)
   public static Set<String> loadActiveKeysFromJsonProfile(String profilePath) {
+    return new BuiltInQualityProfileJsonLoader(null).activeKeysFromJsonProfile(profilePath);
+  }
+
+  public Set<String> activeKeysFromJsonProfile(String profilePath) {
     JsonParser jsonParser = new JsonParser();
     Map<String, Object> root;
     try {
-      root = jsonParser.parse(Resources.toString(profilePath, UTF_8));
+      root = jsonParser.parse(Resources.toString(resourceProvider, profilePath, UTF_8));
     } catch (IOException e) {
       throw new IllegalStateException("Can't read resource: " + profilePath, e);
     }

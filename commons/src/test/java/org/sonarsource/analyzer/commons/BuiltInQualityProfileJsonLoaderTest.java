@@ -62,6 +62,28 @@ public class BuiltInQualityProfileJsonLoaderTest {
   }
 
   @Test
+  public void load_rule_keys() {
+    assertThat(BuiltInQualityProfileJsonLoader.loadActiveKeysFromJsonProfile(PROFILE_PATH)).containsExactly("S100", "S110");
+  }
+
+  @Test
+  public void load_profile_keys_with_resource_provider() {
+    NewBuiltInQualityProfile newProfile = testContext.createBuiltInQualityProfile(PROFILE_NAME, LANGUAGE);
+    BuiltInQualityProfileJsonLoader loader = BuiltInQualityProfileJsonLoader.builder().withResourceProvider(Resources.class.getClassLoader()::getResourceAsStream).build();
+    loader.loadProfile(newProfile, REPOSITORY_KEY, PROFILE_PATH);
+    newProfile.done();
+
+    BuiltInQualityProfile profile = testContext.profile(LANGUAGE, PROFILE_NAME);
+
+    List<BuiltInActiveRule> activeRules = profile.rules();
+    assertThat(activeRules).hasSize(2);
+    assertThat(profile.rule(RuleKey.of(REPOSITORY_KEY, "S100"))).isNotNull();
+    assertThat(profile.rule(RuleKey.of(REPOSITORY_KEY, "S110"))).isNotNull();
+    assertThat(profile.rule(RuleKey.of(REPOSITORY_KEY, "S123"))).isNull();
+    assertThat(profile.rule(RuleKey.of(REPOSITORY_KEY, "S666"))).isNull();
+  }
+
+  @Test
   public void fails_when_activating_rules_more_than_once() {
     NewBuiltInQualityProfile newProfile = testContext.createBuiltInQualityProfile(PROFILE_NAME, LANGUAGE);
 

@@ -20,12 +20,16 @@
 package org.sonarsource.analyzer.commons;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import javax.annotation.Nullable;
 import org.sonar.api.SonarRuntime;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.RuleType;
@@ -54,27 +58,79 @@ public class RuleMetadataLoader {
   private static final String SECURITY_HOTSPOT = "SECURITY_HOTSPOT";
   private final String resourceFolder;
   private final Set<String> activatedByDefault;
-  private final JsonParser jsonParser;
   private final SonarRuntime sonarRuntime;
+  private final JsonParser jsonParser = new JsonParser();
+  @Nullable
+  private Function<String, InputStream> resourceProvider;
 
   private static final String OWASP_2021 = "OWASP Top 10 2021";
   private static final String OWASP_2017 = "OWASP";
   private static final String PCI_DSS_PREFIX = "PCI DSS ";
   private static final String ASVS_PREFIX = "ASVS ";
 
+  public static class Builder {
+
+    private Builder() {
+    }
+
+    private String resourceFolder;
+    private SonarRuntime sonarRuntime;
+    @Nullable
+    private String defaultProfilePath;
+    @Nullable
+    private Function<String, InputStream> resourceProvider;
+
+    public Builder forResources(String resourceFolder) {
+      this.resourceFolder = Objects.requireNonNull(resourceFolder);
+      return this;
+    }
+
+    public Builder withSonarRuntime(SonarRuntime sonarRuntime) {
+      this.sonarRuntime = Objects.requireNonNull(sonarRuntime);
+      return this;
+    }
+
+    public Builder withDefaultProfilePath(String defaultProfilePath) {
+      this.defaultProfilePath = Objects.requireNonNull(defaultProfilePath);
+      return this;
+    }
+
+    public Builder withResourceProvider(Function<String, InputStream> resourceProvider) {
+      this.resourceProvider = Objects.requireNonNull(resourceProvider);
+      return this;
+    }
+
+    public RuleMetadataLoader build() {
+      Objects.requireNonNull(resourceFolder);
+      Objects.requireNonNull(sonarRuntime);
+      return new RuleMetadataLoader(resourceProvider, resourceFolder, defaultProfilePath, sonarRuntime);
+    }
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
   public RuleMetadataLoader(String resourceFolder, SonarRuntime sonarRuntime) {
-    this(resourceFolder, Collections.emptySet(), sonarRuntime);
+    this(null, resourceFolder, null, sonarRuntime);
   }
 
   public RuleMetadataLoader(String resourceFolder, String defaultProfilePath, SonarRuntime sonarRuntime) {
-    this(resourceFolder, BuiltInQualityProfileJsonLoader.loadActiveKeysFromJsonProfile(defaultProfilePath), sonarRuntime);
+    this(null, resourceFolder, defaultProfilePath, sonarRuntime);
   }
 
-  private RuleMetadataLoader(String resourceFolder, Set<String> activatedByDefault, SonarRuntime sonarRuntime) {
+  private RuleMetadataLoader(@Nullable Function<String, InputStream> resourceProvider, String resourceFolder, @Nullable String defaultProfilePath, SonarRuntime sonarRuntime) {
+    this.resourceProvider = resourceProvider;
     this.resourceFolder = resourceFolder;
-    this.jsonParser = new JsonParser();
-    this.activatedByDefault = activatedByDefault;
     this.sonarRuntime = sonarRuntime;
+    if (defaultProfilePath != null) {
+      BuiltInQualityProfileJsonLoader loader = resourceProvider == null ?
+        BuiltInQualityProfileJsonLoader.loader() :
+        BuiltInQualityProfileJsonLoader.builder().withResourceProvider(resourceProvider).build();
+      activatedByDefault = loader.activeKeysFromJsonProfile(defaultProfilePath);
+    } else {
+      activatedByDefault = Collections.emptySet();
+    }
   }
 
   public void addRulesByAnnotatedClass(NewRepository repository, List<Class<?>> ruleClasses) {
@@ -151,7 +207,7 @@ public class RuleMetadataLoader {
     String htmlPath = resourceFolder + RESOURCE_SEP + rule.key() + ".html";
     String description;
     try {
-      description = Resources.toString(htmlPath, UTF_8);
+      description = Resources.toString(resourceProvider, htmlPath, UTF_8);
     } catch (IOException e) {
       throw new IllegalStateException("Can't read resource: " + htmlPath, e);
     }
@@ -181,7 +237,7 @@ public class RuleMetadataLoader {
   Map<String, Object> getMetadata(String ruleKey) {
     String jsonPath = resourceFolder + RESOURCE_SEP + ruleKey + ".json";
     try {
-      return jsonParser.parse(Resources.toString(jsonPath, UTF_8));
+      return jsonParser.parse(Resources.toString(resourceProvider, jsonPath, UTF_8));
     } catch (IOException | RuntimeException e) {
       throw new IllegalStateException("Can't read resource: " + jsonPath, e);
     }

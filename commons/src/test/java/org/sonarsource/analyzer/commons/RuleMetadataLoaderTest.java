@@ -102,6 +102,29 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
+  public void load_rule_S110_with_resource_provider() throws Exception {
+    @Rule(key = "S110") class TestRule {
+    }
+    ruleMetadataLoader = RuleMetadataLoader.builder()
+      .forResources(RESOURCE_FOLDER)
+      .withSonarRuntime(SONAR_RUNTIME_9_3)
+      .withResourceProvider(Resources.class.getClassLoader()::getResourceAsStream)
+      .build();
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+
+    newRepository.done();
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("S110");
+    assertThat(rule).isNotNull();
+    DebtRemediationFunction remediation = rule.debtRemediationFunction();
+    assertThat(remediation).isNotNull();
+    assertThat(remediation.type()).isEqualTo(DebtRemediationFunction.Type.LINEAR_OFFSET);
+    assertThat(remediation.baseEffort()).isEqualTo("4h");
+    assertThat(remediation.gapMultiplier()).isEqualTo("30min");
+    assertThat(rule.gapDescription()).isEqualTo("Number of parents above the defined threshold");
+  }
+
+  @Test
   public void load_rules_key_based() throws Exception {
     ruleMetadataLoader.addRulesByRuleKey(newRepository, Arrays.asList("S110", "S100"));
     newRepository.done();
@@ -221,6 +244,23 @@ public class RuleMetadataLoaderTest {
     class TestRule {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SONAR_RUNTIME_9_3);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S100");
+    assertThat(rule.activatedByDefault()).isTrue();
+  }
+
+  @Test
+  public void rule_in_default_profile_with_resource_provider() throws Exception {
+    @Rule(key = "S100")
+    class TestRule {
+    }
+    ruleMetadataLoader = RuleMetadataLoader.builder()
+      .forResources(RESOURCE_FOLDER)
+      .withSonarRuntime(SONAR_RUNTIME_9_3)
+      .withDefaultProfilePath(DEFAULT_PROFILE_PATH)
+      .withResourceProvider(Resources.class.getClassLoader()::getResourceAsStream)
+      .build();
     ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S100");

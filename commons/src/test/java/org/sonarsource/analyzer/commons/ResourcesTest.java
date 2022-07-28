@@ -20,6 +20,8 @@
 package org.sonarsource.analyzer.commons;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.function.Function;
 import org.junit.Test;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -30,6 +32,29 @@ public class ResourcesTest {
   @Test
   public void read_resource() throws Exception {
     assertThat(Resources.toString("org/sonarsource/analyzer/commons/ResourcesTest.txt", UTF_8)).isEqualTo("hello\n");
+  }
+
+  @Test
+  public void read_resource_with_provider() throws Exception {
+    assertThat(Resources.toString(
+      Resources.class.getClassLoader()::getResourceAsStream,
+      "org/sonarsource/analyzer/commons/ResourcesTest.txt",
+      UTF_8)).isEqualTo("hello\n");
+  }
+
+  @Test
+  public void read_resource_with_provider_helper() throws Exception {
+    Function<String, InputStream> provider = Resources.resourceProvider(Resources.class);
+    assertThat(Resources.toString(
+      provider,
+      "/org/sonarsource/analyzer/commons/ResourcesTest.txt",
+      UTF_8)).isEqualTo("hello\n");
+  }
+
+  @Test
+  public void resource_provider_can_return_null() throws Exception {
+    Function<String, InputStream> provider = Resources.resourceProvider(Resources.class);
+    assertThat(provider.apply("omvalid/path.txt")).isNull();
   }
 
   @Test(expected = IOException.class)
