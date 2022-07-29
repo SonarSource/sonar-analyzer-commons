@@ -20,13 +20,18 @@
 package org.sonarsource.analyzer.commons.regex.helpers;
 
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.BoundaryTree;
+import org.sonarsource.analyzer.commons.regex.ast.CharacterTree;
+import org.sonarsource.analyzer.commons.regex.ast.DotTree;
 import org.sonarsource.analyzer.commons.regex.ast.EndOfLookaroundState;
 import org.sonarsource.analyzer.commons.regex.ast.LookAroundTree;
 
@@ -39,6 +44,7 @@ public class RegexReachabilityChecker {
 
   private final boolean defaultAnswer;
   private final Map<OrderedStatePair, Boolean> cache = new HashMap<>();
+  private static final List<BoundaryTree.Type> TYPE_ENDINGS = Arrays.asList(BoundaryTree.Type.INPUT_END_FINAL_TERMINATOR, BoundaryTree.Type.LINE_END);
 
   public RegexReachabilityChecker(boolean defaultAnswer) {
     this.defaultAnswer = defaultAnswer;
@@ -106,7 +112,7 @@ public class RegexReachabilityChecker {
 
     for (AutomatonState successor : start.successors()) {
       AutomatonState.TransitionType transition = successor.incomingTransitionType();
-      if (((transition == CHARACTER) && canReach(successor, goal))
+      if (((transition == CHARACTER) && !isLineBreakOrPeriodAfterEndBoundaries(visited, successor) && canReach(successor, goal))
         || ((transition != CHARACTER) && canReachWithConsumingInput(successor, goal, visited))) {
         return true;
       }
@@ -151,10 +157,32 @@ public class RegexReachabilityChecker {
       // state itself reachable (but not any state behind it), so that we can check whether the end of the lookahead
       // can be reached without input from a given place within the lookahead.
       if ((successor instanceof EndOfLookaroundState && successor == goal)
-        || ((transition == EPSILON || transition == NEGATION) && canReachWithoutConsumingInput(successor, goal, stopAtBoundaries, visited))) {
+        || ((transition == EPSILON || transition == NEGATION || isLineBreakOrPeriodAfterEndBoundaries(visited, successor))
+            && canReachWithoutConsumingInput(successor, goal, stopAtBoundaries, visited))) {
         return true;
       }
     }
     return false;
+  }
+
+  // Checks whether some end boundaries ($ and \Z) have been previously visited and are followed by newline characters.
+  // Those boundaries do not consume new line characters, so the newline characters can be matched.
+  // Moreover, if the flag DOTALL is set, periods after those boundaries can be matched as well.
+  private static boolean isLineBreakOrPeriodAfterEndBoundaries(Set<AutomatonState> visited, AutomatonState currentState) {
+    if (isEscapeSequence(currentState) || isDotall(currentState)) {
+      return visited.stream()
+        .filter(BoundaryTree.class::isInstance)
+        .map(state -> ((BoundaryTree) state).type())
+        .anyMatch(TYPE_ENDINGS::contains);
+    }
+    return false;
+  }
+
+  private static boolean isEscapeSequence(AutomatonState state) {
+    return state instanceof CharacterTree && ((CharacterTree) state).isEscapeSequence();
+  }
+
+  private static boolean isDotall(AutomatonState currentState) {
+    return currentState instanceof DotTree && currentState.activeFlags().contains(Pattern.DOTALL);
   }
 }
