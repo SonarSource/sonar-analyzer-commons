@@ -82,7 +82,7 @@
     <version.junit-jupiter>5.8.1</version.junit-jupiter>
     <!-- used for deployment to SonarSource Artifactory -->
     <gitRepositoryName>sonar-analyzer-commons</gitRepositoryName>
-    <maven.compiler.release>8</maven.compiler.release>
+    <maven.compiler.release>11</maven.compiler.release>
     <artifactsToPublish>${project.groupId}:sonar-analyzer-commons:jar,${project.groupId}:sonar-analyzer-test-commons:jar,${project.groupId}:sonar-analyzer-recognizers:jar,${project.groupId}:sonar-xml-parsing:jar,${project.groupId}:test-sonar-xml-parsing:jar,${project.groupId}:sonar-regex-parsing:jar</artifactsToPublish>
   </properties>
 
