@@ -32,6 +32,11 @@ public class ResourcesTest {
     assertThat(Resources.toString("org/sonarsource/analyzer/commons/ResourcesTest.txt", UTF_8)).isEqualTo("hello\n");
   }
 
+  @Test
+  public void read_resource_with_absolute() throws Exception {
+    assertThat(Resources.toString("/org/sonarsource/analyzer/commons/ResourcesTest.txt", UTF_8)).isEqualTo("hello\n");
+  }
+
   @Test(expected = IOException.class)
   public void read_invalid_resource() throws Exception {
     Resources.toString("invalid/path.txt", UTF_8);
