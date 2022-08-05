@@ -10,7 +10,7 @@
 
   <groupId>org.sonarsource.analyzer-commons</groupId>
   <artifactId>sonar-analyzer-commons-parent</artifactId>
-  <version>1.27-SNAPSHOT</version>
+  <version>1.28-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>SonarSource Analyzers Commons Parent</name>
