@@ -219,8 +219,9 @@ public class AVLTreeTest {
     assertThat(t).hasToString("");
     assertThat(t.hashCode()).isZero();
     assertThat(t.contains("a")).isFalse();
-    assertThat(t.equals(t)).isTrue();
-    assertThat(t.equals("a")).isFalse();
+    assertThat(t)
+      .isEqualTo(t)
+      .isNotEqualTo("a");
 
     assertThatThrownBy(t::left).isInstanceOf(UnsupportedOperationException.class);
     assertThatThrownBy(t::right).isInstanceOf(UnsupportedOperationException.class);

@@ -71,7 +71,7 @@ public class ProgressReportTest {
     verify(logger, atLeast(3)).info(captor.capture());
 
     List<String> messages = captor.getAllValues();
-    assertThat(messages.size()).isGreaterThanOrEqualTo(3);
+    assertThat(messages).hasSizeGreaterThanOrEqualTo(3);
     assertThat(messages.get(0)).isEqualTo("2 source files to be analyzed");
     for (int i = 1; i < messages.size() - 1; i++) {
       assertThat(messages.get(i)).isEqualTo("0/2 files analyzed, current file: foo1.java");
@@ -99,7 +99,7 @@ public class ProgressReportTest {
     verify(logger, atLeast(3)).info(captor.capture());
 
     List<String> messages = captor.getAllValues();
-    assertThat(messages.size()).isGreaterThanOrEqualTo(3);
+    assertThat(messages).hasSizeGreaterThanOrEqualTo(3);
     assertThat(messages.get(0)).isEqualTo("1 source file to be analyzed");
     for (int i = 1; i < messages.size() - 1; i++) {
       assertThat(messages.get(i)).isEqualTo("0/1 files analyzed, current file: foo.java");
