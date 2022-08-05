@@ -42,7 +42,11 @@ final class Resources {
    * @throws IOException if an I/O error occurs.
    */
   static String toString(String path, Charset charset) throws IOException {
-    try (InputStream input = Resources.class.getClassLoader().getResourceAsStream(path)) {
+    if (!path.startsWith("/")) {
+      // to make sure it is always going to be considered as absolute
+      path = "/" + path;
+    }
+    try (InputStream input = Resources.class.getResourceAsStream(path)) {
       if (input == null) {
         throw new IOException("Resource not found in the classpath: " + path);
       }
