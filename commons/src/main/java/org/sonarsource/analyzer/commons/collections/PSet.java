@@ -19,8 +19,6 @@
  */
 package org.sonarsource.analyzer.commons.collections;
 
-import java.util.function.Consumer;
-
 /**
  * Persistent (functional) Set.
  *
