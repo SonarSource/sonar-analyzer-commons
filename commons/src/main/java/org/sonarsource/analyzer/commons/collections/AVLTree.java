@@ -19,11 +19,9 @@
  */
 package org.sonarsource.analyzer.commons.collections;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -138,7 +136,7 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
   @VisibleForTesting
   Object[] toArray() {
     Set<NodeRenderer<K, V>> nodes = new HashSet<>();
-    forEach((k,v) -> nodes.add(new NodeRenderer<>(k,v)));
+    forEach((k, v) -> nodes.add(new NodeRenderer<>(k, v)));
     return nodes.toArray();
   }
 
@@ -155,38 +153,32 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
 
   @Override
   public Iterator<K> iterator() {
-    return new TreeIterator<>(this);
+    return new TreeKeyIterator<>(this);
   }
 
-  private static class TreeIterator<E> implements Iterator<E> {
+  private static class TreeKeyIterator<E> implements Iterator<E> {
 
-    private final Deque<AVLTree> stack = new ArrayDeque<>();
-    private AVLTree current;
+    private final TreeIterator<E, ?> treeIterator;
 
-    public TreeIterator(AVLTree root) {
-      current = root;
+    TreeKeyIterator(AVLTree<E, ?> root) {
+      treeIterator = new TreeIterator<>(root);
     }
 
     @Override
     public boolean hasNext() {
-      return !stack.isEmpty() || !current.isEmpty();
+      return treeIterator.hasNext();
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public E next() {
-      if (!hasNext()) {
-        throw new NoSuchElementException();
-      }
-      while (!current.isEmpty()) {
-        stack.push(current);
-        current = current.left();
-      }
-      current = stack.pop();
-      AVLTree node = current;
-      current = current.right();
-      return (E) node.key();
+      return (E) treeIterator.next().key();
     }
+  }
+
+  @Override
+  public Iterable<Map.Entry<K, V>> entries() {
+    return new MapEntriesIterable<>(this);
   }
 
   protected abstract AVLTree left();
