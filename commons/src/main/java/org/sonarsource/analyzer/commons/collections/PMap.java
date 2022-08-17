@@ -19,6 +19,7 @@
  */
 package org.sonarsource.analyzer.commons.collections;
 
+import java.util.Map;
 import javax.annotation.Nullable;
 import java.util.function.BiConsumer;
 
@@ -66,4 +67,5 @@ public interface PMap<K, V> {
   @Override
   String toString();
 
+  Iterable<Map.Entry<K, V>> entries();
 }
