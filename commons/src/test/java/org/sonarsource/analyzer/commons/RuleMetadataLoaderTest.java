@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.sonar.api.SonarRuntime;
 import org.sonar.api.internal.SonarRuntimeImpl;
 import org.sonar.api.rule.RuleKey;
+import org.sonar.api.rule.RuleScope;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.debt.DebtRemediationFunction;
@@ -38,6 +39,7 @@ import org.sonar.check.Rule;
 import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.fail;
 
 public class RuleMetadataLoaderTest {
@@ -231,6 +233,34 @@ public class RuleMetadataLoaderTest {
   public void getStringArray() throws Exception {
     Map<String, Object> map = Collections.singletonMap("key", Arrays.asList("x", "y"));
     assertThat(RuleMetadataLoader.getStringArray(map, "key")).containsExactly("x", "y");
+  }
+
+  @Test
+  public void getScopeIfPresent() {
+    RuleScope scope;
+
+    assertThat(RuleMetadataLoader.getScopeIfPresent(Collections.emptyMap(), "scope")).isNotPresent();
+    assertThat(RuleMetadataLoader.getScopeIfPresent(Collections.singletonMap("scope", null), "scope")).isNotPresent();
+    assertThat(RuleMetadataLoader.getScopeIfPresent(Collections.singletonMap("scope", false), "scope")).isNotPresent();
+
+    scope = RuleMetadataLoader.getScopeIfPresent(Collections.singletonMap("scope", "main"), "scope").orElse(null);
+    assertThat(scope).isEqualTo(RuleScope.MAIN);
+
+    scope = RuleMetadataLoader.getScopeIfPresent(Collections.singletonMap("scope", "Main"), "scope").orElse(null);
+    assertThat(scope).isEqualTo(RuleScope.MAIN);
+
+    scope = RuleMetadataLoader.getScopeIfPresent(Collections.singletonMap("scope", "Test"), "scope").orElse(null);
+    assertThat(scope).isEqualTo(RuleScope.TEST);
+
+    scope = RuleMetadataLoader.getScopeIfPresent(Collections.singletonMap("scope", "Tests"), "scope").orElse(null);
+    assertThat(scope).isEqualTo(RuleScope.TEST);
+
+    scope = RuleMetadataLoader.getScopeIfPresent(Collections.singletonMap("scope", "All"), "scope").orElse(null);
+    assertThat(scope).isEqualTo(RuleScope.ALL);
+
+    Map<String, Object> map = Collections.singletonMap("scope", "Unknown");
+    assertThatThrownBy(() -> RuleMetadataLoader.getScopeIfPresent(map, "scope"))
+      .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test(expected = IllegalStateException.class)
