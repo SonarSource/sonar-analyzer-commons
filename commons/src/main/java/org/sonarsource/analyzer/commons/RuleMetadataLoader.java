@@ -25,8 +25,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.sonar.api.SonarRuntime;
+import org.sonar.api.rule.RuleScope;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.rule.RulesDefinition;
@@ -166,6 +168,7 @@ public class RuleMetadataLoader {
     rule.setType(RuleType.valueOf(type));
     rule.setStatus(RuleStatus.valueOf(getUpperCaseString(ruleMetadata, "status")));
     rule.setTags(getStringArray(ruleMetadata, "tags"));
+    getScopeIfPresent(ruleMetadata, "scope").ifPresent(rule::setScope);
 
     Object remediation = ruleMetadata.get("remediation");
     if (remediation != null) {
@@ -283,6 +286,19 @@ public class RuleMetadataLoader {
       throw new IllegalStateException(String.format(INVALID_PROPERTY_MESSAGE, propertyName));
     }
     return ((List<String>) propertyValue).toArray(new String[0]);
+  }
+
+  /*
+   * Unlike the other metadata getter methods, It won't throw an exception if the value is missing but if the value is not a valid rule
+   * scope. The method ignores case and the value "Tests" is mapped to RuleScope.TEST.
+   */
+  static Optional<RuleScope> getScopeIfPresent(Map<String, Object> map, String propertyName) {
+    Object propertyValue = map.get(propertyName);
+    return Optional.ofNullable(propertyValue)
+      .filter(String.class::isInstance)
+      .map(value -> ((String) value).toUpperCase(Locale.ROOT))
+      .map(scope -> "TESTS".equals(scope) ? "TEST" : scope)
+      .map(RuleScope::valueOf);
   }
 
   private static int[] getIntArray(Map<String, Object> map, String propertyName) {
