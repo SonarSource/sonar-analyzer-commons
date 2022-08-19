@@ -20,7 +20,6 @@
 package org.sonarsource.analyzer.commons;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -39,6 +38,9 @@ import org.sonar.api.utils.Version;
 import org.sonar.check.Rule;
 import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKey;
 
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.fail;
@@ -69,7 +71,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "S100") class TestRule {
     }
 
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
     RulesDefinition.Rule rule = repository.rule("S100");
@@ -91,7 +93,7 @@ public class RuleMetadataLoaderTest {
   public void load_rule_S110() throws Exception {
     @Rule(key = "S110") class TestRule {
     }
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
     RulesDefinition.Rule rule = repository.rule("S110");
@@ -126,7 +128,7 @@ public class RuleMetadataLoaderTest {
     @Rule(key = "S123")
     class TestRule {
     }
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
     newRepository.done();
 
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
@@ -145,7 +147,7 @@ public class RuleMetadataLoaderTest {
     @DeprecatedRuleKey(repositoryKey = "oldRepo", ruleKey = "oldKey")
     class TestRule {
     }
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
     newRepository.done();
 
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
@@ -159,7 +161,7 @@ public class RuleMetadataLoaderTest {
     @DeprecatedRuleKey(repositoryKey = "oldRepo2", ruleKey = "oldKey2")
     class TestRule {
     }
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
     newRepository.done();
 
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
@@ -172,7 +174,7 @@ public class RuleMetadataLoaderTest {
     @DeprecatedRuleKey(ruleKey = "oldKey")
     class TestRule {
     }
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
     newRepository.done();
 
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
@@ -200,7 +202,7 @@ public class RuleMetadataLoaderTest {
     class TestRule {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_9_3);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S100");
     assertThat(rule.activatedByDefault()).isFalse();
@@ -212,7 +214,7 @@ public class RuleMetadataLoaderTest {
     class TestRule {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SONAR_RUNTIME_9_3);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S123");
     assertThat(rule.activatedByDefault()).isFalse();
@@ -224,7 +226,7 @@ public class RuleMetadataLoaderTest {
     class TestRule {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SONAR_RUNTIME_9_3);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S100");
     assertThat(rule.activatedByDefault()).isTrue();
@@ -232,7 +234,7 @@ public class RuleMetadataLoaderTest {
 
   @Test
   public void getStringArray() throws Exception {
-    Map<String, Object> map = Collections.singletonMap("key", Arrays.asList("x", "y"));
+    Map<String, Object> map = singletonMap("key", Arrays.asList("x", "y"));
     assertThat(RuleMetadataLoader.getStringArray(map, "key")).containsExactly("x", "y");
   }
 
@@ -240,44 +242,44 @@ public class RuleMetadataLoaderTest {
   public void getScopeIfPresent() {
     Optional<RuleScope> scope;
 
-    scope = RuleMetadataLoader.getScopeIfPresent(Collections.emptyMap(), "scope");
+    scope = RuleMetadataLoader.getScopeIfPresent(emptyMap(), "scope");
     assertThat(scope).isNotPresent();
 
-    scope = RuleMetadataLoader.getScopeIfPresent(Collections.singletonMap("scope", null), "scope");
+    scope = RuleMetadataLoader.getScopeIfPresent(singletonMap("scope", null), "scope");
     assertThat(scope).isNotPresent();
 
-    scope = RuleMetadataLoader.getScopeIfPresent(Collections.singletonMap("scope", false), "scope");
+    scope = RuleMetadataLoader.getScopeIfPresent(singletonMap("scope", false), "scope");
     assertThat(scope).isNotPresent();
 
-    scope = RuleMetadataLoader.getScopeIfPresent(Collections.singletonMap("scope", "main"), "scope");
+    scope = RuleMetadataLoader.getScopeIfPresent(singletonMap("scope", "main"), "scope");
     assertThat(scope).contains(RuleScope.MAIN);
 
-    scope = RuleMetadataLoader.getScopeIfPresent(Collections.singletonMap("scope", "Main"), "scope");
+    scope = RuleMetadataLoader.getScopeIfPresent(singletonMap("scope", "Main"), "scope");
     assertThat(scope).contains(RuleScope.MAIN);
 
-    scope = RuleMetadataLoader.getScopeIfPresent(Collections.singletonMap("scope", "Test"), "scope");
+    scope = RuleMetadataLoader.getScopeIfPresent(singletonMap("scope", "Test"), "scope");
     assertThat(scope).contains(RuleScope.TEST);
 
-    scope = RuleMetadataLoader.getScopeIfPresent(Collections.singletonMap("scope", "Tests"), "scope");
+    scope = RuleMetadataLoader.getScopeIfPresent(singletonMap("scope", "Tests"), "scope");
     assertThat(scope).contains(RuleScope.TEST);
 
-    scope = RuleMetadataLoader.getScopeIfPresent(Collections.singletonMap("scope", "All"), "scope");
+    scope = RuleMetadataLoader.getScopeIfPresent(singletonMap("scope", "All"), "scope");
     assertThat(scope).contains(RuleScope.ALL);
 
-    Map<String, Object> map = Collections.singletonMap("scope", "Unknown");
+    Map<String, Object> map = singletonMap("scope", "Unknown");
     assertThatThrownBy(() -> RuleMetadataLoader.getScopeIfPresent(map, "scope"))
       .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test(expected = IllegalStateException.class)
   public void getStringArray_with_invalid_type() throws Exception {
-    Map<String, Object> map = Collections.singletonMap("key", "x");
+    Map<String, Object> map = singletonMap("key", "x");
     RuleMetadataLoader.getStringArray(map, "key");
   }
 
   @Test
   public void getStringArray_without_property() {
-    assertThat(RuleMetadataLoader.getStringArray(Collections.emptyMap(), "key")).isEmpty();
+    assertThat(RuleMetadataLoader.getStringArray(emptyMap(), "key")).isEmpty();
   }
 
   @Test
@@ -286,7 +288,7 @@ public class RuleMetadataLoaderTest {
     class TestRule {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, SONAR_RUNTIME_9_3);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
     assertThat(rule.type()).isEqualTo(RuleType.SECURITY_HOTSPOT);
@@ -341,7 +343,7 @@ public class RuleMetadataLoaderTest {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_9_3);
     try {
-      ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+      ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
       fail("Should have failed");
     } catch (Exception e) {
       assertThat(e).isInstanceOf(IllegalStateException.class);
@@ -356,7 +358,7 @@ public class RuleMetadataLoaderTest {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_9_3);
     try {
-      ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+      ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
       fail("Should have failed");
     } catch (Exception e) {
       assertThat(e).isInstanceOf(IllegalStateException.class);
@@ -371,7 +373,7 @@ public class RuleMetadataLoaderTest {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, "org/sonarsource/analyzer/commons/profile_wrong_cwe.json", SONAR_RUNTIME_9_3);
     try {
-      ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+      ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
       fail("Should have failed");
     } catch (Exception e) {
       assertThat(e).isInstanceOf(IllegalStateException.class);
@@ -384,7 +386,7 @@ public class RuleMetadataLoaderTest {
     class TestRule {
     }
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, DEFAULT_PROFILE_PATH, sonarRuntime);
-    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, Collections.singletonList(TestRule.class));
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
     return rule.securityStandards();
