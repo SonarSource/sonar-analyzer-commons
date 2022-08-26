@@ -72,6 +72,11 @@ public abstract class RegexTree extends AbstractRegexSyntaxElement implements Au
     return false;
   }
 
+  @Override
+  public boolean isBeginningLowerThan(int offset, boolean defaultValue) {
+    return this.getRange().getBeginningOffset() < offset;
+  }
+
   private AutomatonState continuation;
 
   @Nonnull

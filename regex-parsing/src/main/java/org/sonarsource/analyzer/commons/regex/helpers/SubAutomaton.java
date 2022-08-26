@@ -23,16 +23,23 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState.TransitionType;
+import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 
 public class SubAutomaton {
   public final AutomatonState start;
   public final AutomatonState end;
   public final boolean allowPrefix;
+  public final int lowerBound;
 
   public SubAutomaton(AutomatonState start, AutomatonState end, boolean allowPrefix) {
+    this(start, end, -1, allowPrefix);
+  }
+
+  public SubAutomaton(AutomatonState start, AutomatonState end, int lowerBound, boolean allowPrefix) {
     this.start = start;
     this.end = end;
     this.allowPrefix = allowPrefix;
+    this.lowerBound = lowerBound;
   }
 
   public TransitionType incomingTransitionType() {
@@ -45,7 +52,7 @@ public class SubAutomaton {
 
   public boolean anySuccessorMatch(Predicate<SubAutomaton> predicate) {
     for (AutomatonState successor : start.successors()) {
-      if (predicate.test(new SubAutomaton(successor, end, allowPrefix))) {
+      if (!successor.isBeginningLowerThan(lowerBound, false) && predicate.test(new SubAutomaton(successor, end, lowerBound, allowPrefix))) {
         return true;
       }
     }
@@ -54,7 +61,7 @@ public class SubAutomaton {
 
   public boolean allSuccessorMatch(Predicate<SubAutomaton> predicate) {
     for (AutomatonState successor : start.successors()) {
-      if (!predicate.test(new SubAutomaton(successor, end, allowPrefix))) {
+      if (!successor.isBeginningLowerThan(lowerBound, false) && !predicate.test(new SubAutomaton(successor, end, lowerBound, allowPrefix))) {
         return false;
       }
     }

@@ -37,6 +37,10 @@ public interface AutomatonState {
     return Collections.singletonList(continuation());
   }
 
+  default boolean isBeginningLowerThan(int offset, boolean defaultValue) {
+    return defaultValue;
+  }
+
   @Nonnull
   TransitionType incomingTransitionType();
 

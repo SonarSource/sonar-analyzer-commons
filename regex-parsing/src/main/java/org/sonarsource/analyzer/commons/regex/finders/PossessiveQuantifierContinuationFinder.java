@@ -58,11 +58,12 @@ public class PossessiveQuantifierContinuationFinder extends RegexBaseVisitor {
 
   private boolean doesRepetitionContinuationAlwaysFail(RepetitionTree repetitionTree) {
     Quantifier quantifier = repetitionTree.getQuantifier();
+    int lowerBound = repetitionTree.getRange().getBeginningOffset();
     if (!quantifier.isOpenEnded() || quantifier.getModifier() != Quantifier.Modifier.POSSESSIVE) {
       return false;
     }
-    SubAutomaton potentialSuperset = new SubAutomaton(repetitionTree.getElement(), repetitionTree.continuation(), false);
-    SubAutomaton potentialSubset = new SubAutomaton(repetitionTree.continuation(), finalState, true);
+    SubAutomaton potentialSuperset = new SubAutomaton(repetitionTree.getElement(), repetitionTree.getElement().continuation(), lowerBound, false);
+    SubAutomaton potentialSubset = new SubAutomaton(repetitionTree.continuation(), finalState, lowerBound, true);
     return RegexTreeHelper.supersetOf(potentialSuperset, potentialSubset, false);
   }
 }

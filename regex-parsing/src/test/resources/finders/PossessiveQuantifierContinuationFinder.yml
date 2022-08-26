@@ -8,6 +8,9 @@
 - '.*+\w' # Noncompliant
 - '.*+\w+' # Noncompliant
 - '(a|b|c)*+(a|b)' # Noncompliant
+- '(bx++)+x' # Noncompliant
+- '(b(?:xy|c)++)+xy+d' # Noncompliant
+- '(((?:xyz)++x)+y)+z' # Noncompliant
 
 - 'a+abc'
 - 'a+?abc'
@@ -15,5 +18,4 @@
 - 'aa++bc'
 - '\d*+(?<=[02468])'
 - '(:[0-9])?+(:[0-9])?+'
-- '(bx++)+x' # FN because limitation of the algorithm when there's infinite loop
 - '(?(1)(.*)|())'

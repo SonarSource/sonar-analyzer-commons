@@ -57,15 +57,16 @@ public class FailingLookaheadFinder extends RegexBaseVisitor {
 
   private boolean doesLookaheadContinuationAlwaysFail(LookAroundTree lookAround) {
     RegexTree lookAroundElement = lookAround.getElement();
+    int lowerBound = lookAround.getRange().getBeginningOffset();
     SubAutomaton lookAroundSubAutomaton;
-    SubAutomaton continuationSubAutomaton = new SubAutomaton(lookAround.continuation(), finalState, true);
+    SubAutomaton continuationSubAutomaton = new SubAutomaton(lookAround.continuation(), finalState, lowerBound, true);
 
     if (lookAround.getPolarity() == LookAroundTree.Polarity.NEGATIVE) {
-      lookAroundSubAutomaton = new SubAutomaton(lookAroundElement, lookAroundElement.continuation(), false);
+      lookAroundSubAutomaton = new SubAutomaton(lookAroundElement, lookAroundElement.continuation(), lowerBound, false);
       return RegexTreeHelper.supersetOf(lookAroundSubAutomaton, continuationSubAutomaton, false);
     }
     boolean canLookAroundBeAPrefix = matchType != MatchType.FULL;
-    lookAroundSubAutomaton = new SubAutomaton(lookAroundElement, lookAroundElement.continuation(), canLookAroundBeAPrefix);
+    lookAroundSubAutomaton = new SubAutomaton(lookAroundElement, lookAroundElement.continuation(), lowerBound, canLookAroundBeAPrefix);
     return !RegexTreeHelper.intersects(lookAroundSubAutomaton, continuationSubAutomaton, true);
   }
 }
