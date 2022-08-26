@@ -20,10 +20,9 @@
 package org.sonarsource.analyzer.commons.regex.helpers;
 
 import java.util.Objects;
-import java.util.function.Predicate;
+import java.util.stream.Stream;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState.TransitionType;
-import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 
 public class SubAutomaton {
   public final AutomatonState start;
@@ -50,22 +49,10 @@ public class SubAutomaton {
     return start == end;
   }
 
-  public boolean anySuccessorMatch(Predicate<SubAutomaton> predicate) {
-    for (AutomatonState successor : start.successors()) {
-      if (!successor.isBeginningLowerThan(lowerBound, false) && predicate.test(new SubAutomaton(successor, end, lowerBound, allowPrefix))) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public boolean allSuccessorMatch(Predicate<SubAutomaton> predicate) {
-    for (AutomatonState successor : start.successors()) {
-      if (!successor.isBeginningLowerThan(lowerBound, false) && !predicate.test(new SubAutomaton(successor, end, lowerBound, allowPrefix))) {
-        return false;
-      }
-    }
-    return true;
+  public Stream<SubAutomaton> successorsAutomata() {
+    return start.successors().stream()
+      .filter(successor -> !successor.isBeginningLowerThan(lowerBound, false))
+      .map(successor -> new SubAutomaton(successor, end, lowerBound, allowPrefix));
   }
 
   @Override
@@ -74,13 +61,14 @@ public class SubAutomaton {
     if (o == null || getClass() != o.getClass()) return false;
     SubAutomaton automaton = (SubAutomaton) o;
     return allowPrefix == automaton.allowPrefix &&
+      lowerBound == automaton.lowerBound &&
       Objects.equals(start, automaton.start) &&
       Objects.equals(end, automaton.end);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(start, end, allowPrefix);
+    return Objects.hash(start, end, lowerBound, allowPrefix);
   }
 }
 
