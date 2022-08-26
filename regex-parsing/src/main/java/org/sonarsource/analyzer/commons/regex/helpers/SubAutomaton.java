@@ -23,6 +23,8 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState.TransitionType;
+import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
+import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
 
 public class SubAutomaton {
   public final AutomatonState start;
@@ -51,7 +53,9 @@ public class SubAutomaton {
 
   public Stream<SubAutomaton> successorsAutomata() {
     return start.successors().stream()
-      .filter(successor -> !successor.isBeginningLowerThan(lowerBound, false))
+      .filter(successor ->
+        successor.toRegexTree().filter(tree -> tree.is(RegexTree.Kind.REPETITION)).isPresent() ||
+        successor.toRegexTree().map(tree -> tree.getRange().getBeginningOffset() >= lowerBound).orElse(true))
       .map(successor -> new SubAutomaton(successor, end, lowerBound, allowPrefix));
   }
 

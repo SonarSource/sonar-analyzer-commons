@@ -7,6 +7,7 @@
 - '(?!.)ab' # Noncompliant
 - '(?:a(?!bc)|d)+bc' # Noncompliant
 - 'a(?!:abc):ab'
+- '(?:-(?:one|[0-9]+([a-z](?=[^a-z]|$)|st|nd|rd|th)?))*'
 
 - '(?=a)a'
 - '(?=a)..'

@@ -19,6 +19,7 @@
  */
 package org.sonarsource.analyzer.commons.regex.ast;
 
+import java.util.Optional;
 import javax.annotation.Nonnull;
 import org.sonarsource.analyzer.commons.regex.RegexSource;
 
@@ -73,8 +74,8 @@ public abstract class RegexTree extends AbstractRegexSyntaxElement implements Au
   }
 
   @Override
-  public boolean isBeginningLowerThan(int offset, boolean defaultValue) {
-    return this.getRange().getBeginningOffset() < offset;
+  public Optional<RegexTree> toRegexTree() {
+    return Optional.of(this);
   }
 
   private AutomatonState continuation;
