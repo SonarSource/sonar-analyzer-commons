@@ -24,12 +24,12 @@ import org.sonarsource.analyzer.commons.regex.MatchType;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.FinalState;
 import org.sonarsource.analyzer.commons.regex.ast.LookAroundTree;
-import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
+import org.sonarsource.analyzer.commons.regex.helpers.BranchTrackingVisitor;
 import org.sonarsource.analyzer.commons.regex.helpers.RegexTreeHelper;
 import org.sonarsource.analyzer.commons.regex.helpers.SubAutomaton;
 
-public class FailingLookaheadFinder extends RegexBaseVisitor {
+public class FailingLookaheadFinder extends BranchTrackingVisitor {
 
   private static final String MESSAGE = "Remove or fix this lookahead assertion that can never be true.";
 
@@ -57,16 +57,15 @@ public class FailingLookaheadFinder extends RegexBaseVisitor {
 
   private boolean doesLookaheadContinuationAlwaysFail(LookAroundTree lookAround) {
     RegexTree lookAroundElement = lookAround.getElement();
-    int lowerBound = lookAround.getRange().getBeginningOffset();
     SubAutomaton lookAroundSubAutomaton;
-    SubAutomaton continuationSubAutomaton = new SubAutomaton(lookAround.continuation(), finalState, lowerBound, true);
+    SubAutomaton continuationSubAutomaton = new SubAutomaton(lookAround.continuation(), finalState, getBranchRangeFor(lookAround), true);
 
     if (lookAround.getPolarity() == LookAroundTree.Polarity.NEGATIVE) {
-      lookAroundSubAutomaton = new SubAutomaton(lookAroundElement, lookAroundElement.continuation(), lowerBound, false);
+      lookAroundSubAutomaton = new SubAutomaton(lookAroundElement, lookAroundElement.continuation(), false);
       return RegexTreeHelper.supersetOf(lookAroundSubAutomaton, continuationSubAutomaton, false);
     }
     boolean canLookAroundBeAPrefix = matchType != MatchType.FULL;
-    lookAroundSubAutomaton = new SubAutomaton(lookAroundElement, lookAroundElement.continuation(), lowerBound, canLookAroundBeAPrefix);
+    lookAroundSubAutomaton = new SubAutomaton(lookAroundElement, lookAroundElement.continuation(), canLookAroundBeAPrefix);
     return !RegexTreeHelper.intersects(lookAroundSubAutomaton, continuationSubAutomaton, true);
   }
 }

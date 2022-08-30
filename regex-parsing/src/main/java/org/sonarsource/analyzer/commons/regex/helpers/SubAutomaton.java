@@ -23,24 +23,23 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState.TransitionType;
-import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
-import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
+import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
 
 public class SubAutomaton {
   public final AutomatonState start;
   public final AutomatonState end;
+  public final IndexRange excludedRange;
   public final boolean allowPrefix;
-  public final int lowerBound;
 
   public SubAutomaton(AutomatonState start, AutomatonState end, boolean allowPrefix) {
-    this(start, end, -1, allowPrefix);
+    this(start, end, new IndexRange(-1, -1), allowPrefix);
   }
 
-  public SubAutomaton(AutomatonState start, AutomatonState end, int lowerBound, boolean allowPrefix) {
+  public SubAutomaton(AutomatonState start, AutomatonState end, IndexRange excludedRange, boolean allowPrefix) {
     this.start = start;
     this.end = end;
     this.allowPrefix = allowPrefix;
-    this.lowerBound = lowerBound;
+    this.excludedRange = excludedRange;
   }
 
   public TransitionType incomingTransitionType() {
@@ -54,9 +53,8 @@ public class SubAutomaton {
   public Stream<SubAutomaton> successorsAutomata() {
     return start.successors().stream()
       .filter(successor ->
-        successor.toRegexTree().filter(tree -> tree.is(RegexTree.Kind.REPETITION)).isPresent() ||
-        successor.toRegexTree().map(tree -> tree.getRange().getBeginningOffset() >= lowerBound).orElse(true))
-      .map(successor -> new SubAutomaton(successor, end, lowerBound, allowPrefix));
+        successor.toRegexTree().map(tree -> !excludedRange.contains(tree.getRange())).orElse(true))
+      .map(successor -> new SubAutomaton(successor, end, excludedRange, allowPrefix));
   }
 
   @Override
@@ -65,14 +63,14 @@ public class SubAutomaton {
     if (o == null || getClass() != o.getClass()) return false;
     SubAutomaton automaton = (SubAutomaton) o;
     return allowPrefix == automaton.allowPrefix &&
-      lowerBound == automaton.lowerBound &&
+      Objects.equals(excludedRange, automaton.excludedRange) &&
       Objects.equals(start, automaton.start) &&
       Objects.equals(end, automaton.end);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(start, end, lowerBound, allowPrefix);
+    return Objects.hash(start, end, excludedRange, allowPrefix);
   }
 }
 
