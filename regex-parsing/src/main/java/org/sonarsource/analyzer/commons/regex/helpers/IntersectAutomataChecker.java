@@ -36,20 +36,20 @@ public class IntersectAutomataChecker extends AbstractAutomataChecker {
     SimplifiedRegexCharacterClass characterClass2 = SimplifiedRegexCharacterClass.of(auto2.start);
     return ((characterClass1 != null) && (characterClass2 != null)) ?
       (characterClass1.intersects(characterClass2, defaultAnswer) &&
-        auto1.successorsAutomata().anyMatch(successor1 ->
-          auto2.successorsAutomata().anyMatch(successor2 ->
+        auto1.anySuccessorMatch(successor1 ->
+          auto2.anySuccessorMatch(successor2 ->
             check(successor1, successor2, true)))
       ) : defaultAnswer;
   }
 
   @Override
   protected boolean checkAuto1Successors(SubAutomaton auto1, SubAutomaton auto2, boolean defaultAnswer, boolean hasConsumedInput) {
-    return auto1.successorsAutomata().anyMatch(successor -> check(successor, auto2, hasConsumedInput));
+    return auto1.anySuccessorMatch(successor -> check(successor, auto2, hasConsumedInput));
   }
 
   @Override
   protected boolean checkAuto2Successors(SubAutomaton auto1, SubAutomaton auto2, boolean defaultAnswer, boolean hasConsumedInput) {
-    return auto2.successorsAutomata().anyMatch(successor -> check(auto1, successor, hasConsumedInput));
+    return auto2.anySuccessorMatch(successor -> check(auto1, successor, hasConsumedInput));
   }
 }
 
