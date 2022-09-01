@@ -21,7 +21,6 @@ package org.sonarsource.analyzer.commons.regex.helpers;
 
 import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState.TransitionType;
 import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
@@ -53,7 +52,8 @@ public class SubAutomaton {
 
   public boolean anySuccessorMatch(Predicate<SubAutomaton> predicate) {
     for (AutomatonState successor : start.successors()) {
-      if (successor.toRegexTree().map(tree -> !excludedRange.contains(tree.getRange())).orElse(true) && predicate.test(new SubAutomaton(successor, end, excludedRange, allowPrefix))) {
+      if (successor.toRegexTree().map(tree -> !excludedRange.contains(tree.getRange())).orElse(true) &&
+          predicate.test(new SubAutomaton(successor, end, excludedRange, allowPrefix))) {
         return true;
       }
     }
@@ -62,7 +62,8 @@ public class SubAutomaton {
 
   public boolean allSuccessorMatch(Predicate<SubAutomaton> predicate) {
     for (AutomatonState successor : start.successors()) {
-      if (successor.toRegexTree().map(tree -> !excludedRange.contains(tree.getRange())).orElse(true) && !predicate.test(new SubAutomaton(successor, end, excludedRange, allowPrefix))) {
+      if (successor.toRegexTree().map(tree -> !excludedRange.contains(tree.getRange())).orElse(true)
+          && !predicate.test(new SubAutomaton(successor, end, excludedRange, allowPrefix))) {
         return false;
       }
     }
