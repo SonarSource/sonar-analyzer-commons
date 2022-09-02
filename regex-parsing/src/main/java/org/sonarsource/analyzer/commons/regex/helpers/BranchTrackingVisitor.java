@@ -34,7 +34,7 @@ import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
  * cycles during Automaton evaluation.
  */
 public class BranchTrackingVisitor extends RegexBaseVisitor {
-  private Deque<RegexTree> branchingNodes = new ArrayDeque<>();
+  private final Deque<RegexTree> branchingNodes = new ArrayDeque<>();
 
   @Override
   public void visitDisjunction(DisjunctionTree tree) {
