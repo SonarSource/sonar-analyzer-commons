@@ -21,7 +21,6 @@ package org.sonarsource.analyzer.commons.regex.helpers;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Stack;
 import org.sonarsource.analyzer.commons.regex.ast.AbstractRegexSyntaxElement;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
 import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
