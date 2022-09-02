@@ -19,6 +19,9 @@
  */
 package org.sonarsource.analyzer.commons.regex.helpers;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Stack;
 import org.sonarsource.analyzer.commons.regex.ast.AbstractRegexSyntaxElement;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
 import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
@@ -31,18 +34,20 @@ import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
  * cycles during Automaton evaluation.
  */
 public class BranchTrackingVisitor extends RegexBaseVisitor {
-  private RegexTree closestBranchingNode = null;
+  private Deque<RegexTree> branchingNodes = new ArrayDeque<>();
 
   @Override
   public void visitDisjunction(DisjunctionTree tree) {
-    closestBranchingNode = tree;
+    branchingNodes.push(tree);
     super.visitDisjunction(tree);
+    branchingNodes.pop();
   }
 
   @Override
   public void visitRepetition(RepetitionTree tree) {
-    closestBranchingNode = tree;
+    branchingNodes.push(tree);
     super.visitRepetition(tree);
+    branchingNodes.pop();
   }
 
   /**
@@ -52,16 +57,19 @@ public class BranchTrackingVisitor extends RegexBaseVisitor {
    * @return IndexRange of the node's branch.
    */
   public IndexRange getBranchRangeFor(RegexTree tree) {
-    if (closestBranchingNode == null) {
+    if (branchingNodes.isEmpty()) {
       return IndexRange.inaccessible();
-    } else if (closestBranchingNode.is(RegexTree.Kind.REPETITION)) {
-      return ((RepetitionTree) closestBranchingNode).getElement().getRange();
     } else {
-      return ((DisjunctionTree) closestBranchingNode).getAlternatives().stream()
-        .filter(alternative -> alternative.getRange().contains(tree.getRange()))
-        .findFirst()
-        .map(AbstractRegexSyntaxElement::getRange)
-        .orElse(IndexRange.inaccessible());
+      RegexTree closestBranchingNode = branchingNodes.peek();
+      if (branchingNodes.peek().is(RegexTree.Kind.REPETITION)) {
+        return ((RepetitionTree) closestBranchingNode).getElement().getRange();
+      } else {
+        return ((DisjunctionTree) closestBranchingNode).getAlternatives().stream()
+          .filter(alternative -> alternative.getRange().contains(tree.getRange()))
+          .findFirst()
+          .map(AbstractRegexSyntaxElement::getRange)
+          .orElse(IndexRange.inaccessible());
+      }
     }
   }
 }
