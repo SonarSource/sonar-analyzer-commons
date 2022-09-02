@@ -19,8 +19,6 @@
  */
 package org.sonarsource.analyzer.commons.regex.helpers;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import org.sonarsource.analyzer.commons.regex.ast.AbstractRegexSyntaxElement;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
 import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
@@ -29,24 +27,26 @@ import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
 
 /**
- * The BranchTrackingVisitor saves the latest branching nodes as it traverses the tree. This is useful to avoid
- * cycles during Automaton evaluation.
+ * The BranchTrackingVisitor saves the nearest enclosing branching construct as it traverses the tree. This is useful to
+ * avoid cycles during Automaton evaluation.
  */
 public class BranchTrackingVisitor extends RegexBaseVisitor {
-  private final Deque<RegexTree> branchingNodes = new ArrayDeque<>();
+  private RegexTree branchingNode = null;
 
   @Override
   public void visitDisjunction(DisjunctionTree tree) {
-    branchingNodes.push(tree);
+    RegexTree previousBranchingNode = branchingNode;
+    branchingNode = tree;
     super.visitDisjunction(tree);
-    branchingNodes.pop();
+    branchingNode = previousBranchingNode;
   }
 
   @Override
   public void visitRepetition(RepetitionTree tree) {
-    branchingNodes.push(tree);
+    RegexTree previousBranchingNode = branchingNode;
+    branchingNode = tree;
     super.visitRepetition(tree);
-    branchingNodes.pop();
+    branchingNode = previousBranchingNode;
   }
 
   /**
@@ -56,14 +56,13 @@ public class BranchTrackingVisitor extends RegexBaseVisitor {
    * @return IndexRange of the node's branch.
    */
   public IndexRange getBranchRangeFor(RegexTree tree) {
-    if (branchingNodes.isEmpty()) {
+    if (branchingNode == null) {
       return IndexRange.inaccessible();
     } else {
-      RegexTree closestBranchingNode = branchingNodes.peek();
-      if (branchingNodes.peek().is(RegexTree.Kind.REPETITION)) {
-        return ((RepetitionTree) closestBranchingNode).getElement().getRange();
+      if (branchingNode.is(RegexTree.Kind.REPETITION)) {
+        return ((RepetitionTree) branchingNode).getElement().getRange();
       } else {
-        return ((DisjunctionTree) closestBranchingNode).getAlternatives().stream()
+        return ((DisjunctionTree) branchingNode).getAlternatives().stream()
           .filter(alternative -> alternative.getRange().contains(tree.getRange()))
           .findFirst()
           .map(AbstractRegexSyntaxElement::getRange)
