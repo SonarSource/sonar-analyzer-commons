@@ -21,6 +21,7 @@ package org.sonarsource.analyzer.commons.regex.ast;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -35,6 +36,10 @@ public interface AutomatonState {
   @Nonnull
   default List<? extends AutomatonState> successors() {
     return Collections.singletonList(continuation());
+  }
+
+  default Optional<RegexTree> toRegexTree() {
+    return Optional.empty();
   }
 
   @Nonnull

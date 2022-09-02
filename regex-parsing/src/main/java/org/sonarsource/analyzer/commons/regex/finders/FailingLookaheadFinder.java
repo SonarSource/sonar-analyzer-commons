@@ -24,12 +24,12 @@ import org.sonarsource.analyzer.commons.regex.MatchType;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.FinalState;
 import org.sonarsource.analyzer.commons.regex.ast.LookAroundTree;
-import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
+import org.sonarsource.analyzer.commons.regex.helpers.BranchTrackingVisitor;
 import org.sonarsource.analyzer.commons.regex.helpers.RegexTreeHelper;
 import org.sonarsource.analyzer.commons.regex.helpers.SubAutomaton;
 
-public class FailingLookaheadFinder extends RegexBaseVisitor {
+public class FailingLookaheadFinder extends BranchTrackingVisitor {
 
   private static final String MESSAGE = "Remove or fix this lookahead assertion that can never be true.";
 
@@ -58,7 +58,7 @@ public class FailingLookaheadFinder extends RegexBaseVisitor {
   private boolean doesLookaheadContinuationAlwaysFail(LookAroundTree lookAround) {
     RegexTree lookAroundElement = lookAround.getElement();
     SubAutomaton lookAroundSubAutomaton;
-    SubAutomaton continuationSubAutomaton = new SubAutomaton(lookAround.continuation(), finalState, true);
+    SubAutomaton continuationSubAutomaton = new SubAutomaton(lookAround.continuation(), finalState, getBranchRangeFor(lookAround), true);
 
     if (lookAround.getPolarity() == LookAroundTree.Polarity.NEGATIVE) {
       lookAroundSubAutomaton = new SubAutomaton(lookAroundElement, lookAroundElement.continuation(), false);
