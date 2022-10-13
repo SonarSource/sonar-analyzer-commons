@@ -20,18 +20,11 @@
 package org.sonarsource.analyzer.commons;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.util.List;
-
-import org.apache.commons.io.filefilter.IOFileFilter;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class FileProviderTest {
 
@@ -55,21 +48,13 @@ public class FileProviderTest {
   }
 
   @Test
-  public void shouldNotFailWhenChildPathIsUnexpectedlyShorterThanBaseDirPath() {
-    File dir = mock(File.class);
-    final File matchingFile = new File("/matching/file");
-    when(dir.getAbsolutePath()).thenReturn("/a/somewhat/long/path");
-    when(dir.isDirectory()).thenReturn(true);
-    when(dir.listFiles(any(FileFilter.class))).thenAnswer(new Answer<File[]>() {
-      @Override
-      public File[] answer(InvocationOnMock invocation) throws Throwable {
-        IOFileFilter filter = (IOFileFilter) invocation.getArguments()[0];
-        filter.accept(new File("/short"), "path");
-        return new File[] {matchingFile};
-      }
-    });
-    assertThat(scan("xxx", dir)).containsOnly(matchingFile);
+  public void test_nonexistent() {
+    var provider = new FileProvider(new File("not found"), "*/**");
+    assertThatThrownBy(provider::getMatchingFiles)
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Failed to get matching files.");
   }
+
 
   private List<File> getMatchingFiles(String pattern) {
     return scan(pattern, baseDir);
