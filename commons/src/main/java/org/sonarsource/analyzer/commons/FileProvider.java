@@ -20,41 +20,36 @@
 package org.sonarsource.analyzer.commons;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.filefilter.IOFileFilter;
-import org.apache.commons.io.filefilter.TrueFileFilter;
+import java.util.stream.Collectors;
 import org.sonar.api.utils.WildcardPattern;
 
 public class FileProvider {
 
-  private final File baseDir;
+  private final Path baseDir;
   private final WildcardPattern pattern;
 
   public FileProvider(File baseDir, String pattern) {
-    this.baseDir = baseDir;
+    this.baseDir = baseDir.toPath();
     this.pattern = WildcardPattern.create(pattern);
   }
 
   public List<File> getMatchingFiles() {
-    final String baseDirAbsolutePath = baseDir.getAbsolutePath();
-    IOFileFilter fileFilter = new IOFileFilter() {
+    try (var walk = Files.walk(baseDir)) {
+      return walk
+              .filter(p -> !Files.isDirectory(p) && pattern.match(toUnixString(baseDir.relativize(p))))
+              .map(Path::toFile)
+              .collect(Collectors.toList());
+    } catch (IOException e) {
+      throw new IllegalStateException("Failed to get matching files.", e);
+    }
+  }
 
-      @Override
-      public boolean accept(File dir, String name) {
-        return accept(new File(dir, name));
-      }
-
-      @Override
-      public boolean accept(File file) {
-        String path = file.getAbsolutePath();
-        path = path.substring(Math.min(baseDirAbsolutePath.length(), path.length()));
-        return pattern.match(FilenameUtils.separatorsToUnix(path));
-      }
-    };
-    return new ArrayList<>(FileUtils.listFiles(baseDir, fileFilter, TrueFileFilter.INSTANCE));
+  private static String toUnixString(Path path) {
+    return path.toString().replace('\\', '/');
   }
 
 }
