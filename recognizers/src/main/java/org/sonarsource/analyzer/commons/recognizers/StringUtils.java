@@ -19,27 +19,21 @@
  */
 package org.sonarsource.analyzer.commons.recognizers;
 
-import java.util.Arrays;
-import java.util.List;
+public class StringUtils {
 
-import static org.sonarsource.analyzer.commons.recognizers.StringUtils.countMatches;
-
-public class ContainsDetector extends Detector {
-
-  private final List<String> strs;
-
-  public ContainsDetector(double probability, String... strs) {
-    super(probability);
-    this.strs = Arrays.asList(strs);
+  private StringUtils() {
+    // utility class
   }
 
-  @Override
-  public int scan(String line) {
-    String lineWithoutWhitespaces = line.replaceAll("\\s+", "");
-    int matchers = 0;
-    for (String str : strs) {
-      matchers += countMatches(lineWithoutWhitespaces, str);
+  public static int countMatches(String str, String sub) {
+    if (str.isEmpty() || sub.isEmpty()) {
+      return 0;
     }
-    return matchers;
+    int count = 0;
+    for (int idx = 0; (idx = str.indexOf(sub, idx)) != -1; idx += sub.length()) {
+      ++count;
+    }
+    return count;
   }
+
 }

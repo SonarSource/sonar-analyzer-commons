@@ -19,27 +19,17 @@
  */
 package org.sonarsource.analyzer.commons.recognizers;
 
-import java.util.Arrays;
-import java.util.List;
+import org.junit.Test;
 
-import static org.sonarsource.analyzer.commons.recognizers.StringUtils.countMatches;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class ContainsDetector extends Detector {
+public class StringUtilsTest {
 
-  private final List<String> strs;
-
-  public ContainsDetector(double probability, String... strs) {
-    super(probability);
-    this.strs = Arrays.asList(strs);
+  @Test
+  public void test_countMatches() {
+    assertThat(StringUtils.countMatches("", "aaa")).isZero();
+    assertThat(StringUtils.countMatches("aaa", "")).isZero();
+    assertThat(StringUtils.countMatches("aaa", "a")).isEqualTo(3);
   }
 
-  @Override
-  public int scan(String line) {
-    String lineWithoutWhitespaces = line.replaceAll("\\s+", "");
-    int matchers = 0;
-    for (String str : strs) {
-      matchers += countMatches(lineWithoutWhitespaces, str);
-    }
-    return matchers;
-  }
 }
