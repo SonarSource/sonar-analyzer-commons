@@ -84,6 +84,9 @@
     <gitRepositoryName>sonar-analyzer-commons</gitRepositoryName>
     <maven.compiler.release>8</maven.compiler.release>
     <artifactsToPublish>${project.groupId}:sonar-analyzer-commons:jar,${project.groupId}:sonar-analyzer-test-commons:jar,${project.groupId}:sonar-analyzer-recognizers:jar,${project.groupId}:sonar-xml-parsing:jar,${project.groupId}:test-sonar-xml-parsing:jar,${project.groupId}:sonar-regex-parsing:jar</artifactsToPublish>
+    <!-- this property configures the settings in parent pom -->
+    <jdk.min.version>11</jdk.min.version>
+    <maven.compiler.release>${jdk.min.version}</maven.compiler.release>
   </properties>
 
   <dependencyManagement>
