@@ -58,7 +58,7 @@ public class FailingLookaheadFinder extends BranchTrackingVisitor {
   private boolean doesLookaheadContinuationAlwaysFail(LookAroundTree lookAround) {
     RegexTree lookAroundElement = lookAround.getElement();
     SubAutomaton lookAroundSubAutomaton;
-    SubAutomaton continuationSubAutomaton = new SubAutomaton(lookAround.continuation(), finalState, getBranchRangeFor(lookAround), true);
+    SubAutomaton continuationSubAutomaton = new SubAutomaton(lookAround.continuation(), finalState, getBranchPrefixRangeFor(lookAround), true);
 
     if (lookAround.getPolarity() == LookAroundTree.Polarity.NEGATIVE) {
       lookAroundSubAutomaton = new SubAutomaton(lookAroundElement, lookAroundElement.continuation(), false);

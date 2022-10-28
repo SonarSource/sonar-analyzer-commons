@@ -24,6 +24,7 @@ import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.FinalState;
+import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
 import org.sonarsource.analyzer.commons.regex.ast.Quantifier;
 import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
 import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
@@ -63,7 +64,7 @@ public class PossessiveQuantifierContinuationFinder extends BranchTrackingVisito
     }
 
     SubAutomaton potentialSuperset = new SubAutomaton(repetitionTree.getElement(), repetitionTree.getElement().continuation(), false);
-    SubAutomaton potentialSubset = new SubAutomaton(repetitionTree.continuation(), finalState, getBranchRangeFor(repetitionTree), true);
+    SubAutomaton potentialSubset = new SubAutomaton(repetitionTree.continuation(), finalState, getBranchPrefixRangeFor(repetitionTree), true);
     return RegexTreeHelper.supersetOf(potentialSuperset, potentialSubset, false);
   }
 }

@@ -70,4 +70,16 @@ public class BranchTrackingVisitor extends RegexBaseVisitor {
       }
     }
   }
+
+  /**
+   * Return the range from the start of node's branch up to the end of the node. A branch is a group of nodes which are
+   * always traversed together by the automaton.
+   * @param tree a node
+   * @return IndexRange starting at the start of the node's branch and ending at the end of the node.
+   */
+  public IndexRange getBranchPrefixRangeFor(RegexTree tree) {
+    IndexRange branchRange = getBranchRangeFor(tree);
+    IndexRange nodeRange = tree.getRange();
+    return new IndexRange(branchRange.getBeginningOffset(), nodeRange.getEndingOffset());
+  }
 }
