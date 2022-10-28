@@ -5,14 +5,8 @@
 - '(?!ab)ab' # Noncompliant
 - '(?=a)[^ba]' # Noncompliant
 - '(?!.)ab' # Noncompliant
-- '(?:a(?!bc))+bc' # Noncompliant
-- '(?:(x|y)(?!bc))+bc' # Noncompliant
-
-- '(?:a(?!bc)|d)+bc'
-- '(?:a((?!bc)|d)*)+bc'
 - 'a(?!:abc):ab'
-- '(?:-(?:one|[0-9]+([a-z](?=[^a-z]|$)|st|nd|rd|th)?))*'
-- '(..(?=ab))*'
+
 - '(?=a)a'
 - '(?=a)..'
 - '(?=a)ab'

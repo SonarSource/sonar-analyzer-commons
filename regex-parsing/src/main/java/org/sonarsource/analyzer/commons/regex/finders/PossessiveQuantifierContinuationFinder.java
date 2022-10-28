@@ -25,13 +25,13 @@ import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.FinalState;
 import org.sonarsource.analyzer.commons.regex.ast.Quantifier;
+import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
 import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
-import org.sonarsource.analyzer.commons.regex.helpers.BranchTrackingVisitor;
 import org.sonarsource.analyzer.commons.regex.helpers.RegexTreeHelper;
 import org.sonarsource.analyzer.commons.regex.helpers.SubAutomaton;
 
-public class PossessiveQuantifierContinuationFinder extends BranchTrackingVisitor {
+public class PossessiveQuantifierContinuationFinder extends RegexBaseVisitor {
 
   private static final String MESSAGE = "Change this impossible to match sub-pattern that conflicts with the previous possessive quantifier.";
 
@@ -61,9 +61,8 @@ public class PossessiveQuantifierContinuationFinder extends BranchTrackingVisito
     if (!quantifier.isOpenEnded() || quantifier.getModifier() != Quantifier.Modifier.POSSESSIVE) {
       return false;
     }
-
-    SubAutomaton potentialSuperset = new SubAutomaton(repetitionTree.getElement(), repetitionTree.getElement().continuation(), false);
-    SubAutomaton potentialSubset = new SubAutomaton(repetitionTree.continuation(), finalState, getBranchRangeFor(repetitionTree), true);
+    SubAutomaton potentialSuperset = new SubAutomaton(repetitionTree.getElement(), repetitionTree.continuation(), false);
+    SubAutomaton potentialSubset = new SubAutomaton(repetitionTree.continuation(), finalState, true);
     return RegexTreeHelper.supersetOf(potentialSuperset, potentialSubset, false);
   }
 }

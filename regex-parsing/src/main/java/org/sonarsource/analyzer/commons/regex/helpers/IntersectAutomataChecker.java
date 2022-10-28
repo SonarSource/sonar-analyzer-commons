@@ -36,10 +36,9 @@ public class IntersectAutomataChecker extends AbstractAutomataChecker {
     SimplifiedRegexCharacterClass characterClass2 = SimplifiedRegexCharacterClass.of(auto2.start);
     return ((characterClass1 != null) && (characterClass2 != null)) ?
       (characterClass1.intersects(characterClass2, defaultAnswer) &&
-        auto1.anySuccessorMatch(successor1 ->
-          auto2.anySuccessorMatch(successor2 ->
-            check(successor1, successor2, true)))
-      ) : defaultAnswer;
+        auto1.anySuccessorMatch(successor1 -> auto2.anySuccessorMatch(successor2 ->
+          check(successor1, successor2, true)))) :
+      defaultAnswer;
   }
 
   @Override

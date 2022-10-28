@@ -31,10 +31,6 @@ public class IndexRange {
     this.endingOffset = endingOffset;
   }
 
-  public static IndexRange inaccessible() {
-    return new IndexRange(-1, -1);
-  }
-
   public int getBeginningOffset() {
     return beginningOffset;
   }
@@ -49,10 +45,6 @@ public class IndexRange {
 
   public IndexRange extendTo(int newEnd) {
     return new IndexRange(beginningOffset, newEnd);
-  }
-
-  public boolean contains(IndexRange other) {
-    return this.beginningOffset <= other.beginningOffset && other.endingOffset <= this.endingOffset;
   }
 
   @Override

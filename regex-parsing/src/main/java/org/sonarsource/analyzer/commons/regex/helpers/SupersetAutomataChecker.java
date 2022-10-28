@@ -35,9 +35,8 @@ public class SupersetAutomataChecker extends AbstractAutomataChecker {
     SimplifiedRegexCharacterClass characterClass2 = SimplifiedRegexCharacterClass.of(auto2.start);
     return ((characterClass1 != null) && (characterClass2 != null)) ?
       (characterClass1.supersetOf(characterClass2, defaultAnswer) &&
-        auto2.allSuccessorMatch(successor2 ->
-          auto1.anySuccessorMatch(successor1 ->
-            check(successor1, successor2, true)))) :
+        auto2.allSuccessorMatch(successor2 -> auto1.anySuccessorMatch(successor1 ->
+          check(successor1, successor2, true)))) :
       defaultAnswer;
   }
 

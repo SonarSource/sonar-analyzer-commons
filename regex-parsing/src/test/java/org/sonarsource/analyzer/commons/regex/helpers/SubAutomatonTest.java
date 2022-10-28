@@ -23,7 +23,6 @@ package org.sonarsource.analyzer.commons.regex.helpers;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.analyzer.commons.regex.ast.FinalState;
 import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
-import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -37,7 +36,6 @@ class SubAutomatonTest {
     SubAutomaton subAutomaton4 = new SubAutomaton(subAutomaton1.start, subAutomaton1.end, false);
     SubAutomaton subAutomaton5 = new SubAutomaton(subAutomaton1.start, subAutomaton2.end, false);
     SubAutomaton subAutomaton6 = new SubAutomaton(subAutomaton2.start, subAutomaton1.end, false);
-    SubAutomaton subAutomaton7 = new SubAutomaton(subAutomaton1.start, subAutomaton2.end, new IndexRange(0, 3), false);
 
     assertThat(subAutomaton1)
       .isNotEqualTo(null)
@@ -46,7 +44,6 @@ class SubAutomatonTest {
       .isNotEqualTo(subAutomaton3)
       .isNotEqualTo(subAutomaton5)
       .isNotEqualTo(subAutomaton6)
-      .isNotEqualTo(subAutomaton7)
       .isEqualTo(subAutomaton4)
       .isEqualTo(subAutomaton1)
       .hasSameHashCodeAs(subAutomaton4);
