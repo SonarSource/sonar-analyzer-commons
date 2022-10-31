@@ -63,7 +63,7 @@ public class PossessiveQuantifierContinuationFinder extends BranchTrackingVisito
     }
 
     SubAutomaton potentialSuperset = new SubAutomaton(repetitionTree.getElement(), repetitionTree.getElement().continuation(), false);
-    SubAutomaton potentialSubset = new SubAutomaton(repetitionTree.continuation(), finalState, getBranchRangeFor(repetitionTree), true);
+    SubAutomaton potentialSubset = new SubAutomaton(repetitionTree.continuation(), finalState, getPredecessorsRangeOf(repetitionTree), true);
     return RegexTreeHelper.supersetOf(potentialSuperset, potentialSubset, false);
   }
 }

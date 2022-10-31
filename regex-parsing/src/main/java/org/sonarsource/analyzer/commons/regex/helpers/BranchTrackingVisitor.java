@@ -19,7 +19,6 @@
  */
 package org.sonarsource.analyzer.commons.regex.helpers;
 
-import org.sonarsource.analyzer.commons.regex.ast.AbstractRegexSyntaxElement;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
 import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
@@ -27,8 +26,8 @@ import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
 
 /**
- * The BranchTrackingVisitor saves the nearest enclosing branching construct as it traverses the tree. This is useful to
- * avoid cycles during Automaton evaluation.
+ * The BranchTrackingVisitor saves the nearest enclosing branching construct as it traverses the tree. This helps to
+ * track node predecessors, which is useful to avoid cycles during Automaton evaluation.
  */
 public class BranchTrackingVisitor extends RegexBaseVisitor {
   private RegexTree branchingNode = null;
@@ -50,24 +49,35 @@ public class BranchTrackingVisitor extends RegexBaseVisitor {
   }
 
   /**
-   * Return the range of a node's branch. A branch is a group of nodes which are always traversed together by the
-   * automaton.
+   * Return the starting index of a node's first predecessors. If all paths from a node lead to another, then the former
+   * is a predecessor of the latter.
    * @param tree a node
-   * @return IndexRange of the node's branch.
+   * @return starting index of the node's first predecessor
    */
-  public IndexRange getBranchRangeFor(RegexTree tree) {
+  private int getPredecessorsStartOf(RegexTree tree) {
     if (branchingNode == null) {
-      return IndexRange.inaccessible();
+      return 0;
     } else {
       if (branchingNode.is(RegexTree.Kind.REPETITION)) {
-        return ((RepetitionTree) branchingNode).getElement().getRange();
+        return ((RepetitionTree) branchingNode).getElement().getRange().getBeginningOffset();
       } else {
         return ((DisjunctionTree) branchingNode).getAlternatives().stream()
           .filter(alternative -> alternative.getRange().contains(tree.getRange()))
           .findFirst()
-          .map(AbstractRegexSyntaxElement::getRange)
-          .orElse(IndexRange.inaccessible());
+          .map(alternative -> alternative.getRange().getBeginningOffset())
+          .orElse(tree.getRange().getBeginningOffset());
       }
     }
+  }
+
+  /**
+   * Return the range containing all predecessors of the node. If all paths from a node lead to another, then the former
+   * is a predecessor of the latter
+   * @param tree a node
+   * @return IndexRange for all the node's predecessors
+   */
+  public IndexRange getPredecessorsRangeOf(RegexTree tree) {
+    int firstPredecessorIndex = getPredecessorsStartOf(tree);
+    return new IndexRange(firstPredecessorIndex, tree.getRange().getEndingOffset());
   }
 }
