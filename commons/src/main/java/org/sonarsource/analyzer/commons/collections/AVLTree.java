@@ -181,8 +181,6 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
     return new MapEntriesIterable<>(this);
   }
 
-  public abstract int size();
-
   protected abstract AVLTree left();
 
   protected abstract AVLTree right();
