@@ -181,6 +181,8 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
     return new MapEntriesIterable<>(this);
   }
 
+  public abstract int size();
+
   protected abstract AVLTree left();
 
   protected abstract AVLTree right();
@@ -369,6 +371,7 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
     private final AVLTree left;
     private final AVLTree right;
     private final int height;
+    private final int size;
 
     private final Object key;
     private final Object value;
@@ -384,6 +387,12 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
       this.value = value;
       this.nextInBucket = nextInBucket;
       this.height = height;
+      this.size = left.size() + right.size() + 1;
+    }
+
+    @Override
+    public int size() {
+      return size;
     }
 
     @Override
@@ -450,6 +459,11 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
   }
 
   private static final AVLTree EMPTY = new AVLTree() {
+    @Override
+    public int size() {
+      return 0;
+    }
+
     @Override
     protected AVLTree left() {
       throw new UnsupportedOperationException();

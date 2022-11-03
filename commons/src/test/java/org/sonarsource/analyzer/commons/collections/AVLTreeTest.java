@@ -417,4 +417,26 @@ public class AVLTreeTest {
       fail("next() should throw NoSuchElementException on empty stack");
     }  catch (NoSuchElementException exception) {}
   }
+
+  @Test
+  public void test_size() {
+    AVLTree<String, String> t0 = AVLTree.create();
+    AVLTree<String, String> t1 = t0.put("1", "a");
+    AVLTree<String, String> t2 = t1.put("2", "b");
+    AVLTree<String, String> t3 = t2.put("3", "b");
+
+    assertThat(t0.size()).isZero();
+    assertThat(t1.size()).isOne();
+    assertThat(t2.size()).isEqualTo(2);
+    assertThat(t3.size()).isEqualTo(3);
+
+    AVLTree<String, String> t4 = t3.remove("3");
+    assertThat(t4.size()).isEqualTo(2);
+
+    AVLTree<String, String> t5 = t4.remove("2");
+    assertThat(t5.size()).isOne();
+
+    AVLTree<String, String> t6 = t5.remove("1");
+    assertThat(t6.size()).isZero();
+  }
 }

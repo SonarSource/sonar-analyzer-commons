@@ -48,6 +48,11 @@ public interface PSet<E> extends Iterable<E> {
   boolean isEmpty();
 
   /**
+   * @return the number of elements in this set (its cardinality).
+   */
+  int size();
+
+  /**
    * The string representation consists of a list of elements in the ascending order of hash codes.
    * If two elements have same hash code, then their relative order is arbitrary, but stable.
    *

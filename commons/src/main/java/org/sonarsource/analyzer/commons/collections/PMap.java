@@ -59,6 +59,11 @@ public interface PMap<K, V> {
   boolean isEmpty();
 
   /**
+   * @return the number of key-value mappings in this map
+   */
+  int size();
+
+  /**
    * The string representation consists of a list of key-value mappings in the ascending order of hash codes of keys.
    * If two keys have same hash code, then their relative order is arbitrary, but stable.
    *
