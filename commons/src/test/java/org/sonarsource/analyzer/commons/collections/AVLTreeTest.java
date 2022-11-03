@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -329,11 +330,52 @@ public class AVLTreeTest {
   }
 
   @Test
-  public void test_toArray() {
+  public void test_toArray_comparable_type() {
     AVLTree<String, String> t0 = AVLTree.create();
     AVLTree<String, String> t1 = t0.put("1", "a");
     AVLTree<String, String> t2 = t1.put("2", "b");
-    assertThat(t2.toArray()).extracting("key", "value").containsExactlyInAnyOrder(tuple("1", "a"), tuple("2", "b"));
+    assertThat(t2.toArray()).extracting("key", "value")
+      .containsExactly(tuple("1", "a"), tuple("2", "b"));
+  }
+
+  private static class NotComparableString {
+    private final String value;
+
+    public NotComparableString(String value) {
+      this.value = value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      NotComparableString that = (NotComparableString) o;
+      return Objects.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(value);
+    }
+  }
+
+  @Test
+  public void test_toArray_not_comparable_type() {
+    AVLTree<NotComparableString, String> t0 = AVLTree.create();
+    AVLTree<NotComparableString, String> t1 = t0.put(new NotComparableString("1"), "a");
+    AVLTree<NotComparableString, String> t2 = t1.put(new NotComparableString("2"), "b");
+    assertThat(t2.toArray()).extracting("key", "value")
+      .containsExactlyInAnyOrder(tuple(new NotComparableString("1"), "a"), tuple(new NotComparableString("2"), "b"));
+  }
+
+  @Test
+  public void test_NodeRenderer_toString() {
+    AVLTree<String, String> t0 = AVLTree.create();
+    AVLTree<String, String> t1 = t0.put("1", "a");
+    AVLTree<String, String> t2 = t1.put("2", "b");
+
+    assertThat(t2.toArray()).extracting(Object::toString)
+      .containsExactly("1->a", "2->b");
   }
 
   @Test
