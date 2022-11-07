@@ -19,11 +19,12 @@
  */
 package org.sonarsource.analyzer.commons.collections;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
@@ -135,8 +136,13 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
   // Used by IntelliJ renderer, to ease debugging
   @VisibleForTesting
   Object[] toArray() {
-    Set<NodeRenderer<K, V>> nodes = new HashSet<>();
+    List<NodeRenderer<K, V>> nodes = new ArrayList<>();
     forEach((k, v) -> nodes.add(new NodeRenderer<>(k, v)));
+
+    if (nodes.stream().map(kvNodeRenderer -> kvNodeRenderer.key).allMatch(Comparable.class::isInstance)) {
+      nodes.sort(Comparator.comparing(kvNodeRenderer -> (Comparable) kvNodeRenderer.key));
+    }
+
     return nodes.toArray();
   }
 
@@ -148,6 +154,11 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
     public NodeRenderer(K key, V value) {
       this.key = key;
       this.value = value;
+    }
+
+    @Override
+    public String toString() {
+      return key + "->" + value;
     }
   }
 
