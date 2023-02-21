@@ -65,7 +65,7 @@ public class FileIssuesTest {
     Report report = fileIssues.report();
     assertThat(report.getExpectedIssueCount()).isEqualTo(8);
     assertThat(report.getActual()).isEqualTo(report.getExpected());
-    assertThat(report.getActual()).isEqualTo(expectedIssues.getContent());
+    assertThat(report.getActual()).isEqualTo(expectedIssues.getContent().replaceAll("\r\n", "\n"));
   }
 
 }

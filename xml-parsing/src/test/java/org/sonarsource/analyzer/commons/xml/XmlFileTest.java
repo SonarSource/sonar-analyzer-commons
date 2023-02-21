@@ -60,7 +60,7 @@ public class XmlFileTest {
     XmlFile xmlFile = XmlFile.create(inputFile);
 
     assertThat(xmlFile.getCharset()).isEqualTo(StandardCharsets.UTF_8);
-    assertThat(xmlFile.getContents()).isEqualTo(FILE_CONTENT + "\n");
+    assertThat(xmlFile.getContents()).isEqualTo(FILE_CONTENT + System.lineSeparator());
     assertThat(xmlFile.getDocument().getFirstChild().getTextContent()).isEqualTo("Hello");
     assertThat(xmlFile.getInputFile()).isEqualTo(inputFile);
   }

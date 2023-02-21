@@ -29,12 +29,12 @@ public class ResourcesTest {
 
   @Test
   public void read_resource() throws Exception {
-    assertThat(Resources.toString("org/sonarsource/analyzer/commons/ResourcesTest.txt", UTF_8)).isEqualTo("hello\n");
+    assertThat(Resources.toString("org/sonarsource/analyzer/commons/ResourcesTest.txt", UTF_8)).isEqualTo("hello" + System.lineSeparator());
   }
 
   @Test
   public void read_resource_with_absolute() throws Exception {
-    assertThat(Resources.toString("/org/sonarsource/analyzer/commons/ResourcesTest.txt", UTF_8)).isEqualTo("hello\n");
+    assertThat(Resources.toString("/org/sonarsource/analyzer/commons/ResourcesTest.txt", UTF_8)).isEqualTo("hello" + System.lineSeparator());
   }
 
   @Test(expected = IOException.class)

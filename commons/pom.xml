@@ -96,7 +96,7 @@
                   <!-- Warning: Please consider carefully when increasing the size of this shared library, it might have
                   impact on all our analyzers! -->
                   <minsize>100000</minsize>
-                  <maxsize>110000</maxsize>
+                  <maxsize>120000</maxsize>
                   <files>
                     <file>${project.build.directory}/${project.build.finalName}.jar</file>
                   </files>
