@@ -58,6 +58,7 @@ public class RuleMetadataLoader {
   private final Set<String> activatedByDefault;
   private final JsonParser jsonParser;
   private final SonarRuntime sonarRuntime;
+  private final EducationRuleLoader educationRuleLoader;
 
   private static final String OWASP_2021 = "OWASP Top 10 2021";
   private static final String OWASP_2017 = "OWASP";
@@ -77,6 +78,7 @@ public class RuleMetadataLoader {
     this.jsonParser = new JsonParser();
     this.activatedByDefault = activatedByDefault;
     this.sonarRuntime = sonarRuntime;
+    this.educationRuleLoader = new EducationRuleLoader(sonarRuntime);
   }
 
   public void addRulesByAnnotatedClass(NewRepository repository, List<Class<?>> ruleClasses) {
@@ -157,6 +159,7 @@ public class RuleMetadataLoader {
     } catch (IOException e) {
       throw new IllegalStateException("Can't read resource: " + htmlPath, e);
     }
+    description = educationRuleLoader.setEducationDescriptionFromHtml(rule, description);
     rule.setHtmlDescription(description);
   }
 
@@ -179,6 +182,8 @@ public class RuleMetadataLoader {
     if (securityStandards != null) {
       setSecurityStandardsFromJson(rule, (Map<String, Object>) securityStandards);
     }
+
+    educationRuleLoader.setEducationMetadataFromJson(rule, ruleMetadata);
   }
 
   Map<String, Object> getMetadata(String ruleKey) {

@@ -90,6 +90,51 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
+  public void load_education_rule_S102_with_unsupported_product_runtime() {
+    @Rule(key = "S102")
+    class TestRule {
+    }
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("S102");
+    assertThat(rule).isNotNull();
+    assertThat(rule.htmlDescription().replaceAll("\r\n", "\n")).isEqualTo("Intro\n" +
+      "<h2>Why is this an issue?</h2>\n" +
+      "Explanation\n" +
+      "<h2>How to fix it?</h2>\n" +
+      "<h3>How to fix it in Framework-1</h3>\n" +
+      "Details\n" +
+      "<h2>Resources</h2>\n" +
+      "Links");
+    assertThat(rule.ruleDescriptionSections()).isEmpty();
+  }
+
+  @Test
+  public void load_education_rule_S102_with_supported_product_runtime() {
+    @Rule(key = "S102")
+    class TestRule {
+    }
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_9_9);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("S102");
+    assertThat(rule).isNotNull();
+    assertThat(rule.htmlDescription().replaceAll("\r\n", "\n")).isEqualTo("Intro\n" +
+      "<h2>Why is this an issue?</h2>\n" +
+      "Explanation\n" +
+      "<h2>How to fix it?</h2>\n" +
+      "<h3>How to fix it in Framework-1</h3>\n" +
+      "Details\n" +
+      "<h2>Resources</h2>\n" +
+      "Links");
+    assertThat(rule.ruleDescriptionSections()).hasSize(5);
+  }
+
+  @Test
   public void load_rule_S110() throws Exception {
     @Rule(key = "S110") class TestRule {
     }

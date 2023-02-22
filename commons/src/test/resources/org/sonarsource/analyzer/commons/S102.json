@@ -1,0 +1,10 @@
+{
+  "title": "Avoid doing assignments in the condition part of if\/while\/for statements",
+  "type": "CODE_SMELL",
+  "status": "ready",
+  "defaultSeverity": "Major",
+  "educationPrinciples": [
+    "defense_in_depth",
+    "never_trust_user_input"
+  ]
+}

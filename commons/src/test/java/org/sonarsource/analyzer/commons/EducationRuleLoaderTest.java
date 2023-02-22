@@ -19,9 +19,16 @@
  */
 package org.sonarsource.analyzer.commons;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.sonar.api.SonarEdition;
 import org.sonar.api.SonarQubeSide;
 import org.sonar.api.SonarRuntime;
@@ -34,74 +41,84 @@ import org.sonar.api.server.rule.RulesDefinitionAnnotationLoader;
 import org.sonar.api.utils.Version;
 import org.sonar.api.utils.log.LogTester;
 import org.sonar.api.utils.log.LoggerLevel;
-import org.sonar.check.Rule;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.sonar.api.server.rule.RulesDefinition.Context;
-import static org.sonarsource.analyzer.commons.EducationRuleLoader.runtimeSupportsEducationRules;
 
 public class EducationRuleLoaderTest {
 
-  private static final SonarRuntime RUNTIME = SonarRuntimeImpl.forSonarQube(Version.create(9, 7), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
+  private static final SonarRuntime RUNTIME = SonarRuntimeImpl.forSonarQube(Version.create(9, 8), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
+  private static final Path EDUCATION_TEST_FILES_DIRECTORY = Paths.get("src/test/resources/org/sonarsource/analyzer/commons/education");
   private static final String RULE_REPOSITORY_KEY = "rule-definition-test";
-  private static final String RESOURCE_PATH = "valid";
 
-  @org.junit.Rule
+  @Rule
   public LogTester logTester = new LogTester();
+  @Rule
+  public ExpectedException exceptionRule = ExpectedException.none();
+
   private Context context;
   private NewRepository newRepository;
+  private RulesDefinition.NewRule newRule;
 
   @Before
   public void setup() {
     context = new Context();
     newRepository = context.createRepository(RULE_REPOSITORY_KEY, "lang");
-  }
-
-  @Test
-  public void supports_education_rules() {
-    assertThat(runtimeSupportsEducationRules(SonarRuntimeImpl.forSonarQube(Version.create(9, 6), SonarQubeSide.SERVER, SonarEdition.DEVELOPER))).isTrue();
-    assertThat(runtimeSupportsEducationRules(SonarRuntimeImpl.forSonarQube(Version.create(9, 5), SonarQubeSide.SERVER, SonarEdition.DEVELOPER))).isTrue();
-    assertThat(runtimeSupportsEducationRules(SonarRuntimeImpl.forSonarQube(Version.create(9, 4), SonarQubeSide.SERVER, SonarEdition.DEVELOPER))).isFalse();
-    assertThat(runtimeSupportsEducationRules(SonarRuntimeImpl.forSonarQube(Version.create(9, 6), SonarQubeSide.SERVER, SonarEdition.SONARCLOUD))).isTrue();
-    assertThat(runtimeSupportsEducationRules(SonarRuntimeImpl.forSonarLint(Version.create(9, 6)))).isFalse();
-    assertThat(runtimeSupportsEducationRules(SonarRuntimeImpl.forSonarLint(Version.create(9, 6)))).isFalse();
-  }
-
-  @Test
-  public void add_education_rules_invalid_runtime() {
-    @Rule(key = "S100", name = "MyRule", description = "MyDesc")
-    class TestRule {
-    }
-
     new RulesDefinitionAnnotationLoader().load(newRepository, new Class[]{TestRule.class});
+    newRule = newRepository.rule("MyRuleKey");
+  }
+
+  @Test
+  public void supports_education_rules_descriptions() {
+    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarQube(Version.create(9, 5), SonarQubeSide.SERVER, SonarEdition.DEVELOPER)).isEducationRuleDescriptionSupported()).isTrue();
+    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarQube(Version.create(9, 4), SonarQubeSide.SERVER, SonarEdition.DEVELOPER)).isEducationRuleDescriptionSupported()).isFalse();
+    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarQube(Version.create(9, 6), SonarQubeSide.SERVER, SonarEdition.SONARCLOUD)).isEducationRuleDescriptionSupported()).isTrue();
+    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarLint(Version.create(9, 6))).isEducationRuleDescriptionSupported()).isTrue();
+  }
+
+  @Test
+  public void supports_education_principles_metadata() {
+    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarQube(Version.create(9, 8), SonarQubeSide.SERVER, SonarEdition.DEVELOPER)).isEducationPrinciplesMetadataSupported()).isTrue();
+    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarQube(Version.create(9, 8), SonarQubeSide.SERVER, SonarEdition.SONARCLOUD)).isEducationPrinciplesMetadataSupported()).isTrue();
+    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarLint(Version.create(9, 8))).isEducationPrinciplesMetadataSupported()).isTrue();
+    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarQube(Version.create(9, 7), SonarQubeSide.SERVER, SonarEdition.DEVELOPER)).isEducationPrinciplesMetadataSupported()).isFalse();
+    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarLint(Version.create(9, 7))).isEducationPrinciplesMetadataSupported()).isFalse();
+  }
+
+  @Test
+  public void education_description_content_unsupported_product_runtime() throws IOException {
     SonarRuntime invalidRuntime = SonarRuntimeImpl.forSonarQube(Version.create(9, 4), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RESOURCE_PATH, RESOURCE_PATH, invalidRuntime);
-    educationRuleLoader.addEducationRulesByAnnotatedClass(newRepository, List.of(TestRule.class));
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(invalidRuntime);
+    String testFileContent = getTestFileContent("valid/S100.html");
+    String fallbackDescription = educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
     newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
 
-    Repository repository = context.repository(RULE_REPOSITORY_KEY);
-    assertThat(repository.rules()).hasSize(1);
-    RulesDefinition.Rule rule = repository.rule("S100");
-    assertThat(rule.htmlDescription()).isEqualTo("MyDesc");
     assertThat(rule.ruleDescriptionSections()).isEmpty();
+    assertThat(fallbackDescription).isEqualTo(testFileContent);
   }
 
   @Test
-  public void add_education_rules_simple() {
-    @Rule(key = "S100", name = "MyRule", description = "MyDesc")
-    class TestRule {
-    }
-
-    new RulesDefinitionAnnotationLoader().load(newRepository, new Class[]{TestRule.class});
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RESOURCE_PATH, RESOURCE_PATH, RUNTIME);
-    educationRuleLoader.addEducationRulesByAnnotatedClass(newRepository, List.of(TestRule.class));
+  public void education_description_content_unsupported_product_runtime_invalid_format() throws IOException {
+    SonarRuntime invalidRuntime = SonarRuntimeImpl.forSonarQube(Version.create(9, 4), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(invalidRuntime);
+    String testFileContent = getTestFileContent("invalid/S102.html");
+    String fallbackDescription = educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
     newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
 
-    Repository repository = context.repository(RULE_REPOSITORY_KEY);
-    assertThat(repository.rules()).hasSize(1);
-    RulesDefinition.Rule rule = repository.rule("S100");
-    assertThat(rule.htmlDescription()).isEqualTo("MyDesc");
+    assertThat(rule.ruleDescriptionSections()).isEmpty();
+    assertThat(fallbackDescription).isEqualTo(testFileContent);
+  }
+
+  @Test
+  public void education_description_simple_content() throws IOException {
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
+    String testFileContent = getTestFileContent("valid/S100.html");
+    String fallbackDescription = educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
+
     assertThat(rule.ruleDescriptionSections()).hasSize(4);
     assertThat(rule.ruleDescriptionSections().get(0).getHtmlContent()).isEqualTo("Intro");
     assertThat(rule.ruleDescriptionSections().get(1).getHtmlContent()).isEqualTo("Explanation");
@@ -111,22 +128,16 @@ public class EducationRuleLoaderTest {
     assertThat(ruleDescriptionSection.getContext().get().getDisplayName()).isEqualTo("Framework-1");
     assertThat(ruleDescriptionSection.getHtmlContent()).isEqualTo("Details");
     assertThat(rule.ruleDescriptionSections().get(3).getHtmlContent()).isEqualTo("Links");
+    assertThat(fallbackDescription).isEqualTo(testFileContent);
   }
 
   @Test
-  public void add_education_rules_how_to_fix_section() {
-    @Rule(key = "S101", name = "MyRule", description = "MyDesc")
-    class TestRule {
-    }
-
-    new RulesDefinitionAnnotationLoader().load(newRepository, new Class[]{TestRule.class});
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RESOURCE_PATH, RESOURCE_PATH, RUNTIME);
-    educationRuleLoader.addEducationRulesByAnnotatedClass(newRepository, List.of(TestRule.class));
+  public void education_description_content_with_multiple_sections() throws IOException {
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
+    String fallbackDescription = educationRuleLoader.setEducationDescriptionFromHtml(newRule, getTestFileContent("valid/S101.html"));
     newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
 
-    Repository repository = context.repository(RULE_REPOSITORY_KEY);
-    assertThat(repository.rules()).hasSize(1);
-    RulesDefinition.Rule rule = repository.rule("S101");
     assertThat(rule.ruleDescriptionSections()).hasSize(7);
     RuleDescriptionSection ruleDescriptionSection = rule.ruleDescriptionSections().get(2);
     assertThat(ruleDescriptionSection.getContext()).isPresent();
@@ -148,152 +159,91 @@ public class EducationRuleLoaderTest {
     assertThat(ruleDescriptionSection.getContext().get().getKey()).isEqualTo("another_frameworkname");
     assertThat(ruleDescriptionSection.getContext().get().getDisplayName()).isEqualTo("another FrameworkName");
     assertThat(ruleDescriptionSection.getHtmlContent()).isEqualTo("Details of framework with simple name");
+    assertThat(fallbackDescription).isEqualTo(getTestFileContent("valid/S101_fallback.html"));
   }
 
   @Test
-  public void add_education_rules_invalid_how_to_fix_section() {
-    @Rule(key = "S101", name = "MyRule", description = "MyDesc")
-    class TestRule {
-    }
-
-    new RulesDefinitionAnnotationLoader().load(newRepository, new Class[]{TestRule.class});
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader("invalid", "invalid", RUNTIME);
-    educationRuleLoader.addEducationRulesByAnnotatedClass(newRepository, List.of(TestRule.class));
-    assertThat(String.join("\n", logTester.logs(LoggerLevel.ERROR))).isEqualTo(
-      "Unable to load education rule: invalid/S101.html. Invalid education rule format for S101, context based patch is missing.");
-  }
-
-  @Test
-  public void add_education_rules_invalid_format() {
-    @Rule(key = "S100", name = "MyRule", description = "MyDesc")
-    class TestRule {
-    }
-
-    new RulesDefinitionAnnotationLoader().load(newRepository, new Class[]{TestRule.class});
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader("invalid", "invalid", RUNTIME);
-    educationRuleLoader.addEducationRulesByAnnotatedClass(newRepository, List.of(TestRule.class));
-    assertThat(String.join("\n", logTester.logs(LoggerLevel.ERROR))).isEqualTo(
-      "Unable to load education rule: invalid/S100.html. Invalid education rule format for S100, following header is missing: '<h2>Why is this an issue\\?</h2>'"
-    );
-  }
-
-  @Test
-  public void add_education_rules_no_rule_annotation() {
-    class TestRuleUnique {
-    }
-
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RESOURCE_PATH, RESOURCE_PATH, RUNTIME);
-    List<Class<?>> ruleClasses = List.of(TestRuleUnique.class);
-    assertThatThrownBy(() -> educationRuleLoader.addEducationRulesByAnnotatedClass(newRepository, ruleClasses))
-      .isInstanceOf(IllegalStateException.class)
-      .hasMessage("No Rule annotation was found on org.sonarsource.analyzer.commons.EducationRuleLoaderTest$1TestRuleUnique");
-  }
-
-  @Test
-  public void add_education_rules_no_rule_key_in_annotation() {
-    @Rule
-    class TestRule {
-    }
-
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RESOURCE_PATH, RESOURCE_PATH, RUNTIME);
-    List<Class<?>> ruleClasses = List.of(TestRule.class);
-    assertThatThrownBy(() -> educationRuleLoader.addEducationRulesByAnnotatedClass(newRepository, ruleClasses))
-      .isInstanceOf(IllegalStateException.class)
-      .hasMessage("Empty rule key");
-  }
-
-  @Test
-  public void add_education_rules_no_rule_created() {
-    @Rule(key = "S100")
-    class TestRule {
-    }
-
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RESOURCE_PATH, RESOURCE_PATH, RUNTIME);
-    List<Class<?>> ruleClasses = List.of(TestRule.class);
-    assertThatThrownBy(() -> educationRuleLoader.addEducationRulesByAnnotatedClass(newRepository, ruleClasses))
-      .isInstanceOf(IllegalStateException.class)
-      .hasMessage("Rule not found: S100");
-  }
-
-  @Test
-  public void add_education_rules_no_rule_content() {
-    @Rule(key = "S100")
-    class TestRule {
-    }
-
-    new RulesDefinitionAnnotationLoader().load(newRepository, new Class[]{TestRule.class});
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader("", "", RUNTIME);
-    educationRuleLoader.addEducationRulesByAnnotatedClass(newRepository, List.of(TestRule.class));
-
-    assertThat(String.join("\n", logTester.logs(LoggerLevel.DEBUG))).isEqualTo("No educational rule content for S100");
-  }
-
-  @Test
-  public void education_principle_keys() {
-    SonarRuntime runtime = SonarRuntimeImpl.forSonarQube(Version.create(9, 8), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
-    EducationRuleLoader validMetadataEducationRuleLoader = new EducationRuleLoader(RESOURCE_PATH, "metadata/valid", runtime);
-
-    assertThat(validMetadataEducationRuleLoader.educationPrincipleKeys("S100")).containsExactlyInAnyOrder("defense_in_depth", "never_trust_user_input");
-    assertThat(validMetadataEducationRuleLoader.educationPrincipleKeys("S101")).isNull();
-
-    EducationRuleLoader invalidMetadataEducationRuleLoader = new EducationRuleLoader(RESOURCE_PATH, "metadata/invalid", runtime);
-    assertThat(invalidMetadataEducationRuleLoader.educationPrincipleKeys("S100")).isNull();
-    assertThat(invalidMetadataEducationRuleLoader.educationPrincipleKeys("S101")).isNull();
-  }
-
-  @Test
-  public void add_education_rules_with_education_metadata_supported() {
-    @Rule(key = "S102", name = "MyRule", description = "MyDesc")
-    class TestRule {
-    }
-
-    new RulesDefinitionAnnotationLoader().load(newRepository, new Class[]{TestRule.class});
-    SonarRuntime runtime = SonarRuntimeImpl.forSonarQube(Version.create(9, 8), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RESOURCE_PATH, RESOURCE_PATH, runtime);
-    educationRuleLoader.addEducationRulesByAnnotatedClass(newRepository, List.of(TestRule.class));
+  public void education_description_content_with_empty_sections() throws IOException {
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
+    String testFileContent = getTestFileContent("valid/S102.html");
+    String fallbackDescription = educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
     newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
 
-    Repository repository = context.repository(RULE_REPOSITORY_KEY);
-    assertThat(repository.rules()).hasSize(1);
-    RulesDefinition.Rule rule = repository.rule("S102");
+    assertThat(String.join("\n", logTester.logs(LoggerLevel.DEBUG))).isEqualTo("Skipping section 'introduction' for rule 'MyRuleKey', content is empty\n" +
+      "Skipping section 'resources' for rule 'MyRuleKey', content is empty");
+    assertThat(rule.ruleDescriptionSections()).hasSize(2);
+    assertThat(fallbackDescription).isEqualTo(testFileContent);
+  }
+
+  @Test
+  public void education_description_content_with_non_education_format() throws IOException {
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
+    String testFileContent = getTestFileContent("invalid/S100.html");
+    String fallbackDescription = educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
+
+    assertThat(logTester.logs(LoggerLevel.ERROR)).isEmpty();
+    assertThat(rule.ruleDescriptionSections()).isEmpty();
+    assertThat(fallbackDescription).isEqualTo(testFileContent);
+  }
+
+  @Test
+  public void education_description_content_with_invalid_how_to_fix_section() throws IOException {
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
+    String testFileContent = getTestFileContent("invalid/S101.html");
+
+    exceptionRule.expect(IllegalStateException.class);
+    exceptionRule.expectMessage("Invalid education rule format for 'MyRuleKey', context based patch is missing");
+    educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
+  }
+
+  @Test
+  public void education_description_content_with_invalid_format() throws IOException {
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
+    String testFileContent = getTestFileContent("invalid/S102.html");
+
+    exceptionRule.expect(IllegalStateException.class);
+    exceptionRule.expectMessage("Invalid education rule format for 'MyRuleKey', following header is missing: '<h2>How to fix it\\?</h2>'");
+    educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
+  }
+
+  @Test
+  public void education_metadata() {
+    SonarRuntime invalidRuntime = SonarRuntimeImpl.forSonarQube(Version.create(9, 4), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
+
+    RulesDefinition.Rule rule = invokeSetEducationMetadataFromJson(invalidRuntime, Map.of("educationPrinciples", List.of("defense_in_depth", "never_trust_user_input")));
+    assertThat(rule.educationPrincipleKeys()).isEmpty();
+
+    rule = invokeSetEducationMetadataFromJson(RUNTIME, Map.of());
+    assertThat(rule.educationPrincipleKeys()).isEmpty();
+
+    rule = invokeSetEducationMetadataFromJson(RUNTIME, Map.of("educationPrinciples", "notAList"));
+    assertThat(rule.educationPrincipleKeys()).isEmpty();
+
+    rule = invokeSetEducationMetadataFromJson(RUNTIME, Map.of("educationPrinciples", List.of("defense_in_depth", "never_trust_user_input")));
     assertThat(rule.educationPrincipleKeys()).containsExactly("defense_in_depth", "never_trust_user_input");
   }
 
-  @Test
-  public void add_education_rules_with_education_metadata_supported_but_not_present() {
-    @Rule(key = "S100", name = "MyRule", description = "MyDesc")
-    class TestRule {
-    }
-
+  private static RulesDefinition.Rule invokeSetEducationMetadataFromJson(SonarRuntime runtime, Map<String, Object> ruleMetadata) {
+    Context context = new Context();
+    NewRepository newRepository = context.createRepository(RULE_REPOSITORY_KEY, "lang");
     new RulesDefinitionAnnotationLoader().load(newRepository, new Class[]{TestRule.class});
-    SonarRuntime runtime = SonarRuntimeImpl.forSonarQube(Version.create(9, 8), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RESOURCE_PATH, RESOURCE_PATH, runtime);
-    educationRuleLoader.addEducationRulesByAnnotatedClass(newRepository, List.of(TestRule.class));
+    RulesDefinition.NewRule newRule = newRepository.rule("MyRuleKey");
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(runtime);
+    educationRuleLoader.setEducationMetadataFromJson(newRule, ruleMetadata);
     newRepository.done();
-
     Repository repository = context.repository(RULE_REPOSITORY_KEY);
-    assertThat(repository.rules()).hasSize(1);
-    RulesDefinition.Rule rule = repository.rule("S100");
-    assertThat(rule.educationPrincipleKeys()).isEmpty();
+    return repository.rule("MyRuleKey");
   }
 
-  @Test
-  public void add_education_rules_with_empty_sections() {
-    @Rule(key = "S103", name = "MyRule", description = "MyDesc")
-    class TestRule {
-    }
+  private static String getTestFileContent(String filePath) throws IOException {
+    return Files.readString(EDUCATION_TEST_FILES_DIRECTORY.resolve(filePath));
+  }
 
-    new RulesDefinitionAnnotationLoader().load(newRepository, new Class[]{TestRule.class});
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RESOURCE_PATH, RESOURCE_PATH, RUNTIME);
-    educationRuleLoader.addEducationRulesByAnnotatedClass(newRepository, List.of(TestRule.class));
-    newRepository.done();
-
-    Repository repository = context.repository(RULE_REPOSITORY_KEY);
-    assertThat(repository.rules()).hasSize(1);
-    RulesDefinition.Rule rule = repository.rule("S103");
-    assertThat(rule.ruleDescriptionSections()).hasSize(2);
-    assertThat(String.join("\n", logTester.logs(LoggerLevel.DEBUG))).isEqualTo("Skipping section 'introduction' for rule 'S103', content is empty\n" +
-      "Skipping section 'resources' for rule 'S103', content is empty");
+  @org.sonar.check.Rule(key = "MyRuleKey", name = "MyRule", description = "MyDesc")
+  class TestRule {
   }
 
 }
