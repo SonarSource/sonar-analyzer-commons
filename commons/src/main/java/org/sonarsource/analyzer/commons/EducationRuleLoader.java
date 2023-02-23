@@ -43,7 +43,7 @@ import static org.sonar.api.server.rule.RuleDescriptionSection.RuleDescriptionSe
  * This utility class helps loading the new content for progressive education rules.
  * However, as the API around educational rules is still unstable and evolving, it makes it easier to keep the logic inside this analyzer for the moment.
  */
-public class EducationRuleLoader {
+class EducationRuleLoader {
 
   private static final Logger LOG = Loggers.get(EducationRuleLoader.class);
   private static final String WHY_SECTION_HEADER = "<h2>Why is this an issue\\?</h2>";
@@ -163,7 +163,7 @@ public class EducationRuleLoader {
     }
   }
 
-  private boolean isEducationFormat(String description) {
+  private static boolean isEducationFormat(String description) {
     return WHY_SECTION_HEADER_PATTERN.matcher(description).find();
   }
 
