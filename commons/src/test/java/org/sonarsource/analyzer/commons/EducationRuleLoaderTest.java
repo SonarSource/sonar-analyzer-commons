@@ -102,7 +102,7 @@ public class EducationRuleLoaderTest {
   public void education_description_content_unsupported_product_runtime_invalid_format() throws IOException {
     SonarRuntime invalidRuntime = SonarRuntimeImpl.forSonarQube(Version.create(9, 4), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
     EducationRuleLoader educationRuleLoader = new EducationRuleLoader(invalidRuntime);
-    String testFileContent = getTestFileContent("invalid/S102.html");
+    String testFileContent = getTestFileContent("invalid/S101.html");
     String fallbackDescription = educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
@@ -177,6 +177,26 @@ public class EducationRuleLoaderTest {
   }
 
   @Test
+  public void education_description_content_with_generic_how_to_fix_section() throws IOException {
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
+    String testFileContent = getTestFileContent("valid/S103.html");
+
+    educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
+
+    assertThat(rule.ruleDescriptionSections()).hasSize(4);
+    assertThat(rule.ruleDescriptionSections().get(0).getHtmlContent()).isEqualTo("Intro");
+    assertThat(rule.ruleDescriptionSections().get(0).getContext()).isEmpty();
+    assertThat(rule.ruleDescriptionSections().get(1).getHtmlContent()).isEqualTo("Explanation");
+    assertThat(rule.ruleDescriptionSections().get(1).getContext()).isEmpty();
+    assertThat(rule.ruleDescriptionSections().get(2).getHtmlContent()).isEqualTo("Generic how to fix it section without framework specific content");
+    assertThat(rule.ruleDescriptionSections().get(2).getContext()).isEmpty();
+    assertThat(rule.ruleDescriptionSections().get(3).getHtmlContent()).isEqualTo("Links");
+    assertThat(rule.ruleDescriptionSections().get(3).getContext()).isEmpty();
+  }
+
+  @Test
   public void education_description_content_with_non_education_format() throws IOException {
     EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
     String testFileContent = getTestFileContent("invalid/S100.html");
@@ -190,19 +210,9 @@ public class EducationRuleLoaderTest {
   }
 
   @Test
-  public void education_description_content_with_invalid_how_to_fix_section() throws IOException {
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
-    String testFileContent = getTestFileContent("invalid/S101.html");
-
-    exceptionRule.expect(IllegalStateException.class);
-    exceptionRule.expectMessage("Invalid education rule format for 'MyRuleKey', context based patch is missing");
-    educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
-  }
-
-  @Test
   public void education_description_content_with_invalid_format() throws IOException {
     EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
-    String testFileContent = getTestFileContent("invalid/S102.html");
+    String testFileContent = getTestFileContent("invalid/S101.html");
 
     exceptionRule.expect(IllegalStateException.class);
     exceptionRule.expectMessage("Invalid education rule format for 'MyRuleKey', following header is missing: '<h2>How to fix it\\?</h2>'");
