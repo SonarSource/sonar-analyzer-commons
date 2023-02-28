@@ -19,6 +19,9 @@
  */
 package org.sonarsource.analyzer.commons;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -87,6 +90,39 @@ public class RuleMetadataLoaderTest {
     assertThat(remediation.type()).isEqualTo(DebtRemediationFunction.Type.CONSTANT_ISSUE);
     assertThat(remediation.baseEffort()).isEqualTo("5min");
     assertThat(rule.deprecatedRuleKeys()).isEmpty();
+  }
+
+  @Test
+  public void load_education_rule_S102_with_unsupported_product_runtime() throws IOException {
+    @Rule(key = "S102")
+    class TestRule {
+    }
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("S102");
+    String expectedHtmlDescription = Files.readString(Paths.get("src/test/resources/org/sonarsource/analyzer/commons/S102_fallback.html"));
+    assertThat(rule).isNotNull();
+    assertThat(rule.htmlDescription()).isEqualTo(expectedHtmlDescription);
+    assertThat(rule.ruleDescriptionSections()).isEmpty();
+  }
+
+  @Test
+  public void load_education_rule_S102_with_supported_product_runtime() throws IOException {
+    @Rule(key = "S102")
+    class TestRule {
+    }
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_9_9);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("S102");
+    String expectedHtmlDescription = Files.readString(Paths.get("src/test/resources/org/sonarsource/analyzer/commons/S102_fallback.html"));
+    assertThat(rule).isNotNull();
+    assertThat(rule.htmlDescription()).isEqualTo(expectedHtmlDescription);
+    assertThat(rule.ruleDescriptionSections()).hasSize(5);
   }
 
   @Test

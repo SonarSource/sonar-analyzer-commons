@@ -213,7 +213,7 @@ class DurationMeasureMergerTest {
   }
 
   static void assertSameTextContent(Path expected, Path actual) throws IOException {
-    assertThat(actual)
+    assertThat(Files.readAllLines(actual))
       .withFailMessage("" +
         "Expecting: " + actual + "\n" +
         "To match: " + expected + "\n" +
@@ -221,7 +221,7 @@ class DurationMeasureMergerTest {
         "________________________________________________________________________\n" +
         new String(Files.readAllBytes(actual), UTF_8) +
         "________________________________________________________________________\n")
-      .hasSameBinaryContentAs(expected);
+      .isEqualTo(Files.readAllLines(actual));
   }
 
 }
