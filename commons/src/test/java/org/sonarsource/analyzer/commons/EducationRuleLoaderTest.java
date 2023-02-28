@@ -197,6 +197,22 @@ public class EducationRuleLoaderTest {
   }
 
   @Test
+  public void education_description_content_without_resources_section() throws IOException {
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
+    String testFileContent = getTestFileContent("valid/S104.html");
+
+    educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
+
+    assertThat(rule.ruleDescriptionSections()).hasSize(2);
+    assertThat(rule.ruleDescriptionSections().get(0).getHtmlContent()).isEqualTo("Explanation");
+    assertThat(rule.ruleDescriptionSections().get(0).getContext()).isEmpty();
+    assertThat(rule.ruleDescriptionSections().get(1).getHtmlContent()).isEqualTo("Content");
+    assertThat(rule.ruleDescriptionSections().get(1).getContext()).isEmpty();
+  }
+
+  @Test
   public void education_description_content_with_non_education_format() throws IOException {
     EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
     String testFileContent = getTestFileContent("invalid/S100.html");
