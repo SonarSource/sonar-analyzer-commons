@@ -19,6 +19,9 @@
  */
 package org.sonarsource.analyzer.commons;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -90,7 +93,7 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void load_education_rule_S102_with_unsupported_product_runtime() {
+  public void load_education_rule_S102_with_unsupported_product_runtime() throws IOException {
     @Rule(key = "S102")
     class TestRule {
     }
@@ -99,20 +102,14 @@ public class RuleMetadataLoaderTest {
 
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
     RulesDefinition.Rule rule = repository.rule("S102");
+    String expectedHtmlDescription = Files.readString(Paths.get("src/test/resources/org/sonarsource/analyzer/commons/S102_fallback.html"));
     assertThat(rule).isNotNull();
-    assertThat(rule.htmlDescription().replaceAll("\r\n", "\n")).isEqualTo("Intro\n" +
-      "<h2>Why is this an issue?</h2>\n" +
-      "Explanation\n" +
-      "<h2>How to fix it?</h2>\n" +
-      "<h3>How to fix it in Framework-1</h3>\n" +
-      "Details\n" +
-      "<h2>Resources</h2>\n" +
-      "Links");
+    assertThat(rule.htmlDescription()).isEqualTo(expectedHtmlDescription);
     assertThat(rule.ruleDescriptionSections()).isEmpty();
   }
 
   @Test
-  public void load_education_rule_S102_with_supported_product_runtime() {
+  public void load_education_rule_S102_with_supported_product_runtime() throws IOException {
     @Rule(key = "S102")
     class TestRule {
     }
@@ -122,15 +119,9 @@ public class RuleMetadataLoaderTest {
 
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
     RulesDefinition.Rule rule = repository.rule("S102");
+    String expectedHtmlDescription = Files.readString(Paths.get("src/test/resources/org/sonarsource/analyzer/commons/S102_fallback.html"));
     assertThat(rule).isNotNull();
-    assertThat(rule.htmlDescription().replaceAll("\r\n", "\n")).isEqualTo("Intro\n" +
-      "<h2>Why is this an issue?</h2>\n" +
-      "Explanation\n" +
-      "<h2>How to fix it?</h2>\n" +
-      "<h3>How to fix it in Framework-1</h3>\n" +
-      "Details\n" +
-      "<h2>Resources</h2>\n" +
-      "Links");
+    assertThat(rule.htmlDescription()).isEqualTo(expectedHtmlDescription);
     assertThat(rule.ruleDescriptionSections()).hasSize(5);
   }
 

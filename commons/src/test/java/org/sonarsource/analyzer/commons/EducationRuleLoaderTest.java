@@ -99,19 +99,6 @@ public class EducationRuleLoaderTest {
   }
 
   @Test
-  public void education_description_content_unsupported_product_runtime_invalid_format() throws IOException {
-    SonarRuntime invalidRuntime = SonarRuntimeImpl.forSonarQube(Version.create(9, 4), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(invalidRuntime);
-    String testFileContent = getTestFileContent("invalid/S101.html");
-    String fallbackDescription = educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
-    newRepository.done();
-    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
-
-    assertThat(rule.ruleDescriptionSections()).isEmpty();
-    assertThat(fallbackDescription).isEqualTo(testFileContent);
-  }
-
-  @Test
   public void education_description_simple_content() throws IOException {
     EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
     String testFileContent = getTestFileContent("valid/S100.html");
@@ -205,11 +192,13 @@ public class EducationRuleLoaderTest {
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
 
-    assertThat(rule.ruleDescriptionSections()).hasSize(2);
+    assertThat(rule.ruleDescriptionSections()).hasSize(3);
     assertThat(rule.ruleDescriptionSections().get(0).getHtmlContent()).isEqualTo("Explanation");
     assertThat(rule.ruleDescriptionSections().get(0).getContext()).isEmpty();
-    assertThat(rule.ruleDescriptionSections().get(1).getHtmlContent()).isEqualTo("Content");
-    assertThat(rule.ruleDescriptionSections().get(1).getContext()).isEmpty();
+    assertThat(rule.ruleDescriptionSections().get(1).getHtmlContent()).isEqualTo("Content-1");
+    assertThat(rule.ruleDescriptionSections().get(1).getContext().get().getKey()).isEqualTo("framework_1");
+    assertThat(rule.ruleDescriptionSections().get(2).getHtmlContent()).isEqualTo("Content-2");
+    assertThat(rule.ruleDescriptionSections().get(2).getContext().get().getKey()).isEqualTo("framework_2");
   }
 
   @Test
