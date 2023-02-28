@@ -108,11 +108,12 @@ class EducationRuleLoader {
     addSection(rule, ROOT_CAUSE_SECTION_KEY, split[0]);
 
     split = split[1].split(RESOURCES_SECTION_HEADER);
-    checkValidSplit(split, rule, RESOURCES_SECTION_HEADER);
-
     addContextSpecificHowToFixItSection(rule, split[0]);
 
-    addSection(rule, RESOURCES_SECTION_KEY, split[1]);
+    // "Resources" section is optional.
+    if (split.length > 1) {
+      addSection(rule, RESOURCES_SECTION_KEY, split[1]);
+    }
   }
 
   private static void addContextSpecificHowToFixItSection(NewRule rule, String content) {
