@@ -41,7 +41,6 @@ import static org.sonar.api.server.rule.RuleDescriptionSection.RuleDescriptionSe
 
 /**
  * This utility class helps loading the new content for progressive education rules.
- * However, as the API around educational rules is still unstable and evolving, it makes it easier to keep the logic inside this analyzer for the moment.
  */
 class EducationRuleLoader {
 
@@ -76,11 +75,10 @@ class EducationRuleLoader {
     if (!isEducationFormat(description)) {
       return description;
     }
-    if (!isEducationRuleDescriptionSupported()) {
-      return fallbackHtmlDescription(description);
-    }
 
-    addEducationalRuleSections(rule, description);
+    if (isEducationRuleDescriptionSupported()) {
+      addEducationalRuleSections(rule, description);
+    }
     return fallbackHtmlDescription(description);
   }
 
@@ -121,8 +119,11 @@ class EducationRuleLoader {
     Matcher m = HOW_TO_FIX_SECTION_PATTERN.matcher(content);
     boolean match = m.find();
     if (!match) {
-      throw new IllegalStateException(String.format("Invalid education rule format for '%s', context based patch is missing.", rule.key()));
+      // Rule does not have framework specific "How to fix it" sections.
+      addSection(rule, HOW_TO_FIX_SECTION_KEY, content);
+      return;
     }
+
     // Splitting by the "How to fix in <displayName>" will return an array where each element is the content related to a given framework.
     String[] split = content.split(HOW_TO_FIX_SECTION_REGEX);
     // We skip index 0 because it will be an empty string.
