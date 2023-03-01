@@ -162,5 +162,5 @@ public class MyVerifier {
 ```
 
 ### License
-Copyright 2009-2021 SonarSource.
+Copyright 2009-2023 SonarSource.
 Licensed under the [GNU Lesser General Public License, Version 3.0](http://www.gnu.org/licenses/lgpl.txt)
