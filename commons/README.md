@@ -13,5 +13,5 @@ Logic useful for an average language plugin
 * [`FileProvider`](./src/main/java/org/sonarsource/analyzer/commons/FileProvider.java) - to get files matching given pattern in the given directory
 
 ### License
-Copyright 2009-2021 SonarSource.
+Copyright 2009-2023 SonarSource.
 Licensed under the [GNU Lesser General Public License, Version 3.0](http://www.gnu.org/licenses/lgpl.txt)
