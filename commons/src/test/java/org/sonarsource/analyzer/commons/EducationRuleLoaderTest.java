@@ -99,7 +99,7 @@ public class EducationRuleLoaderTest {
   }
 
   @Test
-  public void education_description_simple_content() throws IOException {
+  public void education_description_single_framework_content() throws IOException {
     EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
     String testFileContent = getTestFileContent("valid/S100.html");
     String fallbackDescription = educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
@@ -220,7 +220,17 @@ public class EducationRuleLoaderTest {
     String testFileContent = getTestFileContent("invalid/S101.html");
 
     exceptionRule.expect(IllegalStateException.class);
-    exceptionRule.expectMessage("Invalid education rule format for 'MyRuleKey', following header is missing: '<h2>How to fix it\\?</h2>'");
+    exceptionRule.expectMessage("Invalid education rule format for 'MyRuleKey', following header is missing: '<h2>How to fix it</h2>'");
+    educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
+  }
+
+  @Test
+  public void education_description_content_with_invalid_generic_and_specific_how_sections() throws IOException {
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
+    String testFileContent = getTestFileContent("invalid/S102.html");
+
+    exceptionRule.expect(IllegalStateException.class);
+    exceptionRule.expectMessage("Invalid education rule format for 'MyRuleKey', rule description has both generic and framework-specific 'How to fix it' sections");
     educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
   }
 
