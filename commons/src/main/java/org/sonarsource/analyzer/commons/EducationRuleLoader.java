@@ -102,9 +102,6 @@ class EducationRuleLoader {
   private static void addEducationalRuleSections(NewRule rule, String description) {
     // The "Why is this an issue?" section is expected.
     String[] split = description.split(WHY_SECTION_HEADER);
-    if (split.length != 2) {
-      throw new IllegalStateException(String.format("Invalid education rule format for '%s', following header is missing: '%s'", rule.key(), WHY_SECTION_HEADER));
-    }
 
     // Adding the introduction section if not empty.
     addSection(rule, INTRODUCTION_SECTION_KEY, split[0]);
@@ -116,7 +113,8 @@ class EducationRuleLoader {
     boolean hasFrameworkSpecificHowToFixItSection = frameworkSpecificHowToFixItSectionMatcher.find();
     boolean hasGenericHowToFixItSection = HOW_TO_FIX_SECTION_PATTERN.matcher(rootCauseAndHowToFixItSections).find();
     if (hasGenericHowToFixItSection && hasFrameworkSpecificHowToFixItSection) {
-      throw new IllegalStateException(String.format("Invalid education rule format for '%s', rule description has both generic and framework-specific 'How to fix it' sections", rule.key()));
+      throw new IllegalStateException(
+        String.format("Invalid education rule format for '%s', rule description has both generic and framework-specific 'How to fix it' sections", rule.key()));
     } else if (hasFrameworkSpecificHowToFixItSection) {
       // Splitting by the "How to fix in <displayName>" will return an array where each element after the first is the content related to a given framework.
       String[] innerSplit = rootCauseAndHowToFixItSections.split(HOW_TO_FIX_FRAMEWORK_SECTION_REGEX);
