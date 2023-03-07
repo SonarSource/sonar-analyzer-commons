@@ -45,6 +45,7 @@ import static org.sonar.api.server.rule.RuleDescriptionSection.RuleDescriptionSe
 class EducationRuleLoader {
 
   private static final Logger LOG = Loggers.get(EducationRuleLoader.class);
+  private static final String CODE_EXAMPLES_HEADER = "<h3>Code examples</h3>";
   private static final String WHY_SECTION_HEADER = "<h2>Why is this an issue\\?</h2>";
   private static final String HOW_TO_FIX_SECTION_HEADER = "<h2>How to fix it</h2>";
   private static final String RESOURCES_SECTION_HEADER = "<h2>Resources</h2>";
@@ -106,7 +107,9 @@ class EducationRuleLoader {
     // Adding the introduction section if not empty.
     addSection(rule, INTRODUCTION_SECTION_KEY, split[0]);
     split = split[1].split(RESOURCES_SECTION_HEADER);
-    String rootCauseAndHowToFixItSections = split[0];
+
+    // Filtering out the "<h3>Code examples</h3>" title.
+    String rootCauseAndHowToFixItSections = split[0].replace(CODE_EXAMPLES_HEADER, "");
 
     // Either the generic "How to fix it" section or at least one framework specific "How to fix it in <framework_name>" section is expected.
     Matcher frameworkSpecificHowToFixItSectionMatcher = HOW_TO_FIX_FRAMEWORK_SECTION_PATTERN.matcher(rootCauseAndHowToFixItSections);
