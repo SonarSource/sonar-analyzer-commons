@@ -99,7 +99,7 @@ public class EducationRuleLoaderTest {
   }
 
   @Test
-  public void education_description_simple_content() throws IOException {
+  public void education_description_single_framework_content() throws IOException {
     EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
     String testFileContent = getTestFileContent("valid/S100.html");
     String fallbackDescription = educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
@@ -202,6 +202,22 @@ public class EducationRuleLoaderTest {
   }
 
   @Test
+  public void education_description_content_filters_out_code_example_title() throws IOException {
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
+    String testFileContent = getTestFileContent("valid/S105.html");
+
+    educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
+
+    assertThat(rule.ruleDescriptionSections()).hasSize(4);
+    assertThat(rule.ruleDescriptionSections().get(0).getHtmlContent()).isEqualTo("Intro");
+    assertThat(rule.ruleDescriptionSections().get(1).getHtmlContent()).isEqualTo("Explanation");
+    assertThat(rule.ruleDescriptionSections().get(2).getHtmlContent()).isEqualTo("<h4>Noncompliant code example</h4>" + System.lineSeparator() + "<pre>var a = 1;</pre>");
+    assertThat(rule.ruleDescriptionSections().get(3).getHtmlContent()).isEqualTo("Links");
+  }
+
+  @Test
   public void education_description_content_with_non_education_format() throws IOException {
     EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
     String testFileContent = getTestFileContent("invalid/S100.html");
@@ -220,7 +236,17 @@ public class EducationRuleLoaderTest {
     String testFileContent = getTestFileContent("invalid/S101.html");
 
     exceptionRule.expect(IllegalStateException.class);
-    exceptionRule.expectMessage("Invalid education rule format for 'MyRuleKey', following header is missing: '<h2>How to fix it\\?</h2>'");
+    exceptionRule.expectMessage("Invalid education rule format for 'MyRuleKey', following header is missing: '<h2>How to fix it</h2>'");
+    educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
+  }
+
+  @Test
+  public void education_description_content_with_invalid_generic_and_specific_how_sections() throws IOException {
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
+    String testFileContent = getTestFileContent("invalid/S102.html");
+
+    exceptionRule.expect(IllegalStateException.class);
+    exceptionRule.expectMessage("Invalid education rule format for 'MyRuleKey', rule description has both generic and framework-specific 'How to fix it' sections");
     educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
   }
 
