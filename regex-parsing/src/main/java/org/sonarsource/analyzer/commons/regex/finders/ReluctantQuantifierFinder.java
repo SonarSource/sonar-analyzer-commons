@@ -82,7 +82,7 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
       : Optional.empty();
   }
 
-  private static String makePossessiveOrGreedy(Quantifier quantifier, boolean possessive) {
+  protected String makePossessiveOrGreedy(Quantifier quantifier, boolean possessive) {
     String possessiveAddition = possessive ? "+" : "";
     if (quantifier instanceof SimpleQuantifier) {
       return ((SimpleQuantifier) quantifier).getKind() + possessiveAddition;
