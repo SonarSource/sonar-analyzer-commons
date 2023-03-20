@@ -38,14 +38,15 @@ class PythonRegexSourceTest {
 
     var features = source.features();
     assertThat(features)
-      .hasSize(6)
+      .hasSize(7)
       .containsOnly(
         RegexFeature.RECURSION,
         RegexFeature.CONDITIONAL_SUBPATTERN,
         RegexFeature.PYTHON_SYNTAX_GROUP_NAME,
         RegexFeature.UNESCAPED_CURLY_BRACKET,
         RegexFeature.ONLY_UPPER_BOUND_QUANTIFIER,
-        RegexFeature.POSSESSIVE_QUANTIFIER);
+        RegexFeature.POSSESSIVE_QUANTIFIER,
+        RegexFeature.ATOMIC_GROUP);
   }
 
 }
