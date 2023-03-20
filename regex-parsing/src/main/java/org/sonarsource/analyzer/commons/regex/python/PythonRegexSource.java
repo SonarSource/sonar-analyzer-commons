@@ -32,7 +32,8 @@ public abstract class PythonRegexSource extends RegexSource {
     RegexFeature.PYTHON_SYNTAX_GROUP_NAME,
     RegexFeature.UNESCAPED_CURLY_BRACKET,
     RegexFeature.ONLY_UPPER_BOUND_QUANTIFIER,
-    RegexFeature.POSSESSIVE_QUANTIFIER
+    RegexFeature.POSSESSIVE_QUANTIFIER,
+    RegexFeature.ATOMIC_GROUP
   );
 
   protected PythonRegexSource(String source) {
