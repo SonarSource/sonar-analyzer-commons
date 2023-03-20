@@ -19,28 +19,33 @@
  */
 package org.sonarsource.analyzer.commons.regex.python;
 
-import java.util.EnumSet;
-import java.util.Set;
+import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.CharacterParser;
 import org.sonarsource.analyzer.commons.regex.RegexFeature;
-import org.sonarsource.analyzer.commons.regex.RegexSource;
 
-public abstract class PythonRegexSource extends RegexSource {
+import static org.assertj.core.api.Assertions.assertThat;
 
-  private static final Set<RegexFeature> FEATURES = EnumSet.of(
-    RegexFeature.RECURSION,
-    RegexFeature.CONDITIONAL_SUBPATTERN,
-    RegexFeature.PYTHON_SYNTAX_GROUP_NAME,
-    RegexFeature.UNESCAPED_CURLY_BRACKET,
-    RegexFeature.ONLY_UPPER_BOUND_QUANTIFIER,
-    RegexFeature.POSSESSIVE_QUANTIFIER
-  );
+class PythonRegexSourceTest {
 
-  protected PythonRegexSource(String source) {
-    super(source);
+  @Test
+  void testFeatures() {
+    var source = new PythonRegexSource("") {
+      @Override
+      public CharacterParser createCharacterParser() {
+        return null;
+      }
+    };
+
+    var features = source.features();
+    assertThat(features)
+      .hasSize(6)
+      .containsOnly(
+        RegexFeature.RECURSION,
+        RegexFeature.CONDITIONAL_SUBPATTERN,
+        RegexFeature.PYTHON_SYNTAX_GROUP_NAME,
+        RegexFeature.UNESCAPED_CURLY_BRACKET,
+        RegexFeature.ONLY_UPPER_BOUND_QUANTIFIER,
+        RegexFeature.POSSESSIVE_QUANTIFIER);
   }
 
-  @Override
-  public Set<RegexFeature> features() {
-    return FEATURES;
-  }
 }
