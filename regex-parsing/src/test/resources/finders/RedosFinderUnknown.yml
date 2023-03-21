@@ -1,0 +1,82 @@
+- '(.*,)*'
+- '(.*,)*?'
+- '(.?,)*?'
+- '(a|.a)*?'
+- '(?:.*,)*(X)\1'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;true}}
+- '(.*,)*\1'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;true}}
+- '(.*,)*'
+- '(.*,)*.*'
+- '(.*,)*X'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*,)*X'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*?,)+'
+- '(.*?,){5,}'
+- '((.*,)*)*+'
+- '((.*,)*)?'
+- '(?>(.*,)*)'
+- '((?>.*,)*)*'
+- '(.*,)* (.*,)*'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*,)*$'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*,)*$'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*,)*(..)*'
+- '(.*,)*(.{2})*'
+- 'x*\w*'
+- '.*.*X'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'x*a*x*'
+- 'x*,a*x*'
+- 'x*(xy?)*'
+- '(ab)*a(ba)*'
+- 'x*yx*'
+- 'x*a*b*c*d*e*f*g*h*i*x*'
+- 'x*a*b*c*d*e*f*g*h*i*j*x*'
+- 'x*a*b*c*d*e*f*g*h*i*j*x*x*'
+- '.*\s*'
+- '.*\s*+'
+- '.*+\s*'
+- '.*+\s*+'
+- '.*,\s*+,'
+- '\s*\s*+,'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'a*\s*+,'
+- '[a\s]*\s*+,'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '[a\s]*b*\s*+,'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '\s*+[a\s]*b*,'
+- '\s*+b*[a\s]*,'
+- '\s*,' 
+- '\s*+,'
+- '(?s:.*)\s*,(?s:.*)'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(?s:.*)\s*+,(?s:.*)'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- ',\s*+'
+- ',\s*+,'
+- '\s*+'
+- 'x*x*'
+- 'x*x*x*'
+- 'x*x*x*x*'
+- 'x*x*x*x*x*'
+- '[^=]*.*.*=.*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(.?,)*X'  # Noncompliant {{LINEAR_WHEN_OPTIMIZED;false}}
+- '(.?,)*\1'  # Noncompliant {{LINEAR_WHEN_OPTIMIZED;true}}
+- '(?:(.?)\1,)*'
+- '(?s)(.*,)*.*'
+- '(.*,)*(?s:.)*'
+- '(?s)(.*,)*(.?)*'
+- '(a|b)*'
+- '(x*,){1,5}X'
+- '((a|.a),)*'
+- '(.*,)*[\\s\\S]*'
+- '(?U)(.*,)*(.|\\s)*'
+- '(x?,)?'
+- '(?>.*,)*'
+- '([^,]*+,)*'
+- '(.*?,){5}'
+- '(.*?,){1,5}'
+- '([^,]*,)*'
+- '(;?,)*'
+- '(;*,)*'
+- 'x*|x*'
+- 'a*b*'
+- 'a*a?b*'
+- 'a*(a?b)*'
+- 'a*(ab)*'
+- 'x*x*'
+- '(?s)x*.*'
+- 'x*(?s)*'
+- '(.*,)*('

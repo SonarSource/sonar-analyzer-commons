@@ -1,0 +1,82 @@
+- '(.*,)*'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*,)*?'  # Noncompliant {{ALWAYS_EXPONENTIAL;false}}
+- '(.?,)*?'  # Noncompliant {{ALWAYS_EXPONENTIAL;false}}
+- '(a|.a)*?'  # Noncompliant {{ALWAYS_EXPONENTIAL;false}}
+- '(?:.*,)*(X)\1'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;true}}
+- '(.*,)*\1'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;true}}
+- '(.*,)*'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*,)*.*'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*,)*X'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*,)*X'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*?,)+'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*?,){5,}'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '((.*,)*)*+'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '((.*,)*)?'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(?>(.*,)*)'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '((?>.*,)*)*'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*,)* (.*,)*'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*,)*$'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*,)*$'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*,)*(..)*'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- '(.*,)*(.{2})*'  # Noncompliant {{QUADRATIC_WHEN_OPTIMIZED;false}}
+- 'x*\w*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '.*.*X'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'x*a*x*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'x*,a*x*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'x*(xy?)*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(ab)*a(ba)*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'x*yx*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'x*a*b*c*d*e*f*g*h*i*x*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'x*a*b*c*d*e*f*g*h*i*j*x*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'x*a*b*c*d*e*f*g*h*i*j*x*x*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '.*\s*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '.*\s*+'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '.*+\s*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '.*+\s*+'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '.*,\s*+,'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '\s*\s*+,'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'a*\s*+,'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '[a\s]*\s*+,'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '[a\s]*b*\s*+,'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '\s*+[a\s]*b*,'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '\s*+b*[a\s]*,'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '\s*,'   # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '\s*+,'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(?s:.*)\s*,(?s:.*)'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(?s:.*)\s*+,(?s:.*)'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- ',\s*+'
+- ',\s*+,'
+- '\s*+'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'x*x*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'x*x*x*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'x*x*x*x*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'x*x*x*x*x*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '[^=]*.*.*=.*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(.?,)*X'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(.?,)*\1'  # Noncompliant {{ALWAYS_QUADRATIC;true}}
+- '(?:(.?)\1,)*'  # Noncompliant {{ALWAYS_QUADRATIC;true}}
+- '(?s)(.*,)*.*'
+- '(.*,)*(?s:.)*'
+- '(?s)(.*,)*(.?)*'
+- '(a|b)*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(x*,){1,5}X'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '((a|.a),)*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(.*,)*[\\s\\S]*'
+- '(?U)(.*,)*(.|\\s)*'
+- '(x?,)?'
+- '(?>.*,)*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '([^,]*+,)*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(.*?,){5}'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(.*?,){1,5}'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '([^,]*,)*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(;?,)*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(;*,)*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'x*|x*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'a*b*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'a*a?b*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'a*(a?b)*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'a*(ab)*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- 'x*x*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(?s)x*.*'
+- 'x*(?s)*'  # Noncompliant {{ALWAYS_QUADRATIC;false}}
+- '(.*,)*('
