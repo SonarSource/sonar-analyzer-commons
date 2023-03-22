@@ -20,11 +20,13 @@
 package org.sonarsource.analyzer.commons.regex.ast;
 
 import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexFeature;
 import org.sonarsource.analyzer.commons.regex.RegexParserTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.*;
+import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertType;
 
 class CharacterTreeTest {
 
@@ -68,14 +70,42 @@ class CharacterTreeTest {
     assertFailParsing("\\\\c", "Expected any character, but found the end of the regex");
   }
 
+
   @Test
-  void octalEscapeSequences() {
+  void pythonBackReferenceSequences() {
+    var regexTree = assertSuccessfulParse("\\\\12b", RegexFeature.PYTHON_OCTAL_ESCAPE);
+    var sequence = assertType(SequenceTree.class, regexTree);
+    assertListElements(sequence.getItems(),
+      first -> assertType(BackReferenceTree.class, first),
+      second -> assertType(CharacterTree.class, second)
+    );
+
+    regexTree = assertSuccessfulParse("b\\\\12", RegexFeature.PYTHON_OCTAL_ESCAPE);
+    sequence = assertType(SequenceTree.class, regexTree);
+    assertListElements(sequence.getItems(),
+      first -> assertType(CharacterTree.class, first),
+      second -> assertType(BackReferenceTree.class, second)
+    );
+
+    regexTree = assertSuccessfulParse("b\\\\109", RegexFeature.PYTHON_OCTAL_ESCAPE);
+    sequence = assertType(SequenceTree.class, regexTree);
+    assertListElements(sequence.getItems(),
+      first -> assertType(CharacterTree.class, first),
+      second -> assertType(BackReferenceTree.class, second)
+    );
+  }
+
+  @Test
+  void pythonOctalEscapeSequences() {
+    RegexParserTestUtils.assertCharacter('A', true, "\\\\101", RegexFeature.PYTHON_OCTAL_ESCAPE);
+    RegexParserTestUtils.assertPlainString("Ab", "\\\\101b", RegexFeature.PYTHON_OCTAL_ESCAPE);
     RegexParserTestUtils.assertCharacter('\n', true, "\\012");
     RegexParserTestUtils.assertCharacter('\n', true, "\\12");
     RegexParserTestUtils.assertCharacter('D', true, "\\104");
     assertPlainString("D\n", "\\104\\012");
     assertPlainString("\nD", "\\12D");
   }
+
 
   @Test
   void octalEscapesWithDoubleBackslash() {

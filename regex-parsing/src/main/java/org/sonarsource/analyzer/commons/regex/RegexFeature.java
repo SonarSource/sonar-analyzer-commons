@@ -24,6 +24,7 @@ public enum RegexFeature {
   CONDITIONAL_SUBPATTERN,                             // (?(\1)a|b)
   POSIX_CHARACTER_CLASS,                              // [[:alpha:]]
   PYTHON_SYNTAX_GROUP_NAME,                           // (P<name>)
+  PYTHON_OCTAL_ESCAPE,                                // \\377
   DOTNET_SYNTAX_GROUP_NAME,                           // (?<name>) and (?'name')
   PERL_SYNTAX_GROUP_NAME,                             // \k{name} and \g{name}
   JAVA_SYNTAX_GROUP_NAME,                             // (?<name>)

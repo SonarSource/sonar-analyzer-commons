@@ -126,12 +126,12 @@ public class RegexParserTestUtils {
     }
   }
 
-  public static void assertPlainString(String expected, String regex) {
-    assertPlainString(expected, regex, 0);
+  public static void assertPlainString(String expected, String regex, RegexFeature... regexFeatures) {
+    assertPlainString(expected, regex, 0, regexFeatures);
   }
 
-  public static void assertPlainString(String expected, String regex, int initialFlags) {
-    assertPlainString(expected, assertSuccessfulParse(regex, initialFlags));
+  public static void assertPlainString(String expected, String regex, int initialFlags, RegexFeature... regexFeatures) {
+    assertPlainString(expected, assertSuccessfulParse(regex, initialFlags, regexFeatures));
   }
 
   public static void assertCharacter(char expected, @Nullable Boolean expectedEscape, RegexSyntaxElement regex) {
@@ -161,8 +161,8 @@ public class RegexParserTestUtils {
     assertLocation(index, index + str.length(), token);
   }
 
-  public static void assertCharacter(char expected, @Nullable Boolean expectedEscape, String regexSource) {
-    RegexTree regex = assertSuccessfulParse(regexSource);
+  public static void assertCharacter(char expected, @Nullable Boolean expectedEscape, String regexSource, RegexFeature... features) {
+    RegexTree regex = assertSuccessfulParse(regexSource, features);
     assertLocation(0, regexSource.length(), regex);
     assertCharacter(expected, expectedEscape, regex);
   }

@@ -593,6 +593,11 @@ public class RegexParser {
         case '1':
         case '2':
         case '3':
+          if (source.supportsFeature(RegexFeature.PYTHON_OCTAL_ESCAPE)) {
+            return parsePythonOctalEscapeOrNumericalBackReference(backslash);
+          } else {
+            return parseNumericalBackReference(backslash);
+          }
         case '4':
         case '5':
         case '6':
@@ -897,6 +902,38 @@ public class RegexParser {
     }
     IndexRange range = backslash.getRange().extendTo(characters.getCurrentStartIndex());
     return characterTree(new SourceCharacter(source, range, byteValue, true));
+  }
+
+  protected RegexTree parsePythonOctalEscapeOrNumericalBackReference(SourceCharacter backslash) {
+    var firstDigit = characters.getCurrent();
+    var lastDigit = firstDigit;
+    var escapedNumberSb = new StringBuilder();
+    do {
+      if (!isAsciiDigit(characters.getCurrent().getCharacter())) {
+        break;
+      }
+
+      lastDigit = characters.getCurrent();
+      escapedNumberSb.append(lastDigit.getCharacter());
+
+      characters.moveNext();
+    } while (!characters.isAtEnd());
+
+    var escapedNumberString = escapedNumberSb.toString();
+    if (isOctalEscape(escapedNumberString)) {
+      var range = backslash.getRange().extendTo(characters.getCurrentStartIndex());
+      return characterTree(new SourceCharacter(source, range, (char) Integer.parseInt(escapedNumberString, 8), true));
+    } else {
+      return collect(new BackReferenceTree(source, backslash, null, firstDigit, lastDigit, activeFlags));
+    }
+  }
+
+  private static boolean isOctalEscape(String escapedDigit) {
+    try {
+      return escapedDigit.length() == 3 && Integer.parseInt(escapedDigit, 8) <= 255;
+    } catch (NumberFormatException e) {
+      return false;
+    }
   }
 
   protected RegexTree parseBoundary(SourceCharacter backslash) {
