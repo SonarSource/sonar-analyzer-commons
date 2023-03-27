@@ -73,7 +73,7 @@ public abstract class RedosFinder {
    * "Optimized" here should be understood as the optimization performed by the Java9 regex engine.
    * If no such optimization is performed, these cases are exponential.
    */
-  enum BacktrackingType implements Comparable<BacktrackingType> {
+  enum BacktrackingType {
     NO_ISSUE(0),
     LINEAR_WHEN_OPTIMIZED(1),
     ALWAYS_QUADRATIC(2),
