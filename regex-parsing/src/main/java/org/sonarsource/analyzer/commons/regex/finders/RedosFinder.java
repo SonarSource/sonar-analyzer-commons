@@ -21,7 +21,6 @@ package org.sonarsource.analyzer.commons.regex.finders;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -74,12 +73,22 @@ public abstract class RedosFinder {
    * "Optimized" here should be understood as the optimization performed by the Java9 regex engine.
    * If no such optimization is performed, these cases are exponential.
    */
-  public enum BacktrackingType {
-    ALWAYS_EXPONENTIAL,
-    QUADRATIC_WHEN_OPTIMIZED,
-    ALWAYS_QUADRATIC,
-    LINEAR_WHEN_OPTIMIZED,
-    NO_ISSUE
+  enum BacktrackingType implements Comparable<BacktrackingType> {
+    NO_ISSUE(0),
+    LINEAR_WHEN_OPTIMIZED(1),
+    ALWAYS_QUADRATIC(2),
+    QUADRATIC_WHEN_OPTIMIZED(3),
+    ALWAYS_EXPONENTIAL(4);
+
+    private final int priority;
+
+    BacktrackingType(int priority) {
+      this.priority = priority;
+    }
+
+    public BacktrackingType max(BacktrackingType another) {
+      return this.priority > another.priority ? this : another;
+    }
   }
 
   private boolean regexContainsBackReference;
@@ -258,9 +267,7 @@ public abstract class RedosFinder {
   }
 
   private void addBacktracking(BacktrackingType newBacktrackingType) {
-    if (newBacktrackingType.ordinal() < foundBacktrackingType.ordinal()) {
-      foundBacktrackingType = newBacktrackingType;
-    }
+    foundBacktrackingType = foundBacktrackingType.max(newBacktrackingType);
   }
 
   private class BacktrackingFinder extends RegexBaseVisitor {
@@ -282,7 +289,7 @@ public abstract class RedosFinder {
     public void visitRepetition(RepetitionTree tree) {
       if (tree.isPossessive()) {
         new RedosVisitor(tree, tree.continuation(), false, false).visit(tree);
-      } else if (containsIntersections(Arrays.asList(tree.getElement(), tree.continuation()))) {
+      } else if (containsIntersections(List.of(tree.getElement(), tree.continuation()))) {
         BacktrackingType greedyComplexity = tree.getQuantifier().isOpenEnded() ? BacktrackingType.QUADRATIC_WHEN_OPTIMIZED : BacktrackingType.LINEAR_WHEN_OPTIMIZED;
         addBacktracking(isReluctant ? BacktrackingType.ALWAYS_EXPONENTIAL : greedyComplexity);
         super.visitRepetition(tree);
