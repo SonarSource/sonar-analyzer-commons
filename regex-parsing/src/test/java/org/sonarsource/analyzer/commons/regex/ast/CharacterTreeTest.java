@@ -96,9 +96,7 @@ class CharacterTreeTest {
   }
 
   @Test
-  void pythonOctalEscapeSequences() {
-    RegexParserTestUtils.assertCharacter('A', true, "\\\\101", RegexFeature.PYTHON_OCTAL_ESCAPE);
-    RegexParserTestUtils.assertPlainString("Ab", "\\\\101b", RegexFeature.PYTHON_OCTAL_ESCAPE);
+  void octalEscapeSequences() {
     RegexParserTestUtils.assertCharacter('\n', true, "\\012");
     RegexParserTestUtils.assertCharacter('\n', true, "\\12");
     RegexParserTestUtils.assertCharacter('D', true, "\\104");
@@ -115,6 +113,9 @@ class CharacterTreeTest {
     assertPlainString("D\n", "\\\\0104\\\\012");
     assertPlainString("\nD", "\\\\012D");
     assertPlainString("%6", "\\\\0456");
+    RegexParserTestUtils.assertCharacter('A', true, "\\\\101", RegexFeature.PYTHON_OCTAL_ESCAPE);
+    RegexParserTestUtils.assertPlainString("Ab", "\\\\101b", RegexFeature.PYTHON_OCTAL_ESCAPE);
+    RegexParserTestUtils.assertPlainString("A3", "\\\\1013", RegexFeature.PYTHON_OCTAL_ESCAPE);
   }
 
   @Test

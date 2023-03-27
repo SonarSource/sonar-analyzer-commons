@@ -915,22 +915,21 @@ public class RegexParser {
 
       lastDigit = characters.getCurrent();
       escapedNumberSb.append(lastDigit.getCharacter());
-
       characters.moveNext();
-    } while (!characters.isAtEnd());
+    } while (!characters.isAtEnd() && !isOctalEscape(escapedNumberSb));
 
-    var escapedNumberString = escapedNumberSb.toString();
-    if (isOctalEscape(escapedNumberString)) {
+    if (isOctalEscape(escapedNumberSb)) {
       var range = backslash.getRange().extendTo(characters.getCurrentStartIndex());
-      return characterTree(new SourceCharacter(source, range, (char) Integer.parseInt(escapedNumberString, 8), true));
+      char escapedChar = (char) Integer.parseInt(escapedNumberSb, 0, escapedNumberSb.length(), 8);
+      return characterTree(new SourceCharacter(source, range, escapedChar, true));
     } else {
       return collect(new BackReferenceTree(source, backslash, null, firstDigit, lastDigit, activeFlags));
     }
   }
 
-  private static boolean isOctalEscape(String escapedDigit) {
+  private static boolean isOctalEscape(CharSequence escapedDigit) {
     try {
-      return escapedDigit.length() == 3 && Integer.parseInt(escapedDigit, 8) <= 255;
+      return escapedDigit.length() == 3 && Integer.parseInt(escapedDigit, 0, escapedDigit.length(), 8) <= 255;
     } catch (NumberFormatException e) {
       return false;
     }
