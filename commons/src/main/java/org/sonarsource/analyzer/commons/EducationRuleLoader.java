@@ -129,7 +129,8 @@ class EducationRuleLoader {
       addSection(rule, ROOT_CAUSE_SECTION_KEY, innerSplit[0]);
       addSection(rule, HOW_TO_FIX_SECTION_KEY, innerSplit[1]);
     } else {
-      throw new IllegalStateException(String.format("Invalid education rule format for '%s', following header is missing: '%s'", rule.key(), HOW_TO_FIX_SECTION_HEADER));
+      // No "How to fix it" section for the rule, the only section present is "Why is it an issue".
+      addSection(rule, ROOT_CAUSE_SECTION_KEY, rootCauseAndHowToFixItSections);
     }
 
     // "Resources" section is optional.

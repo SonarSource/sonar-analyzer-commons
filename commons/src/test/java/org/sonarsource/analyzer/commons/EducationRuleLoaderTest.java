@@ -218,6 +218,20 @@ public class EducationRuleLoaderTest {
   }
 
   @Test
+  public void education_description_content_without_how_to_fix_it_section() throws IOException {
+    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
+    String testFileContent = getTestFileContent("valid/S106.html");
+
+    educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
+    newRepository.done();
+    RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
+
+    assertThat(rule.ruleDescriptionSections()).hasSize(1);
+    assertThat(rule.ruleDescriptionSections().get(0).getKey()).isEqualTo("root_cause");
+    assertThat(rule.ruleDescriptionSections().get(0).getHtmlContent()).isEqualTo("Explanation");
+  }
+
+  @Test
   public void education_description_content_with_non_education_format() throws IOException {
     EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
     String testFileContent = getTestFileContent("invalid/S100.html");
@@ -228,16 +242,6 @@ public class EducationRuleLoaderTest {
     assertThat(logTester.logs(LoggerLevel.ERROR)).isEmpty();
     assertThat(rule.ruleDescriptionSections()).isEmpty();
     assertThat(fallbackDescription).isEqualTo(testFileContent);
-  }
-
-  @Test
-  public void education_description_content_with_invalid_format() throws IOException {
-    EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
-    String testFileContent = getTestFileContent("invalid/S101.html");
-
-    exceptionRule.expect(IllegalStateException.class);
-    exceptionRule.expectMessage("Invalid education rule format for 'MyRuleKey', following header is missing: '<h2>How to fix it</h2>'");
-    educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
   }
 
   @Test
