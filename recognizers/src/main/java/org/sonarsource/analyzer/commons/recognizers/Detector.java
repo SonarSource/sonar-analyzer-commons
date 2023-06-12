@@ -37,6 +37,6 @@ public abstract class Detector {
     if (matchers == 0) {
       return 0;
     }
-    return 1 - Math.pow(1 - probability, scan(line));
+    return 1 - Math.pow(1 - probability, matchers);
   }
 }
