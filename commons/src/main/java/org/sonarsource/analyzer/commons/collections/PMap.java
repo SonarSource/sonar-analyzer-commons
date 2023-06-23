@@ -20,7 +20,6 @@
 package org.sonarsource.analyzer.commons.collections;
 
 import java.util.Map;
-import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import java.util.function.BiConsumer;
 
