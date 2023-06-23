@@ -471,7 +471,7 @@ public class AVLTreeTest {
     PMap<String, Integer> map = PCollections.emptyMap();
     map = map.put("A", 3).put("B", 4);
     PSet<String> set = map.keySet();
-    assertThat(set).contains("A", "B");
+    assertThat(set).containsExactlyInAnyOrder("B", "A");
   }
 
   @Test
@@ -484,6 +484,19 @@ public class AVLTreeTest {
     PSet<Integer> set = PCollections.emptySet();
     set = set.add(1).add(2).add(3);
     Stream<Integer> stream = set.stream();
-    assertThat(stream).contains(1, 2, 3);
+    assertThat(stream).containsExactlyInAnyOrder(1, 2, 3);
+  }
+
+  @Test
+  public void test_empty_stack_stream() {
+    assertThat(PCollections.emptyStack().stream()).isEmpty();
+  }
+
+  @Test
+  public void test_stack_stream() {
+    PStack<Integer> stack = PCollections.emptyStack();
+    stack = stack.push(1).push(2).push(3);
+    Stream<Integer> stream = stack.stream();
+    assertThat(stream).containsExactly(3, 2, 1);
   }
 }
