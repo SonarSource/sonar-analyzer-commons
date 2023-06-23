@@ -20,6 +20,7 @@
 package org.sonarsource.analyzer.commons.collections;
 
 import java.util.Map;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import java.util.function.BiConsumer;
 
@@ -68,4 +69,9 @@ public interface PMap<K, V> {
   String toString();
 
   Iterable<Map.Entry<K, V>> entries();
+
+  /**
+   * @return a set view of the keys contained in the map.
+   */
+  PSet<K> keySet();
 }

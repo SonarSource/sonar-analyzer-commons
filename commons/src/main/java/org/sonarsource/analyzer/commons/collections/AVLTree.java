@@ -133,6 +133,11 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
     }
   }
 
+  @Override
+  public PSet<K> keySet() {
+    return this;
+  }
+
   // Used by IntelliJ renderer, to ease debugging
   @VisibleForTesting
   Object[] toArray() {

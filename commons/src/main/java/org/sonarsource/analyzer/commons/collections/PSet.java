@@ -19,6 +19,9 @@
  */
 package org.sonarsource.analyzer.commons.collections;
 
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
 /**
  * Persistent (functional) Set.
  *
@@ -56,4 +59,10 @@ public interface PSet<E> extends Iterable<E> {
   @Override
   String toString();
 
+  /**
+   * @return stream of the set's elements
+   */
+  default Stream<E> stream() {
+    return StreamSupport.stream(this.spliterator(), false);
+  }
 }
