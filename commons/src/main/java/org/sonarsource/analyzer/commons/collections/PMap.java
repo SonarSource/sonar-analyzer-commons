@@ -68,4 +68,9 @@ public interface PMap<K, V> {
   String toString();
 
   Iterable<Map.Entry<K, V>> entries();
+
+  /**
+   * @return a set view of the keys contained in the map.
+   */
+  PSet<K> keySet();
 }

@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -458,5 +459,44 @@ public class AVLTreeTest {
       iterator.next();
       fail("next() should throw NoSuchElementException on empty stack");
     }  catch (NoSuchElementException exception) {}
+  }
+
+  @Test
+  public void test_empty_keyset() {
+    assertThat(PCollections.emptyMap().keySet()).isEmpty();
+  }
+
+  @Test
+  public void test_keyset() {
+    PMap<String, Integer> map = PCollections.emptyMap();
+    map = map.put("A", 3).put("B", 4);
+    PSet<String> set = map.keySet();
+    assertThat(set).containsExactlyInAnyOrder("B", "A");
+  }
+
+  @Test
+  public void test_empty_set_stream() {
+    assertThat(PCollections.emptySet().stream()).isEmpty();
+  }
+
+  @Test
+  public void test_set_stream() {
+    PSet<Integer> set = PCollections.emptySet();
+    set = set.add(1).add(2).add(3);
+    Stream<Integer> stream = set.stream();
+    assertThat(stream).containsExactlyInAnyOrder(1, 2, 3);
+  }
+
+  @Test
+  public void test_empty_stack_stream() {
+    assertThat(PCollections.emptyStack().stream()).isEmpty();
+  }
+
+  @Test
+  public void test_stack_stream() {
+    PStack<Integer> stack = PCollections.emptyStack();
+    stack = stack.push(1).push(2).push(3);
+    Stream<Integer> stream = stack.stream();
+    assertThat(stream).containsExactly(3, 2, 1);
   }
 }

@@ -20,6 +20,8 @@
 package org.sonarsource.analyzer.commons.collections;
 
 import java.util.function.Predicate;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Persistent (functional) Stack.
@@ -77,4 +79,10 @@ public interface PStack<E> extends Iterable<E> {
   @Override
   String toString();
 
+  /**
+   * @return stream of the stack's elements, starting at the top of the stack
+   */
+  default Stream<E> stream() {
+    return StreamSupport.stream(this.spliterator(), false);
+  }
 }
