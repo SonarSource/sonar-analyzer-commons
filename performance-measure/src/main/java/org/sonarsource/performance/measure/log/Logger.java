@@ -24,16 +24,16 @@ import java.util.function.Supplier;
 
 public abstract class Logger {
 
-  public static final String DEFAULT_SONAR_API_LOGGER = "org.sonar.api.utils.log.Loggers";
+  public static final String DEFAULT_SLF4J_LOGGER = "org.slf4j.LoggerFactory";
 
-  private static String sonarApiLogger = DEFAULT_SONAR_API_LOGGER ;
+  private static String loggerImpl = DEFAULT_SLF4J_LOGGER;
 
   public static final Function<Class<?>, Logger> DEFAULT_FACTORY = cls -> {
     try {
-      Class.forName(sonarApiLogger);
+      Class.forName(loggerImpl);
       return new SonarSourceLoggerBridge(cls);
     } catch (ClassNotFoundException e) {
-      // SonarSource logger not available
+      // slf4j logger not available
       return new JavaLoggerBridge(cls);
     }
   };
@@ -55,7 +55,7 @@ public abstract class Logger {
   // Visible for testing
   public static void overrideFactory(Function<Class<?>, Logger> factory, String sonarLoggerClass) {
     Logger.factory = factory;
-    Logger.sonarApiLogger = sonarLoggerClass;
+    Logger.loggerImpl = sonarLoggerClass;
   }
 
 }

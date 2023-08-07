@@ -27,9 +27,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.Logger;
 import org.slf4j.event.Level;
 import org.sonar.api.testfixtures.log.LogTester;
-import org.sonar.api.utils.log.Logger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.atLeast;

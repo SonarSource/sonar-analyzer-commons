@@ -25,14 +25,14 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonar.api.SonarRuntime;
 import org.sonar.api.server.rule.Context;
 import org.sonar.api.server.rule.RuleDescriptionSection;
 import org.sonar.api.server.rule.RuleDescriptionSectionBuilder;
 import org.sonar.api.server.rule.RulesDefinition.NewRule;
 import org.sonar.api.utils.Version;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
 
 import static org.sonar.api.server.rule.RuleDescriptionSection.RuleDescriptionSectionKeys.HOW_TO_FIX_SECTION_KEY;
 import static org.sonar.api.server.rule.RuleDescriptionSection.RuleDescriptionSectionKeys.INTRODUCTION_SECTION_KEY;
@@ -44,7 +44,7 @@ import static org.sonar.api.server.rule.RuleDescriptionSection.RuleDescriptionSe
  */
 class EducationRuleLoader {
 
-  private static final Logger LOG = Loggers.get(EducationRuleLoader.class);
+  private static final Logger LOG = LoggerFactory.getLogger(EducationRuleLoader.class);
   private static final String CODE_EXAMPLES_HEADER = "<h3>Code examples</h3>";
   private static final String WHY_SECTION_HEADER = "<h2>Why is this an issue\\?</h2>";
   private static final String HOW_TO_FIX_SECTION_HEADER = "<h2>How to fix it</h2>";

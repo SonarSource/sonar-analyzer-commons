@@ -24,25 +24,31 @@ import java.util.function.Supplier;
 public class SonarSourceLoggerBridge extends Logger {
 
   @SuppressWarnings("java:S1312")
-  private final org.sonar.api.utils.log.Logger delegate;
+  private final org.slf4j.Logger delegate;
 
   public SonarSourceLoggerBridge(Class<?> cls) {
-    delegate = org.sonar.api.utils.log.Loggers.get(cls);
+    delegate = org.slf4j.LoggerFactory.getLogger(cls);
   }
 
   @Override
   public void debug(Supplier<String> messageSupplier) {
-    delegate.debug(messageSupplier);
+    if (delegate.isDebugEnabled()) {
+      delegate.debug(messageSupplier.get());
+    }
   }
 
   @Override
   public void info(Supplier<String> messageSupplier) {
-    delegate.info(messageSupplier.get());
+    if (delegate.isInfoEnabled()) {
+      delegate.info(messageSupplier.get());
+    }
   }
 
   @Override
   public void warning(Supplier<String> messageSupplier) {
-    delegate.warn(messageSupplier.get());
+    if (delegate.isWarnEnabled()) {
+      delegate.warn(messageSupplier.get());
+    }
   }
 
   @Override

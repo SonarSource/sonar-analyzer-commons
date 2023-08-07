@@ -26,15 +26,15 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonarsource.analyzer.commons.xml.XmlFile;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public abstract class SimpleXPathBasedCheck extends SonarXmlCheck {
 
-  private static final Logger LOG = Loggers.get(SimpleXPathBasedCheck.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SimpleXPathBasedCheck.class);
 
   private final XPath xpath = XPathFactory.newInstance().newXPath();
 
