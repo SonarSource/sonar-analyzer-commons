@@ -43,6 +43,7 @@ import org.sonar.api.testfixtures.log.LogTester;
 import org.sonar.api.utils.Version;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.sonar.api.server.rule.RulesDefinition.Context;
 
 public class EducationRuleLoaderTest {
@@ -53,8 +54,6 @@ public class EducationRuleLoaderTest {
 
   @Rule
   public LogTester logTester = new LogTester().setLevel(Level.TRACE);
-  @Rule
-  public ExpectedException exceptionRule = ExpectedException.none();
 
   private Context context;
   private NewRepository newRepository;
@@ -249,9 +248,9 @@ public class EducationRuleLoaderTest {
     EducationRuleLoader educationRuleLoader = new EducationRuleLoader(RUNTIME);
     String testFileContent = getTestFileContent("invalid/S102.html");
 
-    exceptionRule.expect(IllegalStateException.class);
-    exceptionRule.expectMessage("Invalid education rule format for 'MyRuleKey', rule description has both generic and framework-specific 'How to fix it' sections");
-    educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
+    assertThatThrownBy(() -> educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Invalid education rule format for 'MyRuleKey', rule description has both generic and framework-specific 'How to fix it' sections");
   }
 
   @Test
