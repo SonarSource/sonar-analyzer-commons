@@ -23,15 +23,16 @@ import java.io.File;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
+import org.slf4j.event.Level;
 import org.sonar.api.batch.sensor.internal.SensorContextTester;
-import org.sonar.api.utils.log.LogTester;
+import org.sonar.api.testfixtures.log.LogTester;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ExternalReportProviderTest {
 
   @Rule
-  public final LogTester logTester = new LogTester();
+  public final LogTester logTester = new LogTester().setLevel(Level.TRACE);
   private final String EXTERNAL_REPORTS_PROPERTY = "sonar.foo.mylinter.reportPaths";
 
   @Test

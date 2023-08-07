@@ -29,12 +29,12 @@ import java.util.stream.Stream;
 import javax.xml.xpath.XPathExpression;
 import org.junit.Rule;
 import org.junit.Test;
+import org.slf4j.event.Level;
 import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.fs.internal.DefaultInputFile;
 import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
 import org.sonar.api.rule.RuleKey;
-import org.sonar.api.utils.log.LogTester;
-import org.sonar.api.utils.log.LoggerLevel;
+import org.sonar.api.testfixtures.log.LogTester;
 import org.sonarsource.analyzer.commons.xml.XmlFile;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SimpleXPathBasedCheckTest {
 
   @Rule
-  public LogTester logTester = new LogTester();
+  public LogTester logTester = new LogTester().setLevel(Level.TRACE);
 
   @Test(expected = IllegalStateException.class)
   public void test_invalid_xpath_compilation_throws_exception() throws Exception {
@@ -76,18 +76,18 @@ public class SimpleXPathBasedCheckTest {
     };
 
     logTester.clear();
-    logTester.setLevel(LoggerLevel.INFO);
+    logTester.setLevel(Level.INFO);
     check.scanFile(null, RuleKey.of("tst", "failingXpath"), xmlFile);
     assertThat(check.hasBeenExecuted()).isTrue();
     assertThat(logTester.logs()).isEmpty();
 
     logTester.clear();
-    logTester.setLevel(LoggerLevel.DEBUG);
+    logTester.setLevel(Level.DEBUG);
     check.scanFile(null, RuleKey.of("tst", "failingXpath"), xmlFile);
     assertThat(logTester.logs()).isNotEmpty();
-    List<String> debugs = logTester.logs(LoggerLevel.DEBUG);
+    List<String> debugs = logTester.logs(Level.DEBUG);
     assertThat(debugs).isEmpty();
-    List<String> errors = logTester.logs(LoggerLevel.ERROR);
+    List<String> errors = logTester.logs(Level.ERROR);
     assertThat(errors).hasSize(1);
     assertThat(errors.get(0)).startsWith("[tst:failingXpath] Unable to evaluate XPath expression on file ");
   }
@@ -120,7 +120,7 @@ public class SimpleXPathBasedCheckTest {
       }
     };
 
-    logTester.setLevel(LoggerLevel.DEBUG);
+    logTester.setLevel(Level.DEBUG);
     check.scanFile(null, RuleKey.of("tst", "nodeList"), xmlFile);
     assertThat(check.hasBeenExecuted()).isTrue();
     assertThat(logTester.logs()).isEmpty();

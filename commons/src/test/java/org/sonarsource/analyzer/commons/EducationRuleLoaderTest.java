@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.slf4j.event.Level;
 import org.sonar.api.SonarEdition;
 import org.sonar.api.SonarQubeSide;
 import org.sonar.api.SonarRuntime;
@@ -38,9 +39,8 @@ import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.server.rule.RulesDefinition.Repository;
 import org.sonar.api.server.rule.RulesDefinitionAnnotationLoader;
+import org.sonar.api.testfixtures.log.LogTester;
 import org.sonar.api.utils.Version;
-import org.sonar.api.utils.log.LogTester;
-import org.sonar.api.utils.log.LoggerLevel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.sonar.api.server.rule.RulesDefinition.Context;
@@ -52,7 +52,7 @@ public class EducationRuleLoaderTest {
   private static final String RULE_REPOSITORY_KEY = "rule-definition-test";
 
   @Rule
-  public LogTester logTester = new LogTester();
+  public LogTester logTester = new LogTester().setLevel(Level.TRACE);
   @Rule
   public ExpectedException exceptionRule = ExpectedException.none();
 
@@ -157,7 +157,7 @@ public class EducationRuleLoaderTest {
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
 
-    assertThat(String.join("\n", logTester.logs(LoggerLevel.DEBUG))).isEqualTo("Skipping section 'introduction' for rule 'MyRuleKey', content is empty\n" +
+    assertThat(String.join("\n", logTester.logs(Level.DEBUG))).isEqualTo("Skipping section 'introduction' for rule 'MyRuleKey', content is empty\n" +
       "Skipping section 'resources' for rule 'MyRuleKey', content is empty");
     assertThat(rule.ruleDescriptionSections()).hasSize(2);
     assertThat(fallbackDescription).isEqualTo(testFileContent);
@@ -239,7 +239,7 @@ public class EducationRuleLoaderTest {
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
 
-    assertThat(logTester.logs(LoggerLevel.ERROR)).isEmpty();
+    assertThat(logTester.logs(Level.ERROR)).isEmpty();
     assertThat(rule.ruleDescriptionSections()).isEmpty();
     assertThat(fallbackDescription).isEqualTo(testFileContent);
   }
