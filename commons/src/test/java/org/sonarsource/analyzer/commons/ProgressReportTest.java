@@ -27,9 +27,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.sonar.api.utils.log.LogTester;
+import org.slf4j.event.Level;
+import org.sonar.api.testfixtures.log.LogTester;
 import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.LoggerLevel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.atLeast;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.verify;
 public class ProgressReportTest {
 
   @Rule
-  public LogTester logTester = new LogTester();
+  public LogTester logTester = new LogTester().setLevel(Level.TRACE);
 
   @Test(timeout = 5000)
   public void testSonarLogger() throws Exception {
@@ -48,7 +48,7 @@ public class ProgressReportTest {
     report.start(Arrays.asList("foo.java", "foo.java"));
     report.stop();
 
-    assertThat(logTester.logs(LoggerLevel.INFO)).isNotEmpty();
+    assertThat(logTester.logs(Level.INFO)).isNotEmpty();
   }
 
   @Test(timeout = 5000)

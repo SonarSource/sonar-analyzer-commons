@@ -73,8 +73,8 @@
 
   <properties>
     <!-- versions -->
-    <version.sonar>9.9.0.229</version.sonar>
-    <sonarqube.api.impl.version>9.3.0.51899</sonarqube.api.impl.version>
+    <version.sonar>10.0.0.695</version.sonar>
+    <sonarqube.api.impl.version>10.1.0.73491</sonarqube.api.impl.version>
     <version.assertj>3.17.1</version.assertj>
     <version.jsr305>3.0.2</version.jsr305>
     <version.mockito>3.5.7</version.mockito>
@@ -99,9 +99,20 @@
         <scope>provided</scope>
       </dependency>
       <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.7.30</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
         <groupId>org.sonarsource.sonarqube</groupId>
         <artifactId>sonar-plugin-api-impl</artifactId>
         <version>${sonarqube.api.impl.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sonarsource.api.plugin</groupId>
+        <artifactId>sonar-plugin-api-test-fixtures</artifactId>
+        <version>${version.sonar}</version>
       </dependency>
 
       <!-- COMPILE -->

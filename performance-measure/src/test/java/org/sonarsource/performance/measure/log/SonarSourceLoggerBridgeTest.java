@@ -22,8 +22,8 @@ package org.sonarsource.performance.measure.log;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
-import org.sonar.api.utils.log.LogTesterJUnit5;
-import org.sonar.api.utils.log.LoggerLevel;
+import org.slf4j.event.Level;
+import org.sonar.api.testfixtures.log.LogTesterJUnit5;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,20 +41,20 @@ class SonarSourceLoggerBridgeTest {
 
     assertThat(logTester.logs()).isEmpty();
 
-    logTester.setLevel(LoggerLevel.INFO);
+    logTester.setLevel(Level.INFO);
     logger.debug(() -> "A debug message");
     assertThat(logTester.logs()).isEmpty();
 
-    logTester.setLevel(LoggerLevel.DEBUG);
+    logTester.setLevel(Level.DEBUG);
     logger.debug(() -> "A debug message");
     logger.info(() -> "An info message");
     logger.warning(() -> "A warning message");
     logger.error(() -> "An error message");
-    assertThat(logTester.logs(LoggerLevel.TRACE)).isEmpty();
-    assertThat(logTester.logs(LoggerLevel.DEBUG)).containsExactly("A debug message");
-    assertThat(logTester.logs(LoggerLevel.INFO)).containsExactly("An info message");
-    assertThat(logTester.logs(LoggerLevel.WARN)).containsExactly("A warning message");
-    assertThat(logTester.logs(LoggerLevel.ERROR)).containsExactly("An error message");
+    assertThat(logTester.logs(Level.TRACE)).isEmpty();
+    assertThat(logTester.logs(Level.DEBUG)).containsExactly("A debug message");
+    assertThat(logTester.logs(Level.INFO)).containsExactly("An info message");
+    assertThat(logTester.logs(Level.WARN)).containsExactly("A warning message");
+    assertThat(logTester.logs(Level.ERROR)).containsExactly("An error message");
   }
 
 }
