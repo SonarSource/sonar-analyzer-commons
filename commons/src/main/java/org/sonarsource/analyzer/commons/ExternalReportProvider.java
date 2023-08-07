@@ -36,7 +36,7 @@ public class ExternalReportProvider {
   private static final Logger LOG = LoggerFactory.getLogger(ExternalReportProvider.class);
 
   public static List<File> getReportFiles(SensorContext context, String externalReportsProperty) {
-    boolean externalIssuesSupported = context.getSonarQubeVersion().isGreaterThanOrEqual(Version.create(7, 2));
+    boolean externalIssuesSupported = context.runtime().getApiVersion().isGreaterThanOrEqual(Version.create(7, 2));
     String[] reportPaths = context.config().getStringArray(externalReportsProperty);
 
     if (reportPaths.length == 0) {
