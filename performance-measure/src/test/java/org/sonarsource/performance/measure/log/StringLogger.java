@@ -36,7 +36,7 @@ public class StringLogger extends Logger {
   }
 
   public static StringLogger initialize(Level level) {
-    Logger.overrideFactory(cls -> INSTANCE, Logger.DEFAULT_SONAR_API_LOGGER);
+    Logger.overrideFactory(cls -> INSTANCE, Logger.DEFAULT_SLF4J_LOGGER);
     INSTANCE.clear();
     INSTANCE.setLevel(level);
     return INSTANCE;

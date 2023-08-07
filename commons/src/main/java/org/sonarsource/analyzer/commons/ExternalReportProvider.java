@@ -23,17 +23,17 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.utils.Version;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
 
 public class ExternalReportProvider {
 
   private ExternalReportProvider() {
   }
 
-  private static final Logger LOG = Loggers.get(ExternalReportProvider.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ExternalReportProvider.class);
 
   public static List<File> getReportFiles(SensorContext context, String externalReportsProperty) {
     boolean externalIssuesSupported = context.getSonarQubeVersion().isGreaterThanOrEqual(Version.create(7, 2));

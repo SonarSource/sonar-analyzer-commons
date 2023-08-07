@@ -22,8 +22,8 @@ package org.sonarsource.analyzer.commons;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.StreamSupport;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProgressReport implements Runnable {
 
@@ -58,7 +58,7 @@ public class ProgressReport implements Runnable {
   }
 
   public ProgressReport(String threadName, long period, String adjective) {
-    this(threadName, period, Loggers.get(ProgressReport.class), adjective);
+    this(threadName, period, LoggerFactory.getLogger(ProgressReport.class), adjective);
   }
 
   public ProgressReport(String threadName, long period) {

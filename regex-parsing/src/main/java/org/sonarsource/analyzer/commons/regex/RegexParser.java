@@ -33,8 +33,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonarsource.analyzer.commons.regex.ast.AtomicGroupTree;
 import org.sonarsource.analyzer.commons.regex.ast.BackReferenceTree;
 import org.sonarsource.analyzer.commons.regex.ast.BoundaryTree;
@@ -73,7 +73,7 @@ import static org.sonarsource.analyzer.commons.regex.RegexLexer.EOF;
 
 public class RegexParser {
 
-  private static final Logger LOG = Loggers.get(RegexParser.class);
+  private static final Logger LOG = LoggerFactory.getLogger(RegexParser.class);
 
   private static final String HEX_DIGIT = "hexadecimal digit";
 
