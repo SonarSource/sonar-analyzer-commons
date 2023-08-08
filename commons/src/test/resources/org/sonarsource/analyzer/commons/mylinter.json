@@ -25,6 +25,60 @@
   },
 
   {
+    "key": "identifiable-low-maintainability-rule",
+    "name": "Identifiable Low Maintainability Name",
+    "type": "BUG",
+    "severity": "MINOR",
+    "code": {
+      "impacts": {
+        "MAINTAINABILITY": "LOW"
+      },
+      "attribute": "IDENTIFIABLE"
+    },
+    "description": "Identifiable Rule Description",
+    "url": "http://www.mylinter.org/identifiable-rule"
+  },
+
+  {
+    "key": "respectful-reliability-and-security",
+    "name": "Respectful Reliability and Security",
+    "type": "VULNERABILITY",
+    "severity": "MAJOR",
+    "code": {
+      "impacts": {
+        "RELIABILITY": "MEDIUM",
+        "SECURITY": "HIGH"
+      },
+      "attribute": "RESPECTFUL"
+    },
+    "description": "Respectful Reliability and Security Description"
+  },
+
+  {
+    "key": "missing-code-attribute",
+    "name": "Missing Code Attribute",
+    "type": "BUG",
+    "severity": "MINOR",
+    "code": {
+      "impacts": {
+        "RELIABILITY": "MEDIUM",
+        "SECURITY": "HIGH"
+      }
+    }
+  },
+
+  {
+    "key": "missing-impacts",
+    "name": "Missing impacts",
+    "type": "BUG",
+    "severity": "MINOR",
+    "code": {
+      "attribute": "RESPECTFUL"
+    },
+    "description": "Missing impacts Description"
+  },
+
+  {
     "key": "no-type-rule",
     "name": "No Type Name",
     "severity": "BLOCKER"
