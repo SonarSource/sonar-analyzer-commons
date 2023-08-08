@@ -1,0 +1,16 @@
+{
+  "title": "Not valid taxonomy rule",
+  "type": "CODE_SMELL",
+  "code": {
+    "attribute": "IDENTIFIABLE"
+  },
+  "status": "ready",
+  "remediation": {
+    "func": "Constant\/Issue",
+    "constantCost": "5min"
+  },
+  "tags": [
+    "convention"
+  ],
+  "defaultSeverity": "Minor"
+}

@@ -28,8 +28,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.sonar.api.SonarRuntime;
+import org.sonar.api.issue.impact.Severity;
+import org.sonar.api.issue.impact.SoftwareQuality;
 import org.sonar.api.rule.RuleScope;
 import org.sonar.api.rule.RuleStatus;
+import org.sonar.api.rules.CleanCodeAttribute;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinition.DebtRemediationFunctions;
@@ -114,7 +117,7 @@ public class RuleMetadataLoader {
       throw new IllegalStateException("No Rule annotation was found on " + ruleClass.getName());
     }
     String ruleKey = ruleAnnotation.key();
-    if (ruleKey.length() == 0) {
+    if (ruleKey.isEmpty()) {
       throw new IllegalStateException("Empty key");
     }
     new RulesDefinitionAnnotationLoader().load(repository, ruleClass);
@@ -142,7 +145,7 @@ public class RuleMetadataLoader {
   }
 
   private void addRuleByRuleKey(NewRepository repository, String ruleKey) {
-    if (ruleKey.length() == 0) {
+    if (ruleKey.isEmpty()) {
       throw new IllegalStateException("Empty key");
     }
     NewRule rule = repository.createRule(ruleKey);
@@ -166,6 +169,12 @@ public class RuleMetadataLoader {
   private void setMetadataFromJson(NewRule rule) {
     Map<String, Object> ruleMetadata = getMetadata(rule.key());
     rule.setName(getString(ruleMetadata, "title"));
+    if (isSupported(10, 1)) {
+      Object code = ruleMetadata.get("code");
+      if (code != null) {
+        setCodeAttributeFromJson(rule, (Map<String, Object>) code);
+      }
+    }
     rule.setSeverity(getUpperCaseString(ruleMetadata, "defaultSeverity"));
     String type = getUpperCaseString(ruleMetadata, "type");
     rule.setType(RuleType.valueOf(type));
@@ -193,6 +202,17 @@ public class RuleMetadataLoader {
     } catch (IOException | RuntimeException e) {
       throw new IllegalStateException("Can't read resource: " + jsonPath, e);
     }
+  }
+
+  private static void setCodeAttributeFromJson(NewRule rule, Map<String, Object> code) {
+    String attribute = getString(code, "attribute");
+    rule.setCleanCodeAttribute(CleanCodeAttribute.valueOf(attribute));
+
+    Map<String, String> impacts = (Map<String, String>) code.get("impacts");
+    if (impacts == null || impacts.isEmpty()) {
+      throw new IllegalStateException(String.format(INVALID_PROPERTY_MESSAGE, "impacts") + " for rule: " + rule.key());
+    }
+    impacts.forEach((softwareQuality, severity) -> rule.addDefaultImpact(SoftwareQuality.valueOf(softwareQuality), Severity.valueOf(severity)));
   }
 
   private void setSecurityStandardsFromJson(NewRule rule, Map<String, Object> securityStandards) {

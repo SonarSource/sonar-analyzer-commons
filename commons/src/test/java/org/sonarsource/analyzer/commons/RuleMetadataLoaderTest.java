@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -46,6 +47,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 public class RuleMetadataLoaderTest {
@@ -61,12 +63,111 @@ public class RuleMetadataLoaderTest {
   private static final SonarRuntime SONAR_RUNTIME_9_3 = SonarRuntimeImpl.forSonarLint(Version.create(9, 3));
   private static final SonarRuntime SONAR_RUNTIME_9_5 = SonarRuntimeImpl.forSonarLint(Version.create(9, 5));
   private static final SonarRuntime SONAR_RUNTIME_9_9 = SonarRuntimeImpl.forSonarLint(Version.create(9, 9));
+  private static final SonarRuntime SONAR_RUNTIME_10_1 = SonarRuntimeImpl.forSonarLint(Version.create(10, 1));
 
   @Before
   public void setup() {
     context = new RulesDefinition.Context();
     newRepository = context.createRepository(RULE_REPOSITORY_KEY, "magic");
     ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_9_3);
+  }
+
+  @Test
+  public void load_taxonomy_rule_with_supported_product_runtime() {
+    @Rule(key = "taxonomy_rule")
+    class TestRule {
+    }
+
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_10_1);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("taxonomy_rule");
+    assertThat(rule).isNotNull();
+    assertThat(rule.name()).isEqualTo("Taxonomy rule with code block properties");
+    assertThat(rule.htmlDescription()).isEqualTo("<p>description taxonomy rule</p>");
+    assertThat(rule.severity()).isEqualTo("MINOR");
+    assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
+    assertThat(rule.cleanCodeAttribute().name()).isEqualTo("IDENTIFIABLE");
+    assertThat(rule.defaultImpacts()).isNotEmpty();
+    rule.defaultImpacts().forEach((softwareQuality, severity) -> {
+      assertThat(softwareQuality.name()).isEqualTo("MAINTAINABILITY");
+      assertThat(severity.name()).isEqualTo("HIGH");
+    });
+    assertThat(rule.status()).isEqualTo(RuleStatus.READY);
+    assertThat(rule.tags()).containsExactly("convention");
+    DebtRemediationFunction remediation = rule.debtRemediationFunction();
+    assertThat(remediation).isNotNull();
+    assertThat(remediation.type()).isEqualTo(DebtRemediationFunction.Type.CONSTANT_ISSUE);
+    assertThat(remediation.baseEffort()).isEqualTo("5min");
+    assertThat(rule.deprecatedRuleKeys()).isEmpty();
+  }
+
+  @Test
+  public void load_rule_without_taxonomy_with_supported_product_runtime() {
+    @Rule(key = "S100")
+    class TestRule {
+    }
+
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_10_1);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("S100");
+    assertThat(rule).isNotNull();
+    assertThat(rule.name()).isEqualTo("Function names should comply with a naming convention");
+    assertThat(rule.htmlDescription()).isEqualTo("<p>description S100</p>");
+    assertThat(rule.severity()).isEqualTo("MINOR");
+    assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
+    assertThat(rule.cleanCodeAttribute()).isNull();
+    assertThat(rule.defaultImpacts()).isEmpty();
+    assertThat(rule.status()).isEqualTo(RuleStatus.READY);
+    assertThat(rule.tags()).containsExactly("convention");
+    DebtRemediationFunction remediation = rule.debtRemediationFunction();
+    assertThat(remediation).isNotNull();
+    assertThat(remediation.type()).isEqualTo(DebtRemediationFunction.Type.CONSTANT_ISSUE);
+    assertThat(remediation.baseEffort()).isEqualTo("5min");
+    assertThat(rule.deprecatedRuleKeys()).isEmpty();
+  }
+
+  @Test
+  public void load_taxonomy_rule_with_unsupported_product_runtime() {
+    @Rule(key = "taxonomy_rule")
+    class TestRule {
+    }
+
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_9_5);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("taxonomy_rule");
+    assertThat(rule).isNotNull();
+    assertThat(rule.name()).isEqualTo("Taxonomy rule with code block properties");
+    assertThat(rule.htmlDescription()).isEqualTo("<p>description taxonomy rule</p>");
+    assertThat(rule.severity()).isEqualTo("MINOR");
+    assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
+    assertThat(rule.cleanCodeAttribute()).isNull();
+    assertThat(rule.defaultImpacts()).isEmpty();
+    assertThat(rule.status()).isEqualTo(RuleStatus.READY);
+    assertThat(rule.tags()).containsExactly("convention");
+    DebtRemediationFunction remediation = rule.debtRemediationFunction();
+    assertThat(remediation).isNotNull();
+    assertThat(remediation.type()).isEqualTo(DebtRemediationFunction.Type.CONSTANT_ISSUE);
+    assertThat(remediation.baseEffort()).isEqualTo("5min");
+    assertThat(rule.deprecatedRuleKeys()).isEmpty();
+  }
+
+  @Test
+  public void not_valid_taxonomy_rule_with_supported_product_runtime_throws_exception() {
+    @Rule(key = "not_valid_taxonomy_rule")
+    class TestRule {
+    }
+
+    List<Class<?>> classes = singletonList(TestRule.class);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_10_1);
+    assertThrows("Invalid property: impacts", IllegalStateException.class,
+      () -> ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, classes));
   }
 
   @Test
