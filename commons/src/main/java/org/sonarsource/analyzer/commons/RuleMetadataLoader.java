@@ -56,7 +56,6 @@ public class RuleMetadataLoader {
 
   private static final String INVALID_PROPERTY_MESSAGE = "Invalid property: %s";
   private static final char RESOURCE_SEP = '/';
-  private static final String SECURITY_HOTSPOT = "SECURITY_HOTSPOT";
   private final String resourceFolder;
   private final Set<String> activatedByDefault;
   private final JsonParser jsonParser;
@@ -332,11 +331,6 @@ public class RuleMetadataLoader {
       throw new IllegalStateException(String.format(INVALID_PROPERTY_MESSAGE, propertyName));
     }
     return ((List<Number>) propertyValue).stream().mapToInt(Number::intValue).toArray();
-  }
-
-  boolean isSecurityHotspot(Map<String, Object> ruleMetadata) {
-    String type = getUpperCaseString(ruleMetadata, "type");
-    return SECURITY_HOTSPOT.equals(type);
   }
 
 }
