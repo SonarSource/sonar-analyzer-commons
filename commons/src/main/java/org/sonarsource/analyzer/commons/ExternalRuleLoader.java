@@ -122,6 +122,10 @@ public class ExternalRuleLoader {
     return rulesMap.keySet();
   }
 
+  /**
+   * If isCleanCodeImpactsAndAttributesSupported() == true then ruleType is deprecated and replaced by codeImpacts
+   */
+  @Deprecated(since = "2.6")
   public RuleType ruleType(String ruleKey) {
     ExternalRule externalRule = rulesMap.get(ruleKey);
     if (externalRule != null) {
@@ -131,6 +135,10 @@ public class ExternalRuleLoader {
     }
   }
 
+  /**
+   * If isCleanCodeImpactsAndAttributesSupported() == true then ruleSeverity is deprecated and replaced by codeImpacts
+   */
+  @Deprecated(since = "2.6")
   public Severity ruleSeverity(String ruleKey) {
     ExternalRule externalRule = rulesMap.get(ruleKey);
     if (externalRule != null) {
