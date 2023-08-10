@@ -124,7 +124,7 @@ public class ExternalRuleLoaderTest {
       "MAJOR",
       "42min",
       null,
-      Map.of(),
+      Map.of(RELIABILITY, MEDIUM),
       Set.of()
     );
 
@@ -136,7 +136,7 @@ public class ExternalRuleLoaderTest {
       "MAJOR",
       "5min",
       null,
-      Map.of(),
+      Map.of(MAINTAINABILITY, MEDIUM),
       Set.of("tag1", "tag2")
     );
 
@@ -148,7 +148,7 @@ public class ExternalRuleLoaderTest {
       "INFO",
       "5min",
       null,
-      Map.of(),
+      Map.of(SECURITY, LOW),
       Set.of()
     );
 
@@ -160,7 +160,7 @@ public class ExternalRuleLoaderTest {
       "BLOCKER",
       "5min",
       null,
-      Map.of(),
+      Map.of(MAINTAINABILITY, HIGH),
       Set.of()
     );
 
@@ -172,7 +172,7 @@ public class ExternalRuleLoaderTest {
       "MINOR",
       "5min",
       null,
-      Map.of(),
+      Map.of(RELIABILITY, LOW),
       Set.of()
     );
 
@@ -184,7 +184,7 @@ public class ExternalRuleLoaderTest {
       "MAJOR",
       "5min",
       null,
-      Map.of(),
+      Map.of(SECURITY, MEDIUM),
       Set.of()
     );
 
@@ -209,7 +209,7 @@ public class ExternalRuleLoaderTest {
       "MAJOR",
       "42min",
       null,
-      Map.of(),
+      Map.of(RELIABILITY, MEDIUM),
       Set.of()
     );
 
@@ -245,7 +245,7 @@ public class ExternalRuleLoaderTest {
       "MINOR",
       "5min",
       null,
-      Map.of(),
+      Map.of(RELIABILITY, LOW),
       Set.of()
     );
 
@@ -257,7 +257,7 @@ public class ExternalRuleLoaderTest {
       "MINOR",
       "5min",
       null,
-      Map.of(),
+      Map.of(RELIABILITY, LOW),
       Set.of()
     );
   }

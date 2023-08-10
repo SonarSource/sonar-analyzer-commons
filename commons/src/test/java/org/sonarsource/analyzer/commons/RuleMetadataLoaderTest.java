@@ -121,7 +121,11 @@ public class RuleMetadataLoaderTest {
     assertThat(rule.severity()).isEqualTo("MINOR");
     assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
     assertThat(rule.cleanCodeAttribute()).isNull();
-    assertThat(rule.defaultImpacts()).isEmpty();
+    assertThat(rule.defaultImpacts()).isNotEmpty();
+    rule.defaultImpacts().forEach((softwareQuality, severity) -> {
+      assertThat(softwareQuality.name()).isEqualTo("MAINTAINABILITY");
+      assertThat(severity.name()).isEqualTo("LOW");
+    });
     assertThat(rule.status()).isEqualTo(RuleStatus.READY);
     assertThat(rule.tags()).containsExactly("convention");
     DebtRemediationFunction remediation = rule.debtRemediationFunction();
@@ -148,7 +152,11 @@ public class RuleMetadataLoaderTest {
     assertThat(rule.severity()).isEqualTo("MINOR");
     assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
     assertThat(rule.cleanCodeAttribute()).isNull();
-    assertThat(rule.defaultImpacts()).isEmpty();
+    assertThat(rule.defaultImpacts()).isNotEmpty();
+    rule.defaultImpacts().forEach((softwareQuality, severity) -> {
+      assertThat(softwareQuality.name()).isEqualTo("MAINTAINABILITY");
+      assertThat(severity.name()).isEqualTo("LOW");
+    });
     assertThat(rule.status()).isEqualTo(RuleStatus.READY);
     assertThat(rule.tags()).containsExactly("convention");
     DebtRemediationFunction remediation = rule.debtRemediationFunction();

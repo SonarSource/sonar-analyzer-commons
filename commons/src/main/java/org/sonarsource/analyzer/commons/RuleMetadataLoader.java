@@ -168,15 +168,16 @@ public class RuleMetadataLoader {
   private void setMetadataFromJson(NewRule rule) {
     Map<String, Object> ruleMetadata = getMetadata(rule.key());
     rule.setName(getString(ruleMetadata, "title"));
+    rule.setSeverity(getUpperCaseString(ruleMetadata, "defaultSeverity"));
+    String type = getUpperCaseString(ruleMetadata, "type");
+    rule.setType(RuleType.valueOf(type));
+
     if (isSupported(10, 1)) {
       Object code = ruleMetadata.get("code");
       if (code != null) {
         setCodeAttributeFromJson(rule, (Map<String, Object>) code);
       }
     }
-    rule.setSeverity(getUpperCaseString(ruleMetadata, "defaultSeverity"));
-    String type = getUpperCaseString(ruleMetadata, "type");
-    rule.setType(RuleType.valueOf(type));
     rule.setStatus(RuleStatus.valueOf(getUpperCaseString(ruleMetadata, "status")));
     rule.setTags(getStringArray(ruleMetadata, "tags"));
     getScopeIfPresent(ruleMetadata, "scope").ifPresent(rule::setScope);

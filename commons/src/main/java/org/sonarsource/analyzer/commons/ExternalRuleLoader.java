@@ -62,7 +62,7 @@ public class ExternalRuleLoader {
   private static final String DESCRIPTION_ONLY_URL = "See description of %s rule <code>%s</code> at the <a href=\"%s\">%s website</a>.";
   private static final String DESCRIPTION_WITH_URL = "<p>%s</p> <p>See more at the <a href=\"%s\">%s website</a>.</p>";
   private static final String DESCRIPTION_FALLBACK = "This is external rule <code>%s:%s</code>. No details are available.";
-  public static final Version API_VERSION_SUPPORTING_CLEAN_CODE_IMPACTS_AND_ATTIBUTES = Version.create(10, 1);
+  public static final Version API_VERSION_SUPPORTING_CLEAN_CODE_IMPACTS_AND_ATTRIBUTES = Version.create(10, 1);
 
   private final String linterKey;
   private final String linterName;
@@ -87,7 +87,7 @@ public class ExternalRuleLoader {
     this.languageKey = languageKey;
 
     isCleanCodeImpactsAndAttributesSupported = sonarRuntime != null &&
-      sonarRuntime.getApiVersion().isGreaterThanOrEqual(API_VERSION_SUPPORTING_CLEAN_CODE_IMPACTS_AND_ATTIBUTES);
+      sonarRuntime.getApiVersion().isGreaterThanOrEqual(API_VERSION_SUPPORTING_CLEAN_CODE_IMPACTS_AND_ATTRIBUTES);
 
     loadMetadataFile(pathToMetadata);
   }
