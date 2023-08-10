@@ -24,15 +24,22 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.sonar.api.SonarRuntime;
 import org.sonar.api.batch.rule.Severity;
+import org.sonar.api.issue.impact.SoftwareQuality;
+import org.sonar.api.rules.CleanCodeAttribute;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.server.rule.RulesDefinition.NewRule;
+import org.sonar.api.utils.Version;
 
 /**
  * Creates external rule repository based on json file in the format <code>[ { "key": "...", "name": "..." }, ... ]</code>
@@ -55,19 +62,38 @@ public class ExternalRuleLoader {
   private static final String DESCRIPTION_ONLY_URL = "See description of %s rule <code>%s</code> at the <a href=\"%s\">%s website</a>.";
   private static final String DESCRIPTION_WITH_URL = "<p>%s</p> <p>See more at the <a href=\"%s\">%s website</a>.</p>";
   private static final String DESCRIPTION_FALLBACK = "This is external rule <code>%s:%s</code>. No details are available.";
+  public static final Version API_VERSION_SUPPORTING_CLEAN_CODE_IMPACTS_AND_ATTRIBUTES = Version.create(10, 1);
 
   private final String linterKey;
   private final String linterName;
   private final String languageKey;
+  private final boolean isCleanCodeImpactsAndAttributesSupported;
 
   private Map<String, ExternalRule> rulesMap = new HashMap<>();
 
+  /**
+   * @deprecated Use the constructor that also provide the SonarRuntime argument to determine if you can use
+   * the new Clean Code attributes and impacts API.
+   * Then you should test "isCleanCodeImpactsAndAttributesSupported()" before using codeAttribute and codeImpacts.
+   */
+  @Deprecated(since = "2.6")
   public ExternalRuleLoader(String linterKey, String linterName, String pathToMetadata, String languageKey) {
+    this(linterKey, linterName, pathToMetadata, languageKey, null);
+  }
+
+  public ExternalRuleLoader(String linterKey, String linterName, String pathToMetadata, String languageKey, @Nullable SonarRuntime sonarRuntime) {
     this.linterKey = linterKey;
     this.linterName = linterName;
     this.languageKey = languageKey;
 
+    isCleanCodeImpactsAndAttributesSupported = sonarRuntime != null &&
+      sonarRuntime.getApiVersion().isGreaterThanOrEqual(API_VERSION_SUPPORTING_CLEAN_CODE_IMPACTS_AND_ATTRIBUTES);
+
     loadMetadataFile(pathToMetadata);
+  }
+
+  public boolean isCleanCodeImpactsAndAttributesSupported() {
+    return isCleanCodeImpactsAndAttributesSupported;
   }
 
   public void createExternalRuleRepository(org.sonar.api.server.rule.RulesDefinition.Context context) {
@@ -78,13 +104,14 @@ public class ExternalRuleLoader {
       newRule.setHtmlDescription(rule.getDescription(linterKey, linterName));
       newRule.setDebtRemediationFunction(newRule.debtRemediationFunctions().constantPerIssue(rule.constantDebtMinutes + "min"));
       newRule.setType(rule.type);
+      newRule.setSeverity(rule.severity.name());
+      if (rule.codeAttribute != null && rule.codeImpacts != null) {
+        newRule.setCleanCodeAttribute(rule.codeAttribute);
+        rule.codeImpacts.forEach(newRule::addDefaultImpact);
+      }
 
       if (rule.tags != null) {
         newRule.setTags(rule.tags);
-      }
-
-      if (rule.severity != null) {
-        newRule.setSeverity(rule.severity);
       }
     }
 
@@ -95,6 +122,10 @@ public class ExternalRuleLoader {
     return rulesMap.keySet();
   }
 
+  /**
+   * If isCleanCodeImpactsAndAttributesSupported() == true then ruleType is deprecated and replaced by codeImpacts
+   */
+  @Deprecated(since = "2.6")
   public RuleType ruleType(String ruleKey) {
     ExternalRule externalRule = rulesMap.get(ruleKey);
     if (externalRule != null) {
@@ -104,12 +135,36 @@ public class ExternalRuleLoader {
     }
   }
 
+  /**
+   * If isCleanCodeImpactsAndAttributesSupported() == true then ruleSeverity is deprecated and replaced by codeImpacts
+   */
+  @Deprecated(since = "2.6")
   public Severity ruleSeverity(String ruleKey) {
     ExternalRule externalRule = rulesMap.get(ruleKey);
-    if (externalRule != null && externalRule.severity != null) {
-      return Severity.valueOf(externalRule.severity);
+    if (externalRule != null) {
+      return externalRule.severity;
     } else {
       return DEFAULT_SEVERITY;
+    }
+  }
+
+  @Nullable
+  public CleanCodeAttribute codeAttribute(String ruleKey) {
+    ExternalRule externalRule = rulesMap.get(ruleKey);
+    if (externalRule != null) {
+      return externalRule.codeAttribute;
+    } else {
+      return null;
+    }
+  }
+
+  @Nullable
+  public Map<SoftwareQuality, org.sonar.api.issue.impact.Severity> codeImpacts(String ruleKey) {
+    ExternalRule externalRule = rulesMap.get(ruleKey);
+    if (externalRule != null) {
+      return externalRule.codeImpacts;
+    } else {
+      return null;
     }
   }
 
@@ -128,7 +183,7 @@ public class ExternalRuleLoader {
 
       List<Map<String, Object>> rules = new JsonParser().parseArray(inputStreamReader);
       for (Map<String, Object> rule : rules) {
-        ExternalRule externalRule = new ExternalRule(rule);
+        ExternalRule externalRule = new ExternalRule(rule, isCleanCodeImpactsAndAttributesSupported);
         rulesMap.put(externalRule.key, externalRule);
       }
 
@@ -141,6 +196,7 @@ public class ExternalRuleLoader {
     final String key;
     final String name;
     final RuleType type;
+    final Severity severity;
 
     @CheckForNull
     final String url;
@@ -151,12 +207,15 @@ public class ExternalRuleLoader {
     @CheckForNull
     final String[] tags;
 
-    @CheckForNull
-    final String severity;
-
     final Long constantDebtMinutes;
 
-    public ExternalRule(Map<String, Object> rule) {
+    @CheckForNull
+    final CleanCodeAttribute codeAttribute;
+
+    @CheckForNull
+    final Map<SoftwareQuality, org.sonar.api.issue.impact.Severity> codeImpacts;
+
+    public ExternalRule(Map<String, Object> rule, boolean isCleanCodeImpactsAndAttributesSupported) {
       this.key = (String) rule.get("key");
       this.name = (String) rule.get("name");
       this.url = (String) rule.get("url");
@@ -168,13 +227,61 @@ public class ExternalRuleLoader {
       } else {
         this.tags = null;
       }
-      this.severity = (String) rule.get("severity");
-      String inputType = (String) rule.get("type");
-      if (inputType != null) {
-        type = RuleType.valueOf(inputType);
+      type = getType(rule);
+      severity = getSeverity(rule);
+      if (isCleanCodeImpactsAndAttributesSupported) {
+        codeAttribute = getCodeAttribute(rule);
+        codeImpacts = getCodeImpacts(rule);
       } else {
-        type = DEFAULT_ISSUE_TYPE;
+        codeAttribute = null;
+        codeImpacts = null;
       }
+    }
+
+    private static RuleType getType(Map<String, Object> rule) {
+      String strType = (String) rule.get("type");
+      if (strType != null) {
+        return RuleType.valueOf(strType);
+      } else {
+        return DEFAULT_ISSUE_TYPE;
+      }
+    }
+
+    private static Severity getSeverity(Map<String, Object> rule) {
+      String strSeverity = (String) rule.get("severity");
+      if (strSeverity != null) {
+        return Severity.valueOf(strSeverity);
+      } else {
+        return DEFAULT_SEVERITY;
+      }
+    }
+
+    @Nullable
+    private static CleanCodeAttribute getCodeAttribute(Map<String, Object> rule) {
+      JSONObject code = (JSONObject) rule.get("code");
+      if (code != null) {
+        String attribute = (String) code.get("attribute");
+        if (attribute != null) {
+          return CleanCodeAttribute.valueOf(attribute);
+        }
+      }
+      return null;
+    }
+
+    @Nullable
+    private static Map<SoftwareQuality, org.sonar.api.issue.impact.Severity> getCodeImpacts(Map<String, Object> rule) {
+      JSONObject code = (JSONObject) rule.get("code");
+      if (code != null) {
+        JSONObject impacts = (JSONObject) code.get("impacts");
+        if (impacts != null) {
+          Map<SoftwareQuality, org.sonar.api.issue.impact.Severity> map = new LinkedHashMap<>();
+          impacts.forEach(
+            (k, v) -> map.put(SoftwareQuality.valueOf((String) k),
+              org.sonar.api.issue.impact.Severity.valueOf((String) v)));
+          return map;
+        }
+      }
+      return null;
     }
 
     String getDescription(String linterKey, String linterName) {

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -46,7 +47,12 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
+import static org.sonar.api.issue.impact.Severity.HIGH;
+import static org.sonar.api.issue.impact.Severity.LOW;
+import static org.sonar.api.issue.impact.SoftwareQuality.MAINTAINABILITY;
+import static org.sonar.api.rules.CleanCodeAttribute.IDENTIFIABLE;
 
 public class RuleMetadataLoaderTest {
 
@@ -56,11 +62,12 @@ public class RuleMetadataLoaderTest {
   private RulesDefinition.Context context;
   private NewRepository newRepository;
   private RuleMetadataLoader ruleMetadataLoader;
-  // using SonarLint for simplicity (it requires less parameters)
+  // using SonarLint for simplicity (it requires fewer parameters)
   private static final SonarRuntime SONAR_RUNTIME_9_2 = SonarRuntimeImpl.forSonarLint(Version.create(9, 2));
   private static final SonarRuntime SONAR_RUNTIME_9_3 = SonarRuntimeImpl.forSonarLint(Version.create(9, 3));
   private static final SonarRuntime SONAR_RUNTIME_9_5 = SonarRuntimeImpl.forSonarLint(Version.create(9, 5));
   private static final SonarRuntime SONAR_RUNTIME_9_9 = SonarRuntimeImpl.forSonarLint(Version.create(9, 9));
+  private static final SonarRuntime SONAR_RUNTIME_10_1 = SonarRuntimeImpl.forSonarLint(Version.create(10, 1));
 
   @Before
   public void setup() {
@@ -70,8 +77,119 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void load_rule_S100() throws Exception {
-    @Rule(key = "S100") class TestRule {
+  public void load_taxonomy_rule_with_supported_product_runtime() {
+    @Rule(key = "taxonomy_rule")
+    class TestRule {
+    }
+
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_10_1);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("taxonomy_rule");
+    assertThat(rule).isNotNull();
+    assertThat(rule.name()).isEqualTo("Taxonomy rule with code block properties");
+    assertThat(rule.htmlDescription()).isEqualTo("<p>description taxonomy rule</p>");
+    assertThat(rule.severity()).isEqualTo("MINOR");
+    assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
+    assertThat(rule.cleanCodeAttribute()).isEqualTo(IDENTIFIABLE);
+    assertThat(rule.defaultImpacts()).isEqualTo(Map.of(MAINTAINABILITY, HIGH));
+    assertThat(rule.status()).isEqualTo(RuleStatus.READY);
+    assertThat(rule.tags()).containsExactly("convention");
+    DebtRemediationFunction remediation = rule.debtRemediationFunction();
+    assertThat(remediation).isNotNull();
+    assertThat(remediation.type()).isEqualTo(DebtRemediationFunction.Type.CONSTANT_ISSUE);
+    assertThat(remediation.baseEffort()).isEqualTo("5min");
+    assertThat(rule.deprecatedRuleKeys()).isEmpty();
+  }
+
+  @Test
+  public void load_rule_without_taxonomy_with_supported_product_runtime() {
+    @Rule(key = "S100")
+    class TestRule {
+    }
+
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_10_1);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("S100");
+    assertThat(rule).isNotNull();
+    assertThat(rule.name()).isEqualTo("Function names should comply with a naming convention");
+    assertThat(rule.htmlDescription()).isEqualTo("<p>description S100</p>");
+    assertThat(rule.severity()).isEqualTo("MINOR");
+    assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
+    assertThat(rule.cleanCodeAttribute()).isNull();
+    assertThat(rule.defaultImpacts()).isNotEmpty();
+    rule.defaultImpacts().forEach((softwareQuality, severity) -> {
+      assertThat(softwareQuality.name()).isEqualTo("MAINTAINABILITY");
+      assertThat(severity.name()).isEqualTo("LOW");
+    });
+    assertThat(rule.status()).isEqualTo(RuleStatus.READY);
+    assertThat(rule.tags()).containsExactly("convention");
+    DebtRemediationFunction remediation = rule.debtRemediationFunction();
+    assertThat(remediation).isNotNull();
+    assertThat(remediation.type()).isEqualTo(DebtRemediationFunction.Type.CONSTANT_ISSUE);
+    assertThat(remediation.baseEffort()).isEqualTo("5min");
+    assertThat(rule.deprecatedRuleKeys()).isEmpty();
+  }
+
+  @Test
+  public void load_taxonomy_rule_with_unsupported_product_runtime() {
+    @Rule(key = "taxonomy_rule")
+    class TestRule {
+    }
+
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_9_5);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("taxonomy_rule");
+    assertThat(rule).isNotNull();
+    assertThat(rule.name()).isEqualTo("Taxonomy rule with code block properties");
+    assertThat(rule.htmlDescription()).isEqualTo("<p>description taxonomy rule</p>");
+    assertThat(rule.severity()).isEqualTo("MINOR");
+    assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
+    assertThat(rule.cleanCodeAttribute()).isNull();
+    assertThat(rule.defaultImpacts()).isEqualTo(Map.of(MAINTAINABILITY, LOW));
+    assertThat(rule.status()).isEqualTo(RuleStatus.READY);
+    assertThat(rule.tags()).containsExactly("convention");
+    DebtRemediationFunction remediation = rule.debtRemediationFunction();
+    assertThat(remediation).isNotNull();
+    assertThat(remediation.type()).isEqualTo(DebtRemediationFunction.Type.CONSTANT_ISSUE);
+    assertThat(remediation.baseEffort()).isEqualTo("5min");
+    assertThat(rule.deprecatedRuleKeys()).isEmpty();
+  }
+
+  @Test
+  public void not_valid_taxonomy_rule_with_supported_product_runtime_throws_exception() {
+    @Rule(key = "not_valid_taxonomy_rule")
+    class TestRule {
+    }
+
+    List<Class<?>> classes = singletonList(TestRule.class);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_10_1);
+    assertThrows("Invalid property: impacts", IllegalStateException.class,
+      () -> ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, classes));
+  }
+
+  @Test
+  public void not_valid_taxonomy_rule_with_impacts_empty_with_supported_product_runtime_throws_exception() {
+    @Rule(key = "not_valid_taxonomy_rule_2")
+    class TestRule {
+    }
+
+    List<Class<?>> classes = singletonList(TestRule.class);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_10_1);
+    assertThrows("Invalid property: impacts", IllegalStateException.class,
+      () -> ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, classes));
+  }
+
+  @Test
+  public void load_rule_S100() {
+    @Rule(key = "S100")
+    class TestRule {
     }
 
     ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
@@ -126,8 +244,9 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void load_rule_S110() throws Exception {
-    @Rule(key = "S110") class TestRule {
+  public void load_rule_S110() {
+    @Rule(key = "S110")
+    class TestRule {
     }
     ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
     newRepository.done();
@@ -143,7 +262,7 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void load_rules_key_based() throws Exception {
+  public void load_rules_key_based() {
     ruleMetadataLoader.addRulesByRuleKey(newRepository, Arrays.asList("S110", "S100"));
     newRepository.done();
 
@@ -160,7 +279,13 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void load_rule_S123() throws Exception {
+  public void load_missing_rule_key_based() {
+    List<String> ruleList = List.of("");
+    assertThrows("Empty key", IllegalStateException.class, () -> ruleMetadataLoader.addRulesByRuleKey(newRepository, ruleList));
+  }
+
+  @Test
+  public void load_rule_S123() {
     @Rule(key = "S123")
     class TestRule {
     }
@@ -178,7 +303,7 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void load_rule_with_deprecated_key() throws Exception {
+  public void load_rule_with_deprecated_key() {
     @Rule(key = "S123")
     @DeprecatedRuleKey(repositoryKey = "oldRepo", ruleKey = "oldKey")
     class TestRule {
@@ -191,7 +316,7 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void load_rule_with_many_deprecated_keys() throws Exception {
+  public void load_rule_with_many_deprecated_keys() {
     @Rule(key = "S123")
     @DeprecatedRuleKey(repositoryKey = "oldRepo1", ruleKey = "oldKey1")
     @DeprecatedRuleKey(repositoryKey = "oldRepo2", ruleKey = "oldKey2")
@@ -205,7 +330,7 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void load_rule_with_deprecated_key_without_repo() throws Exception {
+  public void load_rule_with_deprecated_key_without_repo() {
     @Rule(key = "S123")
     @DeprecatedRuleKey(ruleKey = "oldKey")
     class TestRule {
@@ -218,7 +343,7 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void load_rule_list() throws Exception {
+  public void load_rule_list() {
     @Rule(key = "S100")
     class RuleA {
     }
@@ -233,7 +358,7 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void no_profile() throws Exception {
+  public void no_profile() {
     @Rule(key = "S100")
     class TestRule {
     }
@@ -245,7 +370,7 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void rule_not_in_default_profile() throws Exception {
+  public void rule_not_in_default_profile() {
     @Rule(key = "S123")
     class TestRule {
     }
@@ -257,7 +382,7 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void rule_in_default_profile() throws Exception {
+  public void rule_in_default_profile() {
     @Rule(key = "S100")
     class TestRule {
     }
@@ -269,7 +394,50 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void getStringArray() throws Exception {
+  public void test_rule_without_annotation() {
+    class TestRule {
+    }
+
+    List<Class<?>> classes = singletonList(TestRule.class);
+    assertThrows("No Rule annotation was found on TestRule", IllegalStateException.class,
+      () -> ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, classes));
+  }
+
+  @Test
+  public void test_rule_without_key() {
+    @Rule
+    class TestRule {
+    }
+
+    List<Class<?>> classes = singletonList(TestRule.class);
+    assertThrows("Empty key", IllegalStateException.class,
+      () -> ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, classes));
+  }
+
+  @Test
+  public void test_missing_rule_key() {
+    @Rule(key = "S404")
+    class TestRule {
+    }
+
+    List<Class<?>> classes = List.of(TestRule.class);
+    assertThrows("Rule not found: S404", IllegalStateException.class,
+      () -> ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, classes));
+  }
+
+  @Test
+  public void test_not_valid_json_rule() {
+    @Rule(key = "notvalid")
+    class TestRule {
+    }
+
+    List<Class<?>> classes = List.of(TestRule.class);
+    assertThrows("Can't read resource: org/sonarsource/analyzer/commons/notvalid.json", IllegalStateException.class,
+      () -> ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, classes));
+  }
+
+  @Test
+  public void getStringArray() {
     Map<String, Object> map = singletonMap("key", Arrays.asList("x", "y"));
     assertThat(RuleMetadataLoader.getStringArray(map, "key")).containsExactly("x", "y");
   }
@@ -308,7 +476,7 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test(expected = IllegalStateException.class)
-  public void getStringArray_with_invalid_type() throws Exception {
+  public void getStringArray_with_invalid_type() {
     Map<String, Object> map = singletonMap("key", "x");
     RuleMetadataLoader.getStringArray(map, "key");
   }
@@ -340,8 +508,7 @@ public class RuleMetadataLoaderTest {
       "owaspTop10:a2", "owaspTop10:a3",
       "owaspTop10-2021:a4", "owaspTop10-2021:a5",
       "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2",
-      "owaspAsvs-4.0:2.1.1", "owaspAsvs-4.0:2.1.2"
-    );
+      "owaspAsvs-4.0:2.1.1", "owaspAsvs-4.0:2.1.2");
   }
 
   @Test
@@ -351,8 +518,7 @@ public class RuleMetadataLoaderTest {
       "cwe:311", "cwe:315", "cwe:614",
       "owaspTop10:a2", "owaspTop10:a3",
       "owaspTop10-2021:a4", "owaspTop10-2021:a5",
-      "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2"
-    );
+      "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2");
   }
 
   @Test
@@ -427,4 +593,5 @@ public class RuleMetadataLoaderTest {
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
     return rule.securityStandards();
   }
+
 }
