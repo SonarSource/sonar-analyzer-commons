@@ -34,6 +34,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.sonar.api.SonarRuntime;
 import org.sonar.api.batch.rule.Severity;
+import org.sonar.api.batch.sensor.issue.NewExternalIssue;
 import org.sonar.api.issue.impact.SoftwareQuality;
 import org.sonar.api.rules.CleanCodeAttribute;
 import org.sonar.api.rules.RuleType;
@@ -105,10 +106,7 @@ public class ExternalRuleLoader {
       newRule.setDebtRemediationFunction(newRule.debtRemediationFunctions().constantPerIssue(rule.constantDebtMinutes + "min"));
       newRule.setType(rule.type);
       newRule.setSeverity(rule.severity.name());
-      if (rule.codeAttribute != null && rule.codeImpacts != null) {
-        newRule.setCleanCodeAttribute(rule.codeAttribute);
-        rule.codeImpacts.forEach(newRule::addDefaultImpact);
-      }
+      rule.applyCodeAttributeAndImpact(newRule);
 
       if (rule.tags != null) {
         newRule.setTags(rule.tags);
@@ -123,7 +121,7 @@ public class ExternalRuleLoader {
   }
 
   /**
-   * If isCleanCodeImpactsAndAttributesSupported() == true then ruleType is deprecated and replaced by codeImpacts
+   * Deprecated, use {@link #applyTypeAndCleanCodeAttributes(NewExternalIssue, String)} instead.
    */
   @Deprecated(since = "2.6")
   public RuleType ruleType(String ruleKey) {
@@ -136,7 +134,7 @@ public class ExternalRuleLoader {
   }
 
   /**
-   * If isCleanCodeImpactsAndAttributesSupported() == true then ruleSeverity is deprecated and replaced by codeImpacts
+   * Deprecated, use {@link #applyTypeAndCleanCodeAttributes(NewExternalIssue, String)} instead.
    */
   @Deprecated(since = "2.6")
   public Severity ruleSeverity(String ruleKey) {
@@ -148,24 +146,19 @@ public class ExternalRuleLoader {
     }
   }
 
-  @Nullable
-  public CleanCodeAttribute codeAttribute(String ruleKey) {
+  public NewExternalIssue applyTypeAndCleanCodeAttributes(NewExternalIssue newExternalIssue, String ruleKey) {
     ExternalRule externalRule = rulesMap.get(ruleKey);
     if (externalRule != null) {
-      return externalRule.codeAttribute;
+      newExternalIssue
+        .type(externalRule.type)
+        .severity(externalRule.severity);
+      externalRule.applyCodeAttributeAndImpact(newExternalIssue);
     } else {
-      return null;
+      newExternalIssue
+        .type(DEFAULT_ISSUE_TYPE)
+        .severity(DEFAULT_SEVERITY);
     }
-  }
-
-  @Nullable
-  public Map<SoftwareQuality, org.sonar.api.issue.impact.Severity> codeImpacts(String ruleKey) {
-    ExternalRule externalRule = rulesMap.get(ruleKey);
-    if (externalRule != null) {
-      return externalRule.codeImpacts;
-    } else {
-      return null;
-    }
+    return newExternalIssue;
   }
 
   public Long ruleConstantDebtMinutes(String ruleKey) {
@@ -183,7 +176,8 @@ public class ExternalRuleLoader {
 
       List<Map<String, Object>> rules = new JsonParser().parseArray(inputStreamReader);
       for (Map<String, Object> rule : rules) {
-        ExternalRule externalRule = new ExternalRule(rule, isCleanCodeImpactsAndAttributesSupported);
+        ExternalRule externalRule = isCleanCodeImpactsAndAttributesSupported ?
+          new ExternalRuleWithCodeAttribute(rule) : new ExternalRule(rule);
         rulesMap.put(externalRule.key, externalRule);
       }
 
@@ -209,13 +203,7 @@ public class ExternalRuleLoader {
 
     final Long constantDebtMinutes;
 
-    @CheckForNull
-    final CleanCodeAttribute codeAttribute;
-
-    @CheckForNull
-    final Map<SoftwareQuality, org.sonar.api.issue.impact.Severity> codeImpacts;
-
-    public ExternalRule(Map<String, Object> rule, boolean isCleanCodeImpactsAndAttributesSupported) {
+    public ExternalRule(Map<String, Object> rule) {
       this.key = (String) rule.get("key");
       this.name = (String) rule.get("name");
       this.url = (String) rule.get("url");
@@ -229,13 +217,14 @@ public class ExternalRuleLoader {
       }
       type = getType(rule);
       severity = getSeverity(rule);
-      if (isCleanCodeImpactsAndAttributesSupported) {
-        codeAttribute = getCodeAttribute(rule);
-        codeImpacts = getCodeImpacts(rule);
-      } else {
-        codeAttribute = null;
-        codeImpacts = null;
-      }
+    }
+
+    public void applyCodeAttributeAndImpact(NewRule newRule) {
+      // only supported by ExternalRuleWithCodeAttribute
+    }
+
+    public void applyCodeAttributeAndImpact(NewExternalIssue newExternalIssue) {
+      // only supported by ExternalRuleWithCodeAttribute
     }
 
     private static RuleType getType(Map<String, Object> rule) {
@@ -253,6 +242,53 @@ public class ExternalRuleLoader {
         return Severity.valueOf(strSeverity);
       } else {
         return DEFAULT_SEVERITY;
+      }
+    }
+
+    String getDescription(String linterKey, String linterName) {
+      if (description != null && url != null) {
+        return String.format(DESCRIPTION_WITH_URL, description, url, linterName);
+      }
+
+      if (description != null) {
+        return description;
+      }
+
+      if (url != null) {
+        return String.format(DESCRIPTION_ONLY_URL, linterName, key, url, linterName);
+      }
+
+      return String.format(DESCRIPTION_FALLBACK, linterKey, key);
+    }
+  }
+
+  private static class ExternalRuleWithCodeAttribute extends ExternalRule {
+
+    @CheckForNull
+    final CleanCodeAttribute codeAttribute;
+
+    @CheckForNull
+    final Map<SoftwareQuality, org.sonar.api.issue.impact.Severity> codeImpacts;
+
+    public ExternalRuleWithCodeAttribute(Map<String, Object> rule) {
+      super(rule);
+      codeAttribute = getCodeAttribute(rule);
+      codeImpacts = getCodeImpacts(rule);
+    }
+
+    @Override
+    public void applyCodeAttributeAndImpact(NewRule newRule) {
+      if (codeAttribute != null && codeImpacts != null) {
+        newRule.setCleanCodeAttribute(codeAttribute);
+        codeImpacts.forEach(newRule::addDefaultImpact);
+      }
+    }
+
+    @Override
+    public void applyCodeAttributeAndImpact(NewExternalIssue newExternalIssue) {
+      if (codeAttribute != null && codeImpacts != null) {
+        newExternalIssue.cleanCodeAttribute(codeAttribute);
+        codeImpacts.forEach(newExternalIssue::addImpact);
       }
     }
 
@@ -284,21 +320,6 @@ public class ExternalRuleLoader {
       return null;
     }
 
-    String getDescription(String linterKey, String linterName) {
-      if (description != null && url != null) {
-        return String.format(DESCRIPTION_WITH_URL, description, url, linterName);
-      }
-
-      if (description != null) {
-        return description;
-      }
-
-      if (url != null) {
-        return String.format(DESCRIPTION_ONLY_URL, linterName, key, url, linterName);
-      }
-
-      return String.format(DESCRIPTION_FALLBACK, linterKey, key);
-    }
   }
 
 }
