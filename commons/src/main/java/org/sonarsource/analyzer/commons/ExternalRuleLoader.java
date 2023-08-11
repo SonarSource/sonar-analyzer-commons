@@ -34,7 +34,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.sonar.api.SonarRuntime;
 import org.sonar.api.batch.rule.Severity;
-import org.sonar.api.batch.sensor.issue.NewExternalIssue;
 import org.sonar.api.issue.impact.SoftwareQuality;
 import org.sonar.api.rules.CleanCodeAttribute;
 import org.sonar.api.rules.RuleType;
@@ -120,10 +119,6 @@ public class ExternalRuleLoader {
     return rulesMap.keySet();
   }
 
-  /**
-   * Deprecated, use {@link #applyTypeAndCleanCodeAttributes(NewExternalIssue, String)} instead.
-   */
-  @Deprecated(since = "2.6")
   public RuleType ruleType(String ruleKey) {
     ExternalRule externalRule = rulesMap.get(ruleKey);
     if (externalRule != null) {
@@ -133,10 +128,6 @@ public class ExternalRuleLoader {
     }
   }
 
-  /**
-   * Deprecated, use {@link #applyTypeAndCleanCodeAttributes(NewExternalIssue, String)} instead.
-   */
-  @Deprecated(since = "2.6")
   public Severity ruleSeverity(String ruleKey) {
     ExternalRule externalRule = rulesMap.get(ruleKey);
     if (externalRule != null) {
@@ -144,21 +135,6 @@ public class ExternalRuleLoader {
     } else {
       return DEFAULT_SEVERITY;
     }
-  }
-
-  public NewExternalIssue applyTypeAndCleanCodeAttributes(NewExternalIssue newExternalIssue, String ruleKey) {
-    ExternalRule externalRule = rulesMap.get(ruleKey);
-    if (externalRule != null) {
-      newExternalIssue
-        .type(externalRule.type)
-        .severity(externalRule.severity);
-      externalRule.applyCodeAttributeAndImpact(newExternalIssue);
-    } else {
-      newExternalIssue
-        .type(DEFAULT_ISSUE_TYPE)
-        .severity(DEFAULT_SEVERITY);
-    }
-    return newExternalIssue;
   }
 
   public Long ruleConstantDebtMinutes(String ruleKey) {
@@ -223,10 +199,6 @@ public class ExternalRuleLoader {
       // only supported by ExternalRuleWithCodeAttribute
     }
 
-    public void applyCodeAttributeAndImpact(NewExternalIssue newExternalIssue) {
-      // only supported by ExternalRuleWithCodeAttribute
-    }
-
     private static RuleType getType(Map<String, Object> rule) {
       String strType = (String) rule.get("type");
       if (strType != null) {
@@ -281,14 +253,6 @@ public class ExternalRuleLoader {
       if (codeAttribute != null && codeImpacts != null) {
         newRule.setCleanCodeAttribute(codeAttribute);
         codeImpacts.forEach(newRule::addDefaultImpact);
-      }
-    }
-
-    @Override
-    public void applyCodeAttributeAndImpact(NewExternalIssue newExternalIssue) {
-      if (codeAttribute != null && codeImpacts != null) {
-        newExternalIssue.cleanCodeAttribute(codeAttribute);
-        codeImpacts.forEach(newExternalIssue::addImpact);
       }
     }
 
