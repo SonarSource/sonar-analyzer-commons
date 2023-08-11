@@ -19,6 +19,7 @@
  */
 package org.sonarsource.analyzer.commons;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -27,7 +28,10 @@ import org.junit.Test;
 import org.sonar.api.SonarEdition;
 import org.sonar.api.SonarQubeSide;
 import org.sonar.api.SonarRuntime;
+import org.sonar.api.batch.fs.internal.DefaultInputProject;
 import org.sonar.api.batch.rule.Severity;
+import org.sonar.api.batch.sensor.issue.NewExternalIssue;
+import org.sonar.api.batch.sensor.issue.internal.DefaultExternalIssue;
 import org.sonar.api.internal.SonarRuntimeImpl;
 import org.sonar.api.issue.impact.SoftwareQuality;
 import org.sonar.api.rules.CleanCodeAttribute;
@@ -38,6 +42,7 @@ import org.sonar.api.server.rule.RulesDefinition.Rule;
 import org.sonar.api.utils.Version;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.sonar.api.batch.rule.Severity.BLOCKER;
 import static org.sonar.api.batch.rule.Severity.INFO;
 import static org.sonar.api.batch.rule.Severity.MAJOR;
@@ -60,51 +65,24 @@ public class ExternalRuleLoaderTest {
   private static final SonarRuntime RUNTIME_10_1 = SonarRuntimeImpl.forSonarQube(Version.create(10, 1), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
 
   @Test
-  public void test_getters_runtime_10_0() {
-    ExternalRuleLoader loader = loadMyLinterJson(RUNTIME_10_0);
-    assertThat(loader.isCleanCodeImpactsAndAttributesSupported()).isFalse();
-
-    assertRule(loader, "not-existing-key", CODE_SMELL, MAJOR, 5L, null, null);
-    assertRule(loader, "bug-rule", BUG, MAJOR, 42L, null, null);
-    assertRule(loader, "code-smell-rule", CODE_SMELL, MAJOR, 5L, null, null);
-    assertRule(loader, "vulnerability-rule", VULNERABILITY, INFO, 5L, null, null);
-    assertRule(loader, "identifiable-low-maintainability-rule", BUG, MINOR, 5L, null, null);
-    assertRule(loader, "no-type-rule", CODE_SMELL, BLOCKER, 5L, null, null);
-  }
-
-  @Test
-  public void test_getters_null_runtime() {
+  public void test_null_runtime() {
     ExternalRuleLoader loader = loadMyLinterJson(null);
     assertThat(loader.isCleanCodeImpactsAndAttributesSupported()).isFalse();
-    assertRule(loader, "bug-rule", BUG, MAJOR, 42L, null, null);
-    assertRule(loader, "identifiable-low-maintainability-rule", BUG, MINOR, 5L, null, null);
-  }
-
-  @Test
-  public void test_getters_runtime_10_1() {
-    ExternalRuleLoader loader = loadMyLinterJson(RUNTIME_10_1);
-    assertThat(loader.isCleanCodeImpactsAndAttributesSupported()).isTrue();
-
-    assertRule(loader,
-      "bug-rule",
-      BUG,
-      MAJOR,
-      42L,
-      null,
-      null);
-
-    assertRule(loader,
-      "identifiable-low-maintainability-rule",
-      BUG,
-      MINOR,
-      5L,
-      IDENTIFIABLE,
-      Map.of(MAINTAINABILITY, LOW));
+    assertRule(loader, "bug-rule", BUG, MAJOR, 42L);
+    assertRule(loader, "identifiable-low-maintainability-rule", BUG, MINOR, 5L);
   }
 
   @Test
   public void test_repository_10_0() {
     ExternalRuleLoader externalRuleLoader = loadMyLinterJson(RUNTIME_10_0);
+    assertThat(externalRuleLoader.isCleanCodeImpactsAndAttributesSupported()).isFalse();
+    assertRule(externalRuleLoader, "not-existing-key", CODE_SMELL, MAJOR, 5L);
+    assertRule(externalRuleLoader, "bug-rule", BUG, MAJOR, 42L);
+    assertRule(externalRuleLoader, "code-smell-rule", CODE_SMELL, MAJOR, 5L);
+    assertRule(externalRuleLoader, "vulnerability-rule", VULNERABILITY, INFO, 5L);
+    assertRule(externalRuleLoader, "identifiable-low-maintainability-rule", BUG, MINOR, 5L);
+    assertRule(externalRuleLoader, "no-type-rule", CODE_SMELL, BLOCKER, 5L);
+
     RulesDefinition.Context context = new RulesDefinition.Context();
     externalRuleLoader.createExternalRuleRepository(context);
 
@@ -193,6 +171,10 @@ public class ExternalRuleLoaderTest {
   @Test
   public void test_repository_10_1() {
     ExternalRuleLoader externalRuleLoader = loadMyLinterJson(RUNTIME_10_1);
+    assertThat(externalRuleLoader.isCleanCodeImpactsAndAttributesSupported()).isTrue();
+    assertRule(externalRuleLoader, "bug-rule", BUG, MAJOR, 42L);
+    assertRule(externalRuleLoader, "identifiable-low-maintainability-rule", BUG, MINOR, 5L);
+
     RulesDefinition.Context context = new RulesDefinition.Context();
     externalRuleLoader.createExternalRuleRepository(context);
 
@@ -262,14 +244,113 @@ public class ExternalRuleLoaderTest {
     );
   }
 
+  @Test
+  public void test_code_attributes_on_new_issues_SQ_API_10_0() {
+    DefaultExternalIssueWithCodeAttribute externalIssue = new DefaultExternalIssueWithCodeAttribute(mock(DefaultInputProject.class));
+    ExternalRuleLoader externalRuleLoader = loadMyLinterJson(RUNTIME_10_0);
+
+    String ruleKey = "identifiable-low-maintainability-rule";
+    externalRuleLoader.applyTypeAndCleanCodeAttributes(externalIssue, ruleKey);
+
+    SoftAssertions softly = new SoftAssertions();
+    softly.assertThat(externalIssue.type()).as("type of " + ruleKey).isEqualTo(BUG);
+    softly.assertThat(externalIssue.severity()).as("severity of " + ruleKey).isEqualTo(MINOR);
+    softly.assertThat(externalIssue.cleanCodeAttribute()).as("cleanCodeAttribute of " + ruleKey).isNull();
+    softly.assertThat(externalIssue.impacts()).as("impacts of " + ruleKey).isEmpty();
+    softly.assertAll();
+  }
+
+  @Test
+  public void test_code_attributes_on_new_issues_SQ_API_10_1() {
+    ExternalRuleLoader externalRuleLoader = loadMyLinterJson(RUNTIME_10_1);
+
+    String ruleKey = "identifiable-low-maintainability-rule";
+    DefaultExternalIssueWithCodeAttribute externalIssue = new DefaultExternalIssueWithCodeAttribute(mock(DefaultInputProject.class));
+    externalRuleLoader.applyTypeAndCleanCodeAttributes(externalIssue, ruleKey);
+
+    SoftAssertions softly = new SoftAssertions();
+    softly.assertThat(externalIssue.type()).as("type of " + ruleKey).isEqualTo(BUG);
+    softly.assertThat(externalIssue.severity()).as("severity of " + ruleKey).isEqualTo(MINOR);
+    softly.assertThat(externalIssue.cleanCodeAttribute()).as("cleanCodeAttribute of " + ruleKey).isEqualTo(IDENTIFIABLE);
+    softly.assertThat(externalIssue.impacts()).as("impacts of " + ruleKey).isEqualTo(Map.of(MAINTAINABILITY, LOW));
+    softly.assertAll();
+
+    ruleKey = "missing-code-attribute";
+    externalIssue = new DefaultExternalIssueWithCodeAttribute(mock(DefaultInputProject.class));
+    externalRuleLoader.applyTypeAndCleanCodeAttributes(externalIssue, ruleKey);
+
+    softly = new SoftAssertions();
+    softly.assertThat(externalIssue.cleanCodeAttribute()).as("cleanCodeAttribute of " + ruleKey).isNull();
+    softly.assertThat(externalIssue.impacts()).as("impacts of " + ruleKey).isEmpty();
+    softly.assertAll();
+
+    ruleKey = "missing-impacts";
+    externalIssue = new DefaultExternalIssueWithCodeAttribute(mock(DefaultInputProject.class));
+    externalRuleLoader.applyTypeAndCleanCodeAttributes(externalIssue, ruleKey);
+
+    softly = new SoftAssertions();
+    softly.assertThat(externalIssue.cleanCodeAttribute()).as("cleanCodeAttribute of " + ruleKey).isNull();
+    softly.assertThat(externalIssue.impacts()).as("impacts of " + ruleKey).isEmpty();
+    softly.assertAll();
+  }
+
+  @Test
+  public void test_code_attributes_on_unknown_rule() {
+    DefaultExternalIssueWithCodeAttribute externalIssue = new DefaultExternalIssueWithCodeAttribute(mock(DefaultInputProject.class));
+    ExternalRuleLoader externalRuleLoader = loadMyLinterJson(RUNTIME_10_1);
+
+    String ruleKey = "unknown-rule-key";
+    externalRuleLoader.applyTypeAndCleanCodeAttributes(externalIssue, ruleKey);
+
+    SoftAssertions softly = new SoftAssertions();
+    softly.assertThat(externalIssue.type()).as("type of " + ruleKey).isEqualTo(CODE_SMELL);
+    softly.assertThat(externalIssue.severity()).as("severity of " + ruleKey).isEqualTo(MAJOR);
+    softly.assertThat(externalIssue.cleanCodeAttribute()).as("cleanCodeAttribute of " + ruleKey).isNull();
+    softly.assertThat(externalIssue.impacts()).as("impacts of " + ruleKey).isEmpty();
+    softly.assertAll();
+  }
+
+  /**
+   * This class exists because sonar-plugin-api-impl:10.1.0.73491 does not yet implement all the methods of sonar-plugin-api:10.1.0.809
+   * Will be removed and replace with DefaultExternalIssue once sonar-plugin-api-impl has a new version.
+   */
+  class DefaultExternalIssueWithCodeAttribute extends DefaultExternalIssue {
+    private CleanCodeAttribute attribute = null;
+    private final Map<SoftwareQuality, org.sonar.api.issue.impact.Severity> impacts = new LinkedHashMap<>();
+
+    public DefaultExternalIssueWithCodeAttribute(DefaultInputProject project) {
+      super(project);
+    }
+
+    @Override
+    public Map<SoftwareQuality, org.sonar.api.issue.impact.Severity> impacts() {
+      return impacts;
+    }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public CleanCodeAttribute cleanCodeAttribute() {
+      return attribute;
+    }
+
+    @Override
+    public NewExternalIssue cleanCodeAttribute(CleanCodeAttribute attribute) {
+      this.attribute = attribute;
+      return this;
+    }
+
+    @Override
+    public NewExternalIssue addImpact(SoftwareQuality softwareQuality, org.sonar.api.issue.impact.Severity severity) {
+      impacts.put(softwareQuality, severity);
+      return this;
+    }
+  }
+
   private static void assertRule(ExternalRuleLoader externalRuleLoader, String ruleKey,
-                                 RuleType expectedRuleType, Severity expectedRuleSeverity, Long expectedDebtMinutes,
-                                 CleanCodeAttribute expectedCodeAttribute, Map<SoftwareQuality, org.sonar.api.issue.impact.Severity> expectedCodeImpacts) {
+                                 RuleType expectedRuleType, Severity expectedRuleSeverity, Long expectedDebtMinutes) {
     SoftAssertions softly = new SoftAssertions();
     softly.assertThat(externalRuleLoader.ruleType(ruleKey)).as("ruleType of " + ruleKey).isEqualTo(expectedRuleType);
     softly.assertThat(externalRuleLoader.ruleSeverity(ruleKey)).as("ruleSeverity of " + ruleKey).isEqualTo(expectedRuleSeverity);
-    softly.assertThat(externalRuleLoader.codeAttribute(ruleKey)).as("codeAttribute of " + ruleKey).isEqualTo(expectedCodeAttribute);
-    softly.assertThat(externalRuleLoader.codeImpacts(ruleKey)).as("codeImpacts of " + ruleKey).isEqualTo(expectedCodeImpacts);
     softly.assertThat(externalRuleLoader.ruleConstantDebtMinutes(ruleKey))
       .as("ruleConstantDebtMinutes of " + ruleKey).isEqualTo(expectedDebtMinutes);
     softly.assertAll();
@@ -277,7 +358,8 @@ public class ExternalRuleLoaderTest {
 
   private static void assertRule(Repository repository, String ruleKey, String expectedName, String expectedDescription,
                                  RuleType expectedRuleType, String expectedRuleSeverity, String expectedDebtMinutes,
-                                 CleanCodeAttribute expectedCodeAttribute, Map<SoftwareQuality, org.sonar.api.issue.impact.Severity> expectedCodeImpacts,
+                                 @Nullable CleanCodeAttribute expectedCodeAttribute,
+                                 @Nullable Map<SoftwareQuality, org.sonar.api.issue.impact.Severity> expectedCodeImpacts,
                                  Set<String> expectedTags) {
     SoftAssertions softly = new SoftAssertions();
     Rule rule = repository.rule(ruleKey);
