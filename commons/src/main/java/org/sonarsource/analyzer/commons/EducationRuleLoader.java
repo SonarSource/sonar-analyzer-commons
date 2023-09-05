@@ -159,7 +159,6 @@ class EducationRuleLoader {
   private static void addSection(NewRule rule, String sectionKey, String content, @Nullable Context context) {
     String trimmedContent = content.trim();
     if (trimmedContent.isEmpty()) {
-      LOG.debug(String.format("Skipping section '%s' for rule '%s', content is empty", sectionKey, rule.key()));
       return;
     }
 
