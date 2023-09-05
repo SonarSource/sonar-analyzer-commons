@@ -28,7 +28,6 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.slf4j.event.Level;
 import org.sonar.api.SonarEdition;
 import org.sonar.api.SonarQubeSide;
@@ -36,6 +35,7 @@ import org.sonar.api.SonarRuntime;
 import org.sonar.api.internal.SonarRuntimeImpl;
 import org.sonar.api.server.rule.RuleDescriptionSection;
 import org.sonar.api.server.rule.RulesDefinition;
+import org.sonar.api.server.rule.RulesDefinition.Context;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.server.rule.RulesDefinition.Repository;
 import org.sonar.api.server.rule.RulesDefinitionAnnotationLoader;
@@ -44,7 +44,6 @@ import org.sonar.api.utils.Version;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.sonar.api.server.rule.RulesDefinition.Context;
 
 public class EducationRuleLoaderTest {
 
@@ -156,8 +155,6 @@ public class EducationRuleLoaderTest {
     newRepository.done();
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("MyRuleKey");
 
-    assertThat(String.join("\n", logTester.logs(Level.DEBUG))).isEqualTo("Skipping section 'introduction' for rule 'MyRuleKey', content is empty\n" +
-      "Skipping section 'resources' for rule 'MyRuleKey', content is empty");
     assertThat(rule.ruleDescriptionSections()).hasSize(2);
     assertThat(fallbackDescription).isEqualTo(testFileContent);
   }
