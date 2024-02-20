@@ -46,7 +46,7 @@ public class LengthPrefixSerializer {
     try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
          DataOutputStream dos = new DataOutputStream(byteArrayOutputStream)) {
       for (byte[] toSerializeElement : toSerializeList) {
-        writeBytes(dos, toSerializeElement);
+        writeLengthAndBytes(dos, toSerializeElement);
       }
       return byteArrayOutputStream.toByteArray();
     }
@@ -70,8 +70,8 @@ public class LengthPrefixSerializer {
     try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
          DataOutputStream dos = new DataOutputStream(byteArrayOutputStream)) {
       for (Map.Entry<String, byte[]> toSerializeElement : toSerializeMap.entrySet()) {
-        writeBytes(dos, toSerializeElement.getKey().getBytes(StandardCharsets.UTF_8));
-        writeBytes(dos, toSerializeElement.getValue());
+        writeLengthAndBytes(dos, toSerializeElement.getKey().getBytes(StandardCharsets.UTF_8));
+        writeLengthAndBytes(dos, toSerializeElement.getValue());
       }
       return byteArrayOutputStream.toByteArray();
     }
@@ -101,7 +101,7 @@ public class LengthPrefixSerializer {
     return bytes;
   }
 
-  private static void writeBytes(DataOutputStream dos, byte[] bytes) throws IOException {
+  private static void writeLengthAndBytes(DataOutputStream dos, byte[] bytes) throws IOException {
     dos.writeInt(bytes.length);
     dos.write(bytes);
   }
