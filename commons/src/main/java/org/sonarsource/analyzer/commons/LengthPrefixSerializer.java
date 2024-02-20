@@ -31,13 +31,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A utility class to de/serialize a List<byte[]> and Map<String, byte[]> from/to byte[].
+ * Simple length-prefixed serialization is used without any integrity checks.
+ * Lengths are saved as int. Thus, the maximum size of an entry is Integer.MAX_VALUE.
+ */
 public class LengthPrefixSerializer {
 
-  /**
-   * A utility class to de/serialize a List<byte[]> and Map<String, byte[]> from/to byte[].
-   * Simple length-prefixed serialization is used without any integrity checks.
-   * Lengths are saved as int. Thus, the maximum size of an entry is Integer.MAX_VALUE.
-   */
   private LengthPrefixSerializer() {
     // utility
   }
