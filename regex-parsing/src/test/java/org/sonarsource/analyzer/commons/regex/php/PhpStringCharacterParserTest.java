@@ -114,7 +114,7 @@ class PhpStringCharacterParserTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"\\\\0", "\\\\0\\\\r", "\\\\042"})
-  void shouldParseValidRegex(String input) {
+  void shouldParseValidRegexWithEscapedZero(String input) {
     RegexParseResult parseResult = new RegexParser(new PhpRegexSource(input, '"'), PhpRegexFlags.parseFlags("")).parse();
 
     assertThat(parseResult.getSyntaxErrors()).isEmpty();
