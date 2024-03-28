@@ -25,7 +25,11 @@ import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.sonarsource.analyzer.commons.regex.CharacterParser;
+import org.sonarsource.analyzer.commons.regex.RegexParseResult;
+import org.sonarsource.analyzer.commons.regex.RegexParser;
 import org.sonarsource.analyzer.commons.regex.RegexSource;
 import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
 
@@ -106,6 +110,14 @@ class PhpStringCharacterParserTest {
     assertThat(parser.getCurrent().getCharacter()).isEqualTo('b');
     parser.resetTo(0);
     assertThat(parser.getCurrent().getCharacter()).isEqualTo('a');
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"\\\\0", "\\\\0\\\\r", "\\\\042"})
+  void shouldParseValidRegexWithEscapedZero(String input) {
+    RegexParseResult parseResult = new RegexParser(new PhpRegexSource(input, '"'), PhpRegexFlags.parseFlags("")).parse();
+
+    assertThat(parseResult.getSyntaxErrors()).isEmpty();
   }
 
   private Stream<Character> chars(List<SourceCharacter> sourceCharacters) {
