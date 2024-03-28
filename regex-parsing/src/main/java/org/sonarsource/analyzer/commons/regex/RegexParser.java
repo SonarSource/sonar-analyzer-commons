@@ -589,7 +589,11 @@ public class RegexParser {
       SourceCharacter character = characters.getCurrent();
       switch (character.getCharacter()) {
         case '0':
-          return parseOctalEscape(backslash);
+          if (source.supportsFeature(RegexFeature.PHP_BINARY_ZERO)) {
+            return parsePhpOctalEscapeOrBinaryZero(backslash);
+          } else {
+            return parseOctalEscape(backslash);
+          }
         case '1':
         case '2':
         case '3':
@@ -925,6 +929,16 @@ public class RegexParser {
     } else {
       return collect(new BackReferenceTree(source, backslash, null, firstDigit, lastDigit, activeFlags));
     }
+  }
+
+  protected RegexTree parsePhpOctalEscapeOrBinaryZero(SourceCharacter backslash) {
+    int nextCharacter = characters.lookAhead(1);
+    if (nextCharacter == '\\' || nextCharacter == EOF) {
+      // \0 is followed by another escape sequence or is at the end of the regex. Should be treated as a binary zero.
+      characters.moveNext();
+      return characterTree(new SourceCharacter(source, backslash.getRange().extendTo(characters.getCurrentStartIndex()), '\0', true));
+    }
+    return parseOctalEscape(backslash);
   }
 
   private static boolean isOctalEscape(CharSequence escapedDigit) {
