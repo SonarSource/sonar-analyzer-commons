@@ -136,6 +136,12 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
   }
 
   @Override
+  public void assertNoIssuesRaised() {
+    Report report = buildReport();
+    assertEquals("ERROR: No issues were expected, but some were found.", 0, report.getActualIssueCount());
+  }
+
+  @Override
   public void assertNoIssues() {
     assertIssues(false);
   }

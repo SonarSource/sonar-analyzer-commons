@@ -43,6 +43,23 @@ public class SingleFileVerifierTest {
   }
 
   @Test
+  public void test_assert_no_issues_raised() {
+    Path path = Paths.get("src/test/resources/code.js");
+    var verifier = SingleFileVerifier.create(path, UTF_8);
+    verifier.assertNoIssuesRaised();
+
+    var verifierWithNonComplComment = SingleFileVerifier.create(path, UTF_8);
+    verifierWithNonComplComment.addComment(4, 19, "// Noncompliant", 2, 0);
+    verifierWithNonComplComment.assertNoIssuesRaised();
+
+    var verifierWithIssue = SingleFileVerifier.create(path, UTF_8);
+    verifierWithIssue.reportIssue("issue").onLine(4);
+    assertThatThrownBy(verifierWithIssue::assertNoIssuesRaised)
+      .isInstanceOf(AssertionError.class)
+      .hasMessage("ERROR: No issues were expected, but some were found. expected:<0> but was:<1>");
+  }
+
+  @Test
   public void code_js_with_gap() throws Exception {
     Path path = Paths.get("src/test/resources/code.js");
 

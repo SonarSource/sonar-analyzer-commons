@@ -95,9 +95,14 @@ public interface SingleFileVerifier {
   void assertOneOrMoreIssues();
 
   /**
-   * Run the comparison and expect to find no issue.
+   * Run the comparison and expect to find no issues and no Noncompliant comments in the file.
    */
   void assertNoIssues();
+
+  /**
+   * Run the comparison and expect to find no issues. Allows Noncompliant comments to be present in the file.
+   */
+  void assertNoIssuesRaised();
 
   /**
    * Must always call one and only one of: onFile, onLine, onRange
