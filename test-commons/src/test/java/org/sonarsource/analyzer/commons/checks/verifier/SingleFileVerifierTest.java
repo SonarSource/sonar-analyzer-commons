@@ -56,7 +56,7 @@ public class SingleFileVerifierTest {
     verifierWithIssue.reportIssue("issue").onLine(4);
     assertThatThrownBy(verifierWithIssue::assertNoIssuesRaised)
       .isInstanceOf(AssertionError.class)
-      .hasMessage("ERROR: Found 1 unexpected issues. expected:<0> but was:<1>");
+      .hasMessage("ERROR: No issues were expected, but some were found. expected:<0> but was:<1>");
   }
 
   @Test
