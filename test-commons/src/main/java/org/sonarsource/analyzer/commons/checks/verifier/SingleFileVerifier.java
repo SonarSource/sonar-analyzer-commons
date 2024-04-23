@@ -100,6 +100,11 @@ public interface SingleFileVerifier {
   void assertNoIssues();
 
   /**
+   * Run the comparison and expect to find no issue. Allows Noncompliant comments to be present in the file.
+   */
+  void assertNoIssuesRaised();
+
+  /**
    * Must always call one and only one of: onFile, onLine, onRange
    */
   interface IssueBuilder {
