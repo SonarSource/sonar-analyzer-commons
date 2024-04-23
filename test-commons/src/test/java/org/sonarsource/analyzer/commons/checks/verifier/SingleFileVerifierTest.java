@@ -43,7 +43,7 @@ public class SingleFileVerifierTest {
   }
 
   @Test
-  public void test_assert_no_issues_raised() throws Exception {
+  public void test_assert_no_issues_raised() {
     Path path = Paths.get("src/test/resources/code.js");
     var verifier = SingleFileVerifier.create(path, UTF_8);
     verifier.assertNoIssuesRaised();
