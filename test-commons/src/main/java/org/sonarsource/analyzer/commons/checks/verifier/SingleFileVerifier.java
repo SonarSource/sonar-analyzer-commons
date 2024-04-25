@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import javax.annotation.Nullable;
 import org.sonarsource.analyzer.commons.checks.verifier.internal.InternalIssueVerifier;
+import org.sonarsource.analyzer.commons.quickfixes.QuickFix;
 
 /**
  * Example:
@@ -105,6 +106,11 @@ public interface SingleFileVerifier {
   void assertNoIssuesRaised();
 
   /**
+   * Sets the verifier to expect quick fixes.
+   */
+  SingleFileVerifier withQuickFixes();
+
+  /**
    * Must always call one and only one of: onFile, onLine, onRange
    */
   interface IssueBuilder {
@@ -128,6 +134,13 @@ public interface SingleFileVerifier {
      * @param endColumn, start at 1, column number of the last character, if there's only one character then endColumn == column
      */
     Issue onRange(int line, int column, int endLine, int endColumn);
+
+    /**
+     * provide a quickfix for this issue
+     * @param qf QuickFix to add to the issue
+     */
+    Issue addQuickfix(QuickFix qf);
+
   }
 
   interface Issue {

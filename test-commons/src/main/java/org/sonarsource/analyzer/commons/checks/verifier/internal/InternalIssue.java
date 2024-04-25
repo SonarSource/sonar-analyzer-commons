@@ -25,6 +25,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 import org.sonarsource.analyzer.commons.checks.verifier.MultiFileVerifier;
 import org.sonarsource.analyzer.commons.checks.verifier.SingleFileVerifier;
+import org.sonarsource.analyzer.commons.quickfixes.QuickFix;
 
 class InternalIssue implements SingleFileVerifier.IssueBuilder, MultiFileVerifier.IssueBuilder, SingleFileVerifier.Issue, MultiFileVerifier.Issue {
 
@@ -33,6 +34,8 @@ class InternalIssue implements SingleFileVerifier.IssueBuilder, MultiFileVerifie
   IssueLocation location;
   List<Secondary> secondaries = new ArrayList<>();
   List<List<Secondary>> flows = new ArrayList<>();
+  @Nullable
+  QuickFix quickFix = null;
   @Nullable
   Double gap = null;
 
@@ -56,6 +59,12 @@ class InternalIssue implements SingleFileVerifier.IssueBuilder, MultiFileVerifie
   @Override
   public InternalIssue onRange(int line, int column, int endLine, int endColumn) {
     this.location = new IssueLocation.Range(path, line, column, endLine, endColumn);
+    return this;
+  }
+
+  @Override
+  public InternalIssue addQuickfix(QuickFix qf) {
+    this.quickFix = qf;
     return this;
   }
 

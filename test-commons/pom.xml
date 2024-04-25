@@ -27,6 +27,11 @@
       <artifactId>assertj-core</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>${parent.groupId}</groupId>
+      <artifactId>sonar-analyzer-quickfixes</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
 </project>

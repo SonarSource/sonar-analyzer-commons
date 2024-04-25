@@ -31,6 +31,8 @@ import java.util.Set;
 import org.sonarsource.analyzer.commons.checks.verifier.FileContent;
 import org.sonarsource.analyzer.commons.checks.verifier.MultiFileVerifier;
 import org.sonarsource.analyzer.commons.checks.verifier.SingleFileVerifier;
+import org.sonarsource.analyzer.commons.quickfixes.QuickFix;
+import org.sonarsource.analyzer.commons.quickfixes.TextSpan;
 
 import static org.junit.Assert.assertEquals;
 
@@ -40,7 +42,9 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
   private Set<Path> filesToVerify = new LinkedHashSet<>();
   private Map<Path, List<Comment>> comments = new HashMap<>();
   private Map<Path, List<InternalIssue>> actualIssues = new HashMap<>();
+  private Map<Path, Map<TextSpan, List<QuickFix>>> actualQuickFixes = new HashMap<>();
   private Charset encoding;
+  private boolean verifyQuickFixes = false;
 
   public InternalIssueVerifier(Path mainSourceFilePath, Charset encoding) {
     this.mainSourceFilePath = mainSourceFilePath.toAbsolutePath();
@@ -70,6 +74,11 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
   @Override
   public InternalIssueVerifier addComment(int line, int column, String content, int prefixLength, int suffixLength) {
     return addComment(mainSourceFilePath, line, column, content, prefixLength, suffixLength);
+  }
+
+  public InternalIssueVerifier withQuickFixes() {
+    verifyQuickFixes = true;
+    return this;
   }
 
   @Override
@@ -166,6 +175,10 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
     }
     if (error != null) {
       report.prependContext(error + " ");
+    }
+    if(verifyQuickFixes){
+      new QuickFixVerifier(comments.get(mainSourceFilePath), actualQuickFixes.get(mainSourceFilePath))
+        .accept(Set.copyOf(actualIssues.get(mainSourceFilePath)));
     }
     assertEquals(report.getContext(), report.getExpected(), report.getActual());
   }
