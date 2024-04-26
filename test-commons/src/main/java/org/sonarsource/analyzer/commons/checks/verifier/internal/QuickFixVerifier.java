@@ -36,9 +36,9 @@ import org.sonarsource.analyzer.commons.checks.verifier.quickfix.TextSpan;
 
 public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
 
-  private static final Pattern QUICK_FIX_DEFINITION = Pattern.compile("\\s*quickfixes=(?<id>\\S+)\\]\\].*");
-  private static final Pattern QUICK_FIX_MESSAGE = Pattern.compile("\\s*fix@(?<id>\\S+)\\s+\\{\\{(?<message>.*)\\}\\}");
-  private static final Pattern QUICK_FIX_EDIT = Pattern.compile("\\s*edit@(?<id>\\S+).+");
+  private static final Pattern QUICK_FIX_DEFINITION = Pattern.compile("\\s*quickfixes=(?<id>\\S+)\\]\\].*+");
+  private static final Pattern QUICK_FIX_MESSAGE = Pattern.compile("\\s*fix@(?<id>\\S++)\\s++\\{\\{(?<message>.*)\\}\\}");
+  private static final Pattern QUICK_FIX_EDIT = Pattern.compile("\\s*edit@(?<id>\\S+).++");
 
   private static final UnaryOperator<String> VALUE_PATTERN = str -> str + "(?<value>[^;]+).+";
   private static final Pattern START_LINE = Pattern.compile(VALUE_PATTERN.apply("\\s*sl="));
@@ -47,6 +47,7 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
   private static final Pattern END_COLUMN = Pattern.compile(VALUE_PATTERN.apply("\\s*ec="));
   private static final String PROPS_START_DELIMITER = "[[";
   private static final String PROPS_END_DELIMITER = "]]";
+  public static final String VALUE_GROUP = "value";
 
   private final Map<TextSpan, List<QuickFix>> actualQuickFixes = new HashMap<>();
   private final Map<TextSpan, List<QuickFix>> expectedQuickFixes;
@@ -60,7 +61,7 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
 
   public QuickFixVerifier(List<Comment> expectedQuickFixesComments) {
     this.expectedQuickFixes = buildExpectedQuickFixes(expectedQuickFixesComments);
-    if(expectedQuickFixes.isEmpty()) {
+    if (expectedQuickFixes.isEmpty()) {
       throw new AssertionError("[Quick Fix] No quick fixes found in the expected comments");
     }
   }
@@ -71,16 +72,12 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
       TextSpan primaryLocation = getInternalIssueLocation(issue);
       List<QuickFix> quickFixes = issue.quickFix != null ? List.of(issue.quickFix) : new ArrayList<>();
       actualQuickFixes.put(primaryLocation, quickFixes);
-    }
-    for (InternalIssue issue : issues) {
-      TextSpan primaryLocation = getInternalIssueLocation(issue);
       List<QuickFix> actual = actualQuickFixes.get(primaryLocation);
       String expectedQfId = quickFixesForTextSpan.getOrDefault(primaryLocation, null);
       if (expectedQfId == null) {
         // We don't have to always test quick fixes, we do nothing if there is no expected quick fix.
         continue;
       }
-      String expectedQfMessage = quickfixesMessages.getOrDefault(expectedQfId, null);
       List<QuickFix> expected = expectedQuickFixes.get(primaryLocation);
       validateQuickfixes(expected, actual, issue);
     }
@@ -150,22 +147,22 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
     for (Comment comment : expectedQuickFixesComments) {
       parseQuickFix(comment.content, comment.line);
     }
-    Map<TextSpan, List<QuickFix>> expectedQuickFixes = new HashMap<>();
-    for (TextSpan location : quickFixesForTextSpan.keySet()) {
-      String qfId = quickFixesForTextSpan.get(location);
+    Map<TextSpan, List<QuickFix>> result = new HashMap<>();
+    for (Map.Entry<TextSpan, String> entry : quickFixesForTextSpan.entrySet()) {
+      String qfId = quickFixesForTextSpan.get(entry.getKey());
       List<TextEdit> edits = quickfixesEdits.get(qfId);
       if (edits == null || edits.isEmpty()) {
         throw new AssertionError(String.format("[Quick Fix] Quick fix edits not found for quick fix id %s", qfId));
       }
       //we only support 1 qf per issue
       String description = quickfixesMessages.get(qfId);
-      if(description == null || description.isEmpty()) {
+      if (description == null || description.isEmpty()) {
         throw new AssertionError(String.format("[Quick Fix] Quick fix message not found for quick fix id %s", qfId));
       }
-      List<QuickFix> quickFixes = List.of(QuickFix.newQuickFix(description, location).addTextEdits(edits).build());
-      expectedQuickFixes.put(location, quickFixes);
+      List<QuickFix> quickFixes = List.of(QuickFix.newQuickFix(description, entry.getKey()).addTextEdits(edits).build());
+      result.put(entry.getKey(), quickFixes);
     }
-    return expectedQuickFixes;
+    return result;
   }
 
   private static TextSpan editorTextSpan(TextSpan textSpan) {
@@ -197,6 +194,9 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
     if (editMatcher.find()) {
       String quickFixId = editMatcher.group("id");
       String replacement = parseMessage(comment, comment.length());
+      if(replacement == null) {
+        throw new AssertionError(String.format("[Quick Fix] Missing replacement %d: %s", line, comment));
+      }
       TextEdit quickFixEdit = parseTextEdit(comment, line, replacement);
       quickfixesEdits.computeIfAbsent(quickFixId, k -> new ArrayList<>()).add(quickFixEdit);
     }
@@ -213,10 +213,10 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
     }
     Matcher slMatcher = START_LINE.matcher(comment);
     Matcher elMatcher = END_LINE.matcher(comment);
-    int startLine = slMatcher.find() ? Integer.parseInt(slMatcher.group("value")) : line;
-    int startColumn = Integer.parseInt(scMatcher.group("value"));
-    int endLine = elMatcher.find() ? Integer.parseInt(elMatcher.group("value")) : line;
-    int endColumn = Integer.parseInt(ecMatcher.group("value"));
+    int startLine = slMatcher.find() ? Integer.parseInt(slMatcher.group(VALUE_GROUP)) : line;
+    int startColumn = Integer.parseInt(scMatcher.group(VALUE_GROUP));
+    int endLine = elMatcher.find() ? Integer.parseInt(elMatcher.group(VALUE_GROUP)) : line;
+    int endColumn = Integer.parseInt(ecMatcher.group(VALUE_GROUP));
     TextSpan textSpan = new TextSpan(startLine, startColumn, endLine, endColumn);
     quickFixesForTextSpan.put(textSpan, quickFixId);
   }
@@ -263,11 +263,10 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
     if (issue.location instanceof IssueLocation.Range) {
       IssueLocation.Range range = (IssueLocation.Range) issue.location;
       return new TextSpan(range.getLine(), range.getColumn(), range.getEndLine(), range.getEndColumn());
-    } else if (issue.location instanceof IssueLocation.Line) {
+    } else {
       IssueLocation.Line line = (IssueLocation.Line) issue.location;
       return new TextSpan(line.getLine());
     }
-    return null;
   }
 
 }

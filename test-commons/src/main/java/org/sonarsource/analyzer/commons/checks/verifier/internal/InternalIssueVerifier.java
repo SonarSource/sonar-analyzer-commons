@@ -31,8 +31,6 @@ import java.util.Set;
 import org.sonarsource.analyzer.commons.checks.verifier.FileContent;
 import org.sonarsource.analyzer.commons.checks.verifier.MultiFileVerifier;
 import org.sonarsource.analyzer.commons.checks.verifier.SingleFileVerifier;
-import org.sonarsource.analyzer.commons.checks.verifier.quickfix.QuickFix;
-import org.sonarsource.analyzer.commons.checks.verifier.quickfix.TextSpan;
 
 import static org.junit.Assert.assertEquals;
 
@@ -42,7 +40,6 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
   private Set<Path> filesToVerify = new LinkedHashSet<>();
   private Map<Path, List<Comment>> comments = new HashMap<>();
   private Map<Path, List<InternalIssue>> actualIssues = new HashMap<>();
-  private Map<Path, Map<TextSpan, List<QuickFix>>> actualQuickFixes = new HashMap<>();
   private Charset encoding;
   private boolean verifyQuickFixes = false;
 
