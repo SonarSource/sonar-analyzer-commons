@@ -1,5 +1,5 @@
 /*
- * SonarSource Analyzers Quickfixes
+ * SonarSource Analyzers Test Commons
  * Copyright (C) 2009-2024 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
