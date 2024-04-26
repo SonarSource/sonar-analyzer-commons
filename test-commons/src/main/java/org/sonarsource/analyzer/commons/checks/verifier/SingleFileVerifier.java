@@ -23,7 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import javax.annotation.Nullable;
 import org.sonarsource.analyzer.commons.checks.verifier.internal.InternalIssueVerifier;
-import org.sonarsource.analyzer.commons.quickfixes.QuickFix;
+import org.sonarsource.analyzer.commons.checks.verifier.quickfix.QuickFix;
 
 /**
  * Example:
@@ -135,12 +135,6 @@ public interface SingleFileVerifier {
      */
     Issue onRange(int line, int column, int endLine, int endColumn);
 
-    /**
-     * provide a quickfix for this issue
-     * @param qf QuickFix to add to the issue
-     */
-    Issue addQuickfix(QuickFix qf);
-
   }
 
   interface Issue {
@@ -159,6 +153,8 @@ public interface SingleFileVerifier {
      * @param message optional message, can be null
      */
     Issue addSecondary(int line, int column, int endLine, int endColumn, @Nullable String message);
+
+    Issue addQuickFix(QuickFix quickFix);
   }
 
 }
