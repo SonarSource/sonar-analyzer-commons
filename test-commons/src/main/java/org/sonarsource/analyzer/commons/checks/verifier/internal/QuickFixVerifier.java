@@ -29,7 +29,6 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.Nullable;
 import org.sonarsource.analyzer.commons.checks.verifier.quickfix.QuickFix;
 import org.sonarsource.analyzer.commons.checks.verifier.quickfix.TextEdit;
 import org.sonarsource.analyzer.commons.checks.verifier.quickfix.TextSpan;
@@ -49,7 +48,6 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
   private static final String PROPS_END_DELIMITER = "]]";
   public static final String VALUE_GROUP = "value";
 
-  private final Map<TextSpan, List<QuickFix>> actualQuickFixes = new HashMap<>();
   private final Map<TextSpan, List<QuickFix>> expectedQuickFixes;
 
   //we support only 1 quickfix per issue
@@ -70,9 +68,7 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
   public void accept(Set<InternalIssue> issues) {
     for (InternalIssue issue : issues) {
       TextSpan primaryLocation = getInternalIssueLocation(issue);
-      List<QuickFix> quickFixes = issue.quickFix != null ? List.of(issue.quickFix) : new ArrayList<>();
-      actualQuickFixes.put(primaryLocation, quickFixes);
-      List<QuickFix> actual = actualQuickFixes.get(primaryLocation);
+      List<QuickFix> actual = issue.quickFix != null ? List.of(issue.quickFix) : new ArrayList<>();
       String expectedQfId = quickFixesForTextSpan.getOrDefault(primaryLocation, null);
       if (expectedQfId == null) {
         // We don't have to always test quick fixes, we do nothing if there is no expected quick fix.
@@ -83,9 +79,9 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
     }
   }
 
-  private static void validateQuickfixes(List<QuickFix> expected, @Nullable List<QuickFix> actual, InternalIssue issue) {
+  private static void validateQuickfixes(List<QuickFix> expected, List<QuickFix> actual, InternalIssue issue) {
     TextSpan primaryLocation = getInternalIssueLocation(issue);
-    if (actual == null || actual.isEmpty()) {
+    if (actual.isEmpty()) {
       // At this point, we know that expected is not empty
       throw new AssertionError(String.format("[Quick Fix] Missing quick fix for issue on line %d", primaryLocation.startLine));
     }
@@ -151,13 +147,13 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
     for (Map.Entry<TextSpan, String> entry : quickFixesForTextSpan.entrySet()) {
       String qfId = quickFixesForTextSpan.get(entry.getKey());
       List<TextEdit> edits = quickfixesEdits.get(qfId);
-      if (edits == null || edits.isEmpty()) {
+      if (edits == null) {
         throw new AssertionError(String.format("[Quick Fix] Quick fix edits not found for quick fix id %s", qfId));
       }
       //we only support 1 qf per issue
       String description = quickfixesMessages.get(qfId);
-      if (description == null || description.isEmpty()) {
-        throw new AssertionError(String.format("[Quick Fix] Quick fix message not found for quick fix id %s", qfId));
+      if (description == null) {
+        throw new AssertionError(String.format("[Quick Fix] Quick fix description not found for quick fix id %s", qfId));
       }
       List<QuickFix> quickFixes = List.of(QuickFix.newQuickFix(description, entry.getKey()).addTextEdits(edits).build());
       result.put(entry.getKey(), quickFixes);
@@ -194,8 +190,8 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
     if (editMatcher.find()) {
       String quickFixId = editMatcher.group("id");
       String replacement = parseMessage(comment, comment.length());
-      if(replacement == null) {
-        throw new AssertionError(String.format("[Quick Fix] Missing replacement %d: %s", line, comment));
+      if (replacement == null) {
+        throw new AssertionError(String.format("[Quick Fix] Missing replacement for edit at line %d", line));
       }
       TextEdit quickFixEdit = parseTextEdit(comment, line, replacement);
       quickfixesEdits.computeIfAbsent(quickFixId, k -> new ArrayList<>()).add(quickFixEdit);

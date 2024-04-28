@@ -43,12 +43,12 @@ public class QuickFixVerifierTest {
       .addSingleLineCommentSyntax("//")
       .parseInto(path, verifier);
 
-    TextEdit edit1 = mockEdit(5, 18, 5, 23, "\"foo\"");
+    TextEdit edit1 = mockEdit(5, 18, 5, 23, "\"foo\n\"");
     TextEdit edit2 = mockEdit(6, 5, 6, 10, "\"bar\"");
     QuickFix qf1 = mockQf("Move \"bar\" on the left side of .equals", edit1, edit2);
 
     verifier.reportIssue("issue").onRange(3, 18, 3, 23).addQuickFix(qf1);
-    verifier.reportIssue("Without quickfix").onLine(8);
+    verifier.reportIssue("Without quickfix").onRange(8, 1, 8, 10);
     verifier.assertOneOrMoreIssues();
   }
 
@@ -66,7 +66,7 @@ public class QuickFixVerifierTest {
   }
 
   @Test
-  public void test_without_missing_quickfix() {
+  public void test_missing_actual_quickfix() {
     Path path = Paths.get("src/test/resources/quickfixes/JavaCodeWithQuickFix.java");
     var verifier = SingleFileVerifier.create(path, UTF_8).withQuickFixes();
     CommentParser.create()
@@ -74,19 +74,20 @@ public class QuickFixVerifierTest {
       .parseInto(path, verifier);
 
     verifier.reportIssue("issue").onRange(3, 18, 3, 23);
-    assertThatThrownBy(() -> verifier.assertOneOrMoreIssues())
+    verifier.reportIssue("Without quickfix").onLine(8);
+    assertThatThrownBy(verifier::assertOneOrMoreIssues)
       .hasMessage("[Quick Fix] Missing quick fix for issue on line 3");
   }
 
   @Test
-  public void test_code_without_quickfixes() {
+  public void test_sample_without_expected_quickfixes() {
     Path path = Paths.get("src/test/resources/quickfixes/JavaCodeWithoutQuickFix.java");
     var verifier = SingleFileVerifier.create(path, UTF_8).withQuickFixes();
     CommentParser.create()
       .addSingleLineCommentSyntax("//")
       .parseInto(path, verifier);
 
-    assertThatThrownBy(() -> verifier.assertOneOrMoreIssues())
+    assertThatThrownBy(verifier::assertOneOrMoreIssues)
       .hasMessage("[Quick Fix] No quick fixes found in the expected comments");
 
     var verifierWithoutExpectingQfs = SingleFileVerifier.create(path, UTF_8);
@@ -98,28 +99,123 @@ public class QuickFixVerifierTest {
   }
 
   @Test
-  public void test_qf_no_message() {
-    Path path = Paths.get("src/test/resources/quickfixes/JavaCodeWithQuickFixNoMessage.java");
-    var verifier = SingleFileVerifier.create(path, UTF_8).withQuickFixes();
+  public void test_actual_missing_edits() {
+    Path path = Paths.get("src/test/resources/quickfixes/JavaCodeWithQuickFix.java");
+    var verifier = SingleFileVerifier.create(path, UTF_8)
+      .withQuickFixes();
+
     CommentParser.create()
       .addSingleLineCommentSyntax("//")
       .parseInto(path, verifier);
 
-    assertThatThrownBy(() -> verifier.assertOneOrMoreIssues())
-      .hasMessage("[Quick Fix] Quick fix message not found for quick fix id qf1");
+    QuickFix qf1 = mockQf("Move \"bar\" on the left side of .equals");
+
+    verifier.reportIssue("issue").onRange(3, 18, 3, 23).addQuickFix(qf1);
+    verifier.reportIssue("Without quickfix").onLine(8);
+
+    assertThatThrownBy(verifier::assertOneOrMoreIssues)
+      .hasMessageContaining("[Quick Fix] Wrong number of edits for issue on line 3.");
   }
 
   @Test
-  public void test_missing_edits() {
-    Path path = Paths.get("src/test/resources/code.js");
-    var verifier = SingleFileVerifier.create(path, UTF_8).withQuickFixes();
+  public void test_expected_qf_missing_edits() {
+    var verifier = getVerifierWithQuickFixes("src/test/resources/main.js");
 
-    QuickFix qf1 = mockQf("Move \"bar\" on the left side of .equals");
-    verifier.reportIssue("issue").onLine(1).addQuickFix(qf1);
-    verifier.addComment(1, 5, "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]", 2, 0);
+    verifier.addComment(4, 1, "Noncompliant [[sc=0;ec=0;quickfixes=qf1]]", 0, 0);
+    verifier.addComment(5, 1, "fix@qf1 {{Expected description}}", 0, 0);
 
-    assertThatThrownBy(() -> verifier.assertOneOrMoreIssues())
-      .hasMessage("[Quick Fix] Quick fix edits not found for quick fix id qf1");
+    assertThatThrownBy(verifier::assertOneOrMoreIssues)
+      .hasMessageContaining("[Quick Fix] Quick fix edits not found for quick fix id qf1");
+  }
+
+  @Test
+  public void test_expected_qf_missing_description() {
+    var verifier = getVerifierWithQuickFixes("src/test/resources/main.js");
+
+    verifier.addComment(4, 1, "Noncompliant [[sc=0;ec=0;quickfixes=qf1]]", 0, 0);
+    verifier.addComment(5, 1, "edit@qf1 [[sl=1;sc=1;el=1;ec=1]] {{replacement}}", 0, 0);
+
+    assertThatThrownBy(verifier::assertOneOrMoreIssues)
+      .hasMessageContaining("[Quick Fix] Quick fix description not found for quick fix id");
+  }
+
+  @Test
+  public void test_wrong_description() {
+    var verifier = getVerifierWithQuickFixes("src/test/resources/code.js");
+
+    TextEdit edit1 = mockEdit(1, 1, 1, 3, "foo");
+    QuickFix qf1 = mockQf("Wrong description", edit1);
+    verifier.reportIssue("issue").onRange(1, 1, 1, 3).addQuickFix(qf1);
+    verifier.addComment(1, 5, "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]", 0, 0);
+    verifier.addComment(2, 5, "fix@qf1 {{Expected description}}", 0, 0);
+    verifier.addComment(3, 5, "edit@qf1 [[sc=1;ec=1]] {{foo}}", 0, 0);
+
+    assertThatThrownBy(verifier::assertOneOrMoreIssues)
+      .hasMessageContaining("[Quick Fix] Wrong description for issue on line 1.");
+  }
+
+  @Test
+  public void test_wrong_number_of_edits() {
+    var verifier = getVerifierWithQuickFixes("src/test/resources/code.js");
+
+    TextEdit edit1 = mockEdit(1, 1, 1, 3, "foo");
+    TextEdit edit2 = mockEdit(1, 1, 1, 3, "goo");
+    QuickFix qf1 = mockQf("Description", edit1, edit2);
+    verifier.reportIssue("issue").onRange(1, 1, 1, 3).addQuickFix(qf1);
+    verifier.addComment(1, 5, "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]", 0, 0);
+    verifier.addComment(2, 5, "fix@qf1 {{Description}}", 0, 0);
+    verifier.addComment(3, 5, "edit@qf1 [[sc=1;ec=1]] {{foo}}", 0, 0);
+
+    assertThatThrownBy(verifier::assertOneOrMoreIssues)
+      .hasMessageContaining("[Quick Fix] Wrong number of edits for issue on line");
+  }
+
+  @Test
+  public void test_wrong_edit_replacement() {
+    var verifier = getVerifierWithQuickFixes("src/test/resources/main.js");
+
+    TextEdit edit1 = mockEdit(4, 1, 4, 3, "wrong replacement");
+    QuickFix qf1 = mockQf("Description", edit1);
+    verifier.reportIssue("issue").onRange(4, 1, 4, 3).addQuickFix(qf1);
+    verifier.addComment(4, 5, "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]", 0, 0);
+    verifier.addComment(5, 5, "fix@qf1 {{Description}}", 0, 0);
+    verifier.addComment(6, 5, "edit@qf1 [[sc=1;ec=1]] {{expected replacement}}", 0, 0);
+
+    assertThatThrownBy(verifier::assertOneOrMoreIssues)
+      .hasMessageContaining("[Quick Fix] Wrong text replacement of edit 1 for issue on line 4.");
+  }
+
+  @Test
+  public void test_wrong_edit_location() {
+    var verifier = getVerifierWithQuickFixes("src/test/resources/main.js");
+
+    TextEdit edit1 = mockEdit(4, 3, 4, 5, "expected replacement");
+    QuickFix qf1 = mockQf("Description", edit1);
+    verifier.reportIssue("issue").onRange(4, 1, 4, 3).addQuickFix(qf1);
+    verifier.addComment(4, 5, "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]", 0, 0);
+    verifier.addComment(5, 5, "fix@qf1 {{Description}}", 0, 0);
+    verifier.addComment(6, 5, "edit@qf1 [[sc=1;ec=1]] {{expected replacement}}", 0, 0);
+
+    assertThatThrownBy(verifier::assertOneOrMoreIssues)
+      .hasMessageContaining("[Quick Fix] Wrong change location of edit 1 for issue on line 4.");
+  }
+
+  @Test
+  public void test_missing_expected_replacement() {
+    var verifier = getVerifierWithQuickFixes("src/test/resources/main.js");
+
+    verifier.reportIssue("issue").onLine(1);
+    verifier.addComment(4, 5, "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]", 0, 0);
+    verifier.addComment(5, 5, "fix@qf1 {{Description}}", 0, 0);
+    verifier.addComment(6, 5, "edit@qf1 [[sc=1;ec=1]]", 0, 0);
+
+    assertThatThrownBy(verifier::assertOneOrMoreIssues)
+      .hasMessageContaining("[Quick Fix] Missing replacement for edit at line");
+  }
+
+  private static SingleFileVerifier getVerifierWithQuickFixes(String path) {
+    return SingleFileVerifier.create(Paths.get(path), UTF_8)
+      .withQuickFixes();
   }
 
   private static QuickFix mockQf(String descr, TextEdit... edits) {
