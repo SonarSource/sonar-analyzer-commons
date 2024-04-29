@@ -106,9 +106,9 @@ public interface SingleFileVerifier {
   void assertNoIssuesRaised();
 
   /**
-   * Sets the verifier to expect quick fixes.
+   * Sets the verifier to ignore expected quick fixes.
    */
-  SingleFileVerifier withQuickFixes();
+  SingleFileVerifier withoutQuickFixes();
 
   /**
    * Must always call one and only one of: onFile, onLine, onRange

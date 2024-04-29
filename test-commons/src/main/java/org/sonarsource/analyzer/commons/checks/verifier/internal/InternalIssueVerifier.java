@@ -41,7 +41,7 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
   private Map<Path, List<Comment>> comments = new HashMap<>();
   private Map<Path, List<InternalIssue>> actualIssues = new HashMap<>();
   private Charset encoding;
-  private boolean verifyQuickFixes = false;
+  private boolean verifyQuickFixes = true;
 
   public InternalIssueVerifier(Path mainSourceFilePath, Charset encoding) {
     this.mainSourceFilePath = mainSourceFilePath.toAbsolutePath();
@@ -73,8 +73,8 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
     return addComment(mainSourceFilePath, line, column, content, prefixLength, suffixLength);
   }
 
-  public InternalIssueVerifier withQuickFixes() {
-    verifyQuickFixes = true;
+  public InternalIssueVerifier withoutQuickFixes() {
+    verifyQuickFixes = false;
     return this;
   }
 

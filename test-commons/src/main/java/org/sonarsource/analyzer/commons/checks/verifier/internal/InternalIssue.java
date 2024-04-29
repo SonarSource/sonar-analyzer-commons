@@ -34,8 +34,7 @@ class InternalIssue implements SingleFileVerifier.IssueBuilder, MultiFileVerifie
   IssueLocation location;
   List<Secondary> secondaries = new ArrayList<>();
   List<List<Secondary>> flows = new ArrayList<>();
-  @Nullable
-  QuickFix quickFix = null;
+  List<QuickFix> quickFixes = new ArrayList<>();
   @Nullable
   Double gap = null;
 
@@ -75,7 +74,7 @@ class InternalIssue implements SingleFileVerifier.IssueBuilder, MultiFileVerifie
 
   @Override
   public InternalIssue addQuickFix(QuickFix quickFix) {
-    this.quickFix = quickFix;
+    this.quickFixes.add(quickFix);
     return this;
   }
 
