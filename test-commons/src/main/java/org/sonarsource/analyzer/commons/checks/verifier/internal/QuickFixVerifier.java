@@ -157,7 +157,7 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
           throw new AssertionError(String.format("[Quick Fix] Quick fix description not found for quick fix id %s", qfId));
         }
         QuickFix quickFix = QuickFix.newQuickFix(description, entry.getKey())
-          .addTextEdits(edits.stream().map(rel -> rel.toAbsoluteTextEdit(qfId, quickfixesLineReference)).collect(Collectors.toList()))
+          .addTextEdits(edits.stream().map(rel -> rel.toAbsoluteTextEdit(quickfixesLineReference.get(qfId))).collect(Collectors.toList()))
           .build();
         expectedQuickFixes.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).add(quickFix);
       }
@@ -211,12 +211,12 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
     Matcher elMatcher = END_LINE.matcher(comment);
     Matcher lineModMatcher = ISSUE_LINE_MODIFIER.matcher(comment);
     int lineMod = lineModMatcher.find() ? Integer.parseInt(lineModMatcher.group("mod")) : 0;
-    int startLine = slMatcher.find() ? Integer.parseInt(slMatcher.group(VALUE_GROUP)) : line + lineMod;
+    int startLine = slMatcher.find() ? Integer.parseInt(slMatcher.group(VALUE_GROUP)) : (line + lineMod);
     int startColumn = scMatcher.find() ? Integer.parseInt(scMatcher.group(VALUE_GROUP)) : 1;
-    int endLine = elMatcher.find() ? Integer.parseInt(elMatcher.group(VALUE_GROUP)) : line + lineMod;
+    int endLine = elMatcher.find() ? Integer.parseInt(elMatcher.group(VALUE_GROUP)) : (line + lineMod);
     int endColumn = ecMatcher.find() ? Integer.parseInt(ecMatcher.group(VALUE_GROUP)) : 1;
     var issueId = new IssueIdentifier(startLine, startColumn, endLine, endColumn);
-    for(String id : ids){
+    for (String id : ids) {
       quickfixesLineReference.put(id, line + lineMod);
       quickFixesForIssue.computeIfAbsent(issueId, k -> new ArrayList<>()).add(id);
     }
@@ -283,15 +283,15 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
   }
 
   private static class RelativeTextEdit {
-    public RelativeLine sl = new RelativeLine();
-    public int sc = 0;
-    public RelativeLine el = new RelativeLine();
-    public int ec = 0;
-    public String replacement = "";
+    private RelativeLine sl = new RelativeLine();
+    private int sc = 0;
+    private RelativeLine el = new RelativeLine();
+    private int ec = 0;
+    private String replacement = "";
 
     private static class RelativeLine {
-      public int line = 0;
-      public boolean isRelative = true;
+      private int line = 0;
+      private boolean isRelative = true;
 
       public RelativeLine() {
       }
@@ -304,9 +304,9 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
       }
     }
 
-    public TextEdit toAbsoluteTextEdit(String qfId, Map<String, Integer> quickfixesLineReference) {
-      int startLine = sl.isRelative ? quickfixesLineReference.get(qfId) + sl.line : sl.line;
-      int endLine = el.isRelative ? quickfixesLineReference.get(qfId) + el.line : el.line;
+    public TextEdit toAbsoluteTextEdit(int referenceLine) {
+      int startLine = sl.isRelative ? (referenceLine + sl.line) : sl.line;
+      int endLine = el.isRelative ? (referenceLine + el.line) : el.line;
       return TextEdit.replaceTextSpan(new TextSpan(startLine, sc, endLine, ec), replacement);
     }
 
