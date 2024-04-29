@@ -49,6 +49,10 @@ public class QuickFixVerifierTest {
 
     verifier.reportIssue("issue").onRange(3, 18, 3, 23).addQuickFix(qf1);
     verifier.reportIssue("Without quickfix").onRange(8, 1, 8, 10);
+
+    verifier.reportIssue("On file for coverage").onFile();
+    verifier.addComment(10, 1, "Noncompliant@0 {{On file for coverage}}", 0, 0);
+
     verifier.assertOneOrMoreIssues();
   }
 
@@ -119,10 +123,10 @@ public class QuickFixVerifierTest {
 
   @Test
   public void test_expected_qf_missing_edits() {
-    var verifier = getVerifierWithQuickFixes("src/test/resources/main.js");
-
-    verifier.addComment(4, 1, "Noncompliant [[sc=0;ec=0;quickfixes=qf1]]", 0, 0);
-    verifier.addComment(5, 1, "fix@qf1 {{Expected description}}", 0, 0);
+    var verifier = getVerifierWithQfAndComments(
+      "Noncompliant [[sc=0;ec=0;quickfixes=qf1]]",
+      "fix@qf1 {{Expected description}}"
+    );
 
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
       .hasMessageContaining("[Quick Fix] Quick fix edits not found for quick fix id qf1");
@@ -130,10 +134,10 @@ public class QuickFixVerifierTest {
 
   @Test
   public void test_expected_qf_missing_description() {
-    var verifier = getVerifierWithQuickFixes("src/test/resources/main.js");
-
-    verifier.addComment(4, 1, "Noncompliant [[sc=0;ec=0;quickfixes=qf1]]", 0, 0);
-    verifier.addComment(5, 1, "edit@qf1 [[sl=1;sc=1;el=1;ec=1]] {{replacement}}", 0, 0);
+    var verifier = getVerifierWithQfAndComments(
+      "Noncompliant [[sc=0;ec=0;quickfixes=qf1]]",
+      "edit@qf1 [[sl=1;sc=1;el=1;ec=1]] {{replacement}}"
+    );
 
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
       .hasMessageContaining("[Quick Fix] Quick fix description not found for quick fix id");
@@ -141,30 +145,31 @@ public class QuickFixVerifierTest {
 
   @Test
   public void test_wrong_description() {
-    var verifier = getVerifierWithQuickFixes("src/test/resources/code.js");
+    var verifier = getVerifierWithQfAndComments(
+      "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]",
+      "fix@qf1 {{Expected description}}",
+      "edit@qf1 [[sc=1;ec=1]] {{foo}}"
+    );
 
     TextEdit edit1 = mockEdit(1, 1, 1, 3, "foo");
     QuickFix qf1 = mockQf("Wrong description", edit1);
     verifier.reportIssue("issue").onRange(1, 1, 1, 3).addQuickFix(qf1);
-    verifier.addComment(1, 5, "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]", 0, 0);
-    verifier.addComment(2, 5, "fix@qf1 {{Expected description}}", 0, 0);
-    verifier.addComment(3, 5, "edit@qf1 [[sc=1;ec=1]] {{foo}}", 0, 0);
 
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
-      .hasMessageContaining("[Quick Fix] Wrong description for issue on line 1.");
+      .hasMessageContaining("[Quick Fix] Wrong description for issue on line");
   }
 
   @Test
   public void test_wrong_number_of_edits() {
-    var verifier = getVerifierWithQuickFixes("src/test/resources/code.js");
+    var verifier = getVerifierWithQfAndComments(
+      "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]",
+      "fix@qf1 {{Description}}",
+      "edit@qf1 [[sc=1;ec=1]] {{foo}}");
 
     TextEdit edit1 = mockEdit(1, 1, 1, 3, "foo");
     TextEdit edit2 = mockEdit(1, 1, 1, 3, "goo");
     QuickFix qf1 = mockQf("Description", edit1, edit2);
     verifier.reportIssue("issue").onRange(1, 1, 1, 3).addQuickFix(qf1);
-    verifier.addComment(1, 5, "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]", 0, 0);
-    verifier.addComment(2, 5, "fix@qf1 {{Description}}", 0, 0);
-    verifier.addComment(3, 5, "edit@qf1 [[sc=1;ec=1]] {{foo}}", 0, 0);
 
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
       .hasMessageContaining("[Quick Fix] Wrong number of edits for issue on line");
@@ -172,50 +177,114 @@ public class QuickFixVerifierTest {
 
   @Test
   public void test_wrong_edit_replacement() {
-    var verifier = getVerifierWithQuickFixes("src/test/resources/main.js");
+    var verifier = getVerifierWithQfAndComments(
+      "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]",
+      "fix@qf1 {{Description}}",
+      "edit@qf1 [[sc=1;ec=1]] {{expected replacement}}"
+    );
 
-    TextEdit edit1 = mockEdit(4, 1, 4, 3, "wrong replacement");
+    TextEdit edit1 = mockEdit(1, 1, 1, 3, "wrong replacement");
     QuickFix qf1 = mockQf("Description", edit1);
-    verifier.reportIssue("issue").onRange(4, 1, 4, 3).addQuickFix(qf1);
-    verifier.addComment(4, 5, "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]", 0, 0);
-    verifier.addComment(5, 5, "fix@qf1 {{Description}}", 0, 0);
-    verifier.addComment(6, 5, "edit@qf1 [[sc=1;ec=1]] {{expected replacement}}", 0, 0);
+    verifier.reportIssue("issue").onRange(1, 1, 1, 3).addQuickFix(qf1);
 
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
-      .hasMessageContaining("[Quick Fix] Wrong text replacement of edit 1 for issue on line 4.");
+      .hasMessageContaining("[Quick Fix] Wrong text replacement of edit 1 for issue on line");
   }
 
   @Test
   public void test_wrong_edit_location() {
-    var verifier = getVerifierWithQuickFixes("src/test/resources/main.js");
+    var verifier = getVerifierWithQfAndComments(
+      "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]",
+      "fix@qf1 {{Description}}",
+      "edit@qf1 [[sc=1;ec=1]] {{expected replacement}}"
+    );
 
-    TextEdit edit1 = mockEdit(4, 3, 4, 5, "expected replacement");
+    TextEdit edit1 = mockEdit(1, 3, 1, 5, "expected replacement");
     QuickFix qf1 = mockQf("Description", edit1);
-    verifier.reportIssue("issue").onRange(4, 1, 4, 3).addQuickFix(qf1);
-    verifier.addComment(4, 5, "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]", 0, 0);
-    verifier.addComment(5, 5, "fix@qf1 {{Description}}", 0, 0);
-    verifier.addComment(6, 5, "edit@qf1 [[sc=1;ec=1]] {{expected replacement}}", 0, 0);
+    verifier.reportIssue("issue").onRange(1, 1, 1, 3).addQuickFix(qf1);
+
 
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
-      .hasMessageContaining("[Quick Fix] Wrong change location of edit 1 for issue on line 4.");
+      .hasMessageContaining("[Quick Fix] Wrong change location of edit 1 for issue on line");
   }
 
   @Test
   public void test_missing_expected_replacement() {
-    var verifier = getVerifierWithQuickFixes("src/test/resources/main.js");
-
-    verifier.reportIssue("issue").onLine(1);
-    verifier.addComment(4, 5, "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]", 0, 0);
-    verifier.addComment(5, 5, "fix@qf1 {{Description}}", 0, 0);
-    verifier.addComment(6, 5, "edit@qf1 [[sc=1;ec=1]]", 0, 0);
+    var verifier = getVerifierWithQfAndComments(
+      "Noncompliant [[sl=-1;sc=1;el=-1;ec=3;quickfixes=qf1]]",
+      "fix@qf1 {{Description}}",
+      "edit@qf1 [[sc=1;ec=1]]"
+    );
 
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
+      .hasMessageContaining("[Quick Fix] Missing replacement for edit at line");
+  }
+
+  @Test
+  public void test_missing_expected_start_column() {
+    var verifier = getVerifierWithQfAndComments(
+      "Noncompliant [[ec=3;quickfixes=qf1]]",
+      "fix@qf1 {{Description}}",
+      "edit@qf1 [[sc=1;ec=1]] {{Replacement}}"
+    );
+
+    assertThatThrownBy(verifier::assertOneOrMoreIssues)
+      .hasMessageContaining("[Quick Fix] Missing start column for quick fix definition on line");
+  }
+
+  @Test
+  public void test_missing_expected_end_column() {
+    var verifier = getVerifierWithQfAndComments(
+      "Noncompliant [[sc=3;quickfixes=qf1]]",
+      "fix@qf1 {{Description}}",
+      "edit@qf1 [[sc=1;ec=1]] {{Replacement}}"
+    );
+
+    assertThatThrownBy(verifier::assertOneOrMoreIssues)
+      .hasMessageContaining("[Quick Fix] Missing end column for quick fix definition on line");
+  }
+
+  @Test
+  public void test_wrong_text_edit_format() {
+    var verifier = getVerifierWithQfAndComments(
+      "Noncompliant [[sc=3;ec=5;quickfixes=qf1]]",
+      "fix@qf1 {{Description}}",
+      "edit@qf1 [[sc=1;ec=1 {{Replacement}}"
+    );
+
+    assertThatThrownBy(verifier::assertOneOrMoreIssues)
+      .hasMessageContaining("[Quick Fix] Invalid quickfix format line 3: edit@qf1 [[sc=1;ec=1 {{Replacement}}");
+
+    var verifier2 = getVerifierWithQfAndComments(
+      "Noncompliant [[sc=3;ec=5;quickfixes=qf1]]",
+      "fix@qf1 {{Description}}",
+      "edit@qf1 sc=1;ec=1]] {{Replacement}}"
+    );
+
+    assertThatThrownBy(verifier2::assertOneOrMoreIssues)
+      .hasMessageContaining("[Quick Fix] Invalid quickfix format line 3: edit@qf1 sc=1;ec=1]] {{Replacement}}");
+
+    var verifier3 = getVerifierWithQfAndComments(
+      "Noncompliant [[sc=3;ec=5;quickfixes=qf1]]",
+      "fix@qf1 {{Description}}",
+      "edit@qf1 [[sc=1;ec=1]] {{Replacement"
+    );
+
+    assertThatThrownBy(verifier3::assertOneOrMoreIssues)
       .hasMessageContaining("[Quick Fix] Missing replacement for edit at line");
   }
 
   private static SingleFileVerifier getVerifierWithQuickFixes(String path) {
     return SingleFileVerifier.create(Paths.get(path), UTF_8)
       .withQuickFixes();
+  }
+
+  private static SingleFileVerifier getVerifierWithQfAndComments(String... comments) {
+    var verifier = getVerifierWithQuickFixes("src/test/resources/empty.js");
+    for (int i = 0; i < comments.length; i++) {
+      verifier.addComment(1 + i, 1, comments[i], 0, 0);
+    }
+    return verifier;
   }
 
   private static QuickFix mockQf(String descr, TextEdit... edits) {

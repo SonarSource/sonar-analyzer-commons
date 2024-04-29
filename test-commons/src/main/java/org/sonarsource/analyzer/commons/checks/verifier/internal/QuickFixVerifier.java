@@ -169,6 +169,7 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
     if (issue.location instanceof IssueLocation.Line) {
       return ((IssueLocation.Line) issue.location).getLine();
     } else {
+      //This would be reached only by issues on file, for which quickfixes are not supported
       return -1;
     }
   }
@@ -256,12 +257,16 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
   }
 
   private static TextSpan getInternalIssueLocation(InternalIssue issue) {
-    if (issue.location instanceof IssueLocation.Range) {
-      IssueLocation.Range range = (IssueLocation.Range) issue.location;
+    IssueLocation location = issue.location;
+    if (location instanceof IssueLocation.Range) {
+      IssueLocation.Range range = (IssueLocation.Range) location;
       return new TextSpan(range.getLine(), range.getColumn(), range.getEndLine(), range.getEndColumn());
-    } else {
-      IssueLocation.Line line = (IssueLocation.Line) issue.location;
+    } else if (location instanceof IssueLocation.Line){
+      IssueLocation.Line line = (IssueLocation.Line) location;
       return new TextSpan(line.getLine());
+    } else {
+      // No support for quickfixes on file
+      return new TextSpan(-1, -1, -1, -1);
     }
   }
 
