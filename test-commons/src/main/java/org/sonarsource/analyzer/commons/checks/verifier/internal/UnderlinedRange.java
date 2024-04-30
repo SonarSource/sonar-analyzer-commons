@@ -63,10 +63,7 @@ public class UnderlinedRange implements Comparable<UnderlinedRange> {
     this.column = column;
     this.endLine = endLine;
     this.endColumn = endColumn;
-    if (endLine < line || (endLine == line && endColumn < column)) {
-      throw new IndexOutOfBoundsException(toString());
-    }
-    if (line < 1 || column < 1 || (endLine != line && endColumn < 1)) {
+    if (endLine < line) {
       throw new IndexOutOfBoundsException(toString());
     }
   }

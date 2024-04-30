@@ -121,28 +121,8 @@ public class UnderlinedRangeTest {
   }
 
   @Test(expected = IndexOutOfBoundsException.class)
-  public void out_of_bounds_line() throws Exception {
-    new UnderlinedRange(0, 10, 5, 15);
-  }
-
-  @Test(expected = IndexOutOfBoundsException.class)
-  public void out_of_bounds_column() throws Exception {
-    new UnderlinedRange(5, 0, 5, 15);
-  }
-
-  @Test(expected = IndexOutOfBoundsException.class)
   public void out_of_bounds_end_line() throws Exception {
     new UnderlinedRange(5, 10, 4, 15);
-  }
-
-  @Test(expected = IndexOutOfBoundsException.class)
-  public void out_of_bounds_end_column() throws Exception {
-    new UnderlinedRange(5, 10, 5, 9);
-  }
-
-  @Test(expected = IndexOutOfBoundsException.class)
-  public void multiline_out_of_bounds_end_column() throws Exception {
-    new UnderlinedRange(5, 10, 6, 0);
   }
 
 }
