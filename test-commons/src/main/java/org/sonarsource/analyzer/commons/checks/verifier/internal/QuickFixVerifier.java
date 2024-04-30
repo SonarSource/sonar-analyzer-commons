@@ -58,7 +58,7 @@ public class QuickFixVerifier implements Consumer<Set<InternalIssue>> {
   //this is used to calculate absolute line numbers for text edits
   private final Map<String, Integer> quickfixesLineReference = new HashMap<>();
 
-  public QuickFixVerifier(List<Comment> expectedQuickFixesComments) {
+  public QuickFixVerifier(List<Comment> expectedQuickFixesComments, Map<Integer, LineIssues> expectedIssues) {
     buildExpectedQuickFixes(expectedQuickFixesComments);
   }
 

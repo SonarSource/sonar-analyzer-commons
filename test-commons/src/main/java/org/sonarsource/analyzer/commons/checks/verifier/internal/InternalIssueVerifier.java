@@ -174,7 +174,9 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
       report.prependContext(error + " ");
     }
     if(verifyQuickFixes){
-      new QuickFixVerifier(comments.get(mainSourceFilePath))
+      TestFile testFile = new TestFile(new FileContent(mainSourceFilePath, encoding));
+      var fileIssues = new FileIssues(testFile, comments.computeIfAbsent(mainSourceFilePath, key -> Collections.emptyList()));
+      new QuickFixVerifier(comments.get(mainSourceFilePath), fileIssues)
         .accept(Set.copyOf(actualIssues.get(mainSourceFilePath)));
     }
     assertEquals(report.getContext(), report.getExpected(), report.getActual());

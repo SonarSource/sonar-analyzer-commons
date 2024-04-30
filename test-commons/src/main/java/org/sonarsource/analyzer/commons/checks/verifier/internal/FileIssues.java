@@ -63,6 +63,9 @@ public class FileIssues {
         }
       }
     }
+
+    // Build expecteq quickfixes map
+    new QuickFixVerifier(comments, expectedIssueMap);
   }
 
   private void addLocation(PreciseLocation location) {
@@ -157,6 +160,8 @@ public class FileIssues {
       ReportDiff.diff(report.getExpected(), report.getActual()) +
       "[----------------------------------------------------------------------]\n";
     report.appendContext("In file (" + testFile.getName() + ":" + line + ")\n" + diff);
+
+    new QuickFixVerifier(expectedIssueMap, comm)
 
     return report;
   }
