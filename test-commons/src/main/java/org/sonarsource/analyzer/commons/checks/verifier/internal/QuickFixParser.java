@@ -38,7 +38,7 @@ public class QuickFixParser {
   private static final String PROPS_START_DELIMITER = "[[";
   private static final String PROPS_END_DELIMITER = "]]";
 
-  private final Map<TextSpan, List<QuickFix>> expectedQuickFixes = new HashMap<>();
+  private final Map<String, QuickFix> expectedQuickFixes = new HashMap<>();
   private final Map<TextSpan, List<String>> quickFixesForIssue = new HashMap<>();
 
   //in these two maps we put the messages and edits, not caring if the qf definition was already found or not
@@ -54,7 +54,7 @@ public class QuickFixParser {
   private void buildExpectedQuickFixes(List<Comment> expectedQuickFixesComments, Map<Integer, LineIssues> expectedIssues) {
     expectedIssues.values().forEach(lineIssues -> {
       String qfIds = lineIssues.params.get("quickfixes");
-      if (qfIds != null) {
+      if (qfIds != null && !"!".equals(qfIds)) {
         String[] ids = qfIds.split(",");
         for (String id : ids) {
           quickfixesLineReference.put(id, lineIssues.line);
@@ -78,7 +78,7 @@ public class QuickFixParser {
         QuickFix quickFix = QuickFix.newQuickFix(description, entry.getKey())
           .addTextEdits(edits.stream().map(rel -> rel.toAbsoluteTextEdit(quickfixesLineReference.get(qfId))).collect(Collectors.toList()))
           .build();
-        expectedQuickFixes.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).add(quickFix);
+        expectedQuickFixes.put(qfId, quickFix);
       }
     }
   }
@@ -197,7 +197,7 @@ public class QuickFixParser {
 
   }
 
-  public Map<TextSpan, List<QuickFix>> getExpectedQuickFixes() {
+  public Map<String, QuickFix> getExpectedQuickFixes() {
     return expectedQuickFixes;
   }
 

@@ -158,7 +158,7 @@ public class Report {
     actual.append(report.actual).append("\n");
     expectedQuickfixes.append(report.expectedQuickfixes).append("\n");
     actualQuickfixes.append(report.actualQuickfixes).append("\n");
-    quickfixContext.append(report.quickfixContext).append("; ");
+    quickfixContext.append(report.quickfixContext);
     return this;
   }
 

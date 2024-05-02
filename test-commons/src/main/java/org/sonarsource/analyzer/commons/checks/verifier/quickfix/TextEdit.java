@@ -62,4 +62,8 @@ public class TextEdit {
     return new TextSpan(startLine, startColumn, endLine, endColumn);
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    return obj instanceof TextEdit && textSpan.equals(((TextEdit) obj).textSpan) && replacement.equals(((TextEdit) obj).replacement);
+  }
 }

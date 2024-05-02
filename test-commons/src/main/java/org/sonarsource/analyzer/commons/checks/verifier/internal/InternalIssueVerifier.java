@@ -169,15 +169,15 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
       report.prependActual(error + "\n");
     } else if (report.getExpectedIssueCount() != report.getActualIssueCount()) {
       error = "ERROR: Expect " + report.getExpectedIssueCount() + " issues instead of " + report.getActualIssueCount() + ".";
-    } else if (verifyQuickFixes && report.getExpectedQuickfixCount() != report.getActualQuickfixCount()) {
+    } else if (verifyQuickFixes && report.getExpectedQuickfixCount() <= report.getActualQuickfixCount()) {
       error = "ERROR: Expect " + report.getExpectedQuickfixCount() + " quickfixes instead of " + report.getActualQuickfixCount() + ".";
     }
     if (error != null) {
       report.prependContext(error + " ");
     }
     assertEquals(report.getContext(), report.getExpected(), report.getActual());
-    if(verifyQuickFixes){
-      assertEquals(report.getQuickfixContext(), report.getExpectedQuickfixes(), report.getActualQuickfixes());
+    if(verifyQuickFixes && !report.getQuickfixContext().isEmpty()){
+      throw new AssertionError(report.getQuickfixContext());
     }
   }
 

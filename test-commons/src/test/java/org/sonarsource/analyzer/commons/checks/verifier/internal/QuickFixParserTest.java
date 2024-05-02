@@ -106,15 +106,61 @@ public class QuickFixParserTest {
   }
 
   @Test
+  public void test_more_quickfixes_than_expected() {
+    var verifier = getVerifierWithComments(
+      "Noncompliant"
+    );
+    verifier.reportIssue("Issue").onRange(1, 1, 1, 1)
+      .addQuickFix(mockQf("first", mockEdit(1, 1, 1, 1, "Replacement")));
+    verifier.assertOneOrMoreIssues();
+  }
+
+  @Test
+  public void test_expecting_no_quickfixes() {
+    var verifier = getVerifierWithComments(
+      "Noncompliant [[quickfixes=!]]"
+    );
+    verifier.reportIssue("Issue").onRange(1, 1, 1, 1)
+      .addQuickFix(mockQf("first", mockEdit(1, 1, 1, 1, "Replacement")));
+    assertThatThrownBy(verifier::assertOneOrMoreIssues)
+      .hasMessageContaining("Issue at line 1 was expecting to have no quickfixes but had 1");
+
+    var verifier2 = getVerifierWithComments(
+      "Noncompliant [[quickfixes=!]]"
+    );
+    verifier2.reportIssue("Issue").onRange(1, 1, 1, 1);
+    verifier2.assertOneOrMoreIssues();
+  }
+
+  @Test
   public void test_quickfixes_not_provided() {
     var verifier = getVerifierWithComments(
-      "Noncompliant [[sl=2;sc=1;el=2;ec=1;quickfixes=qf1]]",
+      "Noncompliant@+1 {{Issue}} [[sl=2;sc=1;el=2;ec=1;quickfixes=qf1]]",
       "fix@qf1 {{first}}",
       "edit@qf1 [[sl=+2;sc=1;el=+3;ec=1]] {{Replacement}}"
     );
-    verifier.reportIssue("Issue").onRange(2, 1, 2, 2); // wrong range will result in an unmatched quickfix
+    verifier.reportIssue("Issue").onRange(2, 1, 2, 1);
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
-      .hasMessageContaining("ERROR: Expect 1 quickfixes instead of 0. In file (empty.js:1)");
+      .hasMessageContaining("Expected quickfix qf1 at line 2 was not matched by any provided quickfixes");
+  }
+
+  @Test
+  public void test_different_issues_on_same_line_with_quickfixes() {
+    var verifier = getVerifierWithComments(
+      "Noncompliant@+1 {{Issue}} [[sc=1;ec=1;quickfixes=qf1]]",
+      "Noncompliant {{Issue2}} [[sc=1;ec=1;quickfixes=qf2]]",
+      "fix@qf1 {{first}}",
+      "edit@qf1 [[sc=1;ec=1]] {{Replacement}}",
+      "fix@qf2 {{second}}",
+      "edit@qf2 [[sc=1;ec=1]] {{Replacement2}}"
+    );
+    verifier.reportIssue("Issue").onRange(2, 123, 2, 321);
+    verifier.reportIssue("Issue2").onRange(2, 1, 2, 112).addQuickFix(
+      mockQf("second", mockEdit(2, 1, 2, 1, "Replacement2"))
+    );
+    //FIXME This test is not supposed to pass, the issue parsing only collects multiple issue messages for the same line
+    //it does not care about columns or quickfixes for the first one
+    verifier.assertOneOrMoreIssues();
   }
 
   @Test
@@ -145,11 +191,12 @@ public class QuickFixParserTest {
     verifier.reportIssue("Without quickfix").onLine(8);
 
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
-      .hasMessageContaining(
-        "[ '-' means expected but not provided, '+' means provided but not expected ]\n" +
-        "   Edits: \n" +
-        "- (3:18)-(3:23) -> {{\"foo\\n\"}}\n" +
-        "- (3:5)-(3:10) -> {{\"bar\"}}\n"
+      .hasMessageContaining(String.format(
+        "Expected quickfix qf1 at line 3 was not matched by any provided quickfixes %n" +
+          "Expected description: {{Move \"bar\" on the left side of .equals}} %n" +
+          "Expected edits: %n" +
+          "(3:18)-(3:23) -> \"foo\\n\"%n" +
+          "(3:5)-(3:10) -> \"bar\"")
       );
   }
 
@@ -188,9 +235,11 @@ public class QuickFixParserTest {
     verifier.reportIssue("issue").onRange(1, 1, 1, 1).addQuickFix(qf1);
 
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
-      .hasMessageContaining(
-        "- line 1: [[QuickFix: Expected description]]\n" +
-        "+ line 1: [[QuickFix: Wrong description]]");
+      .hasMessageContaining(String.format(
+        "Expected quickfix qf1 at line 1 was not matched by any provided quickfixes %n" +
+          "Expected description: {{Expected description}} %n" +
+          "Expected edits: %n" +
+          "(1:1)-(1:1) -> foo"));
   }
 
   @Test
@@ -206,10 +255,7 @@ public class QuickFixParserTest {
     verifier.reportIssue("issue").onRange(1, 1, 1, 3).addQuickFix(qf1);
 
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
-      .hasMessageContaining(
-        "- (1:1)-(1:1) -> {{foo}}\n" +
-        "+ (1:1)-(1:3) -> {{foo}}\n" +
-        "+ (1:1)-(1:3) -> {{goo}}");
+      .hasMessageContaining("Expected quickfix qf1 at line 1 was not matched by any provided quickfixes");
   }
 
   @Test

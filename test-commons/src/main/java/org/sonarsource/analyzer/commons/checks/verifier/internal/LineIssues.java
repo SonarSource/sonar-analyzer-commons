@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import javax.annotation.Nullable;
+import org.sonarsource.analyzer.commons.checks.verifier.quickfix.QuickFix;
 
 public class LineIssues {
 
@@ -45,6 +46,8 @@ public class LineIssues {
   public final List<String> messages;
 
   public final Map<String, String> params;
+
+  public List<QuickFix> quickfixes = new ArrayList<>();
 
   @Nullable
   public PrimaryLocation primaryLocation;
