@@ -31,7 +31,7 @@ import org.sonarsource.analyzer.commons.checks.verifier.quickfix.TextEdit;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class QuickFixVerifierTest {
+public class QuickFixParserTest {
 
   @Test
   public void test_correct_quickfix() {
@@ -42,7 +42,7 @@ public class QuickFixVerifierTest {
       .addSingleLineCommentSyntax("//")
       .parseInto(path, verifier);
 
-    TextEdit edit1 = mockEdit(3, 18, 3, 23, "\"foo\n\"");
+    TextEdit edit1 = mockEdit(3, 18, 3, 23, "\"foo\\n\"");
     TextEdit edit2 = mockEdit(3, 5, 3, 10, "\"bar\"");
     QuickFix qf1 = mockQf("Move \"bar\" on the left side of .equals", edit1, edit2);
 
@@ -114,7 +114,7 @@ public class QuickFixVerifierTest {
     );
     verifier.reportIssue("Issue").onRange(2, 1, 2, 2); // wrong range will result in an unmatched quickfix
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
-      .hasMessage("[Quick Fix] Missing quick fixes for the following issues: (2:1)-(2:1)");
+      .hasMessageContaining("ERROR: Expect 1 quickfixes instead of 0. In file (empty.js:1)");
   }
 
   @Test
@@ -128,20 +128,6 @@ public class QuickFixVerifierTest {
     verifier.reportIssue("issue").onRange(3, 18, 3, 23);
     verifier.reportIssue("Without quickfix").onLine(8);
     verifier.assertOneOrMoreIssues();
-  }
-
-  @Test
-  public void test_missing_actual_quickfix() {
-    Path path = Paths.get("src/test/resources/quickfixes/JavaCodeWithQuickFix.java");
-    var verifier = SingleFileVerifier.create(path, UTF_8);
-    CommentParser.create()
-      .addSingleLineCommentSyntax("//")
-      .parseInto(path, verifier);
-
-    verifier.reportIssue("issue").onRange(3, 18, 3, 23);
-    verifier.reportIssue("Without quickfix").onLine(8);
-    assertThatThrownBy(verifier::assertOneOrMoreIssues)
-      .hasMessage("[Quick Fix] Missing quick fix for issue on line 3");
   }
 
   @Test
@@ -159,7 +145,12 @@ public class QuickFixVerifierTest {
     verifier.reportIssue("Without quickfix").onLine(8);
 
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
-      .hasMessageContaining("[Quick Fix] Wrong number of edits for issue on line 3.");
+      .hasMessageContaining(
+        "[ '-' means expected but not provided, '+' means provided but not expected ]\n" +
+        "   Edits: \n" +
+        "- (3:18)-(3:23) -> {{\"foo\\n\"}}\n" +
+        "- (3:5)-(3:10) -> {{\"bar\"}}\n"
+      );
   }
 
   @Test
@@ -192,12 +183,14 @@ public class QuickFixVerifierTest {
       "edit@qf1 [[sc=1;ec=1]] {{foo}}"
     );
 
-    TextEdit edit1 = mockEdit(1, 1, 1, 3, "foo");
+    TextEdit edit1 = mockEdit(1, 1, 1, 1, "foo");
     QuickFix qf1 = mockQf("Wrong description", edit1);
-    verifier.reportIssue("issue").onRange(1, 1, 1, 3).addQuickFix(qf1);
+    verifier.reportIssue("issue").onRange(1, 1, 1, 1).addQuickFix(qf1);
 
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
-      .hasMessageContaining("[Quick Fix] Wrong description for issue on line");
+      .hasMessageContaining(
+        "- line 1: [[QuickFix: Expected description]]\n" +
+        "+ line 1: [[QuickFix: Wrong description]]");
   }
 
   @Test
@@ -213,40 +206,10 @@ public class QuickFixVerifierTest {
     verifier.reportIssue("issue").onRange(1, 1, 1, 3).addQuickFix(qf1);
 
     assertThatThrownBy(verifier::assertOneOrMoreIssues)
-      .hasMessageContaining("[Quick Fix] Wrong number of edits for issue on line");
-  }
-
-  @Test
-  public void test_wrong_edit_replacement() {
-    var verifier = getVerifierWithComments(
-      "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]",
-      "fix@qf1 {{Description}}",
-      "edit@qf1 [[sc=1;ec=1]] {{expected replacement}}"
-    );
-
-    TextEdit edit1 = mockEdit(1, 1, 1, 3, "wrong replacement");
-    QuickFix qf1 = mockQf("Description", edit1);
-    verifier.reportIssue("issue").onRange(1, 1, 1, 3).addQuickFix(qf1);
-
-    assertThatThrownBy(verifier::assertOneOrMoreIssues)
-      .hasMessageContaining("[Quick Fix] Wrong text replacement of edit 1 for issue on line");
-  }
-
-  @Test
-  public void test_wrong_edit_location() {
-    var verifier = getVerifierWithComments(
-      "Noncompliant [[sc=1;ec=3;quickfixes=qf1]]",
-      "fix@qf1 {{Description}}",
-      "edit@qf1 [[sc=1;ec=1]] {{expected replacement}}"
-    );
-
-    TextEdit edit1 = mockEdit(1, 3, 1, 5, "expected replacement");
-    QuickFix qf1 = mockQf("Description", edit1);
-    verifier.reportIssue("issue").onRange(1, 1, 1, 3).addQuickFix(qf1);
-
-
-    assertThatThrownBy(verifier::assertOneOrMoreIssues)
-      .hasMessageContaining("[Quick Fix] Wrong change location of edit 1 for issue on line");
+      .hasMessageContaining(
+        "- (1:1)-(1:1) -> {{foo}}\n" +
+        "+ (1:1)-(1:3) -> {{foo}}\n" +
+        "+ (1:1)-(1:3) -> {{goo}}");
   }
 
   @Test

@@ -29,6 +29,11 @@ public class TextEdit {
     this.replacement = replacement;
   }
 
+  @Override
+  public String toString() {
+    return textSpan.toString() + " -> " + "{{" + replacement + "}}";
+  }
+
   public TextSpan getTextSpan() {
     return textSpan;
   }

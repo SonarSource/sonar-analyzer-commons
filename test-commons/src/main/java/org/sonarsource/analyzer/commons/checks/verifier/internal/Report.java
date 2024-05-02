@@ -28,6 +28,7 @@ public class Report {
 
   private int expectedQuickfixCount;
   private int actualQuickfixCount;
+  private StringBuilder quickfixContext;
   private StringBuilder expectedQuickfixes;
   private StringBuilder actualQuickfixes;
 
@@ -41,6 +42,7 @@ public class Report {
 
     expectedQuickfixCount = 0;
     actualQuickfixCount = 0;
+    quickfixContext = new StringBuilder();
     expectedQuickfixes = new StringBuilder();
     actualQuickfixes = new StringBuilder();
   }
@@ -107,6 +109,10 @@ public class Report {
     return context.toString();
   }
 
+  public String getQuickfixContext() {
+    return quickfixContext.toString();
+  }
+
   public Report appendActual(String text) {
     actual.append(text);
     return this;
@@ -137,12 +143,22 @@ public class Report {
     return this;
   }
 
+  public Report appendQuickfixContext(String text){
+    quickfixContext.append(text);
+    return this;
+  }
+
   public Report append(Report report) {
     expectedIssueCount += report.expectedIssueCount;
     actualIssueCount += report.actualIssueCount;
+    expectedQuickfixCount += report.expectedQuickfixCount;
+    actualQuickfixCount += report.actualQuickfixCount;
     context.append(report.context).append("; ");
     expected.append(report.expected).append("\n");
     actual.append(report.actual).append("\n");
+    expectedQuickfixes.append(report.expectedQuickfixes).append("\n");
+    actualQuickfixes.append(report.actualQuickfixes).append("\n");
+    quickfixContext.append(report.quickfixContext).append("; ");
     return this;
   }
 
