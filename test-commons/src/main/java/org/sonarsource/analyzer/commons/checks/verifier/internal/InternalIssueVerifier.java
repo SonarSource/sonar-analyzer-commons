@@ -132,7 +132,7 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
           preciseLocation.addSecondary(new UnderlinedRange(range.getLine(), range.getColumn(), range.getEndLine(), range.getEndColumn()), secondary.message);
         }
       }
-      fileIssues.addActualIssue(line, issue.message, preciseLocation, issue.gap);
+      fileIssues.addActualIssue(line, issue.message, preciseLocation, issue.gap, issue.quickFixes);
     }
   }
 
@@ -169,15 +169,16 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
       report.prependActual(error + "\n");
     } else if (report.getExpectedIssueCount() != report.getActualIssueCount()) {
       error = "ERROR: Expect " + report.getExpectedIssueCount() + " issues instead of " + report.getActualIssueCount() + ".";
+    } else if (verifyQuickFixes && report.getExpectedQuickfixCount() != report.getActualQuickfixCount()) {
+      error = "ERROR: Expect " + report.getExpectedQuickfixCount() + " quickfixes instead of " + report.getActualQuickfixCount() + ".";
     }
     if (error != null) {
       report.prependContext(error + " ");
     }
-    if(verifyQuickFixes){
-      new QuickFixVerifier(comments.get(mainSourceFilePath))
-        .accept(Set.copyOf(actualIssues.get(mainSourceFilePath)));
-    }
     assertEquals(report.getContext(), report.getExpected(), report.getActual());
+    if(verifyQuickFixes){
+      assertEquals(report.getQuickfixContext(), report.getExpectedQuickfixes(), report.getActualQuickfixes());
+    }
   }
 
 }

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class QuickFix {
 
@@ -40,6 +41,13 @@ public class QuickFix {
 
   public List<TextEdit> getTextEdits() {
     return textEdits;
+  }
+
+  @Override
+  public String toString() {
+    return "[[QuickFix: " + description + "]]" +
+      "\n Edits: " +
+      "\n" + textEdits.stream().map(TextEdit::toString).collect(Collectors.joining("\n"));
   }
 
   /**

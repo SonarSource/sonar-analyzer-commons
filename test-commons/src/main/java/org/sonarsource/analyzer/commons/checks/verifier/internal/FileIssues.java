@@ -27,6 +27,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import org.sonarsource.analyzer.commons.checks.verifier.quickfix.QuickFix;
+import org.sonarsource.analyzer.commons.checks.verifier.quickfix.TextSpan;
 
 public class FileIssues {
 
@@ -37,6 +39,10 @@ public class FileIssues {
   private final Map<Integer, LineIssues> expectedIssueMap = new TreeMap<>();
 
   private final Map<Integer, LineIssues> actualIssueMap = new TreeMap<>();
+
+  private final Map<TextSpan, List<QuickFix>> expectedQuickFixes;
+
+  private final Map<Integer, List<QuickFix>> actualQuickFixes = new TreeMap<>();
 
   @Nullable
   private PrimaryLocation currentPrimary = null;
@@ -63,6 +69,10 @@ public class FileIssues {
         }
       }
     }
+
+    // Build expected quickfixes map
+    var qfv = new QuickFixParser(comments, expectedIssueMap);
+    expectedQuickFixes = qfv.expectedQuickFixes;
   }
 
   private void addLocation(PreciseLocation location) {
@@ -118,15 +128,20 @@ public class FileIssues {
    * @param line of the issue, start at 1, same as TokenLocation#startLine()
    */
   public void addActualIssue(int line, String message, @Nullable PrimaryLocation preciseLocation) {
-    addActualIssue(line, message, preciseLocation, null);
+    addActualIssue(line, message, preciseLocation, null, List.of());
   }
 
   /**
    * @param line of the issue, start at 1, same as TokenLocation#startLine()
    */
   public void addActualIssue(int line, String message, @Nullable PrimaryLocation preciseLocation, @Nullable Double effortToFix) {
+    addActualIssue(line, message, preciseLocation, effortToFix, List.of());
+  }
+
+  public void addActualIssue(int line, String message, @Nullable PrimaryLocation preciseLocation, @Nullable Double effortToFix, List<QuickFix> quickfixes) {
     LineIssues lineIssues = actualIssueMap.computeIfAbsent(line, key -> LineIssues.at(testFile, line, preciseLocation));
     lineIssues.add(message, effortToFix);
+    actualQuickFixes.computeIfAbsent(line, key -> new ArrayList<>()).addAll(quickfixes);
   }
 
   public Report report() {
@@ -137,6 +152,7 @@ public class FileIssues {
     Report report = new Report();
 
     report.setExpectedIssueCount(expectedIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum());
+    report.setExpectedQuickfixCount(expectedQuickFixes.values().stream().mapToInt(List::size).sum());
 
     String testFileName = "<" + testFile.getName() + ">";
     report.appendExpected(testFileName + "\n" + expectedIssueMap.values().stream()
@@ -144,12 +160,27 @@ public class FileIssues {
       .map(LineIssues::toString)
       .collect(Collectors.joining("\n")));
 
+    report.appendExpectedQuickfixes(testFileName + "\n" + expectedQuickFixes.entrySet().stream()
+      .map(entry ->
+        entry.getValue().stream()
+          .map(qf -> String.format("line %d: ", entry.getKey().startLine) + qf.toString())
+          .collect(Collectors.joining("\n")))
+      .collect(Collectors.joining("\n")));
+
     report.setActualIssueCount(actualIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum());
+    report.setActualQuickfixCount(actualQuickFixes.values().stream().mapToInt(List::size).sum());
 
     report.appendActual(testFileName + "\n" + actualIssueMap.values().stream()
       .map(lineIssues -> lineIssues.dropUntestedAttributes(expectedIssueMap.get(lineIssues.line)))
       .map(LineIssues::toString)
       .collect(Collectors.joining("\n")));
+
+    report.appendActualQuickfixes(testFileName + "\n" + actualQuickFixes.entrySet().stream()
+      .map(entry ->
+        entry.getValue().stream()
+          .map(qf -> String.format("line %d: ", entry.getKey()) + qf.toString())
+          .collect(Collectors.joining("\n")))
+      .collect(Collectors.joining()));
 
     int line = firstDiffLine(report.getExpected(), report.getActual());
     String diff = "[----------------------------------------------------------------------]\n" +
@@ -157,6 +188,13 @@ public class FileIssues {
       ReportDiff.diff(report.getExpected(), report.getActual()) +
       "[----------------------------------------------------------------------]\n";
     report.appendContext("In file (" + testFile.getName() + ":" + line + ")\n" + diff);
+
+    int qfLine = firstDiffLine(report.getExpectedQuickfixes(), report.getActualQuickfixes());
+    String qfDiff = "[------------------------Quickfixes Error------------------------------]\n" +
+      "[ '-' means expected but not provided, '+' means provided but not expected ]\n" +
+      ReportDiff.diff(report.getExpectedQuickfixes(), report.getActualQuickfixes()) +
+      "[----------------------------------------------------------------------]\n";
+    report.appendQuickfixContext("In file (" + testFile.getName() + ":" + qfLine + ")\n" + qfDiff);
 
     return report;
   }
