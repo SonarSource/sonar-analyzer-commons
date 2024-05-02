@@ -265,12 +265,12 @@ public class QuickFixParserTest {
       .hasMessageContaining("[Quick Fix] Invalid quickfix edit format: edit@qf1 [[sc=1;cc=1]] {{Replacement}}");
   }
 
-  private static SingleFileVerifier getVerifier(String path) {
-    return SingleFileVerifier.create(Paths.get(path), UTF_8);
+  private static SingleFileVerifier getVerifier() {
+    return SingleFileVerifier.create(Paths.get("src/test/resources/empty.js"), UTF_8);
   }
 
   private static SingleFileVerifier getVerifierWithComments(String... comments) {
-    var verifier = getVerifier("src/test/resources/empty.js");
+    var verifier = getVerifier();
     for (int i = 0; i < comments.length; i++) {
       verifier.addComment(1 + i, 1, comments[i], 0, 0);
     }

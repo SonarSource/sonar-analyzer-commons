@@ -52,7 +52,7 @@ public class TextSpan {
 
   @Override
   public int hashCode() {
-    int prime = 27;
+    int prime = 29;
     int result = 1;
     result = prime * result + startLine;
     result = prime * result + startCharacter;

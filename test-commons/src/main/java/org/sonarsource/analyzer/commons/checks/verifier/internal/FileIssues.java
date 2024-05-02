@@ -71,8 +71,7 @@ public class FileIssues {
     }
 
     // Build expected quickfixes map
-    var qfv = new QuickFixParser(comments, expectedIssueMap);
-    expectedQuickFixes = qfv.expectedQuickFixes;
+    expectedQuickFixes = new QuickFixParser(comments, expectedIssueMap).getExpectedQuickFixes();
   }
 
   private void addLocation(PreciseLocation location) {
@@ -165,7 +164,7 @@ public class FileIssues {
         entry.getValue().stream()
           .map(qf -> String.format("line %d: ", entry.getKey().startLine) + qf.toString())
           .collect(Collectors.joining("\n")))
-      .collect(Collectors.joining("\n")));
+      .collect(Collectors.joining()));
 
     report.setActualIssueCount(actualIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum());
     report.setActualQuickfixCount(actualQuickFixes.values().stream().mapToInt(List::size).sum());

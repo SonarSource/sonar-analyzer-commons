@@ -43,7 +43,7 @@ public class QuickFixTest {
 
   @Test
   public void test_build_quick_fix_with_edits() {
-    TextEdit edit = TextEdit.removeTextSpan(TextEdit.textSpan(1,2,3,4));
+    TextEdit edit = TextEdit.removeTextSpan(TextEdit.textSpan(1, 2, 3, 4));
     QuickFix quickFix = QuickFix.newQuickFix("description")
       .addTextEdits(Collections.singletonList(edit))
       .build();
@@ -52,9 +52,21 @@ public class QuickFixTest {
   }
 
   @Test
+  public void test_builder_with_edits() {
+    QuickFix quickFix = QuickFix.newQuickFix("description")
+      .addTextEdit(1, 2, 3, 4, "")
+      .build();
+    assertThat(quickFix.getDescription()).isEqualTo("description");
+    assertThat(quickFix.getTextEdits()).hasSize(1);
+    assertThat(quickFix.getTextEdits().get(0).getTextSpan()).isEqualTo(
+      new TextSpan(1, 2, 3, 4)
+    );
+  }
+
+  @Test
   public void test_can_set_edits_multiples_times() {
-    TextEdit edit1 = TextEdit.removeTextSpan(TextEdit.textSpan(1,2,3,4));
-    TextEdit edit2 = TextEdit.removeTextSpan(TextEdit.textSpan(2,3,4,5));
+    TextEdit edit1 = TextEdit.removeTextSpan(TextEdit.textSpan(1, 2, 3, 4));
+    TextEdit edit2 = TextEdit.removeTextSpan(TextEdit.textSpan(2, 3, 4, 5));
     QuickFix quickFix = QuickFix.newQuickFix("description")
       .addTextEdits(Collections.singletonList(edit1))
       .addTextEdit(edit2)
@@ -65,8 +77,8 @@ public class QuickFixTest {
 
   @Test
   public void reverseSortEdits_sorts_as_expected() {
-    TextEdit edit1 = TextEdit.removeTextSpan(TextEdit.textSpan(1,2,3,4));
-    TextEdit edit2 = TextEdit.removeTextSpan(TextEdit.textSpan(2,3,4,5));
+    TextEdit edit1 = TextEdit.removeTextSpan(TextEdit.textSpan(1, 2, 3, 4));
+    TextEdit edit2 = TextEdit.removeTextSpan(TextEdit.textSpan(2, 3, 4, 5));
 
     assert_text_edits_are_ordered_as_expected(
       Collections.emptyList(),

@@ -38,7 +38,7 @@ public class QuickFixParser {
   private static final String PROPS_START_DELIMITER = "[[";
   private static final String PROPS_END_DELIMITER = "]]";
 
-  public final Map<TextSpan, List<QuickFix>> expectedQuickFixes = new HashMap<>();
+  private final Map<TextSpan, List<QuickFix>> expectedQuickFixes = new HashMap<>();
   private final Map<TextSpan, List<String>> quickFixesForIssue = new HashMap<>();
 
   //in these two maps we put the messages and edits, not caring if the qf definition was already found or not
@@ -195,6 +195,10 @@ public class QuickFixParser {
       return TextEdit.replaceTextSpan(new TextSpan(startLine, sc, endLine, ec), replacement);
     }
 
+  }
+
+  public Map<TextSpan, List<QuickFix>> getExpectedQuickFixes() {
+    return expectedQuickFixes;
   }
 
 }

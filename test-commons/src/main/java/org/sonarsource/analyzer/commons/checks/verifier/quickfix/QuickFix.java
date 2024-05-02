@@ -84,6 +84,11 @@ public class QuickFix {
       return this;
     }
 
+    public Builder addTextEdit(int startLine, int startCharacter, int endLine, int endCharacter, String replacement) {
+      textEdits.add(TextEdit.replaceTextSpan(new TextSpan(startLine, startCharacter, endLine, endCharacter), replacement));
+      return this;
+    }
+
     public Builder addTextEdits(List<TextEdit> textEdits) {
       this.textEdits.addAll(textEdits);
       return this;
