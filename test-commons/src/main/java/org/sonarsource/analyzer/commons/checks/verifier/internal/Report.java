@@ -79,24 +79,6 @@ public class Report {
     this.actualQuickfixCount = actualQuickfixCount;
   }
 
-  public String getExpectedQuickfixes() {
-    return expectedQuickfixes.toString();
-  }
-
-  public Report appendExpectedQuickfixes(String expectedQuickfixes) {
-    this.expectedQuickfixes.append(expectedQuickfixes);
-    return this;
-  }
-
-  public String getActualQuickfixes() {
-    return actualQuickfixes.toString();
-  }
-
-  public Report appendActualQuickfixes(String actualQuickfixes) {
-    this.actualQuickfixes.append(actualQuickfixes);
-    return this;
-  }
-
   public String getActual() {
     return actual.toString();
   }

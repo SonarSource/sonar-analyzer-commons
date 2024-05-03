@@ -155,21 +155,13 @@ public class QuickFixParser {
   }
 
   private static TextSpan getTextSpan(LineIssues issue) {
-    if (issue.primaryLocation != null) {
-      return new TextSpan(
-        issue.primaryLocation.range.line,
-        issue.primaryLocation.range.column,
-        issue.primaryLocation.range.endLine,
-        issue.primaryLocation.range.endColumn);
-    } else {
-      String sc = issue.params.get("sc");
-      String ec = issue.params.get("ec");
-      return new TextSpan(
-        issue.line,
-        sc != null ? Integer.parseInt(sc) : 1,
-        issue.line,
-        ec != null ? Integer.parseInt(ec) : 1);
-    }
+    String sc = issue.params.get("sc");
+    String ec = issue.params.get("ec");
+    return new TextSpan(
+      issue.line,
+      sc != null ? Integer.parseInt(sc) : 1,
+      issue.line,
+      ec != null ? Integer.parseInt(ec) : 1);
   }
 
   private static class RelativeTextEdit {
