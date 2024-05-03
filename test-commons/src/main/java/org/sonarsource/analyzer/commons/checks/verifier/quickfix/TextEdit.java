@@ -66,4 +66,9 @@ public class TextEdit {
   public boolean equals(Object obj) {
     return obj instanceof TextEdit && textSpan.equals(((TextEdit) obj).textSpan) && replacement.equals(((TextEdit) obj).replacement);
   }
+
+  @Override
+  public int hashCode() {
+    return 17 * textSpan.hashCode() + 31 * replacement.hashCode();
+  }
 }

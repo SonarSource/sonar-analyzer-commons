@@ -158,7 +158,7 @@ public class QuickFixParserTest {
     verifier.reportIssue("Issue2").onRange(2, 1, 2, 112).addQuickFix(
       mockQf("second", mockEdit(2, 1, 2, 1, "Replacement2"))
     );
-    //FIXME This test is not supposed to pass, the issue parsing only collects multiple issue messages for the same line
+    //This test is not supposed to pass, the issue parsing only collects multiple issue messages for the same line
     //it does not care about columns or quickfixes for the first one
     verifier.assertOneOrMoreIssues();
   }

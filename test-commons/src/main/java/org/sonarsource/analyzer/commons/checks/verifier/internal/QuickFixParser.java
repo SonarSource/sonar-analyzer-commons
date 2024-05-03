@@ -41,7 +41,6 @@ public class QuickFixParser {
   private final Map<String, QuickFix> expectedQuickFixes = new HashMap<>();
   private final Map<TextSpan, List<String>> quickFixesForIssue = new HashMap<>();
 
-  //in these two maps we put the messages and edits, not caring if the qf definition was already found or not
   private final Map<String, String> quickfixesMessages = new HashMap<>();
   private final Map<String, List<RelativeTextEdit>> quickfixesEdits = new HashMap<>();
   //this is used to calculate absolute line numbers for text edits
@@ -52,19 +51,12 @@ public class QuickFixParser {
   }
 
   private void buildExpectedQuickFixes(List<Comment> expectedQuickFixesComments, Map<Integer, LineIssues> expectedIssues) {
-    expectedIssues.values().forEach(lineIssues -> {
-      String qfIds = lineIssues.params.get("quickfixes");
-      if (qfIds != null && !"!".equals(qfIds)) {
-        String[] ids = qfIds.split(",");
-        for (String id : ids) {
-          quickfixesLineReference.put(id, lineIssues.line);
-          quickFixesForIssue.computeIfAbsent(getTextSpan(lineIssues), k -> new ArrayList<>()).add(id);
-        }
-      }
-    });
+    populateIssueData(expectedIssues);
+
     for (Comment comment : expectedQuickFixesComments) {
       parseQuickFix(comment.content, comment.line);
     }
+
     for (Map.Entry<TextSpan, List<String>> entry : quickFixesForIssue.entrySet()) {
       for (String qfId : entry.getValue()) {
         List<RelativeTextEdit> edits = quickfixesEdits.get(qfId);
@@ -81,6 +73,19 @@ public class QuickFixParser {
         expectedQuickFixes.put(qfId, quickFix);
       }
     }
+  }
+
+  private void populateIssueData(Map<Integer, LineIssues> expectedIssues) {
+    expectedIssues.values().forEach(lineIssues -> {
+      String qfIds = lineIssues.params.get("quickfixes");
+      if (qfIds != null && !"!".equals(qfIds)) {
+        String[] ids = qfIds.split(",");
+        for (String id : ids) {
+          quickfixesLineReference.put(id, lineIssues.line);
+          quickFixesForIssue.computeIfAbsent(getTextSpan(lineIssues), k -> new ArrayList<>()).add(id);
+        }
+      }
+    });
   }
 
   void parseQuickFix(String comment, int line) {

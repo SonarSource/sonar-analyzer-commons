@@ -47,7 +47,7 @@ public class LineIssues {
 
   public final Map<String, String> params;
 
-  public List<QuickFix> quickfixes = new ArrayList<>();
+  private List<QuickFix> quickfixes = new ArrayList<>();
 
   @Nullable
   public PrimaryLocation primaryLocation;
@@ -197,4 +197,13 @@ public class LineIssues {
       return testFile.lineWithoutNoncompliantComment(lineNumber);
     }
   }
+
+  public List<QuickFix> getQuickfixes(){
+    return quickfixes;
+  }
+
+  public void setQuickfixes(List<QuickFix> quickfixes){
+    this.quickfixes = quickfixes;
+  }
+
 }

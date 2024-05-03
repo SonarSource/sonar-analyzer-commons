@@ -139,7 +139,7 @@ public class FileIssues {
   public void addActualIssue(int line, String message, @Nullable PrimaryLocation preciseLocation, @Nullable Double effortToFix, List<QuickFix> quickfixes) {
     LineIssues lineIssues = actualIssueMap.computeIfAbsent(line, key -> LineIssues.at(testFile, line, preciseLocation));
     lineIssues.add(message, effortToFix);
-    lineIssues.quickfixes = quickfixes;
+    lineIssues.setQuickfixes(quickfixes);
   }
 
   public Report report() {
@@ -197,21 +197,21 @@ public class FileIssues {
       LineIssues actualIssue = actualIssueMap.get(expectedIssue.line);
       var expectedQfs = getQfIdsFromIssue(expectedIssue);
       if (expectedQfs.length == 1 && "!".equals(expectedQfs[0])) {
-        if (!actualIssue.quickfixes.isEmpty()) {
+        if (!actualIssue.getQuickfixes().isEmpty()) {
           report.appendQuickfixContext(
-            String.format("Issue at line %d was expecting to have no quickfixes but had %d", actualIssue.line, actualIssue.quickfixes.size())
+            String.format("Issue at line %d was expecting to have no quickfixes but had %d", actualIssue.line, actualIssue.getQuickfixes().size())
           );
         }
         continue;
       }
       for (String qfId : expectedQfs) {
         QuickFix qf = expectedQuickFixes.get(qfId);
-        if (!isExpectedQuickfixProvided(qf, actualIssue.quickfixes)) {
+        if (!isExpectedQuickfixProvided(qf, actualIssue.getQuickfixes())) {
           report.appendQuickfixContext(String.format("Expected quickfix %s at line %d was not matched by any provided quickfixes %n", qfId, expectedIssue.line));
           report.appendQuickfixContext(String.format("Expected description: {{%s}} %n", qf.getDescription()));
-          report.appendQuickfixContext(String.format("Expected edits: %n" +
-            qf.getTextEdits().stream()
-              .map(edit -> edit.getTextSpan() + " -> " + edit.getReplacement()).collect(Collectors.joining("%n"))));
+          var textEditsString = String.format(qf.getTextEdits().stream()
+            .map(edit -> edit.getTextSpan() + " -> " + edit.getReplacement()).collect(Collectors.joining("%n")));
+          report.appendQuickfixContext(String.format("Expected edits: %n%s", textEditsString));
         }
       }
     }
