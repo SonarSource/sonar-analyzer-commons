@@ -195,6 +195,10 @@ public class FileIssues {
     for (LineIssues expectedIssue : expectedIssueMap.values()) {
       // actualIssue cannot be null, as an exception would have been already been thrown by the InternalIssueVerifier
       LineIssues actualIssue = actualIssueMap.get(expectedIssue.line);
+      if(actualIssue == null){
+        // If there is no issue for the expected one, an error will be raised in the report anyway
+        continue;
+      }
       var expectedQfs = getQfIdsFromIssue(expectedIssue);
       if (expectedQfs.length == 1 && "!".equals(expectedQfs[0])) {
         if (!actualIssue.getQuickfixes().isEmpty()) {

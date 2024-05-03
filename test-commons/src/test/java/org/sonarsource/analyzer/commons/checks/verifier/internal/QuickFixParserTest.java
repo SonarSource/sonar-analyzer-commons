@@ -106,6 +106,18 @@ public class QuickFixParserTest {
   }
 
   @Test
+  public void test_expected_qfs_when_no_issue_is_expected() {
+    var verifier = getVerifierWithComments(
+      "Noncompliant [[quickfixes=qf1,qf2]]",
+      "fix@qf1 {{first}}",
+      "edit@qf1 [[sc=1;ec=1]] {{Replacement}}",
+      "fix@qf2 {{second}}",
+      "edit@qf2 [[sl=+4;sc=3;el=+4;ec=3]] {{Replacement2}}"
+    );
+    verifier.assertNoIssuesRaised();
+  }
+
+  @Test
   public void test_more_quickfixes_than_expected() {
     var verifier = getVerifierWithComments(
       "Noncompliant"
