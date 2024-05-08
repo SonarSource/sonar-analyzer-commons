@@ -103,6 +103,11 @@ public interface MultiFileVerifier {
   void assertNoIssues();
 
   /**
+   * Run the comparison and expect to find no issues. Allows Noncompliant comments to be present in the file.
+   */
+  void assertNoIssuesRaised();
+
+  /**
    * Sets the verifier to ignore expected quick fixes.
    */
   SingleFileVerifier withoutQuickFixes();
