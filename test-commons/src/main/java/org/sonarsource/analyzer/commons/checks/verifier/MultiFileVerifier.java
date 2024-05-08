@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import javax.annotation.Nullable;
 import org.sonarsource.analyzer.commons.checks.verifier.internal.InternalIssueVerifier;
+import org.sonarsource.analyzer.commons.checks.verifier.quickfix.QuickFix;
 
 /**
  * Example:
@@ -102,6 +103,11 @@ public interface MultiFileVerifier {
   void assertNoIssues();
 
   /**
+   * Sets the verifier to ignore expected quick fixes.
+   */
+  SingleFileVerifier withoutQuickFixes();
+
+  /**
    * Must always call one and only one of: onFile, onLine, onRange
    */
   interface IssueBuilder {
@@ -144,6 +150,8 @@ public interface MultiFileVerifier {
      * @param message optional message, can be null
      */
     Issue addSecondary(Path path, int line, int column, int endLine, int endColumn, @Nullable String message);
+
+    Issue addQuickFix(QuickFix quickFix);
   }
 
 }
