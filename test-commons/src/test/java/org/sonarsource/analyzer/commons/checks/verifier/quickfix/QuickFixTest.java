@@ -35,7 +35,7 @@ public class QuickFixTest {
   }
 
   @Test
-  public void test_build_quick_fix_with_formated_mesasge() {
+  public void test_build_quick_fix_with_formatted_message() {
     QuickFix quickFix = QuickFix.newQuickFix("description %s %d", "yolo", 42).build();
     assertThat(quickFix.getDescription()).isEqualTo("description yolo 42");
     assertThat(quickFix.getTextEdits()).isEmpty();
