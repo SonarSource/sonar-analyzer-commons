@@ -22,6 +22,7 @@ package org.sonarsource.analyzer.commons.checks.verifier.quickfix;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 
 public class TextEditTest {
@@ -75,5 +76,19 @@ public class TextEditTest {
     assertEquals(new TextSpan(line, column, line, column), textSpan);
   }
 
+  @Test
+  public void testEqualsAndHashCode(){
+    TextSpan textSpan = new TextSpan(1, 1, 1, 1);
+    TextEdit textEdit1 = TextEdit.replaceTextSpan(textSpan, "replacement");
+    TextEdit textEdit2 = TextEdit.replaceTextSpan(textSpan, "replacement");
+    TextEdit textEdit3 = TextEdit.replaceTextSpan(textSpan, "replacement2");
+    TextEdit textEdit4 = TextEdit.replaceTextSpan(new TextSpan(1, 2, 1, 2), "replacement");
+    assertEquals(textEdit1, textEdit2);
+    assertEquals(textEdit1.hashCode(), textEdit2.hashCode());
+    assertNotEquals(textEdit1, textEdit3);
+    assertNotEquals(textEdit1.hashCode(), textEdit3.hashCode());
+    assertNotEquals(textEdit2, new Object());
+    assertNotEquals(textEdit4, textEdit1);
+  }
 
 }

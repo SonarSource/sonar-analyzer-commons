@@ -84,10 +84,10 @@ public class FileIssues {
   private void addPrimary(PrimaryLocation primary) {
     LineIssues lineIssues = expectedIssueMap.get(primary.range.line);
     if (lineIssues == null) {
-      throw new IllegalStateException("Primary location does not have a related issue at " + primary.range);
+      throw new IllegalStateException("Primary location does not have a related issue at " + primary.range.toString());
     }
     if (lineIssues.primaryLocation != null) {
-      throw new IllegalStateException("Primary location conflicts with another primary location at " + primary.range);
+      throw new IllegalStateException("Primary location conflicts with another primary location at " + primary.range.toString());
     }
     orphanSecondaryOrFlowLocations.forEach(secondary -> addSecondaryTo(secondary, primary));
     orphanSecondaryOrFlowLocations.clear();
