@@ -50,7 +50,7 @@ import org.sonarsource.analyzer.commons.checks.verifier.internal.InternalIssueVe
  *   verifier.assertNoIssues();
  * </pre>
  */
-public interface MultiFileVerifier {
+public interface MultiFileVerifier extends QuickfixVerifier {
 
   /**
    * @param mainSourceFilePath
@@ -102,6 +102,11 @@ public interface MultiFileVerifier {
   void assertNoIssues();
 
   /**
+   * Run the comparison and expect to find no issues. Allows Noncompliant comments to be present in the file.
+   */
+  void assertNoIssuesRaised();
+
+  /**
    * Must always call one and only one of: onFile, onLine, onRange
    */
   interface IssueBuilder {
@@ -127,7 +132,7 @@ public interface MultiFileVerifier {
     Issue onRange(int line, int column, int endLine, int endColumn);
   }
 
-  interface Issue {
+  interface Issue extends QuickfixVerifier.IssueWithQuickfix {
 
     /**
      * @param gap Gap used for the computation of the effort (previously effortToFix)
@@ -144,6 +149,7 @@ public interface MultiFileVerifier {
      * @param message optional message, can be null
      */
     Issue addSecondary(Path path, int line, int column, int endLine, int endColumn, @Nullable String message);
+
   }
 
 }

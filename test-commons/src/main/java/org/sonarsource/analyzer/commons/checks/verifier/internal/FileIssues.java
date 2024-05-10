@@ -27,6 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import org.sonarsource.analyzer.commons.checks.verifier.quickfix.QuickFix;
 
 public class FileIssues {
 
@@ -37,6 +38,10 @@ public class FileIssues {
   private final Map<Integer, LineIssues> expectedIssueMap = new TreeMap<>();
 
   private final Map<Integer, LineIssues> actualIssueMap = new TreeMap<>();
+
+  private final Map<String, QuickFix> expectedQuickFixes;
+
+  private final Map<Integer, List<QuickFix>> actualQuickFixes = new TreeMap<>();
 
   @Nullable
   private PrimaryLocation currentPrimary = null;
@@ -63,6 +68,9 @@ public class FileIssues {
         }
       }
     }
+
+    // Build expected quickfixes map
+    expectedQuickFixes = new QuickFixParser(comments, expectedIssueMap).getExpectedQuickFixes();
   }
 
   private void addLocation(PreciseLocation location) {
@@ -118,15 +126,21 @@ public class FileIssues {
    * @param line of the issue, start at 1, same as TokenLocation#startLine()
    */
   public void addActualIssue(int line, String message, @Nullable PrimaryLocation preciseLocation) {
-    addActualIssue(line, message, preciseLocation, null);
+    addActualIssue(line, message, preciseLocation, null, List.of());
   }
 
   /**
    * @param line of the issue, start at 1, same as TokenLocation#startLine()
    */
   public void addActualIssue(int line, String message, @Nullable PrimaryLocation preciseLocation, @Nullable Double effortToFix) {
+    addActualIssue(line, message, preciseLocation, effortToFix, List.of());
+  }
+
+  public void addActualIssue(int line, String message, @Nullable PrimaryLocation preciseLocation, @Nullable Double effortToFix,
+    List<QuickFix> quickfixes) {
     LineIssues lineIssues = actualIssueMap.computeIfAbsent(line, key -> LineIssues.at(testFile, line, preciseLocation));
     lineIssues.add(message, effortToFix);
+    lineIssues.setQuickfixes(quickfixes);
   }
 
   public Report report() {
@@ -137,6 +151,7 @@ public class FileIssues {
     Report report = new Report();
 
     report.setExpectedIssueCount(expectedIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum());
+    report.setExpectedQuickfixCount(expectedQuickFixes.size());
 
     String testFileName = "<" + testFile.getName() + ">";
     report.appendExpected(testFileName + "\n" + expectedIssueMap.values().stream()
@@ -145,6 +160,7 @@ public class FileIssues {
       .collect(Collectors.joining("\n")));
 
     report.setActualIssueCount(actualIssueMap.values().stream().mapToInt(issues -> issues.messages.size()).sum());
+    report.setActualQuickfixCount(actualQuickFixes.values().stream().mapToInt(List::size).sum());
 
     report.appendActual(testFileName + "\n" + actualIssueMap.values().stream()
       .map(lineIssues -> lineIssues.dropUntestedAttributes(expectedIssueMap.get(lineIssues.line)))
@@ -157,6 +173,8 @@ public class FileIssues {
       ReportDiff.diff(report.getExpected(), report.getActual()) +
       "[----------------------------------------------------------------------]\n";
     report.appendContext("In file (" + testFile.getName() + ":" + line + ")\n" + diff);
+
+    buildQuickfixReport(report);
 
     return report;
   }
@@ -172,6 +190,56 @@ public class FileIssues {
       line = Integer.parseInt(matcher.group(1));
     }
     return line;
+  }
+
+  private void buildQuickfixReport(Report report) {
+    for (LineIssues expectedIssue : expectedIssueMap.values()) {
+      // actualIssue cannot be null, as an exception would have been already been thrown by the InternalIssueVerifier
+      LineIssues actualIssue = actualIssueMap.get(expectedIssue.line);
+      if (actualIssue == null) {
+        // If there is no issue for the expected one, an error will be raised in the report anyway
+        continue;
+      }
+      var expectedQfs = getQfIdsFromIssue(expectedIssue);
+      if (expectedQfs.length == 1 && "!".equals(expectedQfs[0])) {
+        if (!actualIssue.getQuickfixes().isEmpty()) {
+          report.appendQuickfixContext(
+            String.format("Issue at line %d was expecting to have no quickfixes but had %d", actualIssue.line,
+              actualIssue.getQuickfixes().size())
+          );
+        }
+      } else {
+        for (String qfId : expectedQfs) {
+          appendQuickfixReport(qfId, actualIssue, expectedIssue, report);
+        }
+      }
+    }
+  }
+
+  private void appendQuickfixReport(String qfId, LineIssues actualIssue, LineIssues expectedIssue, Report report) {
+    QuickFix qf = expectedQuickFixes.get(qfId);
+    if (!isExpectedQuickfixProvided(qf, actualIssue.getQuickfixes())) {
+      report.appendQuickfixContext(String.format("Expected quickfix %s at line %d was not matched by any provided quickfixes %n",
+        qfId, expectedIssue.line));
+      report.appendQuickfixContext(String.format("Expected description: {{%s}} %n", qf.getDescription()));
+      var textEditsString = String.format(qf.getTextEdits().stream()
+        .map(edit -> edit.getTextSpan() + " -> " + edit.getReplacement()).collect(Collectors.joining("%n")));
+      report.appendQuickfixContext(String.format("Expected edits: %n%s", textEditsString));
+    }
+  }
+
+  private static boolean isExpectedQuickfixProvided(QuickFix expected, List<QuickFix> actuallyProvided) {
+    return actuallyProvided.stream()
+      .anyMatch(qf ->
+        qf.getDescription().equals(expected.getDescription())
+          && qf.getTextEdits().equals(expected.getTextEdits())
+      );
+  }
+
+  private static String[] getQfIdsFromIssue(LineIssues issue) {
+    var qfs = issue.params.get("quickfixes");
+    if (qfs == null) return new String[0];
+    return qfs.split(",");
   }
 
 }

@@ -50,7 +50,7 @@ import org.sonarsource.analyzer.commons.checks.verifier.internal.InternalIssueVe
  *   verifier.assertNoIssues();
  * </pre>
  */
-public interface SingleFileVerifier {
+public interface SingleFileVerifier extends QuickfixVerifier {
 
   /**
    * @param sourceFilePath
@@ -105,6 +105,11 @@ public interface SingleFileVerifier {
   void assertNoIssuesRaised();
 
   /**
+   * Sets the verifier to ignore expected quick fixes.
+   */
+  SingleFileVerifier withoutQuickFixes();
+
+  /**
    * Must always call one and only one of: onFile, onLine, onRange
    */
   interface IssueBuilder {
@@ -128,9 +133,10 @@ public interface SingleFileVerifier {
      * @param endColumn, start at 1, column number of the last character, if there's only one character then endColumn == column
      */
     Issue onRange(int line, int column, int endLine, int endColumn);
+
   }
 
-  interface Issue {
+  interface Issue extends QuickfixVerifier.IssueWithQuickfix {
 
     /**
      * @param gap Gap used for the computation of the effort (previously effortToFix)
@@ -146,6 +152,7 @@ public interface SingleFileVerifier {
      * @param message optional message, can be null
      */
     Issue addSecondary(int line, int column, int endLine, int endColumn, @Nullable String message);
+
   }
 
 }

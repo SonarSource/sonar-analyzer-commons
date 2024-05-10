@@ -41,6 +41,7 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
   private Map<Path, List<Comment>> comments = new HashMap<>();
   private Map<Path, List<InternalIssue>> actualIssues = new HashMap<>();
   private Charset encoding;
+  private boolean verifyQuickFixes = true;
 
   public InternalIssueVerifier(Path mainSourceFilePath, Charset encoding) {
     this.mainSourceFilePath = mainSourceFilePath.toAbsolutePath();
@@ -70,6 +71,11 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
   @Override
   public InternalIssueVerifier addComment(int line, int column, String content, int prefixLength, int suffixLength) {
     return addComment(mainSourceFilePath, line, column, content, prefixLength, suffixLength);
+  }
+
+  public InternalIssueVerifier withoutQuickFixes() {
+    verifyQuickFixes = false;
+    return this;
   }
 
   @Override
@@ -126,7 +132,7 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
           preciseLocation.addSecondary(new UnderlinedRange(range.getLine(), range.getColumn(), range.getEndLine(), range.getEndColumn()), secondary.message);
         }
       }
-      fileIssues.addActualIssue(line, issue.message, preciseLocation, issue.gap);
+      fileIssues.addActualIssue(line, issue.message, preciseLocation, issue.gap, issue.quickFixes);
     }
   }
 
@@ -163,11 +169,16 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
       report.prependActual(error + "\n");
     } else if (report.getExpectedIssueCount() != report.getActualIssueCount()) {
       error = "ERROR: Expect " + report.getExpectedIssueCount() + " issues instead of " + report.getActualIssueCount() + ".";
+    } else if (verifyQuickFixes && report.getExpectedQuickfixCount() <= report.getActualQuickfixCount()) {
+      error = "ERROR: Expect " + report.getExpectedQuickfixCount() + " quickfixes instead of " + report.getActualQuickfixCount() + ".";
     }
     if (error != null) {
       report.prependContext(error + " ");
     }
     assertEquals(report.getContext(), report.getExpected(), report.getActual());
+    if(verifyQuickFixes && !report.getQuickfixContext().isEmpty()){
+      throw new AssertionError(report.getQuickfixContext());
+    }
   }
 
 }
