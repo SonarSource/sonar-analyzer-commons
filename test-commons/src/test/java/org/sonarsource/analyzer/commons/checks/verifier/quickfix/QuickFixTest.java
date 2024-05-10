@@ -73,7 +73,7 @@ public class QuickFixTest {
       .build();
     assertThat(quickFix.getDescription()).isEqualTo("description");
     assertThat(quickFix.getTextEdits()).hasSize(2).containsExactly(edit1, edit2);
-    assertThat(quickFix.toString()).isEqualTo("[[QuickFix: description]]\n" +
+    assertThat(quickFix).hasToString("[[QuickFix: description]]\n" +
       " Edits: \n" +
       "(1:2)-(3:4) -> {{}}\n" +
       "(2:3)-(4:5) -> {{}}");

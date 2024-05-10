@@ -41,7 +41,7 @@ public class TextSpanTest {
   public void equals_hash_code() {
     assertThat(new TextSpan(42, 2, 42, 2)).isEqualTo(new TextSpan(42, 2, 42, 2));
     assertThat(new TextSpan(42, 2, 42, 2)).isNotEqualTo(new TextSpan(42, 1, 42, 2));
-    assertThat(new TextSpan(42, 2, 42, 2).hashCode()).isEqualTo(new TextSpan(42, 2, 42, 2).hashCode());
+    assertThat(new TextSpan(42, 2, 42, 2)).hasSameHashCodeAs(new TextSpan(42, 2, 42, 2));
     assertThat(new TextSpan(42, 2, 42, 2).hashCode()).isNotEqualTo(new TextSpan(42, 1, 42, 2).hashCode());
   }
 

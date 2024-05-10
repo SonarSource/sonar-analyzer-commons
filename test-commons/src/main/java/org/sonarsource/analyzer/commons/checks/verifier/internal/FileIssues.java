@@ -84,10 +84,10 @@ public class FileIssues {
   private void addPrimary(PrimaryLocation primary) {
     LineIssues lineIssues = expectedIssueMap.get(primary.range.line);
     if (lineIssues == null) {
-      throw new IllegalStateException("Primary location does not have a related issue at " + primary.range.toString());
+      throw new IllegalStateException("Primary location does not have a related issue at " + primary.range);
     }
     if (lineIssues.primaryLocation != null) {
-      throw new IllegalStateException("Primary location conflicts with another primary location at " + primary.range.toString());
+      throw new IllegalStateException("Primary location conflicts with another primary location at " + primary.range);
     }
     orphanSecondaryOrFlowLocations.forEach(secondary -> addSecondaryTo(secondary, primary));
     orphanSecondaryOrFlowLocations.clear();
@@ -136,7 +136,8 @@ public class FileIssues {
     addActualIssue(line, message, preciseLocation, effortToFix, List.of());
   }
 
-  public void addActualIssue(int line, String message, @Nullable PrimaryLocation preciseLocation, @Nullable Double effortToFix, List<QuickFix> quickfixes) {
+  public void addActualIssue(int line, String message, @Nullable PrimaryLocation preciseLocation, @Nullable Double effortToFix,
+    List<QuickFix> quickfixes) {
     LineIssues lineIssues = actualIssueMap.computeIfAbsent(line, key -> LineIssues.at(testFile, line, preciseLocation));
     lineIssues.add(message, effortToFix);
     lineIssues.setQuickfixes(quickfixes);
@@ -195,7 +196,7 @@ public class FileIssues {
     for (LineIssues expectedIssue : expectedIssueMap.values()) {
       // actualIssue cannot be null, as an exception would have been already been thrown by the InternalIssueVerifier
       LineIssues actualIssue = actualIssueMap.get(expectedIssue.line);
-      if(actualIssue == null){
+      if (actualIssue == null) {
         // If there is no issue for the expected one, an error will be raised in the report anyway
         continue;
       }
@@ -203,21 +204,27 @@ public class FileIssues {
       if (expectedQfs.length == 1 && "!".equals(expectedQfs[0])) {
         if (!actualIssue.getQuickfixes().isEmpty()) {
           report.appendQuickfixContext(
-            String.format("Issue at line %d was expecting to have no quickfixes but had %d", actualIssue.line, actualIssue.getQuickfixes().size())
+            String.format("Issue at line %d was expecting to have no quickfixes but had %d", actualIssue.line,
+              actualIssue.getQuickfixes().size())
           );
         }
-        continue;
-      }
-      for (String qfId : expectedQfs) {
-        QuickFix qf = expectedQuickFixes.get(qfId);
-        if (!isExpectedQuickfixProvided(qf, actualIssue.getQuickfixes())) {
-          report.appendQuickfixContext(String.format("Expected quickfix %s at line %d was not matched by any provided quickfixes %n", qfId, expectedIssue.line));
-          report.appendQuickfixContext(String.format("Expected description: {{%s}} %n", qf.getDescription()));
-          var textEditsString = String.format(qf.getTextEdits().stream()
-            .map(edit -> edit.getTextSpan() + " -> " + edit.getReplacement()).collect(Collectors.joining("%n")));
-          report.appendQuickfixContext(String.format("Expected edits: %n%s", textEditsString));
+      } else {
+        for (String qfId : expectedQfs) {
+          appendQuickfixReport(qfId, actualIssue, expectedIssue, report);
         }
       }
+    }
+  }
+
+  private void appendQuickfixReport(String qfId, LineIssues actualIssue, LineIssues expectedIssue, Report report) {
+    QuickFix qf = expectedQuickFixes.get(qfId);
+    if (!isExpectedQuickfixProvided(qf, actualIssue.getQuickfixes())) {
+      report.appendQuickfixContext(String.format("Expected quickfix %s at line %d was not matched by any provided quickfixes %n",
+        qfId, expectedIssue.line));
+      report.appendQuickfixContext(String.format("Expected description: {{%s}} %n", qf.getDescription()));
+      var textEditsString = String.format(qf.getTextEdits().stream()
+        .map(edit -> edit.getTextSpan() + " -> " + edit.getReplacement()).collect(Collectors.joining("%n")));
+      report.appendQuickfixContext(String.format("Expected edits: %n%s", textEditsString));
     }
   }
 
