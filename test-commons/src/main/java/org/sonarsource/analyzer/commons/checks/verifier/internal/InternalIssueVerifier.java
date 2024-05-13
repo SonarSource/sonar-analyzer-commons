@@ -73,6 +73,7 @@ public class InternalIssueVerifier implements MultiFileVerifier, SingleFileVerif
     return addComment(mainSourceFilePath, line, column, content, prefixLength, suffixLength);
   }
 
+  @Override
   public InternalIssueVerifier withoutQuickFixes() {
     verifyQuickFixes = false;
     return this;

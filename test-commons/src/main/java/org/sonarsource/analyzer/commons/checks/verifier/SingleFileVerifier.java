@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import javax.annotation.Nullable;
 import org.sonarsource.analyzer.commons.checks.verifier.internal.InternalIssueVerifier;
+import org.sonarsource.analyzer.commons.checks.verifier.quickfix.QuickFix;
 
 /**
  * Example:
@@ -50,7 +51,7 @@ import org.sonarsource.analyzer.commons.checks.verifier.internal.InternalIssueVe
  *   verifier.assertNoIssues();
  * </pre>
  */
-public interface SingleFileVerifier extends QuickfixVerifier {
+public interface SingleFileVerifier {
 
   /**
    * @param sourceFilePath
@@ -136,7 +137,7 @@ public interface SingleFileVerifier extends QuickfixVerifier {
 
   }
 
-  interface Issue extends QuickfixVerifier.IssueWithQuickfix {
+  interface Issue {
 
     /**
      * @param gap Gap used for the computation of the effort (previously effortToFix)
@@ -152,6 +153,8 @@ public interface SingleFileVerifier extends QuickfixVerifier {
      * @param message optional message, can be null
      */
     Issue addSecondary(int line, int column, int endLine, int endColumn, @Nullable String message);
+
+    Issue addQuickFix(QuickFix quickFix);
 
   }
 
