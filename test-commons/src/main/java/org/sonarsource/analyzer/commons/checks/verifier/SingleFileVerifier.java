@@ -51,7 +51,7 @@ import org.sonarsource.analyzer.commons.checks.verifier.quickfix.QuickFix;
  *   verifier.assertNoIssues();
  * </pre>
  */
-public interface SingleFileVerifier extends QuickfixVerifier {
+public interface SingleFileVerifier {
 
   /**
    * @param sourceFilePath
@@ -137,7 +137,7 @@ public interface SingleFileVerifier extends QuickfixVerifier {
 
   }
 
-  interface Issue extends QuickfixVerifier.IssueWithQuickfix {
+  interface Issue {
 
     /**
      * @param gap Gap used for the computation of the effort (previously effortToFix)
@@ -154,7 +154,6 @@ public interface SingleFileVerifier extends QuickfixVerifier {
      */
     Issue addSecondary(int line, int column, int endLine, int endColumn, @Nullable String message);
 
-    @Override
     Issue addQuickFix(QuickFix quickFix);
 
   }

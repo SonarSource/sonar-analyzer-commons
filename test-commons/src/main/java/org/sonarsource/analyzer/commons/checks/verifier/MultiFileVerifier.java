@@ -51,7 +51,7 @@ import org.sonarsource.analyzer.commons.checks.verifier.quickfix.QuickFix;
  *   verifier.assertNoIssues();
  * </pre>
  */
-public interface MultiFileVerifier extends QuickfixVerifier {
+public interface MultiFileVerifier {
 
   /**
    * @param mainSourceFilePath
@@ -108,6 +108,11 @@ public interface MultiFileVerifier extends QuickfixVerifier {
   void assertNoIssuesRaised();
 
   /**
+   * Sets the verifier to ignore expected quick fixes.
+   */
+  MultiFileVerifier withoutQuickFixes();
+
+  /**
    * Must always call one and only one of: onFile, onLine, onRange
    */
   interface IssueBuilder {
@@ -133,7 +138,7 @@ public interface MultiFileVerifier extends QuickfixVerifier {
     Issue onRange(int line, int column, int endLine, int endColumn);
   }
 
-  interface Issue extends QuickfixVerifier.IssueWithQuickfix {
+  interface Issue {
 
     /**
      * @param gap Gap used for the computation of the effort (previously effortToFix)
@@ -151,7 +156,6 @@ public interface MultiFileVerifier extends QuickfixVerifier {
      */
     Issue addSecondary(Path path, int line, int column, int endLine, int endColumn, @Nullable String message);
 
-    @Override
     Issue addQuickFix(QuickFix quickFix);
 
   }
