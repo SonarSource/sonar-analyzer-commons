@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import javax.annotation.Nullable;
 import org.sonarsource.analyzer.commons.checks.verifier.internal.InternalIssueVerifier;
+import org.sonarsource.analyzer.commons.checks.verifier.quickfix.QuickFix;
 
 /**
  * Example:
@@ -149,6 +150,9 @@ public interface MultiFileVerifier extends QuickfixVerifier {
      * @param message optional message, can be null
      */
     Issue addSecondary(Path path, int line, int column, int endLine, int endColumn, @Nullable String message);
+
+    @Override
+    Issue addQuickFix(QuickFix quickFix);
 
   }
 
