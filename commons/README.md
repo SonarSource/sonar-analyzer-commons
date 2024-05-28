@@ -11,6 +11,7 @@ Logic useful for an average language plugin
 * [`ExternalReportProvider`](./src/main/java/org/sonarsource/analyzer/commons/ExternalReportProvider.java) - to get the list of io.File with external reports
 * [`ProgressReport`](./src/main/java/org/sonarsource/analyzer/commons/ProgressReport.java) - to produce logs with number of analyzed files
 * [`FileProvider`](./src/main/java/org/sonarsource/analyzer/commons/FileProvider.java) - to get files matching given pattern in the given directory
+* [`SonarLintCache`](./src/main/java/org/sonarsource/analyzer/commons/SonarLintCache.java) - to transfer information between plugins in a SonarLint context using the cache
 
 ### License
 Copyright 2009-2023 SonarSource.
