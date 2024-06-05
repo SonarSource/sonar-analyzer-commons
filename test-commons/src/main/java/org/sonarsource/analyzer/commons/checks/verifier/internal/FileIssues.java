@@ -139,7 +139,7 @@ public class FileIssues {
   }
 
   public void addActualIssue(int line, String message, @Nullable PrimaryLocation preciseLocation, @Nullable Double effortToFix,
-    List<QuickFix> quickfixes) {
+                             List<QuickFix> quickfixes) {
     LineIssues lineIssues = actualIssueMap.computeIfAbsent(line, key -> LineIssues.at(testFile, line, preciseLocation));
     lineIssues.add(message, effortToFix);
     lineIssues.setQuickfixes(quickfixes);
@@ -242,44 +242,44 @@ public class FileIssues {
       );
   }
 
-  private static Optional<QuickFix> singleMostSimilar(QuickFix expected, List<QuickFix> actuallyProvided){
+  private static Optional<QuickFix> singleMostSimilar(QuickFix expected, List<QuickFix> actuallyProvided) {
     var similarQuickfixes = actuallyProvided.stream().filter(qf -> areSimilar(expected, qf)).collect(Collectors.toList());
     return similarQuickfixes.size() == 1 ? Optional.of(similarQuickfixes.get(0)) : Optional.empty();
   }
 
-  private static boolean areSimilar(QuickFix expected, QuickFix actual){
-    if (!expected.getDescription().equals(actual.getDescription())){
+  private static boolean areSimilar(QuickFix expected, QuickFix actual) {
+    if (!expected.getDescription().equals(actual.getDescription())) {
       return false;
     }
-    if (expected.getTextEdits().isEmpty()){
+    if (expected.getTextEdits().isEmpty()) {
       return actual.getTextEdits().isEmpty();
     }
-    if (actual.getTextEdits().isEmpty()){
+    if (actual.getTextEdits().isEmpty()) {
       return false;
     }
     return expected.getTextEdits().get(0).getTextSpan().startLine == actual.getTextEdits().get(0).getTextSpan().startLine;
   }
 
-  private static void reportFirstErrorInEdit(List<TextEdit> expectedEdits, List<TextEdit> actualEdits, Report report){
-    if (expectedEdits.size() != actualEdits.size()){
+  private static void reportFirstErrorInEdit(List<TextEdit> expectedEdits, List<TextEdit> actualEdits, Report report) {
+    if (expectedEdits.size() != actualEdits.size()) {
       report.appendQuickfixContext("Unexpected number of edits. Expected " + expectedEdits.size() + ", was " + actualEdits.size() + "\n");
       return;
     }
     var expectedEditsIter = expectedEdits.iterator();
     var actualEditsIter = actualEdits.iterator();
     var editIdx = 1;
-    while (expectedEditsIter.hasNext()){
+    while (expectedEditsIter.hasNext()) {
       var expectedEdit = expectedEditsIter.next();
       var actualEdit = actualEditsIter.next();
       var expReplacement = expectedEdit.getReplacement();
       var actReplacement = actualEdit.getReplacement();
-      if (!expReplacement.equals(actReplacement)){
+      if (!expReplacement.equals(actReplacement)) {
         report.appendQuickfixContext("Wrong replacement for edit #" + editIdx + ":\n|EXPECTED|" + expReplacement + "\n| ACTUAL |" + actReplacement + "\n");
         return;
       }
       var expSpan = expectedEdit.getTextSpan();
       var actSpan = actualEdit.getTextSpan();
-      if (!expSpan.equals(actSpan)){
+      if (!expSpan.equals(actSpan)) {
         report.appendQuickfixContext("Wrong text span for edit #" + editIdx + ": expected " + expSpan + " but was " + actSpan + "\n");
         return;
       }
