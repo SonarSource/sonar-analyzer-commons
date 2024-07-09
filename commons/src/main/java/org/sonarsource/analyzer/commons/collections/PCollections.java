@@ -53,6 +53,6 @@ public final class PCollections {
    */
   @SuppressWarnings("unchecked")
   public static <E> PStack<E> emptyStack() {
-    return (PStack<E>) SinglyLinkedList.EMPTY;
+    return SinglyLinkedList.EMPTY;
   }
 }
