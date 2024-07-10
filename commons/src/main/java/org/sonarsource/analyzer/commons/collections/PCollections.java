@@ -24,14 +24,34 @@ public final class PCollections {
   private PCollections() {
   }
 
+  /**
+   * Returns a persistent set containing zero elements.
+   *
+   * @param <E> the {@code PSet}'s element type
+   * @return an empty {@code PSet}
+   */
   public static <E> PSet<E> emptySet() {
     return AVLTree.create();
   }
 
+  /**
+   * Returns a persistent map containing zero mappings.
+   *
+   * @param <E> the {@code PMap}'s key type
+   * @param <V> the {@code PMap}'s value type
+   * @return an empty {@code PMap}
+   */
   public static <E, V> PMap<E, V> emptyMap() {
     return AVLTree.create();
   }
 
+  /**
+   * Returns a persistent stack containing zero elements.
+   *
+   * @param <E> the {@code PStack}'s element type
+   * @return an empty {@code PStack}
+   */
+  @SuppressWarnings("unchecked")
   public static <E> PStack<E> emptyStack() {
     return SinglyLinkedList.EMPTY;
   }

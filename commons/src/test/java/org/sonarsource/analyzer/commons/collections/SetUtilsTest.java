@@ -22,7 +22,6 @@ package org.sonarsource.analyzer.commons.collections;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
-import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
