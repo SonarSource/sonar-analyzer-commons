@@ -68,6 +68,7 @@ public class RuleMetadataLoaderTest {
   private static final SonarRuntime SONAR_RUNTIME_9_5 = SonarRuntimeImpl.forSonarLint(Version.create(9, 5));
   private static final SonarRuntime SONAR_RUNTIME_9_9 = SonarRuntimeImpl.forSonarLint(Version.create(9, 9));
   private static final SonarRuntime SONAR_RUNTIME_10_1 = SonarRuntimeImpl.forSonarLint(Version.create(10, 1));
+  private static final SonarRuntime SONAR_RUNTIME_10_10 = SonarRuntimeImpl.forSonarLint(Version.create(10, 10));
 
   @Before
   public void setup() {
@@ -498,6 +499,19 @@ public class RuleMetadataLoaderTest {
     assertThat(rule.type()).isEqualTo(RuleType.SECURITY_HOTSPOT);
     assertThat(rule.securityStandards())
       .containsExactlyInAnyOrder("cwe:311", "cwe:315", "cwe:614", "owaspTop10:a2", "owaspTop10:a3", "owaspTop10-2021:a4", "owaspTop10-2021:a5");
+  }
+
+  @Test
+  public void test_security_standards_on_10_10_return_asvs() {
+    Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_10_10);
+    assertThat(securityStandards).containsExactlyInAnyOrder(
+      "cwe:311", "cwe:315", "cwe:614",
+      "owaspTop10:a2", "owaspTop10:a3",
+      "owaspTop10-2021:a4", "owaspTop10-2021:a5",
+      "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2",
+      "owaspAsvs-4.0:2.1.1", "owaspAsvs-4.0:2.1.2",
+      "stig-ASD_V5R3:V-222612"
+    );
   }
 
   @Test

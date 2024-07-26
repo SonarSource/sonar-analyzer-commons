@@ -41,6 +41,7 @@ import org.sonar.api.server.rule.RulesDefinition.NewRule;
 import org.sonar.api.server.rule.RulesDefinition.OwaspAsvsVersion;
 import org.sonar.api.server.rule.RulesDefinition.OwaspTop10Version;
 import org.sonar.api.server.rule.RulesDefinition.PciDssVersion;
+import org.sonar.api.server.rule.RulesDefinition.StigVersion;
 import org.sonar.api.server.rule.RulesDefinitionAnnotationLoader;
 import org.sonar.api.utils.AnnotationUtils;
 import org.sonar.api.utils.Version;
@@ -66,6 +67,7 @@ public class RuleMetadataLoader {
   private static final String OWASP_2017 = "OWASP";
   private static final String PCI_DSS_PREFIX = "PCI DSS ";
   private static final String ASVS_PREFIX = "ASVS ";
+  private static final String STIG_PREFIX = "STIG ";
 
   public RuleMetadataLoader(String resourceFolder, SonarRuntime sonarRuntime) {
     this(resourceFolder, Collections.emptySet(), sonarRuntime);
@@ -223,6 +225,7 @@ public class RuleMetadataLoader {
     addOwasp(rule, securityStandards);
     addPciDss(rule, securityStandards);
     addOwaspAsvs(rule, securityStandards);
+    addStig(rule, securityStandards);
   }
 
   private void addOwasp(NewRule rule, Map<String, Object> securityStandards) {
@@ -262,6 +265,17 @@ public class RuleMetadataLoader {
     for (OwaspAsvsVersion asvsVersion : OwaspAsvsVersion.values()) {
       String asvsKey = ASVS_PREFIX + asvsVersion.label();
       rule.addOwaspAsvs(asvsVersion, getStringArray(securityStandards, asvsKey));
+    }
+  }
+
+  private void addStig(NewRule rule, Map<String, Object> securityStandards) {
+    if (!isSupported(10, 10)) {
+      return;
+    }
+
+    for (StigVersion stigVersion : StigVersion.values()) {
+      String stigKey = STIG_PREFIX + stigVersion.label();
+      rule.addStig(stigVersion, getStringArray(securityStandards, stigKey));
     }
   }
 
