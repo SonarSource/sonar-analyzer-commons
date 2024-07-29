@@ -502,7 +502,7 @@ public class RuleMetadataLoaderTest {
   }
 
   @Test
-  public void test_security_standards_on_10_10_return_asvs() {
+  public void test_security_standards_on_10_10_return_stig() {
     Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_10_10);
     assertThat(securityStandards).containsExactlyInAnyOrder(
       "cwe:311", "cwe:315", "cwe:614",
@@ -511,6 +511,18 @@ public class RuleMetadataLoaderTest {
       "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2",
       "owaspAsvs-4.0:2.1.1", "owaspAsvs-4.0:2.1.2",
       "stig-ASD_V5R3:V-222612"
+    );
+  }
+
+  @Test
+  public void test_security_standards_before_10_10() {
+    Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_9_9);
+    assertThat(securityStandards).containsExactlyInAnyOrder(
+      "cwe:311", "cwe:315", "cwe:614",
+      "owaspTop10:a2", "owaspTop10:a3",
+      "owaspTop10-2021:a4", "owaspTop10-2021:a5",
+      "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2",
+      "owaspAsvs-4.0:2.1.1", "owaspAsvs-4.0:2.1.2"
     );
   }
 
