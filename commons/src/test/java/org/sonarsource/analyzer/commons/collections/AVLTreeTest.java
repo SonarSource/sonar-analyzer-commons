@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -498,5 +499,41 @@ public class AVLTreeTest {
     stack = stack.push(1).push(2).push(3);
     Stream<Integer> stream = stack.stream();
     assertThat(stream).containsExactly(3, 2, 1);
+  }
+
+  @Test
+  public void test_not_equal_but_same_hashcode_iteration() {
+    var a = new Weird();
+    var b = new Weird();
+
+    int count = 0;
+    var set = PSet.of(a, b);
+    for (var ignored : set) {
+      count++;
+    }
+    assertThat(count).isEqualTo(2);
+  }
+
+  @Test
+  public void test_not_equal_but_same_hashcode_forEach() {
+    var a = new Weird();
+    var b = new Weird();
+
+    var count = new AtomicInteger(0);
+    var set = PSet.of(a, b);
+    set.forEach(ignored -> count.incrementAndGet());
+    assertThat(count.get()).isEqualTo(2);
+  }
+
+  static class Weird {
+    @Override
+    public boolean equals(Object obj) {
+      return false;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
   }
 }

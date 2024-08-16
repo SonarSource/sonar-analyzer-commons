@@ -28,20 +28,27 @@ class TreeIterator<K, V> implements Iterator<AVLTree<K, V>> {
 
   private final Deque<AVLTree<K, V>> stack = new ArrayDeque<>();
   private AVLTree<K, V> current;
+  private AVLTree<K, V> inBucket;
 
   TreeIterator(AVLTree<K, V> root) {
     current = root;
+    inBucket = null;
   }
 
   @Override
   public boolean hasNext() {
-    return !stack.isEmpty() || !current.isEmpty();
+    return !stack.isEmpty() || !current.isEmpty() || inBucket != null;
   }
 
   @SuppressWarnings("unchecked")
   public AVLTree<K, V> next() {
     if (!hasNext()) {
       throw new NoSuchElementException();
+    }
+    if (inBucket != null) {
+      var previous = inBucket;
+      inBucket = inBucket.nextInBucket();
+      return previous;
     }
     while (!current.isEmpty()) {
       stack.push(current);
@@ -50,6 +57,7 @@ class TreeIterator<K, V> implements Iterator<AVLTree<K, V>> {
     current = stack.pop();
     AVLTree<K, V> node = current;
     current = current.right();
+    inBucket = node.nextInBucket();
     return node;
   }
 }
