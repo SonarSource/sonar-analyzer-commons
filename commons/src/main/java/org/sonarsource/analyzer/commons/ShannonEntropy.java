@@ -19,7 +19,8 @@
  */
 package org.sonarsource.analyzer.commons;
 
-import java.util.HashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 public class ShannonEntropy {
@@ -35,9 +36,12 @@ public class ShannonEntropy {
     }
     int length = str.length();
     return str.chars()
-      .collect(HashMap<Integer, Integer>::new, (map, ch) -> map.merge(ch, 1, Integer::sum), HashMap::putAll)
-      .values().stream()
-      .mapToDouble(count -> ((double) count) / length)
+      .boxed()
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+      .values()
+      .stream()
+      .map(Long::doubleValue)
+      .mapToDouble(count -> count / length)
       .map(frequency -> -frequency * Math.log(frequency))
       .sum() / LOG_2;
   }
