@@ -52,6 +52,10 @@ public abstract class SonarXmlCheck {
     return ruleKey;
   }
 
+  protected SensorContext getContext() {
+    return context;
+  }
+
   public abstract void scanFile(XmlFile file);
 
   public final void reportIssueOnFile(String message, List<Integer> secondaryLocationLines) {
