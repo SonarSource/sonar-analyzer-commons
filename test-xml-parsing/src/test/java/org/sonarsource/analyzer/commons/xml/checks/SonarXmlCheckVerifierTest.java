@@ -21,18 +21,23 @@ package org.sonarsource.analyzer.commons.xml.checks;
 
 import org.assertj.core.util.Lists;
 import org.junit.Test;
+import org.sonar.api.config.internal.MapSettings;
 import org.sonarsource.analyzer.commons.xml.XmlFile;
 import org.w3c.dom.Element;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SonarXmlCheckVerifierTest {
 
   @Test
   public void test() {
-    SonarXmlCheckVerifier.verifyNoIssue("file.xml", new SilentTestCheck());
+    SilentTestCheck check = new SilentTestCheck();
+    SonarXmlCheckVerifier.verifyNoIssue("file.xml", check);
+    SonarXmlCheckVerifier.verifyNoIssue("file.xml", check, new MapSettings());
     SonarXmlCheckVerifier.verifyIssueOnFile("file.xml", new FileTestCheck(), "Test file level message", 1, 2);
     SonarXmlCheckVerifier.verifyIssues("checkTestFile.xml", new TestCheck());
+    SonarXmlCheckVerifier.verifyIssues("checkTestFile.xml", new TestCheck(), new MapSettings());
   }
 
   @Test

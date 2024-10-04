@@ -38,6 +38,7 @@ import org.sonar.api.batch.sensor.internal.SensorContextTester;
 import org.sonar.api.batch.sensor.issue.Issue;
 import org.sonar.api.batch.sensor.issue.Issue.Flow;
 import org.sonar.api.batch.sensor.issue.IssueLocation;
+import org.sonar.api.config.internal.MapSettings;
 import org.sonar.api.rule.RuleKey;
 import org.sonarsource.analyzer.commons.checks.verifier.SingleFileVerifier;
 import org.sonarsource.analyzer.commons.xml.XmlFile;
@@ -70,11 +71,27 @@ public class SonarXmlCheckVerifier {
     createVerifier(relativePath, check).checkNoIssues();
   }
 
-  private static SonarXmlCheckVerifier createVerifier(String fileName, SonarXmlCheck check) {
-    File file = new File(new File(BASE_DIR.toFile(), check.getClass().getSimpleName()), fileName);
+  public static void verifyIssues(String relativePath, SonarXmlCheck check, MapSettings settings) {
+    createVerifier(relativePath, check, settings).checkIssues();
+  }
 
+  public static void verifyNoIssue(String relativePath, SonarXmlCheck check, MapSettings settings) {
+    createVerifier(relativePath, check, settings).checkNoIssues();
+  }
+
+  private static SonarXmlCheckVerifier createVerifier(String fileName, SonarXmlCheck check, MapSettings settings) {
     SensorContextTester context = SensorContextTester.create(BASE_DIR);
+    context.setSettings(settings);
+    return createVerifier(fileName, check, context);
+  }
 
+  private static SonarXmlCheckVerifier createVerifier(String fileName, SonarXmlCheck check) {
+    SensorContextTester context = SensorContextTester.create(BASE_DIR);
+    return createVerifier(fileName, check, context);
+  }
+
+  private static SonarXmlCheckVerifier createVerifier(String fileName, SonarXmlCheck check, SensorContextTester context) {
+    File file = new File(new File(BASE_DIR.toFile(), check.getClass().getSimpleName()), fileName);
     String filePath = file.getPath();
     String content;
     try (Stream<String> lines = Files.lines(file.toPath())) {
