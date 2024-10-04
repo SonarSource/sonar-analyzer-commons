@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 import org.sonar.api.SonarRuntime;
 import org.sonar.api.issue.impact.Severity;
 import org.sonar.api.issue.impact.SoftwareQuality;
@@ -206,7 +207,7 @@ public class RuleMetadataLoader {
     }
   }
 
-  private static void setCodeAttributeFromJson(NewRule rule, Map<String, Object> code) {
+  private void setCodeAttributeFromJson(NewRule rule, Map<String, Object> code) {
     String attribute = getString(code, "attribute");
     rule.setCleanCodeAttribute(CleanCodeAttribute.valueOf(attribute));
 
@@ -214,7 +215,23 @@ public class RuleMetadataLoader {
     if (impacts == null || impacts.isEmpty()) {
       throw new IllegalStateException(String.format(INVALID_PROPERTY_MESSAGE, "impacts") + " for rule: " + rule.key());
     }
-    impacts.forEach((softwareQuality, severity) -> rule.addDefaultImpact(SoftwareQuality.valueOf(softwareQuality), Severity.valueOf(severity)));
+    impacts.forEach((softwareQuality, severity) -> rule.addDefaultImpact(SoftwareQuality.valueOf(softwareQuality),
+      getCleanCodeTaxanomySeverity(severity)));
+  }
+
+  private @NotNull Severity getCleanCodeTaxanomySeverity(String severity) {
+    if (isSupported(10, 11)) {
+      return Severity.valueOf(severity);
+    }
+
+    switch (severity) {
+      case "INFO":
+        return Severity.LOW;
+      case "BLOCKER":
+        return Severity.HIGH;
+      default:
+        return Severity.valueOf(severity);
+    }
   }
 
   private void setSecurityStandardsFromJson(NewRule rule, Map<String, Object> securityStandards) {
