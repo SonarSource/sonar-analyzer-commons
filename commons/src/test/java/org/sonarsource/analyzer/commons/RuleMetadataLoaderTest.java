@@ -49,9 +49,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
+import static org.sonar.api.issue.impact.Severity.BLOCKER;
 import static org.sonar.api.issue.impact.Severity.HIGH;
+import static org.sonar.api.issue.impact.Severity.INFO;
 import static org.sonar.api.issue.impact.Severity.LOW;
 import static org.sonar.api.issue.impact.SoftwareQuality.MAINTAINABILITY;
+import static org.sonar.api.issue.impact.SoftwareQuality.RELIABILITY;
+import static org.sonar.api.issue.impact.SoftwareQuality.SECURITY;
 import static org.sonar.api.rules.CleanCodeAttribute.IDENTIFIABLE;
 
 public class RuleMetadataLoaderTest {
@@ -69,6 +73,7 @@ public class RuleMetadataLoaderTest {
   private static final SonarRuntime SONAR_RUNTIME_9_9 = SonarRuntimeImpl.forSonarLint(Version.create(9, 9));
   private static final SonarRuntime SONAR_RUNTIME_10_1 = SonarRuntimeImpl.forSonarLint(Version.create(10, 1));
   private static final SonarRuntime SONAR_RUNTIME_10_10 = SonarRuntimeImpl.forSonarLint(Version.create(10, 10));
+  private static final SonarRuntime SONAR_RUNTIME_10_11 = SonarRuntimeImpl.forSonarLint(Version.create(10, 11));
 
   @Before
   public void setup() {
@@ -83,7 +88,7 @@ public class RuleMetadataLoaderTest {
     class TestRule {
     }
 
-    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_10_1);
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_10_11);
     ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
     newRepository.done();
     RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
@@ -94,7 +99,11 @@ public class RuleMetadataLoaderTest {
     assertThat(rule.severity()).isEqualTo("MINOR");
     assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
     assertThat(rule.cleanCodeAttribute()).isEqualTo(IDENTIFIABLE);
-    assertThat(rule.defaultImpacts()).isEqualTo(Map.of(MAINTAINABILITY, HIGH));
+    assertThat(rule.defaultImpacts()).isEqualTo(Map.ofEntries(
+      Map.entry(MAINTAINABILITY, HIGH),
+      Map.entry(SECURITY, INFO),
+      Map.entry(RELIABILITY, BLOCKER)
+    ));
     assertThat(rule.status()).isEqualTo(RuleStatus.READY);
     assertThat(rule.tags()).containsExactly("convention");
     DebtRemediationFunction remediation = rule.debtRemediationFunction();
@@ -102,6 +111,25 @@ public class RuleMetadataLoaderTest {
     assertThat(remediation.type()).isEqualTo(DebtRemediationFunction.Type.CONSTANT_ISSUE);
     assertThat(remediation.baseEffort()).isEqualTo("5min");
     assertThat(rule.deprecatedRuleKeys()).isEmpty();
+  }
+
+  @Test
+  public void test_if_info_blocker_taxonomy_are_migrated() {
+    @Rule(key = "taxonomy_rule")
+    class TestRule {
+    }
+
+    ruleMetadataLoader = new RuleMetadataLoader(RESOURCE_FOLDER, SONAR_RUNTIME_10_10);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("taxonomy_rule");
+    assertThat(rule).isNotNull();
+    assertThat(rule.defaultImpacts()).isEqualTo(Map.ofEntries(
+      Map.entry(MAINTAINABILITY, HIGH),
+      Map.entry(SECURITY, LOW),
+      Map.entry(RELIABILITY, HIGH)
+    ));
   }
 
   @Test
