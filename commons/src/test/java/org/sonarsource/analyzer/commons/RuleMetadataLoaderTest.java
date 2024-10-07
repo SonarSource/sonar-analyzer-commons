@@ -31,8 +31,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonar.api.SonarRuntime;
 import org.sonar.api.internal.SonarRuntimeImpl;
-import org.sonar.api.issue.impact.Severity;
-import org.sonar.api.issue.impact.SoftwareQuality;
 import org.sonar.api.rule.RuleKey;
 import org.sonar.api.rule.RuleScope;
 import org.sonar.api.rule.RuleStatus;
@@ -51,9 +49,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
+import static org.sonar.api.issue.impact.Severity.BLOCKER;
 import static org.sonar.api.issue.impact.Severity.HIGH;
+import static org.sonar.api.issue.impact.Severity.INFO;
 import static org.sonar.api.issue.impact.Severity.LOW;
 import static org.sonar.api.issue.impact.SoftwareQuality.MAINTAINABILITY;
+import static org.sonar.api.issue.impact.SoftwareQuality.RELIABILITY;
+import static org.sonar.api.issue.impact.SoftwareQuality.SECURITY;
 import static org.sonar.api.rules.CleanCodeAttribute.IDENTIFIABLE;
 
 public class RuleMetadataLoaderTest {
@@ -99,8 +101,8 @@ public class RuleMetadataLoaderTest {
     assertThat(rule.cleanCodeAttribute()).isEqualTo(IDENTIFIABLE);
     assertThat(rule.defaultImpacts()).isEqualTo(Map.ofEntries(
       Map.entry(MAINTAINABILITY, HIGH),
-      Map.entry(SoftwareQuality.SECURITY, Severity.INFO),
-      Map.entry(SoftwareQuality.RELIABILITY, Severity.BLOCKER)
+      Map.entry(SECURITY, INFO),
+      Map.entry(RELIABILITY, BLOCKER)
     ));
     assertThat(rule.status()).isEqualTo(RuleStatus.READY);
     assertThat(rule.tags()).containsExactly("convention");
@@ -125,8 +127,8 @@ public class RuleMetadataLoaderTest {
     assertThat(rule).isNotNull();
     assertThat(rule.defaultImpacts()).isEqualTo(Map.ofEntries(
       Map.entry(MAINTAINABILITY, HIGH),
-      Map.entry(SoftwareQuality.SECURITY, LOW),
-      Map.entry(SoftwareQuality.RELIABILITY, HIGH)
+      Map.entry(SECURITY, LOW),
+      Map.entry(RELIABILITY, HIGH)
     ));
   }
 

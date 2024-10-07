@@ -27,7 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.jetbrains.annotations.NotNull;
 import org.sonar.api.SonarRuntime;
 import org.sonar.api.issue.impact.Severity;
 import org.sonar.api.issue.impact.SoftwareQuality;
@@ -215,11 +214,11 @@ public class RuleMetadataLoader {
     if (impacts == null || impacts.isEmpty()) {
       throw new IllegalStateException(String.format(INVALID_PROPERTY_MESSAGE, "impacts") + " for rule: " + rule.key());
     }
-    impacts.forEach((softwareQuality, severity) -> rule.addDefaultImpact(SoftwareQuality.valueOf(softwareQuality),
-      getCleanCodeTaxanomySeverity(severity)));
+    impacts.forEach((softwareQuality, severity) ->
+      rule.addDefaultImpact(SoftwareQuality.valueOf(softwareQuality), getCleanCodeTaxanomySeverity(severity)));
   }
 
-  private @NotNull Severity getCleanCodeTaxanomySeverity(String severity) {
+  private Severity getCleanCodeTaxanomySeverity(String severity) {
     if (isSupported(10, 11)) {
       return Severity.valueOf(severity);
     }
