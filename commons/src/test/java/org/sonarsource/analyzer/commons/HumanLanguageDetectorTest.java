@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.offset;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-class LatinAlphabetDetectorTest {
+class HumanLanguageDetectorTest {
 
   static Stream<Arguments> testHumanLanguageScore() {
     return of(
@@ -81,6 +81,6 @@ class LatinAlphabetDetectorTest {
   @ParameterizedTest
   @MethodSource
   void testHumanLanguageScore(String text, Double expected) {
-    assertThat(LatinAlphabetDetector.humanLanguageScore(text)).isEqualTo(expected, offset(0.0000001));
+    assertThat(HumanLanguageDetector.humanLanguageScore(text)).isEqualTo(expected, offset(0.0000001));
   }
 }

@@ -20,9 +20,9 @@
 package org.sonarsource.analyzer.commons;
 
 public class EntropyDetector {
-  private static final int DEFAULT_MIN_SECRET_LENGTH_FOR_GIVEN_ENTROPY = 25;
-  private static final double DEFAULT_ENTROPY_INCREASE_FACTOR_BY_MISSING_CHARACTER = 1.034;
-  private static final double DEFAULT_ENTROPY_SCORE_INCREMENT = 0.6;
+  public static final int DEFAULT_MIN_SECRET_LENGTH_FOR_GIVEN_ENTROPY = 25;
+  public static final double DEFAULT_ENTROPY_INCREASE_FACTOR_BY_MISSING_CHARACTER = 1.034;
+  public static final double DEFAULT_ENTROPY_SCORE_INCREMENT = 0.6;
 
   private final double minEntropyThreshold;
   private final int minimumSecretLengthForGivenEntropy;

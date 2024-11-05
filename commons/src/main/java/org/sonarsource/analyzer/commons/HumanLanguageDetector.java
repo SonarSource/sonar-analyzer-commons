@@ -23,7 +23,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class LatinAlphabetDetector {
+public class HumanLanguageDetector {
   private static final double[] WORD_FIRST_LETTER_FREQUENCIES = {2.6590433d, 1.2620203d, 1.5564419d, 0.9035879d, 0.7042806d, 1.1847413d, 0.4955763d, 0.9510469d, 1.7106735d,
     0.2684641d,
     0.2196475d, 0.7503985d, 1.087598d, 0.6504237d, 1.7798191d, 1.2322421d, 0.0468438d, 0.9674179d, 1.8778546d, 3.5174797d, 0.4200321d, 0.2624742d, 1.2915608d, 0.0095785d,
@@ -89,7 +89,7 @@ public class LatinAlphabetDetector {
 
   private static final Pattern wordPattern = Pattern.compile("[a-z]++|[A-Z][a-z]++|[A-Za-z]++");
 
-  private LatinAlphabetDetector() {
+  private HumanLanguageDetector() {
     // utility class
   }
 

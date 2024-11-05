@@ -27,12 +27,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.sonarsource.analyzer.commons.EntropyDetector.DEFAULT_ENTROPY_INCREASE_FACTOR_BY_MISSING_CHARACTER;
+import static org.sonarsource.analyzer.commons.EntropyDetector.DEFAULT_ENTROPY_SCORE_INCREMENT;
+import static org.sonarsource.analyzer.commons.EntropyDetector.DEFAULT_MIN_SECRET_LENGTH_FOR_GIVEN_ENTROPY;
 
 class EntropyDetectorTest {
 
   @ParameterizedTest
   @MethodSource("stringPerLevelForEntropyScore")
-  void test_progressive_entropy_score_sensibility(String input, int currentSensibility) {
+  void testProgressiveEntropyScoreSensibility(String input, int currentSensibility) {
     // The higher the sensibility, the more we filter.
     // We want to test that the current level accept the string, but not the level above.
     EntropyDetector current = new EntropyDetector(currentSensibility);
@@ -57,13 +60,13 @@ class EntropyDetectorTest {
   }
 
   @Test
-  void test_last_level_entropy_sensibility() {
+  void testLastLevelEntropySensibility() {
     EntropyDetector current = new EntropyDetector(10);
     assertFalse(current.hasEnoughEntropy("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"));
   }
 
   @Test
-  void test_entropy_high_sensibility() {
+  void testEntropyHighSensibility() {
     EntropyDetector current = new EntropyDetector(7);
     // Low entropy
     assertFalse(current.hasEnoughEntropy("the_the_the_the_the_the_the"));
@@ -74,7 +77,7 @@ class EntropyDetectorTest {
   }
 
   @Test
-  void test_entropy_low_sensibility() {
+  void testEntropyLowSensibility() {
     EntropyDetector current = new EntropyDetector(1);
     assertTrue(current.hasEnoughEntropy("my package"));
     assertTrue(current.hasEnoughEntropy("xxx_xxx_xxx_xxx_xxx_xxx_xxx"));
@@ -85,23 +88,35 @@ class EntropyDetectorTest {
   }
 
   @Test
-  void test_custom_minimum_secret_length() {
-    EntropyDetector current = new EntropyDetector(1, 10, 1.034, 0.6);
+  void testCustomMinimumSecretLength() {
+    EntropyDetector current = new EntropyDetector(
+      1,
+      10,
+      DEFAULT_ENTROPY_INCREASE_FACTOR_BY_MISSING_CHARACTER,
+      DEFAULT_ENTROPY_SCORE_INCREMENT);
     assertTrue(current.hasEnoughEntropy("xxx_xxx_xxx"));
     assertFalse(current.hasEnoughEntropy("xxx_xxx"));
   }
 
   @Test
-  void test_custom_entropy_increase_factor_by_missing_character() {
-    EntropyDetector current = new EntropyDetector(1, 25, 1.05, 0.6);
+  void testCustomEntropyIncreaseFactorByMissingCharacter() {
+    EntropyDetector current = new EntropyDetector(
+      1,
+      DEFAULT_MIN_SECRET_LENGTH_FOR_GIVEN_ENTROPY,
+      1.05,
+      DEFAULT_ENTROPY_SCORE_INCREMENT);
     assertTrue(current.hasEnoughEntropy("xxx_xxx_xxx_xxx_xxx_xxx_xxx"));
     assertTrue(current.hasEnoughEntropy("xxx_xxx_xxx_xxx_xxx_xxx"));
     assertFalse(current.hasEnoughEntropy("xxx_xxx_xxx"));
   }
 
   @Test
-  void test_custom_entropy_score_increment() {
-    EntropyDetector current = new EntropyDetector(1, 25, 1.034, 0.5);
+  void testCustomEntropyScoreIncrement() {
+    EntropyDetector current = new EntropyDetector(
+      1,
+      DEFAULT_MIN_SECRET_LENGTH_FOR_GIVEN_ENTROPY,
+      DEFAULT_ENTROPY_INCREASE_FACTOR_BY_MISSING_CHARACTER,
+      0.5);
     assertTrue(current.hasEnoughEntropy("xxx_xxx_xxx_xxx_xxx"));
     assertFalse(current.hasEnoughEntropy("xxx_xxx"));
   }
