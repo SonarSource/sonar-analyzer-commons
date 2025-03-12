@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.sonar.api.SonarRuntime;
@@ -36,11 +37,16 @@ import org.sonar.api.rule.RuleScope;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.debt.DebtRemediationFunction;
+import org.sonar.api.server.rule.RuleParamType;
 import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.utils.Version;
 import org.sonar.check.Rule;
 import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKey;
+import org.sonarsource.analyzer.commons.domain.RuleManifest;
+import org.sonarsource.analyzer.commons.domain.RuleManifestCode;
+import org.sonarsource.analyzer.commons.domain.RuleManifestParameter;
+import org.sonarsource.analyzer.commons.domain.RuleManifestRemediation;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -625,6 +631,201 @@ public class RuleMetadataLoaderTest {
     }
   }
 
+  @Test
+  public void test_create_rule_from_rule_manifest_with_no_remediation() {
+    var manifest = this.createRuleManifest(null, List.of(new RuleManifestParameter() {
+      public String defaultValue() {
+        return "Default Value";
+      }
+
+      public String description() {
+        return "Param0 Description";
+      }
+
+      public String name() {
+        return "Param0";
+      }
+
+      public String type() {
+        return "STRING";
+      }
+    }, new RuleManifestParameter() {
+      public String defaultValue() {
+        return "10";
+      }
+
+      public String description() {
+        return "Param1 Description";
+      }
+
+      public String name() {
+        return "Param1";
+      }
+
+      public String type() {
+        return "INTEGER";
+      }
+    }), new RuleManifestCode() {
+      public Map<String, String> impacts() {
+        return Map.of("MAINTAINABILITY", "LOW");
+      }
+
+      public String attribute() {
+        return "IDENTIFIABLE";
+      }
+    });
+
+    var ruleMetadataLoader1011 = new RuleMetadataLoader(SONAR_RUNTIME_10_11);
+
+    var newRule = ruleMetadataLoader1011.createRuleFromRuleManifest(newRepository, manifest);
+
+    assertThat(newRule.key()).isEqualTo("Name");
+
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("Name");
+
+    assertThat(rule).isNotNull();
+    assertThat(rule.cleanCodeAttribute()).isEqualTo(IDENTIFIABLE);
+    assertThat(rule.key()).isEqualTo("Name");
+    assertThat(rule.htmlDescription()).isEqualTo("<h2>HTMLDocumentation</h2>");
+    assertThat(rule.ruleDescriptionSections()).isEmpty();
+    assertThat(rule.scope()).isEqualTo(RuleScope.TEST);
+    assertThat(rule.severity()).isEqualTo("MINOR");
+    assertThat(rule.status()).isEqualTo(RuleStatus.READY);
+    assertThat(rule.tags()).containsExactly("tag0", "tag1");
+    assertThat(rule.debtRemediationFunction()).isNull();
+
+    assertThat(rule.param("Param0").type()).isEqualTo(RuleParamType.STRING);
+    assertThat(rule.param("Param0").defaultValue()).isEqualTo("Default Value");
+    assertThat(rule.param("Param0").description()).isEqualTo("Param0 Description");
+    assertThat(rule.param("Param1").type()).isEqualTo(RuleParamType.INTEGER);
+    assertThat(rule.param("Param1").defaultValue()).isEqualTo("10");
+    assertThat(rule.param("Param1").description()).isEqualTo("Param1 Description");  }
+
+  @Test
+  public void test_create_rule_from_rule_manifest_with_constant_remediation() {
+    var manifest = this.createRuleManifest(new RuleManifestRemediation() {
+      public String func() {
+        return "ConstantFunction";
+      }
+
+      public String constantCost() {
+        return "10min";
+      }
+
+      public String linearFactor() {
+        return null;
+      }
+
+      public String linearOffset() {
+        return null;
+      }
+
+      public String linearDescription() {
+        return null;
+      }
+    }, List.of(), null);
+
+    var ruleMetadataLoader1011 = new RuleMetadataLoader(SONAR_RUNTIME_10_11);
+
+    var newRule = ruleMetadataLoader1011.createRuleFromRuleManifest(newRepository, manifest);
+
+    assertThat(newRule.key()).isEqualTo("Name");
+
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("Name");
+
+    assertThat(rule.debtRemediationFunction().type()).isEqualTo(DebtRemediationFunction.Type.CONSTANT_ISSUE);
+    assertThat(rule.debtRemediationFunction().baseEffort()).isEqualTo("10min");
+    assertThat(rule.debtRemediationFunction().gapMultiplier()).isNull();
+  }
+
+  @Test
+  public void test_create_rule_from_rule_manifest_with_linear_remediation() {
+    var manifest = this.createRuleManifest(new RuleManifestRemediation() {
+      public String func() {
+        return "Linear";
+      }
+
+      public String constantCost() {
+        return null;
+      }
+
+      public String linearFactor() {
+        return "10min";
+      }
+
+      public String linearOffset() {
+        return "linear offset";
+      }
+
+      public String linearDescription() {
+        return "Remediation Linear Description";
+      }
+    }, List.of(), null);
+
+    var ruleMetadataLoader1011 = new RuleMetadataLoader(SONAR_RUNTIME_10_11);
+
+    var newRule = ruleMetadataLoader1011.createRuleFromRuleManifest(newRepository, manifest);
+
+    assertThat(newRule.key()).isEqualTo("Name");
+
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("Name");
+
+    assertThat(rule.debtRemediationFunction().type()).isEqualTo(DebtRemediationFunction.Type.LINEAR);
+    assertThat(rule.debtRemediationFunction().baseEffort()).isNull();
+    assertThat(rule.debtRemediationFunction().gapMultiplier()).isEqualTo("10min");
+    assertThat(rule.gapDescription()).isEqualTo("Remediation Linear Description");
+  }
+
+  @Test
+  public void test_create_rule_from_rule_manifest_with_linear_offset_remediation() {
+    var manifest = this.createRuleManifest(new RuleManifestRemediation() {
+      public String func() {
+        return "LinearOffset";
+      }
+
+      public String constantCost() {
+        return null;
+      }
+
+      public String linearFactor() {
+        return "5min";
+      }
+
+      public String linearOffset() {
+        return "10min";
+      }
+
+      public String linearDescription() {
+        return "Remediation Linear Description";
+      }
+    }, List.of(), null);
+
+    var ruleMetadataLoader1011 = new RuleMetadataLoader(SONAR_RUNTIME_10_11);
+
+    var newRule = ruleMetadataLoader1011.createRuleFromRuleManifest(newRepository, manifest);
+
+    assertThat(newRule.key()).isEqualTo("Name");
+
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("Name");
+
+    assertThat(rule.debtRemediationFunction().type()).isEqualTo(DebtRemediationFunction.Type.LINEAR_OFFSET);
+    assertThat(rule.debtRemediationFunction().baseEffort()).isEqualTo("10min");
+    assertThat(rule.debtRemediationFunction().gapMultiplier()).isEqualTo("5min");
+    assertThat(rule.gapDescription()).isEqualTo("Remediation Linear Description");
+  }
+
   private Set<String> getSecurityStandards(SonarRuntime sonarRuntime) {
     @Rule(key = "S2092")
     class TestRule {
@@ -636,4 +837,59 @@ public class RuleMetadataLoaderTest {
     return rule.securityStandards();
   }
 
+  private RuleManifest createRuleManifest(
+    RuleManifestRemediation remediation,
+    List<RuleManifestParameter> parameters,
+    RuleManifestCode code
+  ) {
+    return new RuleManifest() {
+      public RuleManifestCode code() {
+        return code;
+      }
+
+      public String defaultSeverity() {
+        return "Minor";
+      }
+
+      public String htmlDocumentation() {
+        return "<h2>HTMLDocumentation</h2>";
+      }
+
+      public String name() {
+        return "Name";
+      }
+
+      public List<RuleManifestParameter> parameters() {
+        return parameters;
+      }
+
+      public RuleManifestRemediation remediation() {
+        return remediation;
+      }
+
+      public String scope() {
+        return "Tests";
+      }
+
+      public String sqKey() {
+        return "SQ Key";
+      }
+
+      public String status() {
+        return "ready";
+      }
+
+      public List<String> tags() {
+        return List.of("tag0", "tag1");
+      }
+
+      public String title() {
+        return "Title";
+      }
+
+      public String type() {
+        return "CODE_SMELL";
+      }
+    };
+  }
 }
