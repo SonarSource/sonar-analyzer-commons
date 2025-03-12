@@ -122,7 +122,7 @@
                   <!-- Warning: Please consider carefully when increasing the size of this shared library, it might have
                   impact on all our analyzers! -->
                   <minsize>130000</minsize>
-                  <maxsize>133000</maxsize>
+                  <maxsize>140000</maxsize>
                   <files>
                     <file>${project.build.directory}/${project.build.finalName}.jar</file>
                   </files>

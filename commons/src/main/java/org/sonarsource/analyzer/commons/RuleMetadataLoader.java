@@ -22,11 +22,13 @@ package org.sonarsource.analyzer.commons;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
 import org.sonar.api.SonarRuntime;
 import org.sonar.api.issue.impact.Severity;
 import org.sonar.api.issue.impact.SoftwareQuality;
@@ -34,6 +36,7 @@ import org.sonar.api.rule.RuleScope;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.CleanCodeAttribute;
 import org.sonar.api.rules.RuleType;
+import org.sonar.api.server.rule.RuleParamType;
 import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinition.DebtRemediationFunctions;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
@@ -47,6 +50,9 @@ import org.sonar.api.utils.AnnotationUtils;
 import org.sonar.api.utils.Version;
 import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKey;
 import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKeys;
+import org.sonarsource.analyzer.commons.domain.RuleManifest;
+
+import javax.annotation.Nullable;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -68,6 +74,13 @@ public class RuleMetadataLoader {
   private static final String PCI_DSS_PREFIX = "PCI DSS ";
   private static final String ASVS_PREFIX = "ASVS ";
   private static final String STIG_PREFIX = "STIG ";
+  private static final String IMPACTS = "impacts";
+  private static final String LINEAR_FACTOR = "linearFactor";
+  private static final String LINEAR_DESCRIPTION = "linearDesc";
+
+  public RuleMetadataLoader(SonarRuntime sonarRuntime) {
+    this(null, Collections.emptySet(), sonarRuntime);
+  }
 
   public RuleMetadataLoader(String resourceFolder, SonarRuntime sonarRuntime) {
     this(resourceFolder, Collections.emptySet(), sonarRuntime);
@@ -77,7 +90,7 @@ public class RuleMetadataLoader {
     this(resourceFolder, BuiltInQualityProfileJsonLoader.loadActiveKeysFromJsonProfile(defaultProfilePath), sonarRuntime);
   }
 
-  private RuleMetadataLoader(String resourceFolder, Set<String> activatedByDefault, SonarRuntime sonarRuntime) {
+  private RuleMetadataLoader(@Nullable String resourceFolder, Set<String> activatedByDefault, SonarRuntime sonarRuntime) {
     this.resourceFolder = resourceFolder;
     this.jsonParser = new JsonParser();
     this.activatedByDefault = activatedByDefault;
@@ -99,8 +112,8 @@ public class RuleMetadataLoader {
 
   private void addRuleByAnnotatedClass(NewRepository repository, Class<?> ruleClass) {
     NewRule rule = addAnnotatedRule(repository, ruleClass);
-    setDescriptionFromHtml(rule);
-    setMetadataFromJson(rule);
+    setDescriptionFromHtmlFile(rule);
+    setMetadataFromJsonFile(rule);
     setDefaultActivation(rule);
   }
 
@@ -150,12 +163,17 @@ public class RuleMetadataLoader {
       throw new IllegalStateException("Empty key");
     }
     NewRule rule = repository.createRule(ruleKey);
-    setDescriptionFromHtml(rule);
-    setMetadataFromJson(rule);
+    setDescriptionFromHtmlFile(rule);
+    setMetadataFromJsonFile(rule);
     setDefaultActivation(rule);
   }
 
-  private void setDescriptionFromHtml(NewRule rule) {
+  private void setDescriptionFromHtml(NewRule rule, String description) {
+    description = educationRuleLoader.setEducationDescriptionFromHtml(rule, description);
+    rule.setHtmlDescription(description);
+  }
+
+  private void setDescriptionFromHtmlFile(NewRule rule) {
     String htmlPath = resourceFolder + RESOURCE_SEP + rule.key() + ".html";
     String description;
     try {
@@ -163,12 +181,10 @@ public class RuleMetadataLoader {
     } catch (IOException e) {
       throw new IllegalStateException("Can't read resource: " + htmlPath, e);
     }
-    description = educationRuleLoader.setEducationDescriptionFromHtml(rule, description);
-    rule.setHtmlDescription(description);
+    this.setDescriptionFromHtml(rule, description);
   }
 
-  private void setMetadataFromJson(NewRule rule) {
-    Map<String, Object> ruleMetadata = getMetadata(rule.key());
+  private void setMetadataFromJson(NewRule rule, Map<String, Object> ruleMetadata) {
     rule.setName(getString(ruleMetadata, "title"));
     rule.setSeverity(getUpperCaseString(ruleMetadata, "defaultSeverity"));
     String type = getUpperCaseString(ruleMetadata, "type");
@@ -197,7 +213,13 @@ public class RuleMetadataLoader {
     educationRuleLoader.setEducationMetadataFromJson(rule, ruleMetadata);
   }
 
-  Map<String, Object> getMetadata(String ruleKey) {
+  private void setMetadataFromJsonFile(NewRule rule) {
+    Map<String, Object> ruleMetadata = getMetadataFromFile(rule.key());
+
+    this.setMetadataFromJson(rule, ruleMetadata);
+  }
+
+  Map<String, Object> getMetadataFromFile(String ruleKey) {
     String jsonPath = resourceFolder + RESOURCE_SEP + ruleKey + ".json";
     try {
       return jsonParser.parse(Resources.toString(jsonPath, UTF_8));
@@ -210,9 +232,9 @@ public class RuleMetadataLoader {
     String attribute = getString(code, "attribute");
     rule.setCleanCodeAttribute(CleanCodeAttribute.valueOf(attribute));
 
-    Map<String, String> impacts = (Map<String, String>) code.get("impacts");
+    Map<String, String> impacts = (Map<String, String>) code.get(IMPACTS);
     if (impacts == null || impacts.isEmpty()) {
-      throw new IllegalStateException(String.format(INVALID_PROPERTY_MESSAGE, "impacts") + " for rule: " + rule.key());
+      throw new IllegalStateException(String.format(INVALID_PROPERTY_MESSAGE, IMPACTS) + " for rule: " + rule.key());
     }
     impacts.forEach((softwareQuality, severity) ->
       rule.addDefaultImpact(SoftwareQuality.valueOf(softwareQuality), getCleanCodeTaxanomySeverity(severity)));
@@ -306,17 +328,17 @@ public class RuleMetadataLoader {
       String constantCost = getString(remediation, "constantCost");
       rule.setDebtRemediationFunction(remediationBuilder.constantPerIssue(constantCost.replace("mn", "min")));
     } else if ("Linear".equals(func)) {
-      String linearFactor = getString(remediation, "linearFactor");
+      String linearFactor = getString(remediation, LINEAR_FACTOR);
       rule.setDebtRemediationFunction(remediationBuilder.linear(linearFactor.replace("mn", "min")));
     } else {
-      String linearFactor = getString(remediation, "linearFactor");
+      String linearFactor = getString(remediation, LINEAR_FACTOR);
       String linearOffset = getString(remediation, "linearOffset");
       rule.setDebtRemediationFunction(remediationBuilder.linearWithOffset(
         linearFactor.replace("mn", "min"),
         linearOffset.replace("mn", "min")));
     }
-    if (remediation.get("linearDesc") != null) {
-      rule.setGapDescription(getString(remediation, "linearDesc"));
+    if (remediation.get(LINEAR_DESCRIPTION) != null) {
+      rule.setGapDescription(getString(remediation, LINEAR_DESCRIPTION));
     }
   }
 
@@ -364,4 +386,53 @@ public class RuleMetadataLoader {
     return ((List<Number>) propertyValue).stream().mapToInt(Number::intValue).toArray();
   }
 
+  public NewRule createRuleFromRuleManifest(NewRepository repository, RuleManifest ruleManifest) {
+    var newRule = repository.createRule(ruleManifest.name());
+
+    Map<String, Object> map = new HashMap<>();
+    Map<String, Object> remediationMap = new HashMap<>();
+
+    var remediation = ruleManifest.remediation();
+
+    if (remediation != null) {
+      remediationMap.put("func", remediation.func());
+      remediationMap.put("constantCost", remediation.constantCost());
+      remediationMap.put(LINEAR_DESCRIPTION, remediation.linearDescription());
+      remediationMap.put(LINEAR_FACTOR, remediation.linearFactor());
+      remediationMap.put("linearOffset", remediation.linearOffset());
+
+      map.put("remediation", remediationMap);
+    }
+
+    Map<String, Object> codeMap = new HashMap<>();
+
+    var code = ruleManifest.code();
+
+    if (code != null) {
+      codeMap.put(IMPACTS, code.impacts());
+      codeMap.put("attribute", code.attribute());
+
+      map.put("code", codeMap);
+    }
+
+    map.put("defaultSeverity", ruleManifest.defaultSeverity());
+    map.put("scope", ruleManifest.scope());
+    map.put("status", ruleManifest.status());
+    map.put("tags", ruleManifest.tags());
+    map.put("title", ruleManifest.title());
+    map.put("type", ruleManifest.type());
+
+    this.setMetadataFromJson(newRule, map);
+    this.setDescriptionFromHtml(newRule, ruleManifest.htmlDocumentation());
+
+    for (var parameter: ruleManifest.parameters()) {
+      newRule.createParam(parameter.name())
+        .setName(parameter.name())
+        .setDescription(parameter.description())
+        .setDefaultValue(parameter.defaultValue())
+        .setType(RuleParamType.parse(parameter.type()));
+    }
+
+    return newRule;
+  }
 }
