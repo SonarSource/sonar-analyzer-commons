@@ -254,7 +254,7 @@ public class RuleMetadataLoader {
       case "INFO":
         return Severity.INFO;
       default:
-        return Severity.valueOf(severity);
+        return Severity.MEDIUM;
     }
   }
 
