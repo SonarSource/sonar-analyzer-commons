@@ -130,8 +130,8 @@ public class RuleMetadataLoaderTest {
     assertThat(rule).isNotNull();
     assertThat(rule.defaultImpacts()).isEqualTo(Map.ofEntries(
       Map.entry(MAINTAINABILITY, HIGH),
-      Map.entry(SECURITY, LOW),
-      Map.entry(RELIABILITY, HIGH)
+      Map.entry(SECURITY, INFO),
+      Map.entry(RELIABILITY, BLOCKER)
     ));
   }
 
