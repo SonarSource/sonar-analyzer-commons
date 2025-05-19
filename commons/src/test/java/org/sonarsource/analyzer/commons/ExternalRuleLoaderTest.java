@@ -123,7 +123,7 @@ public class ExternalRuleLoaderTest {
       "INFO",
       "5min",
       null,
-      Map.of(SECURITY, LOW),
+      Map.of(SECURITY, org.sonar.api.issue.impact.Severity.INFO),
       Set.of()
     );
 
@@ -135,7 +135,7 @@ public class ExternalRuleLoaderTest {
       "BLOCKER",
       "5min",
       null,
-      Map.of(MAINTAINABILITY, HIGH),
+      Map.of(MAINTAINABILITY, org.sonar.api.issue.impact.Severity.BLOCKER),
       Set.of()
     );
 
