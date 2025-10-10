@@ -39,6 +39,7 @@ import org.sonar.api.server.rule.RulesDefinition.DebtRemediationFunctions;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.server.rule.RulesDefinition.NewRule;
 import org.sonar.api.server.rule.RulesDefinition.OwaspAsvsVersion;
+import org.sonar.api.server.rule.RulesDefinition.OwaspLlmTop10Version;
 import org.sonar.api.server.rule.RulesDefinition.OwaspTop10Version;
 import org.sonar.api.server.rule.RulesDefinition.OwaspMobileTop10Version;
 import org.sonar.api.server.rule.RulesDefinition.PciDssVersion;
@@ -67,6 +68,7 @@ public class RuleMetadataLoader {
   private final SonarRuntime sonarRuntime;
   private final EducationRuleLoader educationRuleLoader;
 
+  private static final String OWASP_LLM_2025 = "OWASP LLM Top 10 2025";
   private static final String OWASP_MOBILE_2024 = "OWASP Mobile Top 10 2024";
   private static final String OWASP_2021 = "OWASP Top 10 2021";
   private static final String OWASP_2017 = "OWASP";
@@ -260,6 +262,7 @@ public class RuleMetadataLoader {
     }
 
     addOwasp(rule, securityStandards);
+    addOwaspLlm(rule, securityStandards);
     addOwaspMobile(rule, securityStandards);
     addPciDss(rule, securityStandards);
     addOwaspAsvs(rule, securityStandards);
@@ -290,6 +293,15 @@ public class RuleMetadataLoader {
     }
     for (String standard : getStringArray(securityStandards, OWASP_MOBILE_2024)) {
       rule.addOwaspMobileTop10(OwaspMobileTop10Version.Y2024, RulesDefinition.OwaspMobileTop10.valueOf(standard));
+    }
+  }
+
+  private void addOwaspLlm(NewRule rule, Map<String, Object> securityStandards) {
+    if (!isSupported(13, 2)) {
+      return;
+    }
+    for (String standard : getStringArray(securityStandards, OWASP_LLM_2025)) {
+      rule.addOwaspLlmTop10(OwaspLlmTop10Version.Y2025, RulesDefinition.OwaspLlmTop10.valueOf(standard));
     }
   }
 

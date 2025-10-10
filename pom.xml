@@ -73,7 +73,8 @@
 
   <properties>
     <!-- versions -->
-    <version.sonar>11.4.0.2922</version.sonar>
+    <!-- TODO use released version -->
+    <version.sonar>13.2.0.3169</version.sonar>
     <sonarqube.api.impl.version>10.7.0.96327</sonarqube.api.impl.version>
     <version.assertj>3.17.1</version.assertj>
     <version.jsr305>3.0.2</version.jsr305>
