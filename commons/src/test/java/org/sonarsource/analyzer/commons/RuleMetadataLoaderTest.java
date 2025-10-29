@@ -78,7 +78,7 @@ public class RuleMetadataLoaderTest {
   private static final SonarRuntime SONAR_RUNTIME_10_10 = SonarRuntimeImpl.forSonarLint(Version.create(10, 10));
   private static final SonarRuntime SONAR_RUNTIME_10_11 = SonarRuntimeImpl.forSonarLint(Version.create(10, 11));
   private static final SonarRuntime SONAR_RUNTIME_11_4 = SonarRuntimeImpl.forSonarLint(Version.create(11, 4));
-  private static final SonarRuntime SONAR_RUNTIME_13_2 = SonarRuntimeImpl.forSonarLint(Version.create(13, 2));
+  private static final SonarRuntime SONAR_RUNTIME_13_3 = SonarRuntimeImpl.forSonarLint(Version.create(13, 3));
 
   @Before
   public void setup() {
@@ -531,19 +531,26 @@ public class RuleMetadataLoaderTest {
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
     assertThat(rule.type()).isEqualTo(RuleType.SECURITY_HOTSPOT);
     assertThat(rule.securityStandards())
-      .containsExactlyInAnyOrder("cwe:311", "cwe:315", "cwe:614", "owaspTop10:a2", "owaspTop10:a3", "owaspTop10-2021:a4", "owaspTop10-2021:a5");
+      .containsExactlyInAnyOrder("cwe:311", "cwe:315", "cwe:614",
+        "owaspTop10:a2", "owaspTop10:a3",
+        "owaspTop10-2021:a4", "owaspTop10-2021:a5",
+        "owaspTop10-2025:a6", "owaspTop10-2025:a7");
   }
 
   @Test
-  public void test_security_standards_on_13_2() {
-    Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_13_2);
+  public void test_security_standards_on_13_3() {
+    Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_13_3);
     assertThat(securityStandards).containsExactlyInAnyOrder(
       "cwe:311", "cwe:315", "cwe:614",
+      "masvs-1:MSTG-STORAGE-14", "masvs-2:MASVS-STORAGE-15",
       "owaspTop10:a2", "owaspTop10:a3",
       "owaspTop10-2021:a4", "owaspTop10-2021:a5",
+      "owaspTop10-2025:a6", "owaspTop10-2025:a7",
       "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2",
       "owaspAsvs-4.0:2.1.1", "owaspAsvs-4.0:2.1.2",
+      "owaspAsvs-5:2.1.3", "owaspAsvs-5:2.1.4",
       "stig-ASD_V5R3:V-222612",
+      "stig-ASD_V6:V-222613",
       "owaspMobileTop10-2024:m3", "owaspMobileTop10-2024:m4",
       "owaspLlmTop10-2025:llm01", "owaspLlmTop10-2025:llm10"
     );
@@ -556,9 +563,12 @@ public class RuleMetadataLoaderTest {
             "cwe:311", "cwe:315", "cwe:614",
             "owaspTop10:a2", "owaspTop10:a3",
             "owaspTop10-2021:a4", "owaspTop10-2021:a5",
+            "owaspTop10-2025:a6", "owaspTop10-2025:a7",
             "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2",
             "owaspAsvs-4.0:2.1.1", "owaspAsvs-4.0:2.1.2",
+            "owaspAsvs-5:2.1.3", "owaspAsvs-5:2.1.4",
             "stig-ASD_V5R3:V-222612",
+            "stig-ASD_V6:V-222613",
             "owaspMobileTop10-2024:m3", "owaspMobileTop10-2024:m4"
     );
   }
@@ -570,9 +580,12 @@ public class RuleMetadataLoaderTest {
       "cwe:311", "cwe:315", "cwe:614",
       "owaspTop10:a2", "owaspTop10:a3",
       "owaspTop10-2021:a4", "owaspTop10-2021:a5",
+      "owaspTop10-2025:a6", "owaspTop10-2025:a7",
       "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2",
       "owaspAsvs-4.0:2.1.1", "owaspAsvs-4.0:2.1.2",
-      "stig-ASD_V5R3:V-222612"
+      "owaspAsvs-5:2.1.3", "owaspAsvs-5:2.1.4",
+      "stig-ASD_V5R3:V-222612",
+      "stig-ASD_V6:V-222613"
     );
   }
 
@@ -583,8 +596,10 @@ public class RuleMetadataLoaderTest {
       "cwe:311", "cwe:315", "cwe:614",
       "owaspTop10:a2", "owaspTop10:a3",
       "owaspTop10-2021:a4", "owaspTop10-2021:a5",
+      "owaspTop10-2025:a6", "owaspTop10-2025:a7",
       "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2",
-      "owaspAsvs-4.0:2.1.1", "owaspAsvs-4.0:2.1.2");
+      "owaspAsvs-4.0:2.1.1", "owaspAsvs-4.0:2.1.2",
+      "owaspAsvs-5:2.1.3", "owaspAsvs-5:2.1.4");
   }
 
   @Test
@@ -594,6 +609,7 @@ public class RuleMetadataLoaderTest {
       "cwe:311", "cwe:315", "cwe:614",
       "owaspTop10:a2", "owaspTop10:a3",
       "owaspTop10-2021:a4", "owaspTop10-2021:a5",
+      "owaspTop10-2025:a6", "owaspTop10-2025:a7",
       "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2");
   }
 
@@ -603,7 +619,8 @@ public class RuleMetadataLoaderTest {
     assertThat(securityStandards).containsExactlyInAnyOrder(
       "cwe:311", "cwe:315", "cwe:614",
       "owaspTop10:a2", "owaspTop10:a3",
-      "owaspTop10-2021:a4", "owaspTop10-2021:a5");
+      "owaspTop10-2021:a4", "owaspTop10-2021:a5",
+      "owaspTop10-2025:a6", "owaspTop10-2025:a7");
   }
 
   @Test
