@@ -69,9 +69,9 @@ public class RuleMetadataLoader {
   private final EducationRuleLoader educationRuleLoader;
 
   private static final String OWASP_MOBILE_2024 = "OWASP Mobile Top 10 2024";
-  private static final Map<OwaspTop10Version, String> OWASP_TOP_10_VERSION_WITH_LABEL= Map.of(OwaspTop10Version.Y2017, "OWASP",
-    OwaspTop10Version.Y2021, "OWASP Top 10 2021",
-    OwaspTop10Version.Y2025, "OWASP Top 10 2025");
+  private static final String OWASP_2025 = "OWASP Top 10 2025";
+  private static final String OWASP_2021 = "OWASP Top 10 2021";
+  private static final String OWASP_2017 = "OWASP";
   private static final String PCI_DSS_PREFIX = "PCI DSS ";
   private static final String ASVS_PREFIX = "ASVS ";
   private static final String STIG_PREFIX = "STIG ";
@@ -281,19 +281,24 @@ public class RuleMetadataLoader {
 
   private void addOwasp(NewRule rule, Map<String, Object> securityStandards) {
     boolean isOwaspByVersionSupported = isSupported(9, 3);
+    RulesDefinition.OwaspTop10[] valuesFor2017 = getOwaspTop10Values(securityStandards, OWASP_2017);
     if (isOwaspByVersionSupported) {
-      for (Map.Entry<OwaspTop10Version, String> owasTop10Version: OWASP_TOP_10_VERSION_WITH_LABEL.entrySet()) {
-        RulesDefinition.OwaspTop10[] top10Values = Arrays.stream(getStringArray(securityStandards, owasTop10Version.getValue()))
-          .map(RulesDefinition.OwaspTop10::valueOf)
-          .toArray(RulesDefinition.OwaspTop10[]::new);
-        rule.addOwaspTop10(owasTop10Version.getKey(), top10Values);
+      rule.addOwaspTop10(OwaspTop10Version.Y2017, valuesFor2017);
+      RulesDefinition.OwaspTop10[] valuesFor2021 = getOwaspTop10Values(securityStandards, OWASP_2021);
+      rule.addOwaspTop10(OwaspTop10Version.Y2021, valuesFor2021);
+      if (isSupported(13, 3)) {
+        RulesDefinition.OwaspTop10[] valuesFor2025 = getOwaspTop10Values(securityStandards, OWASP_2025);
+        rule.addOwaspTop10(OwaspTop10Version.Y2025, valuesFor2025);
       }
     } else {
-      RulesDefinition.OwaspTop10[] top10Values = Arrays.stream(getStringArray(securityStandards, OWASP_TOP_10_VERSION_WITH_LABEL.get(OwaspTop10Version.Y2017)))
-        .map(RulesDefinition.OwaspTop10::valueOf)
-        .toArray(RulesDefinition.OwaspTop10[]::new);
-      rule.addOwaspTop10(top10Values);
+      rule.addOwaspTop10(valuesFor2017);
     }
+  }
+
+  private RulesDefinition.OwaspTop10[] getOwaspTop10Values(Map<String, Object> securityStandards, String owaspVersionLabel) {
+    return Arrays.stream(getStringArray(securityStandards, owaspVersionLabel))
+      .map(RulesDefinition.OwaspTop10::valueOf)
+      .toArray(RulesDefinition.OwaspTop10[]::new);
   }
 
   private void addOwaspMobile(NewRule rule, Map<String, Object> securityStandards) {
@@ -309,7 +314,7 @@ public class RuleMetadataLoader {
     if (!isSupported(13, 3)) {
       return;
     }
-    for (OwaspLlmTop10Version owaspLlmTop10Version : OwaspLlmTop10Version.values() ) {
+    for (OwaspLlmTop10Version owaspLlmTop10Version : OwaspLlmTop10Version.values()) {
       RulesDefinition.OwaspLlmTop10[] llmTop10Values = Arrays.stream(getStringArray(securityStandards, owaspLlmTop10Version.label()))
         .map(RulesDefinition.OwaspLlmTop10::valueOf)
         .toArray(RulesDefinition.OwaspLlmTop10[]::new);
