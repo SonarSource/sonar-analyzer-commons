@@ -78,6 +78,7 @@ public class RuleMetadataLoaderTest {
   private static final SonarRuntime SONAR_RUNTIME_10_10 = SonarRuntimeImpl.forSonarLint(Version.create(10, 10));
   private static final SonarRuntime SONAR_RUNTIME_10_11 = SonarRuntimeImpl.forSonarLint(Version.create(10, 11));
   private static final SonarRuntime SONAR_RUNTIME_11_4 = SonarRuntimeImpl.forSonarLint(Version.create(11, 4));
+  private static final SonarRuntime SONAR_RUNTIME_13_3 = SonarRuntimeImpl.forSonarLint(Version.create(13, 3));
 
   @Before
   public void setup() {
@@ -530,20 +531,67 @@ public class RuleMetadataLoaderTest {
     RulesDefinition.Rule rule = context.repository(RULE_REPOSITORY_KEY).rule("S2092");
     assertThat(rule.type()).isEqualTo(RuleType.SECURITY_HOTSPOT);
     assertThat(rule.securityStandards())
-      .containsExactlyInAnyOrder("cwe:311", "cwe:315", "cwe:614", "owaspTop10:a2", "owaspTop10:a3", "owaspTop10-2021:a4", "owaspTop10-2021:a5");
+      .containsExactlyInAnyOrder(
+        "cwe:311",
+        "cwe:315",
+        "cwe:614",
+        "owaspTop10:a2",
+        "owaspTop10:a3",
+        "owaspTop10-2021:a4",
+        "owaspTop10-2021:a5");
+  }
+
+  @Test
+  public void test_security_standards_on_13_3() {
+    Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_13_3);
+    assertThat(securityStandards).containsExactlyInAnyOrder(
+      "cwe:311",
+      "cwe:315",
+      "cwe:614",
+      "masvs-1:MSTG-STORAGE-14",
+      "masvs-2:MASVS-STORAGE-15",
+      "owaspTop10:a2",
+      "owaspTop10:a3",
+      "owaspTop10-2021:a4",
+      "owaspTop10-2021:a5",
+      "owaspTop10-2025:a6",
+      "owaspTop10-2025:a7",
+      "pciDss-3.2:1.1.1",
+      "pciDss-3.2:1.1.2",
+      "owaspAsvs-4.0:2.1.1",
+      "owaspAsvs-4.0:2.1.2",
+      "owaspAsvs-5:2.1.3",
+      "owaspAsvs-5:2.1.4",
+      "stig-ASD_V5R3:V-222612",
+      "stig-ASD_V6:V-222613",
+      "owaspMobileTop10-2024:m3",
+      "owaspMobileTop10-2024:m4",
+      "owaspLlmTop10-2025:llm01",
+      "owaspLlmTop10-2025:llm10"
+    );
   }
 
   @Test
   public void test_security_standards_on_11_4() {
     Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_11_4);
     assertThat(securityStandards).containsExactlyInAnyOrder(
-            "cwe:311", "cwe:315", "cwe:614",
-            "owaspTop10:a2", "owaspTop10:a3",
-            "owaspTop10-2021:a4", "owaspTop10-2021:a5",
-            "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2",
-            "owaspAsvs-4.0:2.1.1", "owaspAsvs-4.0:2.1.2",
-            "stig-ASD_V5R3:V-222612",
-            "owaspMobileTop10-2024:m3", "owaspMobileTop10-2024:m4"
+      "cwe:311",
+      "cwe:315",
+      "cwe:614",
+      "owaspTop10:a2",
+      "owaspTop10:a3",
+      "owaspTop10-2021:a4",
+      "owaspTop10-2021:a5",
+      "pciDss-3.2:1.1.1",
+      "pciDss-3.2:1.1.2",
+      "owaspAsvs-4.0:2.1.1",
+      "owaspAsvs-4.0:2.1.2",
+      "owaspAsvs-5:2.1.3",
+      "owaspAsvs-5:2.1.4",
+      "stig-ASD_V5R3:V-222612",
+      "stig-ASD_V6:V-222613",
+      "owaspMobileTop10-2024:m3",
+      "owaspMobileTop10-2024:m4"
     );
   }
 
@@ -551,12 +599,21 @@ public class RuleMetadataLoaderTest {
   public void test_security_standards_on_10_10_return_stig() {
     Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_10_10);
     assertThat(securityStandards).containsExactlyInAnyOrder(
-      "cwe:311", "cwe:315", "cwe:614",
-      "owaspTop10:a2", "owaspTop10:a3",
-      "owaspTop10-2021:a4", "owaspTop10-2021:a5",
-      "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2",
-      "owaspAsvs-4.0:2.1.1", "owaspAsvs-4.0:2.1.2",
-      "stig-ASD_V5R3:V-222612"
+      "cwe:311",
+      "cwe:315",
+      "cwe:614",
+      "owaspTop10:a2",
+      "owaspTop10:a3",
+      "owaspTop10-2021:a4",
+      "owaspTop10-2021:a5",
+      "pciDss-3.2:1.1.1",
+      "pciDss-3.2:1.1.2",
+      "owaspAsvs-4.0:2.1.1",
+      "owaspAsvs-4.0:2.1.2",
+      "owaspAsvs-5:2.1.3",
+      "owaspAsvs-5:2.1.4",
+      "stig-ASD_V5R3:V-222612",
+      "stig-ASD_V6:V-222613"
     );
   }
 
@@ -564,38 +621,58 @@ public class RuleMetadataLoaderTest {
   public void test_security_standards_on_9_9_return_asvs() {
     Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_9_9);
     assertThat(securityStandards).containsExactlyInAnyOrder(
-      "cwe:311", "cwe:315", "cwe:614",
-      "owaspTop10:a2", "owaspTop10:a3",
-      "owaspTop10-2021:a4", "owaspTop10-2021:a5",
-      "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2",
-      "owaspAsvs-4.0:2.1.1", "owaspAsvs-4.0:2.1.2");
+      "cwe:311",
+      "cwe:315",
+      "cwe:614",
+      "owaspTop10:a2",
+      "owaspTop10:a3",
+      "owaspTop10-2021:a4",
+      "owaspTop10-2021:a5",
+      "pciDss-3.2:1.1.1",
+      "pciDss-3.2:1.1.2",
+      "owaspAsvs-4.0:2.1.1",
+      "owaspAsvs-4.0:2.1.2",
+      "owaspAsvs-5:2.1.3",
+      "owaspAsvs-5:2.1.4");
   }
 
   @Test
   public void test_security_standards_on_9_5_return_pci_dss() {
     Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_9_5);
     assertThat(securityStandards).containsExactlyInAnyOrder(
-      "cwe:311", "cwe:315", "cwe:614",
-      "owaspTop10:a2", "owaspTop10:a3",
-      "owaspTop10-2021:a4", "owaspTop10-2021:a5",
-      "pciDss-3.2:1.1.1", "pciDss-3.2:1.1.2");
+      "cwe:311",
+      "cwe:315",
+      "cwe:614",
+      "owaspTop10:a2",
+      "owaspTop10:a3",
+      "owaspTop10-2021:a4",
+      "owaspTop10-2021:a5",
+      "pciDss-3.2:1.1.1",
+      "pciDss-3.2:1.1.2");
   }
 
   @Test
   public void test_security_standards_on_9_3_return_owasp_2021() {
     Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_9_3);
     assertThat(securityStandards).containsExactlyInAnyOrder(
-      "cwe:311", "cwe:315", "cwe:614",
-      "owaspTop10:a2", "owaspTop10:a3",
-      "owaspTop10-2021:a4", "owaspTop10-2021:a5");
+      "cwe:311",
+      "cwe:315",
+      "cwe:614",
+      "owaspTop10:a2",
+      "owaspTop10:a3",
+      "owaspTop10-2021:a4",
+      "owaspTop10-2021:a5");
   }
 
   @Test
   public void test_security_standards_before_9_3() {
     Set<String> securityStandards = getSecurityStandards(SONAR_RUNTIME_9_2);
     assertThat(securityStandards).containsExactlyInAnyOrder(
-      "cwe:311", "cwe:315", "cwe:614",
-      "owaspTop10:a2", "owaspTop10:a3");
+      "cwe:311",
+      "cwe:315",
+      "cwe:614",
+      "owaspTop10:a2",
+      "owaspTop10:a3");
   }
 
   @Test
@@ -714,7 +791,8 @@ public class RuleMetadataLoaderTest {
     assertThat(rule.param("Param0").description()).isEqualTo("Param0 Description");
     assertThat(rule.param("Param1").type()).isEqualTo(RuleParamType.INTEGER);
     assertThat(rule.param("Param1").defaultValue()).isEqualTo("10");
-    assertThat(rule.param("Param1").description()).isEqualTo("Param1 Description");  }
+    assertThat(rule.param("Param1").description()).isEqualTo("Param1 Description");
+  }
 
   @Test
   public void test_create_rule_from_rule_manifest_with_constant_remediation() {

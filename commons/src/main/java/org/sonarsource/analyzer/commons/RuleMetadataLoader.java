@@ -39,6 +39,7 @@ import org.sonar.api.server.rule.RulesDefinition.DebtRemediationFunctions;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.server.rule.RulesDefinition.NewRule;
 import org.sonar.api.server.rule.RulesDefinition.OwaspAsvsVersion;
+import org.sonar.api.server.rule.RulesDefinition.OwaspLlmTop10Version;
 import org.sonar.api.server.rule.RulesDefinition.OwaspTop10Version;
 import org.sonar.api.server.rule.RulesDefinition.OwaspMobileTop10Version;
 import org.sonar.api.server.rule.RulesDefinition.PciDssVersion;
@@ -68,6 +69,7 @@ public class RuleMetadataLoader {
   private final EducationRuleLoader educationRuleLoader;
 
   private static final String OWASP_MOBILE_2024 = "OWASP Mobile Top 10 2024";
+  private static final String OWASP_2025 = "OWASP Top 10 2025";
   private static final String OWASP_2021 = "OWASP Top 10 2021";
   private static final String OWASP_2017 = "OWASP";
   private static final String PCI_DSS_PREFIX = "PCI DSS ";
@@ -259,29 +261,44 @@ public class RuleMetadataLoader {
       rule.addCwe(getIntArray(securityStandards, "CWE"));
     }
 
+    addMasvs(rule, securityStandards);
     addOwasp(rule, securityStandards);
+    addOwaspAsvs(rule, securityStandards);
+    addOwaspLlm(rule, securityStandards);
     addOwaspMobile(rule, securityStandards);
     addPciDss(rule, securityStandards);
-    addOwaspAsvs(rule, securityStandards);
     addStig(rule, securityStandards);
+  }
+
+  private void addMasvs(NewRule rule, Map<String, Object> securityStandards) {
+    if (!isSupported(13, 3)) {
+      return;
+    }
+    for (RulesDefinition.MasvsVersion masvsVersion : RulesDefinition.MasvsVersion.values()) {
+      rule.addMasvs(masvsVersion, getStringArray(securityStandards, masvsVersion.label()));
+    }
   }
 
   private void addOwasp(NewRule rule, Map<String, Object> securityStandards) {
     boolean isOwaspByVersionSupported = isSupported(9, 3);
-
-    for (String standard : getStringArray(securityStandards, OWASP_2017)) {
-      if (isOwaspByVersionSupported) {
-        rule.addOwaspTop10(OwaspTop10Version.Y2017, RulesDefinition.OwaspTop10.valueOf(standard));
-      } else {
-        rule.addOwaspTop10(RulesDefinition.OwaspTop10.valueOf(standard));
-      }
-    }
-
+    RulesDefinition.OwaspTop10[] valuesFor2017 = getOwaspTop10Values(securityStandards, OWASP_2017);
     if (isOwaspByVersionSupported) {
-      for (String standard : getStringArray(securityStandards, OWASP_2021)) {
-        rule.addOwaspTop10(OwaspTop10Version.Y2021, RulesDefinition.OwaspTop10.valueOf(standard));
+      rule.addOwaspTop10(OwaspTop10Version.Y2017, valuesFor2017);
+      RulesDefinition.OwaspTop10[] valuesFor2021 = getOwaspTop10Values(securityStandards, OWASP_2021);
+      rule.addOwaspTop10(OwaspTop10Version.Y2021, valuesFor2021);
+      if (isSupported(13, 3)) {
+        RulesDefinition.OwaspTop10[] valuesFor2025 = getOwaspTop10Values(securityStandards, OWASP_2025);
+        rule.addOwaspTop10(OwaspTop10Version.Y2025, valuesFor2025);
       }
+    } else {
+      rule.addOwaspTop10(valuesFor2017);
     }
+  }
+
+  private RulesDefinition.OwaspTop10[] getOwaspTop10Values(Map<String, Object> securityStandards, String owaspVersionLabel) {
+    return Arrays.stream(getStringArray(securityStandards, owaspVersionLabel))
+      .map(RulesDefinition.OwaspTop10::valueOf)
+      .toArray(RulesDefinition.OwaspTop10[]::new);
   }
 
   private void addOwaspMobile(NewRule rule, Map<String, Object> securityStandards) {
@@ -290,6 +307,18 @@ public class RuleMetadataLoader {
     }
     for (String standard : getStringArray(securityStandards, OWASP_MOBILE_2024)) {
       rule.addOwaspMobileTop10(OwaspMobileTop10Version.Y2024, RulesDefinition.OwaspMobileTop10.valueOf(standard));
+    }
+  }
+
+  private void addOwaspLlm(NewRule rule, Map<String, Object> securityStandards) {
+    if (!isSupported(13, 3)) {
+      return;
+    }
+    for (OwaspLlmTop10Version owaspLlmTop10Version : OwaspLlmTop10Version.values()) {
+      RulesDefinition.OwaspLlmTop10[] llmTop10Values = Arrays.stream(getStringArray(securityStandards, owaspLlmTop10Version.label()))
+        .map(RulesDefinition.OwaspLlmTop10::valueOf)
+        .toArray(RulesDefinition.OwaspLlmTop10[]::new);
+      rule.addOwaspLlmTop10(owaspLlmTop10Version, llmTop10Values);
     }
   }
 

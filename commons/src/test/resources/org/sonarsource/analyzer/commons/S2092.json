@@ -36,20 +36,41 @@
       "A4",
       "A5"
     ],
+    "OWASP Top 10 2025": [
+      "A6",
+      "A7"
+    ],
     "OWASP Mobile Top 10 2024": [
       "M3",
       "M4"
+    ],
+    "OWASP LLM Top 10 2025": [
+      "LLM01",
+      "LLM10"
     ],
     "PCI DSS 3.2": [
       "1.1.1",
       "1.1.2"
     ],
+    "MASVS": [
+      "MSTG-STORAGE-14"
+    ],
+    "MASVS 2": [
+      "MASVS-STORAGE-15"
+    ],
     "ASVS 4.0": [
       "2.1.1",
       "2.1.2"
     ],
+    "ASVS 5": [
+      "2.1.3",
+      "2.1.4"
+    ],
     "STIG ASD_V5R3": [
       "V-222612"
+    ],
+    "STIG ASD_V6": [
+      "V-222613"
     ]
   }
 }
