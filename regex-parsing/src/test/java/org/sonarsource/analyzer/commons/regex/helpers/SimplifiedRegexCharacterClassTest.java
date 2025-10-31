@@ -19,7 +19,6 @@ package org.sonarsource.analyzer.commons.regex.helpers;
 
 import java.util.List;
 import java.util.regex.Pattern;
-import org.apache.commons.text.StringEscapeUtils;
 import org.assertj.core.api.AbstractBooleanAssert;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.analyzer.commons.regex.java.JavaRegexSource;
@@ -491,7 +490,7 @@ class SimplifiedRegexCharacterClassTest {
   }
 
   static RegexParseResult parseRegex(String stringLiteral, FlagSet flagSet) {
-    RegexParseResult result = new RegexParser(new JavaRegexSource(StringEscapeUtils.escapeJava(stringLiteral)), flagSet).parse();
+    RegexParseResult result = new RegexParser(new JavaRegexSource(stringLiteral.replace("\\", "\\\\")), flagSet).parse();
     assertThat(result.getSyntaxErrors()).isEmpty();
     return result;
   }
