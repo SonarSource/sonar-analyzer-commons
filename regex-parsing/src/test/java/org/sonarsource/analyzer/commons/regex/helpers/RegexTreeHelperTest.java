@@ -17,7 +17,6 @@
 package org.sonarsource.analyzer.commons.regex.helpers;
 
 
-import java.util.HashSet;
 import java.util.regex.Pattern;
 import org.assertj.core.api.AbstractBooleanAssert;
 import org.junit.jupiter.api.Test;
@@ -274,7 +273,7 @@ class RegexTreeHelperTest {
     assertSupersetOf("xy+", false, "xy", true, false).isTrue();
     assertSupersetOf("x", false, "x+y", true, false).isTrue();
     assertSupersetOf("x", false, "x*y", true, false).isFalse();
-    assertSupersetOf("\\d+", false, "789", true, false).isTrue();
+    assertSupersetOf("\\\\d+", false, "789", true, false).isTrue();
     assertSupersetOf("\\d+", false, "(7|x)89", true, false).isFalse();
 
     assertSupersetOf("xy", false, "x", false, false).isFalse();
@@ -393,6 +392,7 @@ class RegexTreeHelperTest {
       "\\[([^\\[\\]\\r\\\\]|\\\\.)*\\](?:(?:\\r\\n)?[ \\t])*)(?:\\.(?:(?:\\r\\n)?[ \\t])*(?:[^()<>@,;:\\\\\".\\[\\] \\000" +
       "-\\031]+(?:(?:(?:\\r\\n)?[ \\t])+|\\Z|(?=[\\[\"()<>@,;:\\\\\".\\[\\]]))|\\[([^\\[\\]\\r\\\\]|\\\\.)*\\](?:(?:\\r\\" +
       "n)?[ \\t])*))*\\>(?:(?:\\r\\n)?[ \\t])*))*)?;\\s*)";
+    longEmailRegex = longEmailRegex.replace("\\", "\\\\");
 
     assertIntersects(longEmailRegex, longEmailRegex, false).isTrue();
     assertIntersects(longEmailRegex, longEmailRegex, true).isTrue();
