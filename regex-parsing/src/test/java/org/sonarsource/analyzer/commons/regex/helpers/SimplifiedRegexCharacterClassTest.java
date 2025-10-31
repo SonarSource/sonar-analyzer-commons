@@ -196,29 +196,29 @@ class SimplifiedRegexCharacterClassTest {
   @Test
   void unicode_subsets() {
     int flags = Pattern.UNICODE_CHARACTER_CLASS;
-    assertSupersetOf("\\d", "[0-9]", false, flags).isTrue();
+    assertSupersetOf("\\\\d", "[0-9]", false, flags).isTrue();
     assertSupersetOf("\\D", "[0-9]", false, flags).isFalse();
 
     assertSupersetOf("\\w", "\\D", false, flags).isFalse();
     assertSupersetOf("\\w", "\\D", true, flags).isFalse();
-    assertSupersetOf("\\W", "[:-@]", false, NO_FLAGS).isTrue();
-    assertSupersetOf("\\W", "[{-´]", false, NO_FLAGS).isTrue();
-    assertSupersetOf("\\W", "[{-´]", false, flags).isTrue();
+    assertSupersetOf("\\\\W", "[:-@]", false, NO_FLAGS).isTrue();
+    assertSupersetOf("\\\\W", "[{-´]", false, NO_FLAGS).isTrue();
+    assertSupersetOf("\\\\W", "[{-´]", false, flags).isTrue();
 
-    assertSupersetOf("\\s", "[\u0085\u00A0\u1680\u2000\u2028\u202F\u205F\u3000]", false, flags).isTrue();
-    assertSupersetOf("\\s", "[\u0085\u00A0\u1680\u2000\u2028\u202F\u205F\u3000]", false, NO_FLAGS).isFalse();
+    assertSupersetOf("\\\\s", "[\u0085\u00A0\u1680\u2000\u2028\u202F\u205F\u3000]", false, flags).isTrue();
+    assertSupersetOf("\\\\s", "[\u0085\u00A0\u1680\u2000\u2028\u202F\u205F\u3000]", false, NO_FLAGS).isFalse();
 
     assertSupersetOf("\\S", "[\u0085\u00A0\u1680\u2000\u2028\u202F\u205F\u3000]", false, flags).isFalse();
-    assertSupersetOf("\\S", "[\u0085\u00A0\u1680\u2000\u2028\u202F\u205F\u3000]", false, NO_FLAGS).isTrue();
+    assertSupersetOf("\\\\S", "[\u0085\u00A0\u1680\u2000\u2028\u202F\u205F\u3000]", false, NO_FLAGS).isTrue();
 
-    assertSupersetOf("\\S", "[\u0086\u00A1\u1681\u200B\u202A\u2030\u2060\u3001]", false, flags).isTrue();
-    assertSupersetOf("\\S", "[\u0086\u00A1\u1681\u200B\u202A\u2030\u2060\u3001]", false, NO_FLAGS).isTrue();
+    assertSupersetOf("\\\\S", "[\u0086\u00A1\u1681\u200B\u202A\u2030\u2060\u3001]", false, flags).isTrue();
+    assertSupersetOf("\\\\S", "[\u0086\u00A1\u1681\u200B\u202A\u2030\u2060\u3001]", false, NO_FLAGS).isTrue();
   }
 
   @Test
   void empty_is_not_superset_of_something_with_unknown_characters() {
-    String emptyCharacterClass = "[^\\s\\S]";
-    String unknownCharacter = "\\N{slightly smiling face}";
+    String emptyCharacterClass = "[^\\\\s\\\\S]";
+    String unknownCharacter = "\\\\N{slightly smiling face}";
     assertSupersetOf(emptyCharacterClass, unknownCharacter, true, NO_FLAGS).isFalse();
   }
 
@@ -306,11 +306,11 @@ class SimplifiedRegexCharacterClassTest {
 
   @Test
   void superset_of_predefined_character_classes() {
-    assertSupersetOf("\\d", "[0-9]", false, NO_FLAGS).isTrue();
-    assertSupersetOf("[0-9]", "\\d", false, NO_FLAGS).isTrue();
-    assertSupersetOf("\\d", "[2-5]", false, NO_FLAGS).isTrue();
+    assertSupersetOf("\\\\d", "[0-9]", false, NO_FLAGS).isTrue();
+    assertSupersetOf("[0-9]", "\\\\d", false, NO_FLAGS).isTrue();
+    assertSupersetOf("\\\\d", "[2-5]", false, NO_FLAGS).isTrue();
     assertSupersetOf("[2-5]", "\\d", false, NO_FLAGS).isFalse();
-    assertSupersetOf("[^a-z]", "\\d", false, NO_FLAGS).isTrue();
+    assertSupersetOf("[^a-z]", "\\\\d", false, NO_FLAGS).isTrue();
     assertSupersetOf("\\d", "[^a-z]", true, NO_FLAGS).isFalse();
   }
 
@@ -402,7 +402,7 @@ class SimplifiedRegexCharacterClassTest {
   void superset_of_default_answer() {
     int flags = Pattern.UNICODE_CHARACTER_CLASS;
     assertSupersetOf("[0-9]", "\\d", false, flags).isFalse();
-    assertSupersetOf("[0-9]", "\\d", true, flags).isTrue();
+    assertSupersetOf("[0-9]", "\\\\d", true, flags).isTrue();
   }
 
   @Test
@@ -490,7 +490,7 @@ class SimplifiedRegexCharacterClassTest {
   }
 
   static RegexParseResult parseRegex(String stringLiteral, FlagSet flagSet) {
-    RegexParseResult result = new RegexParser(new JavaRegexSource(stringLiteral.replace("\\", "\\\\")), flagSet).parse();
+    RegexParseResult result = new RegexParser(new JavaRegexSource(stringLiteral), flagSet).parse();
     assertThat(result.getSyntaxErrors()).isEmpty();
     return result;
   }
