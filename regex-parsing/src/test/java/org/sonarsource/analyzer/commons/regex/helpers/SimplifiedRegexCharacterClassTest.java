@@ -19,7 +19,7 @@ package org.sonarsource.analyzer.commons.regex.helpers;
 
 import java.util.List;
 import java.util.regex.Pattern;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.assertj.core.api.AbstractBooleanAssert;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.analyzer.commons.regex.java.JavaRegexSource;

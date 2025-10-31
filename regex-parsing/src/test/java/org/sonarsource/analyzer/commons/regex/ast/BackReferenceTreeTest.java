@@ -21,7 +21,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.analyzer.commons.regex.RegexFeature;
 
-import static org.apache.commons.lang.StringEscapeUtils.escapeJava;
+import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertFailParsing;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertKind;
