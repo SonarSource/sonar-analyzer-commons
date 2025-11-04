@@ -36,6 +36,8 @@ jobs:
         id: build-maven
         uses: SonarSource/ci-github-actions/build-maven@c4694c3bcbf4f6f279b8184623a611b8f39c82e5
         with:
+          artifactory-reader-role: private-reader
+          artifactory-deployer-role: qa-deployer
           deploy-pull-request: true
 
   promote:
