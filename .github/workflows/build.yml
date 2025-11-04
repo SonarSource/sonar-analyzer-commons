@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: github-ubuntu-latest-s
+    runs-on: sonar-xs-public
     name: Build
     permissions:
       id-token: write  # Required for Vault OIDC authentication
@@ -40,7 +40,7 @@ jobs:
 
   promote:
     needs: [ build ]
-    runs-on: github-ubuntu-latest-s
+    runs-on: sonar-xs-public
     name: Promote
     permissions:
       id-token: write
