@@ -1,6 +1,7 @@
 # SonarSource Analyzers Commons Libraries
 
-[![Build](https://github.com/SonarSource/sonar-analyzer-commons/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/SonarSource/sonar-analyzer-commons/actions/workflows/build.yml)
+[![Build](https://github.com/SonarSource/sonar-analyzer-commons/actions/workflows/build.yml/badge.svg)](https://github.com/SonarSource/sonar-analyzer-commons/actions/workflows/build.yml)
+
 ## Modules
 
 * [commons](commons) Logic useful for a language plugin
@@ -16,5 +17,5 @@ mvn clean install
 ```
 
 ### License
-Copyright 2009-2023 SonarSource.
+Copyright 2009-2025 SonarSource.
 Licensed under the [GNU Lesser General Public License, Version 3.0](http://www.gnu.org/licenses/lgpl.txt)
