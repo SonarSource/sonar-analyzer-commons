@@ -16,8 +16,13 @@
  */
 package org.sonarsource.analyzer.commons.xml;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import org.junit.Test;
+import org.sonar.api.batch.fs.InputFile;
+import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
 import org.sonarsource.analyzer.commons.xml.PrologElement.PrologAttribute;
 import org.sonarsource.analyzer.commons.xml.XmlFile.Location;
 import org.w3c.dom.Attr;
@@ -34,6 +39,8 @@ import org.w3c.dom.ProcessingInstruction;
 import org.w3c.dom.Text;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class XmlParserTest {
 
@@ -661,6 +668,20 @@ public class XmlParserTest {
   public void testBOM() throws Exception {
     Document document = XmlFile.create("\ufeff<a><b/></a>").getDocument();
     assertRange(document, Location.NODE, 1, 0, 1, 11);
+  }
+
+  @Test
+  public void largeAttributeAreParsed() throws IOException {
+    InputFile inputFile = TestInputFileBuilder
+      .create("moduleKey", "longAttributes.xml")
+      .setModuleBaseDir(new File("src/test/resources/").toPath())
+      .setCharset(StandardCharsets.UTF_8)
+      .build();
+
+    var file = XmlFile.create(inputFile);
+
+    assertThatNoException()
+      .isThrownBy(file::getDocument);
   }
 
   private void assertRange(Node node, Location locationKind, int startLine, int startColumn, int endLine, int endColumn) {

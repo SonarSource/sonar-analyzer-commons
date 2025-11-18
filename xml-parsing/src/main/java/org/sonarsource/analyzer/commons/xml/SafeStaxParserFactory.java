@@ -16,6 +16,7 @@
  */
 package org.sonarsource.analyzer.commons.xml;
 
+import com.ctc.wstx.api.WstxInputProperties;
 import javax.xml.stream.XMLInputFactory;
 
 public class SafeStaxParserFactory {
@@ -33,6 +34,8 @@ public class SafeStaxParserFactory {
     factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
     factory.setProperty(XMLInputFactory.IS_VALIDATING, false);
     factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+    factory.setProperty(WstxInputProperties.P_MAX_ATTRIBUTE_SIZE, Integer.MAX_VALUE);
+
     return factory;
   }
 
