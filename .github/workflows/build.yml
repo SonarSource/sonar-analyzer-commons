@@ -34,7 +34,7 @@ jobs:
           version: 2025.7.12
       - name: Build and analyze with Maven
         id: build-maven
-        uses: SonarSource/ci-github-actions/build-maven@c4694c3bcbf4f6f279b8184623a611b8f39c82e5
+        uses: SonarSource/ci-github-actions/build-maven@v1
         with:
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
