@@ -40,7 +40,6 @@ import org.w3c.dom.Text;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class XmlParserTest {
 
