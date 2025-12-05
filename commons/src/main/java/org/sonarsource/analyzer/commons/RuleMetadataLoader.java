@@ -247,14 +247,22 @@ public class RuleMetadataLoader {
     }
 
     switch (severity) {
-      case "INFO":
-        return Severity.LOW;
       case "BLOCKER":
+        return Severity.BLOCKER;
+      case "CRITICAL":
         return Severity.HIGH;
+      case "MAJOR":
+        return Severity.MEDIUM;
+      case "MINOR":
+        return Severity.LOW;
+      case "INFO":
+        return Severity.INFO;
       default:
-        return Severity.valueOf(severity);
+        return Severity.MEDIUM;
     }
   }
+
+
 
   private void setSecurityStandardsFromJson(NewRule rule, Map<String, Object> securityStandards) {
     if (securityStandards.get("CWE") != null) {
