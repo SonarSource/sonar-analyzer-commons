@@ -75,7 +75,7 @@
     <!-- versions -->
     <version.sonar.plugin.api>13.3.0.3209</version.sonar.plugin.api>
     <sonarqube.api.impl.version>10.7.0.96327</sonarqube.api.impl.version>
-    <version.assertj>3.17.1</version.assertj>
+    <version.assertj>3.27.7</version.assertj>
     <version.jsr305>3.0.2</version.jsr305>
     <version.mockito>3.5.7</version.mockito>
     <version.junit>4.13.2</version.junit>
