@@ -163,6 +163,18 @@ class SonarResolveTest {
           Set.of(RuleKey.of("cpp", "S100"), RuleKey.of("cpp", "M23_123")),
           "line comment")),
       arguments(
+        "SONAR-RESOLVE cpp:S100 \"line comment\"",
+        42,
+        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+      arguments(
+        "Sonar-Resolve [FP] cpp:S100 \"line comment\"",
+        42,
+        new SonarResolve(42, IssueResolution.Status.FALSE_POSITIVE, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+      arguments(
+        "sOnAr-ReSoLvE [AcCePt] cpp:S100 \"line comment\"",
+        42,
+        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+      arguments(
         "sonar-resolve cpp:S100 \"line \\\"comment\\\"\"",
         42,
         new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line \"comment\"")),
@@ -189,6 +201,7 @@ class SonarResolveTest {
       arguments("sonar-resolve \"line comment\"", "Invalid sonar-resolve directive: missing rule key"),
       arguments("sonar-resolve cppS1234 \"line comment\"", "Invalid sonar-resolve directive: invalid rule key 'cppS1234'"),
       arguments("sonar-resolve [accepted] cpp:S100 \"line comment\"", "Invalid sonar-resolve directive: invalid status '[accepted]'"),
+      arguments("sonar-resolve [Accepted] cpp:S100 \"line comment\"", "Invalid sonar-resolve directive: invalid status '[Accepted]'"),
       arguments("sonar-resolve [fp cpp:S100 \"line comment\"", "Invalid sonar-resolve directive: unterminated status"),
       arguments("sonar-resolve cpp:S100, cpp:S100 \"line comment\"", "Invalid sonar-resolve directive: duplicate rule key 'cpp:S100'"),
       arguments("sonar-resolve cpp:S100, \"line comment\"", "Invalid sonar-resolve directive: invalid rule key list"),
@@ -200,7 +213,7 @@ class SonarResolveTest {
     return Stream.of(
       arguments(
         new String[] {
-          "sonar-resolve",
+          "SONAR-RESOLVE",
           "cpp:S1234 \"reason\""
         },
         42,
@@ -222,8 +235,8 @@ class SonarResolveTest {
         new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S1234")), "first\nsecond\nthird")),
       arguments(
         new String[] {
-          "sonar-resolve",
-          "[fp]",
+          "Sonar-Resolve",
+          "[FP]",
           "cpp:S100,",
           "cpp:M23_123",
           "\"reason\""

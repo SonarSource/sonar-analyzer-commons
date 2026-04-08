@@ -182,7 +182,7 @@ public final class SonarResolve {
         Cursor cursor = new Cursor(accumulatedDirective);
         cursor.skipWhitespace();
 
-        if (!cursor.expectLiteral(KEYWORD, "missing '" + KEYWORD + "'")) {
+        if (!cursor.expectLiteralIgnoreCase(KEYWORD, "missing '" + KEYWORD + "'")) {
           return state;
         }
 
@@ -229,11 +229,11 @@ public final class SonarResolve {
           return incomplete("unterminated status");
         }
 
-        if ("accept".equals(statusText)) {
+        if ("accept".equalsIgnoreCase(statusText)) {
           status = IssueResolution.Status.DEFAULT;
           return true;
         }
-        if ("fp".equals(statusText)) {
+        if ("fp".equalsIgnoreCase(statusText)) {
           status = IssueResolution.Status.FALSE_POSITIVE;
           return true;
         }
@@ -356,8 +356,8 @@ public final class SonarResolve {
           consumeWhile(Character::isWhitespace);
         }
 
-        private boolean expectLiteral(String literal, String missingMessage) {
-          return text.startsWith(literal, index) ? advance(literal.length()) : invalid(missingMessage);
+        private boolean expectLiteralIgnoreCase(String literal, String missingMessage) {
+          return text.regionMatches(true, index, literal, 0, literal.length()) ? advance(literal.length()) : invalid(missingMessage);
         }
 
         private boolean expectWhitespace(String message) {
