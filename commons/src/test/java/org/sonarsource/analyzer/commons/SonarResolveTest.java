@@ -29,17 +29,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-public class SonarResolveTest {
+class SonarResolveTest {
 
   @ParameterizedTest
   @MethodSource("singleLineSuccessCases")
-  public void parse_supports_single_line_syntax(String directive, int line, SonarResolve expected) {
+  void parse_supports_single_line_syntax(String directive, int line, SonarResolve expected) {
     assertThat(parseSingleLine(directive, line)).isEqualTo(expected);
   }
 
   @ParameterizedTest
   @MethodSource("singleLineFailureCases")
-  public void parse_fails_for_invalid_single_line_syntax(String directive, String expectedErrorMessage) {
+  void parse_fails_for_invalid_single_line_syntax(String directive, String expectedErrorMessage) {
     SonarResolve.Driver parser = new SonarResolve.Driver(42);
 
     SonarResolve.Driver.State state = parser.consumeLine(directive);
@@ -53,7 +53,7 @@ public class SonarResolveTest {
 
   @ParameterizedTest
   @MethodSource("multiLineSuccessCases")
-  public void consume_line_supports_multi_line_syntax(String[] lines, int line, SonarResolve expected) {
+  void consume_line_supports_multi_line_syntax(String[] lines, int line, SonarResolve expected) {
     SonarResolve.Driver parser = new SonarResolve.Driver(line);
     for (int i = 0; i < lines.length - 1; i++) {
       assertThat(parser.consumeLine(lines[i])).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
@@ -64,7 +64,7 @@ public class SonarResolveTest {
 
   @ParameterizedTest
   @MethodSource("multiLineFailureCases")
-  public void consume_line_fails_for_invalid_multi_line_syntax(String[] lines, String expectedErrorMessage) {
+  void consume_line_fails_for_invalid_multi_line_syntax(String[] lines, String expectedErrorMessage) {
     SonarResolve.Driver parser = new SonarResolve.Driver(42);
     for (int i = 0; i < lines.length - 1; i++) {
       assertThat(parser.consumeLine(lines[i])).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
@@ -80,7 +80,7 @@ public class SonarResolveTest {
   }
 
   @Test
-  public void finish_before_consuming_any_line_throws() {
+  void finish_before_consuming_any_line_throws() {
     SonarResolve.Driver parser = new SonarResolve.Driver(42);
 
     assertThatThrownBy(parser::finish)
@@ -89,7 +89,7 @@ public class SonarResolveTest {
   }
 
   @Test
-  public void consume_line_after_complete_throws() {
+  void consume_line_after_complete_throws() {
     SonarResolve.Driver parser = new SonarResolve.Driver(42);
     parser.consumeLine("sonar-resolve cpp:S100 \"reason\"");
 
@@ -99,7 +99,7 @@ public class SonarResolveTest {
   }
 
   @Test
-  public void consume_line_after_invalid_throws() {
+  void consume_line_after_invalid_throws() {
     SonarResolve.Driver parser = new SonarResolve.Driver(42);
     parser.consumeLine("sonar-resolve [accepted] cpp:S100 \"reason\"");
 
@@ -109,7 +109,7 @@ public class SonarResolveTest {
   }
 
   @Test
-  public void consume_line_preserves_empty_continuation_lines_inside_justification() {
+  void consume_line_preserves_empty_continuation_lines_inside_justification() {
     SonarResolve.Driver parser = new SonarResolve.Driver(42);
 
     assertThat(parser.consumeLine("sonar-resolve cpp:S100 \"line1")).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
