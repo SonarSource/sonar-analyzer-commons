@@ -42,7 +42,7 @@ class SonarResolveTest {
   void parse_fails_for_invalid_single_line_syntax(String directive, String expectedErrorMessage) {
     SonarResolve.Driver parser = new SonarResolve.Driver(42);
 
-    SonarResolve.Driver.State state = parser.consumeLine(directive);
+    SonarResolve.Driver.State state = parser.consumeLine(42, directive);
     if (state == SonarResolve.Driver.State.INCOMPLETE) {
       state = parser.finish();
     }
@@ -56,9 +56,9 @@ class SonarResolveTest {
   void consume_line_supports_multi_line_syntax(String[] lines, int line, SonarResolve expected) {
     SonarResolve.Driver parser = new SonarResolve.Driver(line);
     for (int i = 0; i < lines.length - 1; i++) {
-      assertThat(parser.consumeLine(lines[i])).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
+      assertThat(parser.consumeLine(line + i, lines[i])).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
     }
-    assertThat(parser.consumeLine(lines[lines.length - 1])).isEqualTo(SonarResolve.Driver.State.COMPLETE);
+    assertThat(parser.consumeLine(line + lines.length - 1, lines[lines.length - 1])).isEqualTo(SonarResolve.Driver.State.COMPLETE);
     assertThat(parser.result()).isEqualTo(expected);
   }
 
@@ -67,10 +67,10 @@ class SonarResolveTest {
   void consume_line_fails_for_invalid_multi_line_syntax(String[] lines, String expectedErrorMessage) {
     SonarResolve.Driver parser = new SonarResolve.Driver(42);
     for (int i = 0; i < lines.length - 1; i++) {
-      assertThat(parser.consumeLine(lines[i])).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
+      assertThat(parser.consumeLine(42 + i, lines[i])).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
     }
 
-    SonarResolve.Driver.State state = parser.consumeLine(lines[lines.length - 1]);
+    SonarResolve.Driver.State state = parser.consumeLine(42 + lines.length - 1, lines[lines.length - 1]);
     if (state == SonarResolve.Driver.State.INCOMPLETE) {
       state = parser.finish();
     }
@@ -91,9 +91,9 @@ class SonarResolveTest {
   @Test
   void consume_line_after_complete_throws() {
     SonarResolve.Driver parser = new SonarResolve.Driver(42);
-    parser.consumeLine("sonar-resolve cpp:S100 \"reason\"");
+    assertThat(parser.consumeLine(42, "sonar-resolve cpp:S100 \"reason\"")).isEqualTo(SonarResolve.Driver.State.COMPLETE);
 
-    assertThatThrownBy(() -> parser.consumeLine("ignored"))
+    assertThatThrownBy(() -> parser.consumeLine(43, "ignored"))
       .isInstanceOf(IllegalStateException.class)
       .hasMessage("Cannot consume additional lines after parser reached a terminal state.");
   }
@@ -101,9 +101,9 @@ class SonarResolveTest {
   @Test
   void consume_line_after_invalid_throws() {
     SonarResolve.Driver parser = new SonarResolve.Driver(42);
-    parser.consumeLine("sonar-resolve [accepted] cpp:S100 \"reason\"");
+    assertThat(parser.consumeLine(42, "sonar-resolve [accepted] cpp:S100 \"reason\"")).isEqualTo(SonarResolve.Driver.State.INVALID);
 
-    assertThatThrownBy(() -> parser.consumeLine("ignored"))
+    assertThatThrownBy(() -> parser.consumeLine(43, "ignored"))
       .isInstanceOf(IllegalStateException.class)
       .hasMessage("Cannot consume additional lines after parser reached a terminal state.");
   }
@@ -112,17 +112,17 @@ class SonarResolveTest {
   void consume_line_preserves_empty_continuation_lines_inside_justification() {
     SonarResolve.Driver parser = new SonarResolve.Driver(42);
 
-    assertThat(parser.consumeLine("sonar-resolve cpp:S100 \"line1")).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
-    assertThat(parser.consumeLine("")).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
-    assertThat(parser.consumeLine("line3\"")).isEqualTo(SonarResolve.Driver.State.COMPLETE);
+    assertThat(parser.consumeLine(42, "sonar-resolve cpp:S100 \"line1")).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
+    assertThat(parser.consumeLine(43, "")).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
+    assertThat(parser.consumeLine(44, "line3\"")).isEqualTo(SonarResolve.Driver.State.COMPLETE);
 
     assertThat(parser.result()).isEqualTo(
-      new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line1\n\nline3"));
+      new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line1\n\nline3"));
   }
 
   private static SonarResolve parseSingleLine(String directive, int line) {
     SonarResolve.Driver parser = new SonarResolve.Driver(line);
-    assertThat(parser.consumeLine(directive)).isEqualTo(SonarResolve.Driver.State.COMPLETE);
+    assertThat(parser.consumeLine(line, directive)).isEqualTo(SonarResolve.Driver.State.COMPLETE);
     return parser.result();
   }
 
@@ -131,11 +131,12 @@ class SonarResolveTest {
       arguments(
         "sonar-resolve cpp:S100 \"line comment\"",
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
       arguments(
         "sonar-resolve cpp:S100, cpp:M23_123,c:S200 , objc:S300 \"line comment\"",
         42,
         new SonarResolve(
+          42,
           42,
           IssueResolution.Status.DEFAULT,
           Set.of(
@@ -147,15 +148,16 @@ class SonarResolveTest {
       arguments(
         "sonar-resolve [accept] cpp:S100 \"line comment\"",
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
       arguments(
         "sonar-resolve [fp] cpp:S100 \"line comment\"",
         42,
-        new SonarResolve(42, IssueResolution.Status.FALSE_POSITIVE, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+        new SonarResolve(42, 42, IssueResolution.Status.FALSE_POSITIVE, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
       arguments(
         "sonar-resolve [fp] cpp:S100, cpp:M23_123 \"line comment\"",
         42,
         new SonarResolve(
+          42,
           42,
           IssueResolution.Status.FALSE_POSITIVE,
           Set.of(RuleKey.of("cpp", "S100"), RuleKey.of("cpp", "M23_123")),
@@ -163,11 +165,12 @@ class SonarResolveTest {
       arguments(
         "sonar-resolve cpp:S100 \"line \\\"comment\\\"\"",
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line \"comment\"")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line \"comment\"")),
       arguments(
         "sonar-resolve cpp:S100 \"line\\nline\\rline\\tline\\\\line\"",
         42,
         new SonarResolve(
+          42,
           42,
           IssueResolution.Status.DEFAULT,
           Set.of(RuleKey.of("cpp", "S100")),
@@ -197,14 +200,14 @@ class SonarResolveTest {
           "cpp:S1234 \"reason\""
         },
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S1234")), "reason")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S1234")), "reason")),
       arguments(
         new String[] {
           "sonar-resolve cpp:S1234 \"reason",
           "reason\""
         },
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S1234")), "reason\nreason")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S1234")), "reason\nreason")),
       arguments(
         new String[] {
           "sonar-resolve cpp:S1234 \"first",
@@ -212,7 +215,7 @@ class SonarResolveTest {
           "third\""
         },
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S1234")), "first\nsecond\nthird")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S1234")), "first\nsecond\nthird")),
       arguments(
         new String[] {
           "sonar-resolve",
@@ -223,6 +226,7 @@ class SonarResolveTest {
         },
         42,
         new SonarResolve(
+          42,
           42,
           IssueResolution.Status.FALSE_POSITIVE,
           Set.of(RuleKey.of("cpp", "S100"), RuleKey.of("cpp", "M23_123")),
@@ -235,6 +239,7 @@ class SonarResolveTest {
         42,
         new SonarResolve(
           42,
+          42,
           IssueResolution.Status.DEFAULT,
           Set.of(RuleKey.of("cpp", "S100"), RuleKey.of("cpp", "M23_123")),
           "reason")),
@@ -246,6 +251,7 @@ class SonarResolveTest {
         },
         42,
         new SonarResolve(
+          42,
           42,
           IssueResolution.Status.DEFAULT,
           Set.of(RuleKey.of("cpp", "S1234")),

@@ -27,20 +27,26 @@ public final class SonarResolve {
 
   public static final String KEYWORD = "sonar-resolve";
 
-  private final int line;
+  private final int directiveLine;
+  private final int targetLine;
   private final IssueResolution.Status status;
   private final Set<RuleKey> ruleKeys;
   private final String justification;
 
-  public SonarResolve(int line, IssueResolution.Status status, Set<RuleKey> ruleKeys, String justification) {
-    this.line = line;
+  public SonarResolve(int directiveLine, int targetLine, IssueResolution.Status status, Set<RuleKey> ruleKeys, String justification) {
+    this.directiveLine = directiveLine;
+    this.targetLine = targetLine;
     this.status = Objects.requireNonNull(status);
     this.ruleKeys = Collections.unmodifiableSet(new LinkedHashSet<>(ruleKeys));
     this.justification = Objects.requireNonNull(justification);
   }
 
-  public int line() {
-    return line;
+  public int directiveLine() {
+    return directiveLine;
+  }
+
+  public int targetLine() {
+    return targetLine;
   }
 
   public IssueResolution.Status status() {
@@ -64,7 +70,8 @@ public final class SonarResolve {
       return false;
     }
     SonarResolve other = (SonarResolve) object;
-    return line == other.line
+    return directiveLine == other.directiveLine
+      && targetLine == other.targetLine
       && status == other.status
       && ruleKeys.equals(other.ruleKeys)
       && justification.equals(other.justification);
@@ -72,13 +79,14 @@ public final class SonarResolve {
 
   @Override
   public int hashCode() {
-    return Objects.hash(line, status, ruleKeys, justification);
+    return Objects.hash(directiveLine, targetLine, status, ruleKeys, justification);
   }
 
   @Override
   public String toString() {
     return "SonarResolve{"
-      + "line=" + line
+      + "directiveLine=" + directiveLine
+      + ", targetLine=" + targetLine
       + ", status=" + status
       + ", ruleKeys=" + ruleKeys
       + ", justification='" + justification + '\''
@@ -96,19 +104,21 @@ public final class SonarResolve {
     private static final String PREFIX = "Invalid sonar-resolve directive: ";
 
     private final StringBuilder accumulatedDirective = new StringBuilder();
-    private final int line;
+    private final int directiveLine;
     private State state = State.INCOMPLETE;
     private SonarResolve result;
     private String errorMessage;
 
-    public Driver(int line) {
-      this.line = line;
+    public Driver(int directiveLine) {
+      this.directiveLine = directiveLine;
     }
 
-    public State consumeLine(String normalizedLine) {
+    // lineNumber is reserved for future features such as supporting relative offsets for target-line computation.
+    // The parameter is part of the API already so analyzers can adopt those features later without another signature change.
+    public State consumeLine(int lineNumber, String lineContent) {
       checkState(state == State.INCOMPLETE, "Cannot consume additional lines after parser reached a terminal state.");
-      appendNormalizedLine(normalizedLine);
-      Parser parser = new Parser(line);
+      appendNormalizedLine(lineContent);
+      Parser parser = new Parser(directiveLine);
       update(parser, parser.parse(accumulatedDirective.toString()));
       return state;
     }
@@ -157,15 +167,15 @@ public final class SonarResolve {
 
     private static final class Parser {
 
-      private final int line;
+      private final int directiveLine;
       private State state = State.INCOMPLETE;
       private String errorMessage;
       private IssueResolution.Status status = IssueResolution.Status.DEFAULT;
       private final Set<RuleKey> ruleKeys = new LinkedHashSet<>();
       private String justification;
 
-      private Parser(int line) {
-        this.line = line;
+      private Parser(int directiveLine) {
+        this.directiveLine = directiveLine;
       }
 
       private State parse(String accumulatedDirective) {
@@ -200,7 +210,7 @@ public final class SonarResolve {
         if (state != State.COMPLETE) {
           return null;
         }
-        return new SonarResolve(line, status, ruleKeys, justification);
+        return new SonarResolve(directiveLine, directiveLine, status, ruleKeys, justification);
       }
 
       private String errorMessage() {
