@@ -165,15 +165,15 @@ class SonarResolveTest {
       arguments(
         "SONAR-RESOLVE cpp:S100 \"line comment\"",
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
       arguments(
         "Sonar-Resolve [FP] cpp:S100 \"line comment\"",
         42,
-        new SonarResolve(42, IssueResolution.Status.FALSE_POSITIVE, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+        new SonarResolve(42, 42, IssueResolution.Status.FALSE_POSITIVE, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
       arguments(
         "sOnAr-ReSoLvE [AcCePt] cpp:S100 \"line comment\"",
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
       arguments(
         "sonar-resolve cpp:S100 \"line \\\"comment\\\"\"",
         42,
