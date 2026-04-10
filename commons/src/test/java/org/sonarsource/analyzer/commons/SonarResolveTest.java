@@ -177,27 +177,27 @@ class SonarResolveTest {
       arguments(
         "sonar-resolve cpp:S100 `line comment`",
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
       arguments(
         "sonar-resolve cpp:S100 'line \\'comment\\''",
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line 'comment'")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line 'comment'")),
       arguments(
         "sonar-resolve cpp:S100 (line comment)",
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
       arguments(
         "sonar-resolve cpp:S100 [line \\]comment]",
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line ]comment")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line ]comment")),
       arguments(
         "sonar-resolve cpp:S100 [line comment)]",
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment)")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment)")),
       arguments(
         "sonar-resolve cpp:S100 {line comment}",
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
       arguments(
         "sonar-resolve cpp:S100 \"line \\\"comment\\\"\"",
         42,
@@ -306,14 +306,14 @@ class SonarResolveTest {
           "second line]"
         },
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S1234")), "first line\nsecond line")),
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S1234")), "first line\nsecond line")),
       arguments(
         new String[] {
           "sonar-resolve cpp:S1234 [first line)",
           "second line]"
         },
         42,
-        new SonarResolve(42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S1234")), "first line)\nsecond line")));
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S1234")), "first line)\nsecond line")));
   }
 
   private static Stream<Arguments> multiLineFailureCases() {
