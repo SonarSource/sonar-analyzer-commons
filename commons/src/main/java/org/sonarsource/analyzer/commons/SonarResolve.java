@@ -285,9 +285,11 @@ public final class SonarResolve {
         if (cursor.isAtEnd()) {
           return incomplete("missing justification");
         }
-        if (!cursor.consume('"')) {
+        Character closingDelimiter = closingDelimiterFor(cursor.peek());
+        if (closingDelimiter == null) {
           return invalid("missing justification");
         }
+        cursor.consume();
 
         StringBuilder justificationBuilder = new StringBuilder();
         boolean escaped = false;
@@ -298,7 +300,7 @@ public final class SonarResolve {
             escaped = false;
           } else if (current == '\\') {
             escaped = true;
-          } else if (current == '"') {
+          } else if (current == closingDelimiter) {
             justification = justificationBuilder.toString();
             return true;
           } else {
@@ -337,6 +339,25 @@ public final class SonarResolve {
 
       private static boolean isRuleKeyChar(char character) {
         return Character.isLetterOrDigit(character) || character == ':' || character == '_';
+      }
+
+      private static Character closingDelimiterFor(char openingDelimiter) {
+        switch (openingDelimiter) {
+          case '`':
+            return '`';
+          case '\'':
+            return '\'';
+          case '"':
+            return '"';
+          case '(':
+            return ')';
+          case '[':
+            return ']';
+          case '{':
+            return '}';
+          default:
+            return null;
+        }
       }
 
       private final class Cursor {
@@ -382,6 +403,10 @@ public final class SonarResolve {
             return true;
           }
           return false;
+        }
+
+        private char peek() {
+          return text.charAt(index);
         }
 
         private char consume() {

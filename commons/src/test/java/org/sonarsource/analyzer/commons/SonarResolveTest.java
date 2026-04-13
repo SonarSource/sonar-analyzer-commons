@@ -175,6 +175,30 @@ class SonarResolveTest {
         42,
         new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
       arguments(
+        "sonar-resolve cpp:S100 `line comment`",
+        42,
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+      arguments(
+        "sonar-resolve cpp:S100 'line \\'comment\\''",
+        42,
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line 'comment'")),
+      arguments(
+        "sonar-resolve cpp:S100 (line comment)",
+        42,
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+      arguments(
+        "sonar-resolve cpp:S100 [line \\]comment]",
+        42,
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line ]comment")),
+      arguments(
+        "sonar-resolve cpp:S100 [line comment)]",
+        42,
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment)")),
+      arguments(
+        "sonar-resolve cpp:S100 {line comment}",
+        42,
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+      arguments(
         "sonar-resolve cpp:S100 \"line \\\"comment\\\"\"",
         42,
         new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line \"comment\"")),
@@ -206,7 +230,10 @@ class SonarResolveTest {
       arguments("sonar-resolve cpp:S100, cpp:S100 \"line comment\"", "Invalid sonar-resolve directive: duplicate rule key 'cpp:S100'"),
       arguments("sonar-resolve cpp:S100, \"line comment\"", "Invalid sonar-resolve directive: invalid rule key list"),
       arguments("sonar-resolve cpp:S100", "Invalid sonar-resolve directive: missing justification"),
-      arguments("sonar-resolve cpp:S100 \"line comment", "Invalid sonar-resolve directive: unterminated justification"));
+      arguments("sonar-resolve cpp:S100 <line comment>", "Invalid sonar-resolve directive: missing justification"),
+      arguments("sonar-resolve cpp:S100 \"line comment", "Invalid sonar-resolve directive: unterminated justification"),
+      arguments("sonar-resolve cpp:S100 [line comment", "Invalid sonar-resolve directive: unterminated justification"),
+      arguments("sonar-resolve cpp:S100 {line comment", "Invalid sonar-resolve directive: unterminated justification"));
   }
 
   private static Stream<Arguments> multiLineSuccessCases() {
@@ -272,7 +299,21 @@ class SonarResolveTest {
           42,
           IssueResolution.Status.DEFAULT,
           Set.of(RuleKey.of("cpp", "S1234")),
-          "prefix\n\nmiddle\t\nsuffix\"")));
+          "prefix\n\nmiddle\t\nsuffix\"")),
+      arguments(
+        new String[] {
+          "sonar-resolve cpp:S1234 [first line",
+          "second line]"
+        },
+        42,
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S1234")), "first line\nsecond line")),
+      arguments(
+        new String[] {
+          "sonar-resolve cpp:S1234 [first line)",
+          "second line]"
+        },
+        42,
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S1234")), "first line)\nsecond line")));
   }
 
   private static Stream<Arguments> multiLineFailureCases() {
@@ -304,6 +345,12 @@ class SonarResolveTest {
       arguments(
         new String[] {
           "sonar-resolve cpp:S100 \"reason",
+          "still reason"
+        },
+        "Invalid sonar-resolve directive: unterminated justification"),
+      arguments(
+        new String[] {
+          "sonar-resolve cpp:S100 [reason",
           "still reason"
         },
         "Invalid sonar-resolve directive: unterminated justification"));
