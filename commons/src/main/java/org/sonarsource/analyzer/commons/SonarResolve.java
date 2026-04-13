@@ -93,7 +93,7 @@ public final class SonarResolve {
       + '}';
   }
 
-  public static final class Driver {
+  public static final class StreamingParser {
 
     public enum State {
       INCOMPLETE,
@@ -109,7 +109,7 @@ public final class SonarResolve {
     private SonarResolve result;
     private String errorMessage;
 
-    public Driver(int directiveLine) {
+    public StreamingParser(int directiveLine) {
       this.directiveLine = directiveLine;
     }
 

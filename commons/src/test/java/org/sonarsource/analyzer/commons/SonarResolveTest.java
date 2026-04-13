@@ -40,48 +40,48 @@ class SonarResolveTest {
   @ParameterizedTest
   @MethodSource("singleLineFailureCases")
   void parse_fails_for_invalid_single_line_syntax(String directive, String expectedErrorMessage) {
-    SonarResolve.Driver parser = new SonarResolve.Driver(42);
+    SonarResolve.StreamingParser parser = new SonarResolve.StreamingParser(42);
 
-    SonarResolve.Driver.State state = parser.consumeLine(42, directive);
-    if (state == SonarResolve.Driver.State.INCOMPLETE) {
+    SonarResolve.StreamingParser.State state = parser.consumeLine(42, directive);
+    if (state == SonarResolve.StreamingParser.State.INCOMPLETE) {
       state = parser.finish();
     }
 
-    assertThat(state).isEqualTo(SonarResolve.Driver.State.INVALID);
+    assertThat(state).isEqualTo(SonarResolve.StreamingParser.State.INVALID);
     assertThat(parser.errorMessage()).isEqualTo(expectedErrorMessage);
   }
 
   @ParameterizedTest
   @MethodSource("multiLineSuccessCases")
   void consume_line_supports_multi_line_syntax(String[] lines, int line, SonarResolve expected) {
-    SonarResolve.Driver parser = new SonarResolve.Driver(line);
+    SonarResolve.StreamingParser parser = new SonarResolve.StreamingParser(line);
     for (int i = 0; i < lines.length - 1; i++) {
-      assertThat(parser.consumeLine(line + i, lines[i])).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
+      assertThat(parser.consumeLine(line + i, lines[i])).isEqualTo(SonarResolve.StreamingParser.State.INCOMPLETE);
     }
-    assertThat(parser.consumeLine(line + lines.length - 1, lines[lines.length - 1])).isEqualTo(SonarResolve.Driver.State.COMPLETE);
+    assertThat(parser.consumeLine(line + lines.length - 1, lines[lines.length - 1])).isEqualTo(SonarResolve.StreamingParser.State.COMPLETE);
     assertThat(parser.result()).isEqualTo(expected);
   }
 
   @ParameterizedTest
   @MethodSource("multiLineFailureCases")
   void consume_line_fails_for_invalid_multi_line_syntax(String[] lines, String expectedErrorMessage) {
-    SonarResolve.Driver parser = new SonarResolve.Driver(42);
+    SonarResolve.StreamingParser parser = new SonarResolve.StreamingParser(42);
     for (int i = 0; i < lines.length - 1; i++) {
-      assertThat(parser.consumeLine(42 + i, lines[i])).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
+      assertThat(parser.consumeLine(42 + i, lines[i])).isEqualTo(SonarResolve.StreamingParser.State.INCOMPLETE);
     }
 
-    SonarResolve.Driver.State state = parser.consumeLine(42 + lines.length - 1, lines[lines.length - 1]);
-    if (state == SonarResolve.Driver.State.INCOMPLETE) {
+    SonarResolve.StreamingParser.State state = parser.consumeLine(42 + lines.length - 1, lines[lines.length - 1]);
+    if (state == SonarResolve.StreamingParser.State.INCOMPLETE) {
       state = parser.finish();
     }
 
-    assertThat(state).isEqualTo(SonarResolve.Driver.State.INVALID);
+    assertThat(state).isEqualTo(SonarResolve.StreamingParser.State.INVALID);
     assertThat(parser.errorMessage()).isEqualTo(expectedErrorMessage);
   }
 
   @Test
   void finish_before_consuming_any_line_throws() {
-    SonarResolve.Driver parser = new SonarResolve.Driver(42);
+    SonarResolve.StreamingParser parser = new SonarResolve.StreamingParser(42);
 
     assertThatThrownBy(parser::finish)
       .isInstanceOf(IllegalStateException.class)
@@ -90,8 +90,8 @@ class SonarResolveTest {
 
   @Test
   void consume_line_after_complete_throws() {
-    SonarResolve.Driver parser = new SonarResolve.Driver(42);
-    assertThat(parser.consumeLine(42, "sonar-resolve cpp:S100 \"reason\"")).isEqualTo(SonarResolve.Driver.State.COMPLETE);
+    SonarResolve.StreamingParser parser = new SonarResolve.StreamingParser(42);
+    assertThat(parser.consumeLine(42, "sonar-resolve cpp:S100 \"reason\"")).isEqualTo(SonarResolve.StreamingParser.State.COMPLETE);
 
     assertThatThrownBy(() -> parser.consumeLine(43, "ignored"))
       .isInstanceOf(IllegalStateException.class)
@@ -100,8 +100,8 @@ class SonarResolveTest {
 
   @Test
   void consume_line_after_invalid_throws() {
-    SonarResolve.Driver parser = new SonarResolve.Driver(42);
-    assertThat(parser.consumeLine(42, "sonar-resolve [accepted] cpp:S100 \"reason\"")).isEqualTo(SonarResolve.Driver.State.INVALID);
+    SonarResolve.StreamingParser parser = new SonarResolve.StreamingParser(42);
+    assertThat(parser.consumeLine(42, "sonar-resolve [accepted] cpp:S100 \"reason\"")).isEqualTo(SonarResolve.StreamingParser.State.INVALID);
 
     assertThatThrownBy(() -> parser.consumeLine(43, "ignored"))
       .isInstanceOf(IllegalStateException.class)
@@ -110,19 +110,19 @@ class SonarResolveTest {
 
   @Test
   void consume_line_preserves_empty_continuation_lines_inside_justification() {
-    SonarResolve.Driver parser = new SonarResolve.Driver(42);
+    SonarResolve.StreamingParser parser = new SonarResolve.StreamingParser(42);
 
-    assertThat(parser.consumeLine(42, "sonar-resolve cpp:S100 \"line1")).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
-    assertThat(parser.consumeLine(43, "")).isEqualTo(SonarResolve.Driver.State.INCOMPLETE);
-    assertThat(parser.consumeLine(44, "line3\"")).isEqualTo(SonarResolve.Driver.State.COMPLETE);
+    assertThat(parser.consumeLine(42, "sonar-resolve cpp:S100 \"line1")).isEqualTo(SonarResolve.StreamingParser.State.INCOMPLETE);
+    assertThat(parser.consumeLine(43, "")).isEqualTo(SonarResolve.StreamingParser.State.INCOMPLETE);
+    assertThat(parser.consumeLine(44, "line3\"")).isEqualTo(SonarResolve.StreamingParser.State.COMPLETE);
 
     assertThat(parser.result()).isEqualTo(
       new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line1\n\nline3"));
   }
 
   private static SonarResolve parseSingleLine(String directive, int line) {
-    SonarResolve.Driver parser = new SonarResolve.Driver(line);
-    assertThat(parser.consumeLine(line, directive)).isEqualTo(SonarResolve.Driver.State.COMPLETE);
+    SonarResolve.StreamingParser parser = new SonarResolve.StreamingParser(line);
+    assertThat(parser.consumeLine(line, directive)).isEqualTo(SonarResolve.StreamingParser.State.COMPLETE);
     return parser.result();
   }
 
