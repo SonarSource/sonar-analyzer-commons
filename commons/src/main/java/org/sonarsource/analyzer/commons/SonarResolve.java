@@ -182,7 +182,7 @@ public final class SonarResolve {
         Cursor cursor = new Cursor(accumulatedDirective);
         cursor.skipWhitespace();
 
-        if (!cursor.expectLiteral(KEYWORD, "missing '" + KEYWORD + "'")) {
+        if (!cursor.expectLiteralIgnoreCase(KEYWORD, "missing '" + KEYWORD + "'")) {
           return state;
         }
 
@@ -229,11 +229,11 @@ public final class SonarResolve {
           return incomplete("unterminated status");
         }
 
-        if ("accept".equals(statusText)) {
+        if ("accept".equalsIgnoreCase(statusText)) {
           status = IssueResolution.Status.DEFAULT;
           return true;
         }
-        if ("fp".equals(statusText)) {
+        if ("fp".equalsIgnoreCase(statusText)) {
           status = IssueResolution.Status.FALSE_POSITIVE;
           return true;
         }
@@ -285,9 +285,11 @@ public final class SonarResolve {
         if (cursor.isAtEnd()) {
           return incomplete("missing justification");
         }
-        if (!cursor.consume('"')) {
+        Character closingDelimiter = closingDelimiterFor(cursor.peek());
+        if (closingDelimiter == null) {
           return invalid("missing justification");
         }
+        cursor.consume();
 
         StringBuilder justificationBuilder = new StringBuilder();
         boolean escaped = false;
@@ -298,7 +300,7 @@ public final class SonarResolve {
             escaped = false;
           } else if (current == '\\') {
             escaped = true;
-          } else if (current == '"') {
+          } else if (current == closingDelimiter) {
             justification = justificationBuilder.toString();
             return true;
           } else {
@@ -339,6 +341,25 @@ public final class SonarResolve {
         return Character.isLetterOrDigit(character) || character == ':' || character == '_';
       }
 
+      private static Character closingDelimiterFor(char openingDelimiter) {
+        switch (openingDelimiter) {
+          case '`':
+            return '`';
+          case '\'':
+            return '\'';
+          case '"':
+            return '"';
+          case '(':
+            return ')';
+          case '[':
+            return ']';
+          case '{':
+            return '}';
+          default:
+            return null;
+        }
+      }
+
       private final class Cursor {
 
         private final String text;
@@ -356,8 +377,8 @@ public final class SonarResolve {
           consumeWhile(Character::isWhitespace);
         }
 
-        private boolean expectLiteral(String literal, String missingMessage) {
-          return text.startsWith(literal, index) ? advance(literal.length()) : invalid(missingMessage);
+        private boolean expectLiteralIgnoreCase(String literal, String missingMessage) {
+          return text.regionMatches(true, index, literal, 0, literal.length()) ? advance(literal.length()) : invalid(missingMessage);
         }
 
         private boolean expectWhitespace(String message) {
@@ -382,6 +403,10 @@ public final class SonarResolve {
             return true;
           }
           return false;
+        }
+
+        private char peek() {
+          return text.charAt(index);
         }
 
         private char consume() {
