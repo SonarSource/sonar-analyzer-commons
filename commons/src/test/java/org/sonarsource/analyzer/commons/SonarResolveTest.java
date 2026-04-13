@@ -167,6 +167,10 @@ class SonarResolveTest {
         42,
         new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line \"comment\"")),
       arguments(
+        "sonar-resolve cpp:S100 \"line comment\" the rest is ignored",
+        42,
+        new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("cpp", "S100")), "line comment")),
+      arguments(
         "sonar-resolve cpp:S100 \"line\\nline\\rline\\tline\\\\line\"",
         42,
         new SonarResolve(
@@ -247,7 +251,7 @@ class SonarResolveTest {
         new String[] {
           "sonar-resolve cpp:S1234 \"prefix\\n",
           "middle\\t",
-          "suffix\\\"\""
+          "suffix\\\"\" the rest is ignored"
         },
         42,
         new SonarResolve(
