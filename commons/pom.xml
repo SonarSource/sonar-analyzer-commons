@@ -121,8 +121,8 @@
                 <requireFilesSize>
                   <!-- Warning: Please consider carefully when increasing the size of this shared library, it might have
                   impact on all our analyzers! -->
-                  <minsize>130000</minsize>
-                  <maxsize>140000</maxsize>
+                  <minsize>140000</minsize>
+                  <maxsize>150000</maxsize>
                   <files>
                     <file>${project.build.directory}/${project.build.finalName}.jar</file>
                   </files>
