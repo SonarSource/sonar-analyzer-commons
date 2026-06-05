@@ -48,8 +48,8 @@ public final class CleartextProtocolFilter {
 
   // --- Internal / non-public hosts -------------------------------------------------------
 
-  private static final String LOOPBACK_IPV4 = "^127(?:\\.\\d+){2}\\.\\d+";
-  private static final String LOOPBACK_IPV6 = "^(?:0*:){7}:?0*1|^::1";
+  private static final String LOOPBACK_IPV4 = "^127(?:\\.\\d+){3}";
+  private static final String LOOPBACK_IPV6 = "^(?:0*:){7}:?0*1|^\\[?::1\\]?";
   // AWS instance metadata service — RFC 3927 link-local (IPv4) and AWS-defined ULA (IPv6)
   private static final String CLOUD_METADATA_IPV4 = "^169\\.254\\.169\\.254";
   private static final String CLOUD_METADATA_IPV6 = "^\\[?fd00:ec2::254\\]?";
