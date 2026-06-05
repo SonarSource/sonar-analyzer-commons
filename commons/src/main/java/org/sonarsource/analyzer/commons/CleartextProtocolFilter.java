@@ -63,7 +63,7 @@ public final class CleartextProtocolFilter {
   private static final String LISTEN_WILDCARDS = "^0\\.0\\.0\\.0|^\\+";
 
   private static final Pattern SAFE_HOSTS = Pattern.compile(
-    "^localhost"
+    "(?:^localhost"
       + "|" + LOOPBACK_IPV4
       + "|" + LOOPBACK_IPV6
       + "|" + CLOUD_METADATA_IPV4
@@ -71,7 +71,8 @@ public final class CleartextProtocolFilter {
       + "|" + CLOUD_METADATA_HOSTNAMES
       + "|" + DOCKER_INTERNAL
       + "|" + K8S_INTERNAL
-      + "|" + LISTEN_WILDCARDS,
+      + "|" + LISTEN_WILDCARDS
+      + ")(?=[:/?#]|$)",
     Pattern.CASE_INSENSITIVE);
 
   // --- Well-known namespace URI authorities ----------------------------------------------
@@ -80,23 +81,41 @@ public final class CleartextProtocolFilter {
   // prefix is mandated by the respective standard; no actual HTTP connection is implied.
 
   private static final Pattern NAMESPACE_URI_AUTHORITIES = Pattern.compile(
-    "^www\\.w3\\.org"                    // W3C: XML Schema, XHTML, RDF, OWL, SPARQL, …
-      + "|^schemas\\.android\\.com"      // Android SDK XML namespaces
-      + "|^schemas\\.microsoft\\.com"    // Microsoft XML schemas
-      + "|^schemas\\.xmlsoap\\.org"      // SOAP / WS-* schemas
-      + "|^www\\.sap\\.com"              // SAP namespaces
-      + "|^www\\.opengis\\.net"          // OGC / OpenGIS
-      + "|^hl7\\.org"                    // HL7 FHIR
-      + "|^unitsofmeasure\\.org"         // UCUM units
-      + "|^purl\\.org"                   // Dublin Core, BIBO, …
-      + "|^docs\\.oasis-open\\.org"      // OASIS: SAML, WS-Security, OData, …
-      + "|^xmlns\\.com"                  // FOAF, vCard, …
-      + "|^json-ld\\.org"                // JSON-LD
-      + "|^schema\\.org"                 // Schema.org structured data
-      + "|^www\\.springframework\\.org"  // Spring Framework XML schemas
-      + "|^maven\\.apache\\.org"         // Maven POM / XSD
-      + "|^dublincore\\.org"             // Dublin Core legacy URIs
-      + "|^ogp\\.me",                    // Open Graph Protocol
+    // W3C: XML Schema, XHTML, RDF, OWL, SPARQL, …
+    "(?:^www\\.w3\\.org"
+      // Android SDK XML namespaces
+      + "|^schemas\\.android\\.com"
+      // Microsoft XML schemas
+      + "|^schemas\\.microsoft\\.com"
+      // SOAP / WS-* schemas
+      + "|^schemas\\.xmlsoap\\.org"
+      // SAP namespaces
+      + "|^www\\.sap\\.com"
+      // OGC / OpenGIS
+      + "|^www\\.opengis\\.net"
+      // HL7 FHIR
+      + "|^hl7\\.org"
+      // UCUM units
+      + "|^unitsofmeasure\\.org"
+      // Dublin Core, BIBO, …
+      + "|^purl\\.org"
+      // OASIS: SAML, WS-Security, OData, …
+      + "|^docs\\.oasis-open\\.org"
+      // FOAF, vCard, …
+      + "|^xmlns\\.com"
+      // JSON-LD
+      + "|^json-ld\\.org"
+      // Schema.org structured data
+      + "|^schema\\.org"
+      // Spring Framework XML schemas
+      + "|^www\\.springframework\\.org"
+      // Maven POM / XSD
+      + "|^maven\\.apache\\.org"
+      // Dublin Core legacy URIs
+      + "|^dublincore\\.org"
+      // Open Graph Protocol
+      + "|^ogp\\.me"
+      + ")(?=[:/?#]|$)",
     Pattern.CASE_INSENSITIVE);
 
   private CleartextProtocolFilter() {
@@ -109,6 +128,9 @@ public final class CleartextProtocolFilter {
    * @param url the raw URL string as it appears in source code
    */
   public static boolean isSafe(String url) {
+    if (url == null) {
+      return true;
+    }
     var matcher = CLEARTEXT_URL.matcher(url.strip());
     if (!matcher.find()) {
       return true;
