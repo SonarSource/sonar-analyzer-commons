@@ -128,9 +128,6 @@ public final class CleartextProtocolFilter {
    * @param url the raw URL string as it appears in source code
    */
   public static boolean isSafe(String url) {
-    if (url == null) {
-      return true;
-    }
     var matcher = CLEARTEXT_URL.matcher(url.strip());
     if (!matcher.find()) {
       return true;
