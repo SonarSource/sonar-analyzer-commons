@@ -16,6 +16,7 @@
  */
 package org.sonarsource.analyzer.commons;
 
+import java.net.URI;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -152,9 +153,40 @@ public final class CleartextProtocolFilter {
     if (!matcher.find()) {
       return true;
     }
-    var rest = matcher.group("rest");
-    return SAFE_HOSTS.matcher(rest).find()
-      || NAMESPACE_URI_AUTHORITIES.matcher(rest).find()
-      || DOCUMENTATION_HOSTS.matcher(rest).find();
+    return isSafeHost(matcher.group("rest"));
+  }
+
+  /**
+   * Returns {@code true} if {@code url} is safe to use without TLS and should NOT
+   * trigger a cleartext-protocol security warning. Call this before raising an issue.
+   *
+   * @param url the parsed URI; must not be null
+   */
+  public static boolean isSafeWithoutTls(URI url) {
+    var scheme = url.getScheme();
+    if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("ftp")) {
+      return true;
+    }
+    var host = url.getHost();
+    if (host == null) {
+      return true;
+    }
+    return isSafeHost(host);
+  }
+
+  private static boolean isSafeHost(String host) {
+    return isInternalHost(host) || isNamespaceUriAuthority(host) || isDocumentationHost(host);
+  }
+
+  private static boolean isInternalHost(String host) {
+    return SAFE_HOSTS.matcher(host).find();
+  }
+
+  private static boolean isNamespaceUriAuthority(String host) {
+    return NAMESPACE_URI_AUTHORITIES.matcher(host).find();
+  }
+
+  private static boolean isDocumentationHost(String host) {
+    return DOCUMENTATION_HOSTS.matcher(host).find();
   }
 }

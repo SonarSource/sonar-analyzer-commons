@@ -16,6 +16,7 @@
  */
 package org.sonarsource.analyzer.commons;
 
+import java.net.URI;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -118,6 +119,52 @@ class CleartextProtocolFilterTest {
       "HTTP://metadata.google.internal",
       "http://WWW.W3.ORG/2001/XMLSchema",
       "  http://localhost  "
+    );
+  }
+
+  @ParameterizedTest(name = "[{index}] {0}")
+  @MethodSource("safeUris")
+  void safeUri(URI uri) {
+    assertThat(CleartextProtocolFilter.isSafeWithoutTls(uri)).isTrue();
+  }
+
+  @ParameterizedTest(name = "[{index}] {0}")
+  @MethodSource("notSafeUris")
+  void notSafeUri(URI uri) {
+    assertThat(CleartextProtocolFilter.isSafeWithoutTls(uri)).isFalse();
+  }
+
+  static Stream<URI> safeUris() {
+    return Stream.of(
+      // Non-cleartext scheme
+      URI.create("https://acme.com"),
+      URI.create("sftp://acme.com"),
+      // Loopback
+      URI.create("http://localhost:8080/api"),
+      URI.create("http://127.0.0.1/path"),
+      // Cloud IMDS
+      URI.create("http://169.254.169.254/latest/meta-data/"),
+      URI.create("http://metadata.google.internal/computeMetadata/v1"),
+      // Kubernetes
+      URI.create("http://vault.vault.svc.cluster.local:8200"),
+      // Namespace URI authority
+      URI.create("http://www.w3.org/2001/XMLSchema"),
+      URI.create("http://schema.org/Person"),
+      // Documentation domain
+      URI.create("http://example.com/path"),
+      URI.create("http://api.example.com/v1"),
+      URI.create("http://myapi.test")
+    );
+  }
+
+  static Stream<URI> notSafeUris() {
+    return Stream.of(
+      // Ordinary public HTTP
+      URI.create("http://acme.com"),
+      URI.create("ftp://files.acme.com/data"),
+      // Userinfo spoofing — getHost() returns the real host
+      URI.create("http://localhost@evil.com"),
+      URI.create("http://www.w3.org@evil.com")
     );
   }
 
