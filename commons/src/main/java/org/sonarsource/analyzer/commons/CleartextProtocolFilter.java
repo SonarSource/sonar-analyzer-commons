@@ -46,10 +46,10 @@ import java.util.regex.Pattern;
  */
 public final class CleartextProtocolFilter {
 
-  // Captures everything after the scheme (http:// / ftp://) as the "rest" group.
-  // "rest" starts with the host and may include an optional port and path.
+  // Captures the authority (host and optional port) after the scheme as the "rest" group.
+  // Stops at the first "/" so path, query, and fragment are excluded.
   private static final Pattern CLEARTEXT_URL = Pattern.compile(
-    "^(?:http|ftp)://(?<rest>\\S+)", Pattern.CASE_INSENSITIVE);
+    "^(?:http|ftp)://(?<rest>[^\\s/]+)", Pattern.CASE_INSENSITIVE);
 
   // --- Internal / non-public hosts -------------------------------------------------------
   private static final List<String> SAFE_HOST_PATTERNS = List.of(
@@ -137,7 +137,7 @@ public final class CleartextProtocolFilter {
 
   private static Pattern buildPattern(List<String> patterns) {
     return Pattern.compile(
-      "(?:" + String.join("|", patterns) + ")(?=[:/?#]|$)",
+      "(?:" + String.join("|", patterns) + ")(?=:|$)",
       Pattern.CASE_INSENSITIVE);
   }
 
