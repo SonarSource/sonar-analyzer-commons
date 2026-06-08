@@ -161,7 +161,7 @@ public final class CleartextProtocolFilter {
    */
   public static boolean isSafeWithoutTls(URI url) {
     var scheme = url.getScheme();
-    if (scheme == null || !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("ftp")) {
+    if (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("ftp")) {
       return true;
     }
     var host = url.getHost();
