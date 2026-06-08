@@ -125,7 +125,7 @@ public final class CleartextProtocolFilter {
    * Returns {@code true} if {@code url} is safe and should NOT trigger a
    * cleartext-protocol security warning. Call this before raising an issue.
    *
-   * @param url the raw URL string as it appears in source code
+   * @param url the raw URL string as it appears in source code; must not be null
    */
   public static boolean isSafe(String url) {
     var matcher = CLEARTEXT_URL.matcher(url.strip());
