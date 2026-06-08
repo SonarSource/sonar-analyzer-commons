@@ -17,6 +17,7 @@
 package org.sonarsource.analyzer.commons;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -47,11 +48,6 @@ import java.util.regex.Pattern;
  */
 public final class CleartextProtocolFilter {
 
-  // Captures the authority (host and optional port) after the scheme as the "rest" group.
-  // Stops at the first "/" so path, query, and fragment are excluded.
-  private static final Pattern CLEARTEXT_URL = Pattern.compile(
-    "^(?:http|ftp)://(?<rest>[^\\s/]+)", Pattern.CASE_INSENSITIVE);
-
   // --- Internal / non-public hosts -------------------------------------------------------
   private static final List<String> SAFE_HOST_PATTERNS = List.of(
     // localhost
@@ -59,11 +55,11 @@ public final class CleartextProtocolFilter {
     // IPv4 loopback (127.0.0.0/8)
     "^127(?:\\.\\d+){3}",
     // IPv6 loopback (::1)
-    "^(?:0*:){7}:?0*1|^\\[?::1\\]?",
+    "^\\[(?:0*:){7}:?0*1\\]|^\\[::1\\]",
     // IPv4 link-local (169.254.0.0/16, RFC 3927) — AWS/Azure/GCP/OCI IMDS
     "^169\\.254\\.\\d+\\.\\d+",
     // AWS IPv6 IMDS (fd00:ec2::254)
-    "^\\[?fd00:ec2::254\\]?",
+    "^\\[fd00:ec2::254\\]",
     // Azure wireserver
     "^168\\.63\\.129\\.16",
     // Alibaba Cloud ECS IMDS
@@ -145,15 +141,16 @@ public final class CleartextProtocolFilter {
   /**
    * Returns {@code true} if {@code url} is safe to use without TLS and should NOT
    * trigger a cleartext-protocol security warning. Call this before raising an issue.
+   * Returns {@code false} if the URL string cannot be parsed as a URI.
    *
-   * @param url the raw URL string as it appears in source code; must not be null
+   * @param url the URL string as it appears in source code; must not be null
    */
   public static boolean isSafeWithoutTls(String url) {
-    var matcher = CLEARTEXT_URL.matcher(url.strip());
-    if (!matcher.find()) {
-      return true;
+    try {
+      return isSafeWithoutTls(new URI(url.strip()));
+    } catch (URISyntaxException e) {
+      return false;
     }
-    return isSafeHost(matcher.group("rest"));
   }
 
   /**
@@ -169,7 +166,7 @@ public final class CleartextProtocolFilter {
     }
     var host = url.getHost();
     if (host == null) {
-      return true;
+      return false;
     }
     return isSafeHost(host);
   }

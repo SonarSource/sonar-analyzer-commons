@@ -51,8 +51,8 @@ class CleartextProtocolFilterTest {
       "http://LOCALHOST:3000",
       "http://127.0.0.1:8080",
       "http://127.255.255.254/path",
-      "http://::1/path",
-      "http://0:0:0:0:0:0:0:1",
+      "http://[::1]/path",
+      "http://[0:0:0:0:0:0:0:1]",
 
       // Cloud IMDS — link-local range (169.254.0.0/16) and named endpoints
       "http://169.254.169.254/latest/meta-data/",
@@ -164,7 +164,9 @@ class CleartextProtocolFilterTest {
       URI.create("ftp://files.acme.com/data"),
       // Userinfo spoofing — getHost() returns the real host
       URI.create("http://localhost@evil.com"),
-      URI.create("http://www.w3.org@evil.com")
+      URI.create("http://www.w3.org@evil.com"),
+      // Opaque URI — http scheme but no host component (getHost() == null)
+      URI.create("http:not-hierarchical")
     );
   }
 
@@ -193,7 +195,11 @@ class CleartextProtocolFilterTest {
       "http://localhost@evil.com",
 
       // Surrounding whitespace with a non-safe URL
-      "  http://acme.com  "
+      "  http://acme.com  ",
+
+      // Malformed — cannot be parsed as a URI (URISyntaxException → false)
+      "http://foo bar.com",
+      "http://[unclosed"
     );
   }
 }
