@@ -16,26 +16,27 @@
  */
 package org.sonarsource.analyzer.commons;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * Determines whether a cleartext-protocol URL should be considered safe and
- * suppressed by S5332 ("Using clear-text protocols is security-sensitive").
+ * Determines whether a cleartext-protocol URL should be considered safe and should not
+ * trigger a security warning.
  * <p>
  * Three categories of safe URLs are recognised:
  * <ul>
- *   <li><b>Internal hosts</b> — loopback addresses, cloud instance metadata
- *       endpoints, Docker-internal hostnames, and Kubernetes cluster-internal service
- *       DNS. None of these are reachable from the public internet.</li>
+ *   <li><b>Internal hosts</b> — loopback addresses, cloud instance metadata endpoints
+ *       (AWS, Azure, GCP, Alibaba, and others), Docker-internal hostnames, and
+ *       Kubernetes cluster-internal service DNS. None of these are reachable from the
+ *       public internet.</li>
  *   <li><b>Namespace URI authorities</b> — well-known authorities (W3C, Android,
  *       OASIS, HL7, …) whose {@code http://} URIs are opaque namespace identifiers
  *       used in XML, JSON-LD, RDF, and similar formats. They carry a protocol prefix
  *       by convention and do not imply an actual HTTP connection.</li>
  *   <li><b>IANA-reserved documentation domains</b> — {@code example.com},
- *       {@code example.net}, and {@code example.org} (RFC 2606) and their subdomains,
- *       plus the reserved TLDs {@code .example}, {@code .test} (RFC 2606), and
- *       {@code .localhost} (RFC 6761). Their use in source code is almost always a
- *       placeholder, not a real connection.</li>
+ *       {@code example.net}, and {@code example.org} and their subdomains, plus the
+ *       reserved TLDs {@code .example}, {@code .test}, and {@code .localhost} (RFC 6761).
+ *       Their use in source code is almost always a placeholder, not a real connection.</li>
  * </ul>
  * <p>
  * Usage: extract the raw URL string from the AST node and call {@link #isSafeWithoutTls(String)}
@@ -51,88 +52,64 @@ public final class CleartextProtocolFilter {
     "^(?:http|ftp)://(?<rest>\\S+)", Pattern.CASE_INSENSITIVE);
 
   // --- Internal / non-public hosts -------------------------------------------------------
-  // TODO Convert these constants into a map for better maintenance
-  private static final String LOOPBACK_IPV4 = "^127(?:\\.\\d+){3}";
-  private static final String LOOPBACK_IPV6 = "^(?:0*:){7}:?0*1|^\\[?::1\\]?";
-  // All 169.254.0.0/16 link-local addresses are non-routable (RFC 3927); covers AWS/Azure/GCP/OCI IMDS
-  private static final String CLOUD_METADATA_IPV4 = "^169\\.254\\.\\d+\\.\\d+";
-  // AWS IPv6 IMDS
-  private static final String CLOUD_METADATA_IPV6 = "^\\[?fd00:ec2::254\\]?";
-  // Azure wireserver — internal Azure platform IP, non-routable outside Azure fabric
-  private static final String AZURE_WIRESERVER = "^168\\.63\\.129\\.16";
-  // Alibaba Cloud ECS instance metadata service
-  private static final String ALIBABA_METADATA = "^100\\.100\\.100\\.200";
-  // GCP and generic cloud IMDS hostnames — resolvable only inside the cloud runtime
-  private static final String CLOUD_METADATA_HOSTNAMES = "^metadata\\.google\\.internal|^metadata\\.internal";
-  // Docker host-side gateway — not routable outside the Docker network
-  private static final String DOCKER_INTERNAL = "^host\\.docker\\.internal|^gateway\\.docker\\.internal";
-  // Kubernetes cluster-internal service DNS (*.svc.cluster.local)
-  private static final String K8S_INTERNAL = "\\.svc\\.cluster\\.local";
-  private static final Pattern SAFE_HOSTS = Pattern.compile(
-    "(?:^localhost"
-      + "|" + LOOPBACK_IPV4
-      + "|" + LOOPBACK_IPV6
-      + "|" + CLOUD_METADATA_IPV4
-      + "|" + CLOUD_METADATA_IPV6
-      + "|" + AZURE_WIRESERVER
-      + "|" + ALIBABA_METADATA
-      + "|" + CLOUD_METADATA_HOSTNAMES
-      + "|" + DOCKER_INTERNAL
-      + "|" + K8S_INTERNAL
-      + ")(?=[:/?#]|$)",
-    Pattern.CASE_INSENSITIVE);
+  private static final List<String> SAFE_HOST_PATTERNS = List.of(
+    "^localhost",                                              // localhost
+    "^127(?:\\.\\d+){3}",                                     // IPv4 loopback (127.0.0.0/8)
+    "^(?:0*:){7}:?0*1|^\\[?::1\\]?",                         // IPv6 loopback (::1)
+    "^169\\.254\\.\\d+\\.\\d+",                               // IPv4 link-local (169.254.0.0/16, RFC 3927) — AWS/Azure/GCP/OCI IMDS
+    "^\\[?fd00:ec2::254\\]?",                                 // AWS IPv6 IMDS (fd00:ec2::254)
+    "^168\\.63\\.129\\.16",                                   // Azure wireserver
+    "^100\\.100\\.100\\.200",                                  // Alibaba Cloud ECS IMDS
+    "^metadata\\.google\\.internal|^metadata\\.internal",     // GCP/generic cloud IMDS hostnames
+    "^host\\.docker\\.internal|^gateway\\.docker\\.internal", // Docker internal hostnames
+    "\\.svc\\.cluster\\.local"                                // Kubernetes cluster-internal DNS (*.svc.cluster.local)
+  );
+
+  private static final Pattern SAFE_HOSTS = buildPattern(SAFE_HOST_PATTERNS);
 
   // --- Well-known namespace URI authorities ----------------------------------------------
   // These authority (host) values appear in http:// URIs that are opaque identifiers in
   // XML namespaces, JSON-LD contexts, RDF ontologies, and similar formats. The protocol
   // prefix is mandated by the respective standard; no actual HTTP connection is implied.
+  private static final List<String> NAMESPACE_URI_PATTERNS = List.of(
+    "^www\\.w3\\.org",              // W3C XML Schema, XHTML, RDF, OWL, SPARQL
+    "^schemas\\.android\\.com",     // Android SDK XML namespaces
+    "^schemas\\.microsoft\\.com",   // Microsoft XML schemas
+    "^schemas\\.xmlsoap\\.org",     // SOAP / WS-* schemas
+    "^www\\.sap\\.com",             // SAP namespaces
+    "^www\\.opengis\\.net",         // OGC / OpenGIS
+    "^hl7\\.org",                   // HL7 FHIR
+    "^unitsofmeasure\\.org",        // UCUM units
+    "^purl\\.org",                  // Dublin Core, BIBO
+    "^docs\\.oasis-open\\.org",     // OASIS: SAML, WS-Security, OData
+    "^xmlns\\.com",                 // FOAF, vCard
+    "^json-ld\\.org",               // JSON-LD
+    "^schema\\.org",                // Schema.org structured data
+    "^www\\.springframework\\.org", // Spring Framework XML schemas
+    "^maven\\.apache\\.org",        // Maven POM / XSD
+    "^dublincore\\.org",            // Dublin Core legacy URIs
+    "^ogp\\.me"                     // Open Graph Protocol
+  );
 
-  private static final Pattern NAMESPACE_URI_AUTHORITIES = Pattern.compile(
-    // W3C: XML Schema, XHTML, RDF, OWL, SPARQL, …
-    "(?:^www\\.w3\\.org"
-      // Android SDK XML namespaces
-      + "|^schemas\\.android\\.com"
-      // Microsoft XML schemas
-      + "|^schemas\\.microsoft\\.com"
-      // SOAP / WS-* schemas
-      + "|^schemas\\.xmlsoap\\.org"
-      // SAP namespaces
-      + "|^www\\.sap\\.com"
-      // OGC / OpenGIS
-      + "|^www\\.opengis\\.net"
-      // HL7 FHIR
-      + "|^hl7\\.org"
-      // UCUM units
-      + "|^unitsofmeasure\\.org"
-      // Dublin Core, BIBO, …
-      + "|^purl\\.org"
-      // OASIS: SAML, WS-Security, OData, …
-      + "|^docs\\.oasis-open\\.org"
-      // FOAF, vCard, …
-      + "|^xmlns\\.com"
-      // JSON-LD
-      + "|^json-ld\\.org"
-      // Schema.org structured data
-      + "|^schema\\.org"
-      // Spring Framework XML schemas
-      + "|^www\\.springframework\\.org"
-      // Maven POM / XSD
-      + "|^maven\\.apache\\.org"
-      // Dublin Core legacy URIs
-      + "|^dublincore\\.org"
-      // Open Graph Protocol
-      + "|^ogp\\.me"
-      + ")(?=[:/?#]|$)",
-    Pattern.CASE_INSENSITIVE);
+  private static final Pattern NAMESPACE_URI_AUTHORITIES = buildPattern(NAMESPACE_URI_PATTERNS);
 
   // --- IANA-reserved documentation / placeholder domains --------------------------------
-  // RFC 6761 reserves example.com/net/org and the .example/.test TLDs for documentation.
-  // RFC 6761 reserves .localhost for loopback addresses.
-  private static final Pattern DOCUMENTATION_HOSTS = Pattern.compile(
-    "(?:example\\.(?:com|net|org)|\\.(?:example|test|localhost))(?=[:/?#]|$)",
-    Pattern.CASE_INSENSITIVE);
+  // example.com/net/org are well-known IANA-delegated documentation domains.
+  // RFC 6761 reserves the .example, .test, and .localhost TLDs for documentation and testing.
+  private static final List<String> DOCUMENTATION_HOST_PATTERNS = List.of(
+    "(?:^|\\.)example\\.(?:com|net|org)", // example.com/net/org and subdomains
+    "\\.(?:example|test|localhost)" // .example, .test, .localhost reserved TLDs (RFC 6761)
+  );
+
+  private static final Pattern DOCUMENTATION_HOSTS = buildPattern(DOCUMENTATION_HOST_PATTERNS);
 
   private CleartextProtocolFilter() {
+  }
+
+  private static Pattern buildPattern(List<String> patterns) {
+    return Pattern.compile(
+      "(?:" + String.join("|", patterns) + ")(?=[:/?#]|$)",
+      Pattern.CASE_INSENSITIVE);
   }
 
   /**
