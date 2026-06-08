@@ -100,19 +100,6 @@ public class CleartextProtocolFilterTest {
     assertThat(CleartextProtocolFilter.isSafe("http://otel-collector.observability.svc.cluster.local:4317")).isTrue();
   }
 
-  // --- Inbound / listen pseudo-hosts -----------------------------------------------------
-
-  @Test
-  public void bind_all_address_is_safe() {
-    assertThat(CleartextProtocolFilter.isSafe("http://0.0.0.0:8080")).isTrue();
-  }
-
-  @Test
-  public void aspnet_listen_wildcard_is_safe() {
-    assertThat(CleartextProtocolFilter.isSafe("http://+:8080")).isTrue();
-    assertThat(CleartextProtocolFilter.isSafe("http://+:5000")).isTrue();
-  }
-
   // --- XML / JSON-LD namespace URI authorities -------------------------------------------
 
   @Test

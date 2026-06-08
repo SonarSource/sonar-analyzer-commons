@@ -59,9 +59,6 @@ public final class CleartextProtocolFilter {
   private static final String DOCKER_INTERNAL = "^host\\.docker\\.internal|^gateway\\.docker\\.internal";
   // Kubernetes cluster-internal service DNS (*.svc.cluster.local)
   private static final String K8S_INTERNAL = "^\\S+\\.svc\\.cluster\\.local";
-  // Bind-all (0.0.0.0) and ASP.NET listen-wildcard (+) are inbound pseudo-hosts, not destinations
-  private static final String LISTEN_WILDCARDS = "^0\\.0\\.0\\.0|^\\+";
-
   private static final Pattern SAFE_HOSTS = Pattern.compile(
     "(?:^localhost"
       + "|" + LOOPBACK_IPV4
@@ -71,7 +68,6 @@ public final class CleartextProtocolFilter {
       + "|" + CLOUD_METADATA_HOSTNAMES
       + "|" + DOCKER_INTERNAL
       + "|" + K8S_INTERNAL
-      + "|" + LISTEN_WILDCARDS
       + ")(?=[:/?#]|$)",
     Pattern.CASE_INSENSITIVE);
 
