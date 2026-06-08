@@ -129,6 +129,12 @@ public final class CleartextProtocolFilter {
 
   private static final Pattern DOCUMENTATION_HOSTS = buildPattern(DOCUMENTATION_HOST_PATTERNS);
 
+  // Lenient fallback: extracts the authority from a cleartext URL without strict URI validation.
+  // Used when java.net.URI rejects the string (e.g. template placeholders) or returns a null
+  // host (e.g. underscores in hostnames).
+  private static final Pattern CLEARTEXT_AUTHORITY = Pattern.compile(
+    "^(?:http|ftp)://(?<rest>[^\\s/?#]+)", Pattern.CASE_INSENSITIVE);
+
   private CleartextProtocolFilter() {
   }
 
@@ -141,16 +147,25 @@ public final class CleartextProtocolFilter {
   /**
    * Returns {@code true} if {@code url} is safe to use without TLS and should NOT
    * trigger a cleartext-protocol security warning. Call this before raising an issue.
-   * Returns {@code false} if the URL string cannot be parsed as a URI.
+   *
+   * <p>Well-formed URLs are checked via {@link #isSafeWithoutTls(URI)}. When strict URI
+   * parsing fails (e.g. template placeholders like {@code ${port}}) or yields no host
+   * (e.g. underscores in hostnames), a lenient authority extraction is used as a fallback.
    *
    * @param url the URL string as it appears in source code; must not be null
    */
   public static boolean isSafeWithoutTls(String url) {
+    var stripped = url.strip();
     try {
-      return isSafeWithoutTls(new URI(url.strip()));
+      var uri = new URI(stripped);
+      if (uri.getScheme() != null && uri.getHost() != null) {
+        return isSafeWithoutTls(uri);
+      }
     } catch (URISyntaxException e) {
-      return false;
+      // fall through to lenient parsing
     }
+    var matcher = CLEARTEXT_AUTHORITY.matcher(stripped);
+    return !matcher.find() || isSafeHost(matcher.group("rest"));
   }
 
   /**

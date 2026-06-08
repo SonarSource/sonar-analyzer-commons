@@ -113,6 +113,14 @@ class CleartextProtocolFilterTest {
       "http://myapp.localhost",
       "http://service.myapp.localhost:8080",
 
+      // Template placeholders in port — URI parsing fails, lenient fallback recovers safe host
+      "http://localhost:${port}/api",
+      "ftp://files.example.com:${port}/data",
+
+      // Underscores in hostnames — URI.getHost() returns null, lenient fallback used
+      "http://my_service.svc.cluster.local:8200",
+      "http://my_app.example.com/path",
+
       // Case insensitivity and surrounding whitespace
       "HTTP://LOCALHOST:8080",
       "FTP://127.0.0.1",
