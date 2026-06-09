@@ -129,13 +129,14 @@ public final class CleartextProtocolFilter {
     ")(?=:|$)", Pattern.CASE_INSENSITIVE);
 
   private static final Set<String> CLEARTEXT_SCHEMES = Set.of(
-    "http", "ftp", "ws", "telnet", "rtmp", "tftp", "gopher", "irc");
+    "http", "ftp", "ws", "telnet", "rtmp", "tftp", "gopher", "irc",
+    "smtp", "ldap", "amqp", "mqtt", "imap", "pop3", "nntp", "sip", "stomp");
 
   // Lenient fallback: extracts the authority from a cleartext URL without strict URI validation.
   // Used when java.net.URI rejects the string (e.g. template placeholders) or returns a null
   // host (e.g. underscores in hostnames).
   private static final Pattern CLEARTEXT_AUTHORITY = Pattern.compile(
-    "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]*@)?(?<rest>[^\\s/?#]+)", Pattern.CASE_INSENSITIVE);
+    "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]++@)?(?<rest>[^\\s/?#]++)", Pattern.CASE_INSENSITIVE);
 
   private CleartextProtocolFilter() {
   }
