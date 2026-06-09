@@ -42,6 +42,8 @@ class CleartextProtocolFilterTest {
       // Not a cleartext URL — always safe regardless of host
       "https://example.com",
       "sftp://example.com",
+      "wss://acme.com",
+      "ircs://acme.com",
       "not-a-url",
       "",
 
@@ -113,9 +115,25 @@ class CleartextProtocolFilterTest {
       "http://myapp.localhost",
       "http://service.myapp.localhost:8080",
 
+      // New cleartext schemes — safe because of internal/documentation host
+      "ws://localhost",
+      "ws://example.com",
+      "telnet://127.0.0.1",
+      "rtmp://example.com/live",
+      "tftp://example.com/file",
+      "gopher://example.com",
+      "irc://localhost/channel",
+
+      // Credentials (userinfo) with safe host — real host after @ is what matters
+      "http://user:password@localhost",
+      "http://user:pass@example.com",
+      // Template placeholder in password — URI parsing fails, lenient fallback used
+      "http://user:${password}@localhost",
+
       // Template placeholders in port — URI parsing fails, lenient fallback recovers safe host
       "http://localhost:${port}/api",
       "ftp://files.example.com:${port}/data",
+      "ws://localhost:${port}/socket",
 
       // Underscores in hostnames — URI.getHost() returns null, lenient fallback used
       "http://my_service.svc.cluster.local:8200",
@@ -147,6 +165,12 @@ class CleartextProtocolFilterTest {
       // Non-cleartext scheme
       URI.create("https://acme.com"),
       URI.create("sftp://acme.com"),
+      URI.create("wss://acme.com"),
+      URI.create("ircs://acme.com"),
+      // New cleartext schemes — safe internal/documentation host
+      URI.create("ws://localhost"),
+      URI.create("ws://example.com"),
+      URI.create("telnet://127.0.0.1"),
       // Loopback
       URI.create("http://localhost:8080/api"),
       URI.create("http://127.0.0.1/path"),
@@ -167,9 +191,15 @@ class CleartextProtocolFilterTest {
 
   static Stream<URI> notSafeUris() {
     return Stream.of(
-      // Ordinary public HTTP
+      // Ordinary public HTTP/FTP
       URI.create("http://acme.com"),
       URI.create("ftp://files.acme.com/data"),
+      // Additional cleartext schemes
+      URI.create("ws://acme.com"),
+      URI.create("telnet://acme.com"),
+      URI.create("rtmp://acme.com/live"),
+      URI.create("gopher://acme.com"),
+      URI.create("irc://acme.com/channel"),
       // Userinfo spoofing — getHost() returns the real host
       URI.create("http://localhost@evil.com"),
       URI.create("http://www.w3.org@evil.com"),
@@ -180,11 +210,19 @@ class CleartextProtocolFilterTest {
 
   static Stream<String> notSafeUrls() {
     return Stream.of(
-      // Ordinary public HTTP
+      // Ordinary public HTTP/FTP
       "http://acme.com",
       "http://api.acme.com/v1/users",
       "ftp://files.acme.com",
       "HTTP://ACME.COM",
+
+      // Additional cleartext schemes
+      "ws://acme.com",
+      "telnet://acme.com",
+      "rtmp://acme.com/live",
+      "tftp://acme.com/file",
+      "gopher://acme.com",
+      "irc://acme.com/channel",
 
       // Documentation domain lookalikes
       "http://notexample.com",
@@ -198,9 +236,13 @@ class CleartextProtocolFilterTest {
       "http://www.w3.org.evil.com/x",
       "http://schema.org.evil.com/Person",
 
-      // Userinfo
+      // Userinfo — safe-looking host before @ must not grant safety
       "http://www.w3.org@evil.com",
       "http://localhost@evil.com",
+      // Template placeholder in password — URI parsing fails, lenient fallback used; real host is acme.com
+      "http://localhost:${password}@acme.com",
+      // Underscore in real host — URI.getHost() returns null, lenient fallback used; real host is acme_corp.com
+      "http://localhost:password@acme_corp.com",
 
       // Surrounding whitespace with a non-safe URL
       "  http://acme.com  ",

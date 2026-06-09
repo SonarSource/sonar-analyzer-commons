@@ -18,13 +18,19 @@ package org.sonarsource.analyzer.commons.appsec;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
  * Determines whether a cleartext-protocol URL should be considered safe and should not
  * trigger a security warning.
  * <p>
- * Three categories of safe URLs are recognised:
+ * Recognised cleartext schemes: {@code http}, {@code ftp}, {@code ws}, {@code telnet},
+ * {@code rtmp}, {@code tftp}, {@code gopher}, {@code irc}. Any other scheme is considered
+ * safe (e.g. {@code https}, {@code wss}, {@code sftp}).
+ * <p>
+ * Three categories of safe cleartext URLs are recognised:
  * <ul>
  *   <li><b>Internal hosts</b> — loopback addresses, cloud instance metadata endpoints
  *       (AWS, Azure, GCP, Alibaba, and others), Docker-internal hostnames, and
@@ -122,11 +128,14 @@ public final class CleartextProtocolFilter {
     "\\.(?:example|test|localhost)" +
     ")(?=:|$)", Pattern.CASE_INSENSITIVE);
 
+  private static final Set<String> CLEARTEXT_SCHEMES = Set.of(
+    "http", "ftp", "ws", "telnet", "rtmp", "tftp", "gopher", "irc");
+
   // Lenient fallback: extracts the authority from a cleartext URL without strict URI validation.
   // Used when java.net.URI rejects the string (e.g. template placeholders) or returns a null
   // host (e.g. underscores in hostnames).
   private static final Pattern CLEARTEXT_AUTHORITY = Pattern.compile(
-    "^(?:http|ftp)://(?<rest>[^\\s/?#]+)", Pattern.CASE_INSENSITIVE);
+    "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]*@)?(?<rest>[^\\s/?#]+)", Pattern.CASE_INSENSITIVE);
 
   private CleartextProtocolFilter() {
   }
@@ -163,7 +172,7 @@ public final class CleartextProtocolFilter {
    */
   public static boolean isSafeWithoutTls(URI url) {
     var scheme = url.getScheme();
-    if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("ftp"))) {
+    if (scheme == null || !CLEARTEXT_SCHEMES.contains(scheme.toLowerCase(Locale.ROOT))) {
       return true;
     }
     var host = url.getHost();
