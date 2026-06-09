@@ -14,7 +14,7 @@
  * You should have received a copy of the Sonar Source-Available License
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
-package org.sonarsource.analyzer.commons;
+package org.sonarsource.analyzer.commons.appsec;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -163,7 +163,7 @@ public final class CleartextProtocolFilter {
    */
   public static boolean isSafeWithoutTls(URI url) {
     var scheme = url.getScheme();
-    if (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("ftp")) {
+    if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("ftp"))) {
       return true;
     }
     var host = url.getHost();
