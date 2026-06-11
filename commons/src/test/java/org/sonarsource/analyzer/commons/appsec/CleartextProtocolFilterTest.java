@@ -150,6 +150,11 @@ class CleartextProtocolFilterTest {
       "http://myapp.localhost",
       "http://service.myapp.localhost:8080",
 
+      // IPv4 loopback — short-form (2- and 3-octet) addresses
+      "http://127.1",
+      "http://127.0.1",
+      "http://127.1:8080/api",
+
       // New cleartext schemes — safe because of internal/documentation host
       "ws://localhost",
       "ws://example.com",
@@ -190,6 +195,18 @@ class CleartextProtocolFilterTest {
       // Underscores in hostnames — URI.getHost() returns null, lenient fallback used
       "http://my_service.svc.cluster.local:8200",
       "http://my_app.example.com/path",
+
+      // New namespace URI authorities
+      "http://xml.apache.org/xslt",
+      "http://schemas.openxmlformats.org/drawingml/2006/main",
+      "http://rdfs.org/ns/void#",
+      "http://schemas.google.com/g/2005",
+      "http://a9.com/-/spec/opensearch/1.1/",
+      "http://ns.adobe.com/xap/1.0/",
+      "http://ltsc.ieee.org/xsd/LOM",
+      "http://docbook.org/ns/docbook",
+      "http://graphml.graphdrawing.org/graphml",
+      "http://json-schema.org/draft-07/schema",
 
       // Case insensitivity and surrounding whitespace
       "HTTP://LOCALHOST:8080",
@@ -307,6 +324,11 @@ class CleartextProtocolFilterTest {
 
       // Surrounding whitespace with a non-safe URL
       "  http://acme.com  ",
+
+      // Bare cleartext scheme with no authority — must not be suppressed
+      "http://",
+      "ftp://",
+      "ws://",
 
       // Malformed — cannot be parsed as a URI (URISyntaxException → false)
       "http://foo bar.com",

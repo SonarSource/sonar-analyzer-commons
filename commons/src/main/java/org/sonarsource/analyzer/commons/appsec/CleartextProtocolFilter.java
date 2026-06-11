@@ -64,8 +64,8 @@ public final class CleartextProtocolFilter {
   private static final Pattern SAFE_HOSTS = Pattern.compile("(?:" +
     // localhost
     "^localhost|" +
-    // IPv4 loopback (127.0.0.0/8)
-    "^127(?:\\.\\d+){3}|" +
+    // IPv4 loopback (127.0.0.0/8) — 2–4 octet forms (127.1, 127.0.1, 127.0.0.1)
+    "^127(?:\\.\\d+){1,3}|" +
     // IPv6 loopback (::1)
     "^\\[(?:0*:){7}:?0*1\\]|^\\[::1\\]|" +
     // IPv4 link-local (169.254.0.0/16, RFC 3927) — AWS/Azure/GCP/OCI IMDS
@@ -122,7 +122,27 @@ public final class CleartextProtocolFilter {
     // Dublin Core legacy URIs
     "^dublincore\\.org|" +
     // Open Graph Protocol
-    "^ogp\\.me" +
+    "^ogp\\.me|" +
+    // Apache Cocoon / XML project namespaces
+    "^xml\\.apache\\.org|" +
+    // Office Open XML (OOXML) — PhpSpreadsheet, PHPWord, etc.
+    "^schemas\\.openxmlformats\\.org|" +
+    // RDF Schema
+    "^rdfs\\.org|" +
+    // Google XML schemas
+    "^schemas\\.google\\.com|" +
+    // Amazon OpenSearch namespace
+    "^a9\\.com|" +
+    // Adobe namespaces
+    "^ns\\.adobe\\.com|" +
+    // IEEE Learning Technology Standards
+    "^ltsc\\.ieee\\.org|" +
+    // DocBook XML
+    "^docbook\\.org|" +
+    // GraphML
+    "^graphml\\.graphdrawing\\.org|" +
+    // JSON Schema
+    "^json-schema\\.org" +
     ")(?=:|$)", Pattern.CASE_INSENSITIVE);
 
   // --- IANA-reserved documentation / placeholder domains --------------------------------
@@ -176,6 +196,11 @@ public final class CleartextProtocolFilter {
   private static final Pattern CLEARTEXT_AUTHORITY = Pattern.compile(
     "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]++@)?(?<rest>[^\\s/?#]++)", Pattern.CASE_INSENSITIVE);
 
+  // Matches a bare cleartext scheme prefix (e.g. "http://") with no authority following it.
+  // Used to detect bare-scheme strings that CLEARTEXT_AUTHORITY won't match.
+  private static final Pattern CLEARTEXT_SCHEME_PREFIX = Pattern.compile(
+    "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://", Pattern.CASE_INSENSITIVE);
+
   private CleartextProtocolFilter() {
   }
 
@@ -228,7 +253,7 @@ public final class CleartextProtocolFilter {
       // fall through to lenient parsing
     }
     var matcher = CLEARTEXT_AUTHORITY.matcher(stripped);
-    return !matcher.find() || isSafeHost(matcher.group("rest"));
+    return matcher.find() ? isSafeHost(matcher.group("rest")) : !CLEARTEXT_SCHEME_PREFIX.matcher(stripped).find();
   }
 
   /**
