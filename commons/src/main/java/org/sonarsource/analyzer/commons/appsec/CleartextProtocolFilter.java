@@ -32,8 +32,10 @@ import java.util.stream.Collectors;
  * trigger a security warning.
  * <p>
  * Recognised cleartext schemes: {@code http}, {@code ftp}, {@code ws}, {@code telnet},
- * {@code rtmp}, {@code tftp}, {@code gopher}, {@code irc}. Any other scheme is considered
- * safe (e.g. {@code https}, {@code wss}, {@code sftp}).
+ * {@code rtmp}, {@code tftp}, {@code gopher}, {@code irc}, {@code smtp}, {@code ldap},
+ * {@code amqp}, {@code mqtt}, {@code imap}, {@code pop3}, {@code nntp}, {@code sip},
+ * {@code stomp}. Any other scheme is considered safe (e.g. {@code https}, {@code wss},
+ * {@code sftp}).
  * <p>
  * Three categories of safe cleartext URLs are recognised:
  * <ul>
@@ -183,6 +185,8 @@ public final class CleartextProtocolFilter {
    * should flag, e.g. {@code {"http://", "ftp://", "ws://", ...}}.
    *
    * <p>Use in conjunction with {@link #getIssueMessage(String)} to build issue messages.
+   * Note: strip the {@code ://} suffix before passing a value from this set to
+   * {@link #getIssueMessage(String)}.
    */
   public static Set<String> getCleartextProtocols() {
     return CLEARTEXT_SCHEME_PREFIXES;
@@ -191,7 +195,7 @@ public final class CleartextProtocolFilter {
   /**
    * Returns the standard issue message for the given cleartext scheme name (without {@code ://}),
    * e.g. {@code getIssueMessage("http")} returns
-   * {@code Optional.of("Using http protocol is insecure. Use https instead.")}.
+   * {@code Optional.of("Using HTTP protocol is insecure. Use HTTPS instead.")}.
    * Returns {@link Optional#empty()} if the scheme is not a known cleartext protocol.
    *
    * @param scheme the scheme name as it appears in the URL, without {@code ://}
