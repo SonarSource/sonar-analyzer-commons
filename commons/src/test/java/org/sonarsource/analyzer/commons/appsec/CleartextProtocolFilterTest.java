@@ -38,8 +38,9 @@ class CleartextProtocolFilterTest {
 
   @Test
   void getCleartextProtocolsIsUnmodifiable() {
+    var protocols = CleartextProtocolFilter.getCleartextProtocols();
     assertThatExceptionOfType(UnsupportedOperationException.class)
-      .isThrownBy(() -> CleartextProtocolFilter.getCleartextProtocols().add("custom://"));
+      .isThrownBy(() -> protocols.add("custom://"));
   }
 
   @Test
@@ -67,8 +68,9 @@ class CleartextProtocolFilterTest {
 
   @Test
   void getAlternativeProtocolsIsUnmodifiable() {
+    var alternatives = CleartextProtocolFilter.getAlternativeProtocols();
     assertThatExceptionOfType(UnsupportedOperationException.class)
-      .isThrownBy(() -> CleartextProtocolFilter.getAlternativeProtocols().put("custom", "customs"));
+      .isThrownBy(() -> alternatives.put("custom", "customs"));
   }
 
   @Test
