@@ -35,20 +35,27 @@ class CleartextProtocolFilterTest {
   }
 
   @Test
-  void getAlternativeProtocolsIsUnmodifiable() {
-    var alternatives = CleartextProtocolFilter.getAlternativeProtocols();
-    assertThatExceptionOfType(UnsupportedOperationException.class)
-      .isThrownBy(() -> alternatives.put("custom", "customs"));
+  void getIssueMessageReturnsFormattedMessage() {
+    assertThat(CleartextProtocolFilter.getIssueMessage("http"))
+      .hasValue("Using http protocol is insecure. Use https instead.");
+    assertThat(CleartextProtocolFilter.getIssueMessage("ftp"))
+      .hasValue("Using ftp protocol is insecure. Use sftp, scp or ftps instead.");
+    assertThat(CleartextProtocolFilter.getIssueMessage("telnet"))
+      .hasValue("Using telnet protocol is insecure. Use ssh instead.");
   }
 
   @Test
-  void cleartextProtocolKeysMatchAlternativeProtocolKeys() {
-    var protocols = CleartextProtocolFilter.getCleartextProtocols();
-    var alternativeKeys = CleartextProtocolFilter.getAlternativeProtocols().keySet();
-    assertThat(protocols)
-      .as("getCleartextProtocols() must be exactly the keySet of getAlternativeProtocols() with :// appended")
-      .hasSameSizeAs(alternativeKeys)
-      .allSatisfy(p -> assertThat(alternativeKeys).contains(p.replace("://", "")));
+  void getIssueMessageReturnsEmptyForUnknownScheme() {
+    assertThat(CleartextProtocolFilter.getIssueMessage("https")).isEmpty();
+    assertThat(CleartextProtocolFilter.getIssueMessage("unknown")).isEmpty();
+  }
+
+  @Test
+  void getIssueMessageIsPresentForAllCleartextProtocols() {
+    CleartextProtocolFilter.getCleartextProtocols()
+      .forEach(prefix -> assertThat(CleartextProtocolFilter.getIssueMessage(prefix.replace("://", "")))
+        .as("missing issue message for scheme: %s", prefix)
+        .isPresent());
   }
 
   @ParameterizedTest(name = "[{index}] {0}")

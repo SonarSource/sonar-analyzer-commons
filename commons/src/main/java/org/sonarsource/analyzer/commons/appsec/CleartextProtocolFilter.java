@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -174,19 +175,26 @@ public final class CleartextProtocolFilter {
    * a well-known secure alternative exists. These are the schemes that rule implementations
    * should flag, e.g. {@code {"http://", "ftp://", "ws://", ...}}.
    *
-   * <p>Use in conjunction with {@link #getAlternativeProtocols()} to build issue messages.
+   * <p>Use in conjunction with {@link #getIssueMessage(String)} to build issue messages.
    */
   public static Set<String> getCleartextProtocols() {
     return CLEARTEXT_SCHEME_PREFIXES;
   }
 
   /**
-   * Returns an unmodifiable map from each reportable cleartext scheme name (without {@code ://})
-   * to the human-readable secure alternative recommended in issue messages, e.g.
-   * {@code {"http" -> "https", "ftp" -> "sftp, scp or ftps", ...}}.
+   * Returns the standard issue message for the given cleartext scheme name (without {@code ://}),
+   * e.g. {@code getIssueMessage("http")} returns
+   * {@code Optional.of("Using http protocol is insecure. Use https instead.")}.
+   * Returns {@link Optional#empty()} if the scheme is not a known cleartext protocol.
+   *
+   * @param scheme the scheme name as it appears in the URL, without {@code ://}
    */
-  public static Map<String, String> getAlternativeProtocols() {
-    return CLEARTEXT_PROTOCOL_ALTERNATIVES;
+  public static Optional<String> getIssueMessage(String scheme) {
+    String alternative = CLEARTEXT_PROTOCOL_ALTERNATIVES.get(scheme);
+    if (alternative == null) {
+      return Optional.empty();
+    }
+    return Optional.of("Using " + scheme + " protocol is insecure. Use " + alternative + " instead.");
   }
 
   /**
