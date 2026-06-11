@@ -37,11 +37,13 @@ class CleartextProtocolFilterTest {
   @Test
   void getIssueMessageReturnsFormattedMessage() {
     assertThat(CleartextProtocolFilter.getIssueMessage("http"))
-      .hasValue("Using http protocol is insecure. Use https instead.");
+      .hasValue("Using HTTP protocol is insecure. Use HTTPS instead.");
     assertThat(CleartextProtocolFilter.getIssueMessage("ftp"))
-      .hasValue("Using ftp protocol is insecure. Use sftp, scp or ftps instead.");
+      .hasValue("Using FTP protocol is insecure. Use SFTP, SCP or FTPS instead.");
     assertThat(CleartextProtocolFilter.getIssueMessage("telnet"))
-      .hasValue("Using telnet protocol is insecure. Use ssh instead.");
+      .hasValue("Using Telnet protocol is insecure. Use SSH instead.");
+    assertThat(CleartextProtocolFilter.getIssueMessage("gopher"))
+      .hasValue("Using Gopher protocol is insecure. Use HTTPS instead.");
   }
 
   @Test

@@ -18,10 +18,12 @@ package org.sonarsource.analyzer.commons.appsec;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -132,33 +134,38 @@ public final class CleartextProtocolFilter {
     ")(?=:|$)", Pattern.CASE_INSENSITIVE);
 
   /**
-   * Maps each cleartext scheme name to its recommended secure alternative.
+   * Maps each cleartext scheme name (correctly capitalised) to its recommended secure alternative.
+   * Keys use display-correct capitalisation (acronyms in ALL-CAPS, proper names in Title Case).
+   * The map uses case-insensitive ordering so lookups work regardless of the input case.
    * This is the single source of truth for both detection and messaging.
    */
-  private static final Map<String, String> CLEARTEXT_PROTOCOL_ALTERNATIVES = Map.ofEntries(
-    Map.entry("http",    "https"),
-    Map.entry("ftp",     "sftp, scp or ftps"),
-    Map.entry("ws",      "wss"),
-    Map.entry("telnet",  "ssh"),
-    Map.entry("gopher",  "https"),
-    Map.entry("tftp",    "sftp"),
-    Map.entry("smtp",    "smtps"),
-    Map.entry("ldap",    "ldaps"),
-    Map.entry("imap",    "imaps"),
-    Map.entry("pop3",    "pop3s"),
-    Map.entry("amqp",    "amqps"),
-    Map.entry("mqtt",    "mqtts"),
-    Map.entry("sip",     "sips"),
-    Map.entry("rtmp",    "rtmps"),
-    Map.entry("irc",     "ircs"),
-    Map.entry("nntp",    "nntps"),
-    Map.entry("stomp",   "stomps")
-  );
+  private static final Map<String, String> CLEARTEXT_PROTOCOL_ALTERNATIVES;
+  static {
+    TreeMap<String, String> m = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    m.put("HTTP",    "HTTPS");
+    m.put("FTP",     "SFTP, SCP or FTPS");
+    m.put("WS",      "WSS");
+    m.put("Telnet",  "SSH");
+    m.put("Gopher",  "HTTPS");
+    m.put("TFTP",    "SFTP");
+    m.put("SMTP",    "SMTPS");
+    m.put("LDAP",    "LDAPS");
+    m.put("IMAP",    "IMAPS");
+    m.put("POP3",    "POP3S");
+    m.put("AMQP",    "AMQPS");
+    m.put("MQTT",    "MQTTS");
+    m.put("SIP",     "SIPS");
+    m.put("RTMP",    "RTMPS");
+    m.put("IRC",     "IRCS");
+    m.put("NNTP",    "NNTPS");
+    m.put("STOMP",   "STOMPS");
+    CLEARTEXT_PROTOCOL_ALTERNATIVES = Collections.unmodifiableMap(m);
+  }
 
   private static final Set<String> CLEARTEXT_SCHEMES = CLEARTEXT_PROTOCOL_ALTERNATIVES.keySet();
 
   private static final Set<String> CLEARTEXT_SCHEME_PREFIXES = CLEARTEXT_SCHEMES.stream()
-    .map(s -> s + "://")
+    .map(s -> s.toLowerCase(Locale.ROOT) + "://")
     .collect(Collectors.toUnmodifiableSet());
 
   // Lenient fallback: extracts the authority from a cleartext URL without strict URI validation.
@@ -190,11 +197,10 @@ public final class CleartextProtocolFilter {
    * @param scheme the scheme name as it appears in the URL, without {@code ://}
    */
   public static Optional<String> getIssueMessage(String scheme) {
-    String alternative = CLEARTEXT_PROTOCOL_ALTERNATIVES.get(scheme);
-    if (alternative == null) {
-      return Optional.empty();
-    }
-    return Optional.of("Using " + scheme + " protocol is insecure. Use " + alternative + " instead.");
+    return CLEARTEXT_PROTOCOL_ALTERNATIVES.entrySet().stream()
+      .filter(e -> e.getKey().equalsIgnoreCase(scheme))
+      .findFirst()
+      .map(e -> "Using " + e.getKey() + " protocol is insecure. Use " + e.getValue() + " instead.");
   }
 
   /**
@@ -229,7 +235,7 @@ public final class CleartextProtocolFilter {
    */
   public static boolean isSafeWithoutTls(URI url) {
     var scheme = url.getScheme();
-    if (scheme == null || !CLEARTEXT_SCHEMES.contains(scheme.toLowerCase(Locale.ROOT))) {
+    if (scheme == null || !CLEARTEXT_SCHEMES.contains(scheme)) {
       return true;
     }
     var host = url.getHost();
