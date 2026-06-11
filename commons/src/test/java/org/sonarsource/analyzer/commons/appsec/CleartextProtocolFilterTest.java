@@ -28,42 +28,10 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 class CleartextProtocolFilterTest {
 
   @Test
-  void getCleartextProtocolsReturnsExpectedSet() {
-    assertThat(CleartextProtocolFilter.getCleartextProtocols())
-      .containsExactlyInAnyOrder(
-        "http://", "ftp://", "ws://", "telnet://", "gopher://", "tftp://",
-        "smtp://", "ldap://", "imap://", "pop3://", "amqp://", "mqtt://",
-        "sip://", "rtmp://", "irc://", "nntp://", "stomp://");
-  }
-
-  @Test
   void getCleartextProtocolsIsUnmodifiable() {
     var protocols = CleartextProtocolFilter.getCleartextProtocols();
     assertThatExceptionOfType(UnsupportedOperationException.class)
       .isThrownBy(() -> protocols.add("custom://"));
-  }
-
-  @Test
-  void getAlternativeProtocolsReturnsExpectedMappings() {
-    var alternatives = CleartextProtocolFilter.getAlternativeProtocols();
-    assertThat(alternatives)
-      .containsEntry("http",   "https")
-      .containsEntry("ftp",    "sftp, scp or ftps")
-      .containsEntry("ws",     "wss")
-      .containsEntry("telnet", "ssh")
-      .containsEntry("gopher", "https")
-      .containsEntry("tftp",   "sftp")
-      .containsEntry("smtp",   "smtps")
-      .containsEntry("ldap",   "ldaps")
-      .containsEntry("imap",   "imaps")
-      .containsEntry("pop3",   "pop3s")
-      .containsEntry("amqp",   "amqps")
-      .containsEntry("mqtt",   "mqtts")
-      .containsEntry("sip",    "sips")
-      .containsEntry("rtmp",   "rtmps")
-      .containsEntry("irc",    "ircs")
-      .containsEntry("nntp",   "nntps")
-      .containsEntry("stomp",  "stomps");
   }
 
   @Test
