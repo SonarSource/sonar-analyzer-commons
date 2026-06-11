@@ -19,8 +19,10 @@ package org.sonarsource.analyzer.commons.appsec;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Determines whether a cleartext-protocol URL should be considered safe and should not
@@ -128,9 +130,35 @@ public final class CleartextProtocolFilter {
     "\\.(?:example|test|localhost)" +
     ")(?=:|$)", Pattern.CASE_INSENSITIVE);
 
-  private static final Set<String> CLEARTEXT_SCHEMES = Set.of(
-    "http", "ftp", "ws", "telnet", "rtmp", "tftp", "gopher", "irc",
-    "smtp", "ldap", "amqp", "mqtt", "imap", "pop3", "nntp", "sip", "stomp");
+  /**
+   * Maps each cleartext scheme name to its recommended secure alternative.
+   * This is the single source of truth for both detection and messaging.
+   */
+  private static final Map<String, String> CLEARTEXT_PROTOCOL_ALTERNATIVES = Map.ofEntries(
+    Map.entry("http",    "https"),
+    Map.entry("ftp",     "sftp, scp or ftps"),
+    Map.entry("ws",      "wss"),
+    Map.entry("telnet",  "ssh"),
+    Map.entry("gopher",  "https"),
+    Map.entry("tftp",    "sftp"),
+    Map.entry("smtp",    "smtps"),
+    Map.entry("ldap",    "ldaps"),
+    Map.entry("imap",    "imaps"),
+    Map.entry("pop3",    "pop3s"),
+    Map.entry("amqp",    "amqps"),
+    Map.entry("mqtt",    "mqtts"),
+    Map.entry("sip",     "sips"),
+    Map.entry("rtmp",    "rtmps"),
+    Map.entry("irc",     "ircs"),
+    Map.entry("nntp",    "nntps"),
+    Map.entry("stomp",   "stomps")
+  );
+
+  private static final Set<String> CLEARTEXT_SCHEMES = CLEARTEXT_PROTOCOL_ALTERNATIVES.keySet();
+
+  private static final Set<String> CLEARTEXT_SCHEME_PREFIXES = CLEARTEXT_SCHEMES.stream()
+    .map(s -> s + "://")
+    .collect(Collectors.toUnmodifiableSet());
 
   // Lenient fallback: extracts the authority from a cleartext URL without strict URI validation.
   // Used when java.net.URI rejects the string (e.g. template placeholders) or returns a null
@@ -139,6 +167,26 @@ public final class CleartextProtocolFilter {
     "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]++@)?(?<rest>[^\\s/?#]++)", Pattern.CASE_INSENSITIVE);
 
   private CleartextProtocolFilter() {
+  }
+
+  /**
+   * Returns the set of cleartext scheme strings (including the {@code ://} suffix) for which
+   * a well-known secure alternative exists. These are the schemes that rule implementations
+   * should flag, e.g. {@code {"http://", "ftp://", "ws://", ...}}.
+   *
+   * <p>Use in conjunction with {@link #getAlternativeProtocols()} to build issue messages.
+   */
+  public static Set<String> getCleartextProtocols() {
+    return CLEARTEXT_SCHEME_PREFIXES;
+  }
+
+  /**
+   * Returns an unmodifiable map from each reportable cleartext scheme name (without {@code ://})
+   * to the human-readable secure alternative recommended in issue messages, e.g.
+   * {@code {"http" -> "https", "ftp" -> "sftp, scp or ftps", ...}}.
+   */
+  public static Map<String, String> getAlternativeProtocols() {
+    return CLEARTEXT_PROTOCOL_ALTERNATIVES;
   }
 
   /**

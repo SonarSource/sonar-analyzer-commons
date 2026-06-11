@@ -18,12 +18,68 @@ package org.sonarsource.analyzer.commons.appsec;
 
 import java.net.URI;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class CleartextProtocolFilterTest {
+
+  @Test
+  void getCleartextProtocolsReturnsExpectedSet() {
+    assertThat(CleartextProtocolFilter.getCleartextProtocols())
+      .containsExactlyInAnyOrder(
+        "http://", "ftp://", "ws://", "telnet://", "gopher://", "tftp://",
+        "smtp://", "ldap://", "imap://", "pop3://", "amqp://", "mqtt://",
+        "sip://", "rtmp://", "irc://", "nntp://", "stomp://");
+  }
+
+  @Test
+  void getCleartextProtocolsIsUnmodifiable() {
+    assertThatExceptionOfType(UnsupportedOperationException.class)
+      .isThrownBy(() -> CleartextProtocolFilter.getCleartextProtocols().add("custom://"));
+  }
+
+  @Test
+  void getAlternativeProtocolsReturnsExpectedMappings() {
+    var alternatives = CleartextProtocolFilter.getAlternativeProtocols();
+    assertThat(alternatives)
+      .containsEntry("http",   "https")
+      .containsEntry("ftp",    "sftp, scp or ftps")
+      .containsEntry("ws",     "wss")
+      .containsEntry("telnet", "ssh")
+      .containsEntry("gopher", "https")
+      .containsEntry("tftp",   "sftp")
+      .containsEntry("smtp",   "smtps")
+      .containsEntry("ldap",   "ldaps")
+      .containsEntry("imap",   "imaps")
+      .containsEntry("pop3",   "pop3s")
+      .containsEntry("amqp",   "amqps")
+      .containsEntry("mqtt",   "mqtts")
+      .containsEntry("sip",    "sips")
+      .containsEntry("rtmp",   "rtmps")
+      .containsEntry("irc",    "ircs")
+      .containsEntry("nntp",   "nntps")
+      .containsEntry("stomp",  "stomps");
+  }
+
+  @Test
+  void getAlternativeProtocolsIsUnmodifiable() {
+    assertThatExceptionOfType(UnsupportedOperationException.class)
+      .isThrownBy(() -> CleartextProtocolFilter.getAlternativeProtocols().put("custom", "customs"));
+  }
+
+  @Test
+  void cleartextProtocolKeysMatchAlternativeProtocolKeys() {
+    var protocols = CleartextProtocolFilter.getCleartextProtocols();
+    var alternativeKeys = CleartextProtocolFilter.getAlternativeProtocols().keySet();
+    assertThat(protocols)
+      .as("getCleartextProtocols() must be exactly the keySet of getAlternativeProtocols() with :// appended")
+      .hasSameSizeAs(alternativeKeys)
+      .allSatisfy(p -> assertThat(alternativeKeys).contains(p.replace("://", "")));
+  }
 
   @ParameterizedTest(name = "[{index}] {0}")
   @MethodSource("safeUrls")
