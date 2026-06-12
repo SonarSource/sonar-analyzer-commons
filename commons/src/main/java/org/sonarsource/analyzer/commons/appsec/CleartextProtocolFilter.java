@@ -18,17 +18,24 @@ package org.sonarsource.analyzer.commons.appsec;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Determines whether a cleartext-protocol URL should be considered safe and should not
  * trigger a security warning.
  * <p>
  * Recognised cleartext schemes: {@code http}, {@code ftp}, {@code ws}, {@code telnet},
- * {@code rtmp}, {@code tftp}, {@code gopher}, {@code irc}. Any other scheme is considered
- * safe (e.g. {@code https}, {@code wss}, {@code sftp}).
+ * {@code rtmp}, {@code tftp}, {@code gopher}, {@code irc}, {@code smtp}, {@code ldap},
+ * {@code amqp}, {@code mqtt}, {@code imap}, {@code pop3}, {@code nntp}, {@code sip},
+ * {@code stomp}. Any other scheme is considered safe (e.g. {@code https}, {@code wss},
+ * {@code sftp}).
  * <p>
  * Three categories of safe cleartext URLs are recognised:
  * <ul>
@@ -128,9 +135,40 @@ public final class CleartextProtocolFilter {
     "\\.(?:example|test|localhost)" +
     ")(?=:|$)", Pattern.CASE_INSENSITIVE);
 
-  private static final Set<String> CLEARTEXT_SCHEMES = Set.of(
-    "http", "ftp", "ws", "telnet", "rtmp", "tftp", "gopher", "irc",
-    "smtp", "ldap", "amqp", "mqtt", "imap", "pop3", "nntp", "sip", "stomp");
+  /**
+   * Maps each cleartext scheme name (correctly capitalised) to its recommended secure alternative.
+   * Keys use display-correct capitalisation (acronyms in ALL-CAPS, proper names in Title Case).
+   * The map uses case-insensitive ordering so lookups work regardless of the input case.
+   * This is the single source of truth for both detection and messaging.
+   */
+  private static final Map<String, String> CLEARTEXT_PROTOCOL_ALTERNATIVES;
+  static {
+    TreeMap<String, String> m = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    m.put("HTTP",    "HTTPS");
+    m.put("FTP",     "SFTP, SCP or FTPS");
+    m.put("WS",      "WSS");
+    m.put("Telnet",  "SSH");
+    m.put("Gopher",  "HTTPS");
+    m.put("TFTP",    "SFTP");
+    m.put("SMTP",    "SMTPS");
+    m.put("LDAP",    "LDAPS");
+    m.put("IMAP",    "IMAPS");
+    m.put("POP3",    "POP3S");
+    m.put("AMQP",    "AMQPS");
+    m.put("MQTT",    "MQTTS");
+    m.put("SIP",     "SIPS");
+    m.put("RTMP",    "RTMPS");
+    m.put("IRC",     "IRCS");
+    m.put("NNTP",    "NNTPS");
+    m.put("STOMP",   "STOMPS");
+    CLEARTEXT_PROTOCOL_ALTERNATIVES = Collections.unmodifiableMap(m);
+  }
+
+  private static final Set<String> CLEARTEXT_SCHEMES = CLEARTEXT_PROTOCOL_ALTERNATIVES.keySet();
+
+  private static final Set<String> CLEARTEXT_SCHEME_PREFIXES = CLEARTEXT_SCHEMES.stream()
+    .map(s -> s.toLowerCase(Locale.ROOT) + "://")
+    .collect(Collectors.toUnmodifiableSet());
 
   // Lenient fallback: extracts the authority from a cleartext URL without strict URI validation.
   // Used when java.net.URI rejects the string (e.g. template placeholders) or returns a null
@@ -139,6 +177,34 @@ public final class CleartextProtocolFilter {
     "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]++@)?(?<rest>[^\\s/?#]++)", Pattern.CASE_INSENSITIVE);
 
   private CleartextProtocolFilter() {
+  }
+
+  /**
+   * Returns the set of cleartext scheme strings (including the {@code ://} suffix) for which
+   * a well-known secure alternative exists. These are the schemes that rule implementations
+   * should flag, e.g. {@code {"http://", "ftp://", "ws://", ...}}.
+   *
+   * <p>Use in conjunction with {@link #getIssueMessage(String)} to build issue messages.
+   * Note: strip the {@code ://} suffix before passing a value from this set to
+   * {@link #getIssueMessage(String)}.
+   */
+  public static Set<String> getCleartextProtocols() {
+    return CLEARTEXT_SCHEME_PREFIXES;
+  }
+
+  /**
+   * Returns the standard issue message for the given cleartext scheme name (without {@code ://}),
+   * e.g. {@code getIssueMessage("http")} returns
+   * {@code Optional.of("Using HTTP protocol is insecure. Use HTTPS instead.")}.
+   * Returns {@link Optional#empty()} if the scheme is not a known cleartext protocol.
+   *
+   * @param scheme the scheme name as it appears in the URL, without {@code ://}
+   */
+  public static Optional<String> getIssueMessage(String scheme) {
+    return CLEARTEXT_PROTOCOL_ALTERNATIVES.entrySet().stream()
+      .filter(e -> e.getKey().equalsIgnoreCase(scheme))
+      .findFirst()
+      .map(e -> "Using " + e.getKey() + " protocol is insecure. Use " + e.getValue() + " instead.");
   }
 
   /**
@@ -173,7 +239,7 @@ public final class CleartextProtocolFilter {
    */
   public static boolean isSafeWithoutTls(URI url) {
     var scheme = url.getScheme();
-    if (scheme == null || !CLEARTEXT_SCHEMES.contains(scheme.toLowerCase(Locale.ROOT))) {
+    if (scheme == null || !CLEARTEXT_SCHEMES.contains(scheme)) {
       return true;
     }
     var host = url.getHost();

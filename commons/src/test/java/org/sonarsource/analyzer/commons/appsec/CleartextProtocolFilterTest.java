@@ -18,12 +18,47 @@ package org.sonarsource.analyzer.commons.appsec;
 
 import java.net.URI;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class CleartextProtocolFilterTest {
+
+  @Test
+  void getCleartextProtocolsIsUnmodifiable() {
+    var protocols = CleartextProtocolFilter.getCleartextProtocols();
+    assertThatExceptionOfType(UnsupportedOperationException.class)
+      .isThrownBy(() -> protocols.add("custom://"));
+  }
+
+  @Test
+  void getIssueMessageReturnsFormattedMessage() {
+    assertThat(CleartextProtocolFilter.getIssueMessage("http"))
+      .hasValue("Using HTTP protocol is insecure. Use HTTPS instead.");
+    assertThat(CleartextProtocolFilter.getIssueMessage("ftp"))
+      .hasValue("Using FTP protocol is insecure. Use SFTP, SCP or FTPS instead.");
+    assertThat(CleartextProtocolFilter.getIssueMessage("telnet"))
+      .hasValue("Using Telnet protocol is insecure. Use SSH instead.");
+    assertThat(CleartextProtocolFilter.getIssueMessage("gopher"))
+      .hasValue("Using Gopher protocol is insecure. Use HTTPS instead.");
+  }
+
+  @Test
+  void getIssueMessageReturnsEmptyForUnknownScheme() {
+    assertThat(CleartextProtocolFilter.getIssueMessage("https")).isEmpty();
+    assertThat(CleartextProtocolFilter.getIssueMessage("unknown")).isEmpty();
+  }
+
+  @Test
+  void getIssueMessageIsPresentForAllCleartextProtocols() {
+    CleartextProtocolFilter.getCleartextProtocols()
+      .forEach(prefix -> assertThat(CleartextProtocolFilter.getIssueMessage(prefix.replace("://", "")))
+        .as("missing issue message for scheme: %s", prefix)
+        .isPresent());
+  }
 
   @ParameterizedTest(name = "[{index}] {0}")
   @MethodSource("safeUrls")
