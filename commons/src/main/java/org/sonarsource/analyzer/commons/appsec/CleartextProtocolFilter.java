@@ -248,7 +248,11 @@ public final class CleartextProtocolFilter {
       // fall through to lenient parsing
     }
     var matcher = CLEARTEXT_AUTHORITY.matcher(stripped);
-    return matcher.find() ? isSafeHost(matcher.group("rest")) : CLEARTEXT_SCHEME_PREFIXES.stream().noneMatch(p -> stripped.toLowerCase(Locale.ROOT).startsWith(p));
+    if (matcher.find()) {
+      return isSafeHost(matcher.group("rest"));
+    }
+    var lower = stripped.toLowerCase(Locale.ROOT);
+    return CLEARTEXT_SCHEME_PREFIXES.stream().noneMatch(lower::startsWith);
   }
 
   /**
