@@ -71,32 +71,30 @@ public final class IpAddressClassifier {
     UNPARSEABLE
   }
 
-  private static final String RFC1918_LABEL = "RFC 1918 Private";
-
   // IPv4 special-purpose blocks per IANA, restricted to entries that are NOT
   // globally reachable.
   @SuppressWarnings("java:S1313")
   private static final List<Block4> RESERVED_IPV4_BLOCKS = List.of(
-    block4("0.0.0.0/8", "This network", BlockKind.THIS_NETWORK),
-    block4("10.0.0.0/8", RFC1918_LABEL, BlockKind.RFC1918_PRIVATE),
-    block4("172.16.0.0/12", RFC1918_LABEL, BlockKind.RFC1918_PRIVATE),
-    block4("192.168.0.0/16", RFC1918_LABEL, BlockKind.RFC1918_PRIVATE),
-    block4("100.64.0.0/10", "CGNAT", BlockKind.CGNAT),
-    block4("127.0.0.0/8", "Loopback", BlockKind.LOOPBACK),
-    block4("169.254.0.0/16", "Link-local", BlockKind.LINK_LOCAL),
-    block4("192.0.0.0/24", "IETF Protocol Assignments", BlockKind.IETF_PROTOCOL),
-    block4("192.0.2.0/24", "Documentation TEST-NET-1", BlockKind.DOCUMENTATION),
-    block4("198.51.100.0/24", "Documentation TEST-NET-2", BlockKind.DOCUMENTATION),
-    block4("203.0.113.0/24", "Documentation TEST-NET-3", BlockKind.DOCUMENTATION),
-    block4("198.18.0.0/15", "Benchmarking", BlockKind.BENCHMARKING),
-    block4("240.0.0.0/4", "Reserved for future use / Class E", BlockKind.RESERVED_FUTURE));
+    block4("0.0.0.0/8", BlockKind.THIS_NETWORK),
+    block4("10.0.0.0/8", BlockKind.RFC1918_PRIVATE),
+    block4("172.16.0.0/12", BlockKind.RFC1918_PRIVATE),
+    block4("192.168.0.0/16", BlockKind.RFC1918_PRIVATE),
+    block4("100.64.0.0/10", BlockKind.CGNAT),
+    block4("127.0.0.0/8", BlockKind.LOOPBACK),
+    block4("169.254.0.0/16", BlockKind.LINK_LOCAL),
+    block4("192.0.0.0/24", BlockKind.IETF_PROTOCOL),
+    block4("192.0.2.0/24", BlockKind.DOCUMENTATION),
+    block4("198.51.100.0/24", BlockKind.DOCUMENTATION),
+    block4("203.0.113.0/24", BlockKind.DOCUMENTATION),
+    block4("198.18.0.0/15", BlockKind.BENCHMARKING),
+    block4("240.0.0.0/4", BlockKind.RESERVED_FUTURE));
 
   private static final List<Block6> RESERVED_IPV6_BLOCKS = List.of(
-    block6("::1/128", "Loopback", BlockKind.LOOPBACK),
-    block6("2001:db8::/32", "Documentation", BlockKind.DOCUMENTATION),
-    block6("3fff::/20", "Documentation", BlockKind.DOCUMENTATION),
-    block6("fc00::/7", "Unique Local", BlockKind.UNIQUE_LOCAL),
-    block6("fe80::/10", "Link-local", BlockKind.LINK_LOCAL));
+    block6("::1/128", BlockKind.LOOPBACK),
+    block6("2001:db8::/32", BlockKind.DOCUMENTATION),
+    block6("3fff::/20", BlockKind.DOCUMENTATION),
+    block6("fc00::/7", BlockKind.UNIQUE_LOCAL),
+    block6("fe80::/10", BlockKind.LINK_LOCAL));
 
   // Lexical pre-filter for IPv6; prevents {@link InetAddress#getByName} from
   // attempting a DNS lookup on strings outside the IPv6 alphabet. Dots are
@@ -252,7 +250,7 @@ public final class IpAddressClassifier {
 
   /**
    * Parses a plain IPv4 address (no CIDR suffix) into a 32-bit value held in a long.
-   * Returns empty for CIDR literals, malformed input, IPv6 literals, or null.
+   * Returns empty for CIDR literals, malformed input, or IPv6 literals. The literal must be non-null.
    * Example: {@code "10.0.0.1"} → {@code OptionalLong.of(0x0A000001L)}; {@code "10.0.0.0/8"} → empty.
    */
   public static OptionalLong parseIpv4SingleAddress(String literal) {
@@ -329,7 +327,9 @@ public final class IpAddressClassifier {
     }
     long result = 0L;
     for (String part : parts) {
-      if (part.isEmpty() || part.length() > 3) {
+      // Reject leading-zero octets so octal-looking literals (e.g. "0177.0.0.1") become UNPARSEABLE
+      // rather than being silently reinterpreted as decimal (0177 -> 177, hiding the loopback address).
+      if (part.isEmpty() || part.length() > 3 || (part.length() > 1 && part.charAt(0) == '0')) {
         return -1L;
       }
       int octet;
@@ -389,7 +389,7 @@ public final class IpAddressClassifier {
     return (prefix < 0 || prefix > maxBits) ? -1 : prefix;
   }
 
-  private static Block4 block4(String cidr, String label, BlockKind kind) {
+  private static Block4 block4(String cidr, BlockKind kind) {
     Range4 range = parseIpv4Cidr(cidr);
     if (range == null) {
       throw new IllegalStateException("Invalid hardcoded IPv4 CIDR: " + cidr);
@@ -397,7 +397,7 @@ public final class IpAddressClassifier {
     return new Block4(kind, range);
   }
 
-  private static Block6 block6(String cidr, String label, BlockKind kind) {
+  private static Block6 block6(String cidr, BlockKind kind) {
     Range6 range = parseIpv6Cidr(cidr);
     if (range == null) {
       throw new IllegalStateException("Invalid hardcoded IPv6 CIDR: " + cidr);

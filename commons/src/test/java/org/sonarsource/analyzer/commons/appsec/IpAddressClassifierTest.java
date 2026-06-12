@@ -170,6 +170,10 @@ class IpAddressClassifierTest {
     "1.2.3.4.5",
     // Bad IPv4 octet value
     "256.0.0.0",
+    // Leading-zero octets — rejected to avoid octal-vs-decimal ambiguity (0177.0.0.1 looks like loopback)
+    "0177.0.0.1",
+    "010.0.0.1",
+    "127.0.0.01",
     // Bad IPv4 CIDR mask
     "10.0.0.1/33",
     "10.0.0.1/-1",
