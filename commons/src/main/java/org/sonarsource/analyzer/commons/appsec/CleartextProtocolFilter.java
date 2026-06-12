@@ -196,11 +196,6 @@ public final class CleartextProtocolFilter {
   private static final Pattern CLEARTEXT_AUTHORITY = Pattern.compile(
     "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]++@)?(?<rest>[^\\s/?#]++)", Pattern.CASE_INSENSITIVE);
 
-  // Matches a bare cleartext scheme prefix (e.g. "http://") with no authority following it.
-  // Used to detect bare-scheme strings that CLEARTEXT_AUTHORITY won't match.
-  private static final Pattern CLEARTEXT_SCHEME_PREFIX = Pattern.compile(
-    "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://", Pattern.CASE_INSENSITIVE);
-
   private CleartextProtocolFilter() {
   }
 
@@ -253,7 +248,7 @@ public final class CleartextProtocolFilter {
       // fall through to lenient parsing
     }
     var matcher = CLEARTEXT_AUTHORITY.matcher(stripped);
-    return matcher.find() ? isSafeHost(matcher.group("rest")) : !CLEARTEXT_SCHEME_PREFIX.matcher(stripped).find();
+    return matcher.find() ? isSafeHost(matcher.group("rest")) : CLEARTEXT_SCHEME_PREFIXES.stream().noneMatch(p -> stripped.toLowerCase(Locale.ROOT).startsWith(p));
   }
 
   /**
