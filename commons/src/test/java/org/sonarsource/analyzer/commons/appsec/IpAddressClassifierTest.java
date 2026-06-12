@@ -182,7 +182,11 @@ class IpAddressClassifierTest {
     // Bad IPv6 CIDR mask
     "2001:db8::/129",
     // Bad IPv6 hex
-    "gggg::1"
+    "gggg::1",
+    // IPV6_LIKE-shaped but fail InetAddress.getByName (covers parseIpv6Cidr null-return + UnknownHostException catch)
+    "1:",
+    ":::",
+    "::fffff"
   })
   void shouldClassifyMalformedAsUnparseable(String literal) {
     assertThat(IpAddressClassifier.classify(literal)).isEqualTo(Classification.UNPARSEABLE);
@@ -276,7 +280,10 @@ class IpAddressClassifierTest {
     "8.8.8.8,          false",
     "fe80::1,          false",
     "192.0.2.10,       false",
-    "bogus,            false"
+    "bogus,            false",
+    // Malformed but IP-shaped — exercise the parsed-null short-circuit
+    "256.0.0.0,        false",
+    "1:,               false"
   })
   void shouldDetectLoopback(String literal, boolean expected) {
     assertThat(IpAddressClassifier.isLoopback(literal)).isEqualTo(expected);
@@ -384,7 +391,10 @@ class IpAddressClassifierTest {
     "0.0.0.0/31,       false",
     "::1,              false",
     "10.0.0.1,         false",
-    "bogus,            false"
+    "bogus,            false",
+    // Malformed but IP-shaped — exercise the parsed-null short-circuit
+    "256.0.0.0,        false",
+    "1:,               false"
   })
   void shouldDetectAnyAddress(String literal, boolean expected) {
     assertThat(IpAddressClassifier.isAnyAddress(literal)).isEqualTo(expected);
@@ -401,7 +411,9 @@ class IpAddressClassifierTest {
     "0.0.0.0,             false",
     "::,                  false",
     "::ffff:ffff:ffff,    false",
-    "bogus,               false"
+    "bogus,               false",
+    // Malformed IPv4 — exercise the parsed-null short-circuit
+    "256.0.0.0,           false"
   })
   void shouldDetectBroadcast(String literal, boolean expected) {
     assertThat(IpAddressClassifier.isBroadcast(literal)).isEqualTo(expected);
@@ -421,7 +433,10 @@ class IpAddressClassifierTest {
     "::/128,           false",
     "0.0.0.0/8,        false",
     "10.0.0.0/8,       false",
-    "bogus,            false"
+    "bogus,            false",
+    // Malformed but IP-shaped — exercise the parsed-null short-circuit
+    "256.0.0.0/0,      false",
+    "1:/0,             false"
   })
   void shouldDetectUnrestrictedCidr(String literal, boolean expected) {
     assertThat(IpAddressClassifier.isUnrestrictedCidr(literal)).isEqualTo(expected);
