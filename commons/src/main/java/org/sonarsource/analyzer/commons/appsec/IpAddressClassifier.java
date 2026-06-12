@@ -204,8 +204,8 @@ public final class IpAddressClassifier {
     if (literal.indexOf(':') >= 0 && IPV6_LIKE.matcher(literal).matches()) {
       Range6 parsed = parseIpv6Cidr(literal);
       return parsed != null
-        && BigInteger.ZERO.equals(parsed.startInclusive)
-        && BigInteger.ZERO.equals(parsed.endInclusive);
+        && parsed.startInclusive.signum() == 0
+        && parsed.endInclusive.signum() == 0;
     }
     return false;
   }
@@ -242,7 +242,7 @@ public final class IpAddressClassifier {
         return false;
       }
       BigInteger maxIpv6 = BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE);
-      return BigInteger.ZERO.equals(parsed.startInclusive)
+      return parsed.startInclusive.signum() == 0
         && maxIpv6.equals(parsed.endInclusive);
     }
     return false;
