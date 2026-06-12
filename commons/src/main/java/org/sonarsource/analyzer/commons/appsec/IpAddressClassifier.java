@@ -23,6 +23,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 
 /**
  * Classifies an IP-address literal (plain or CIDR, IPv4 or IPv6) as reserved for private/special-purpose use, internet-routable, or unparseable.
@@ -250,11 +251,11 @@ public final class IpAddressClassifier {
 
   /**
    * Parses a plain IPv4 address (no CIDR suffix) into a 32-bit value held in a long.
-   * Returns empty for CIDR literals, malformed input, or IPv6 literals. The literal must be non-null.
+   * Returns empty for CIDR literals, malformed input, IPv6 literals, or null.
    * Example: {@code "10.0.0.1"} → {@code OptionalLong.of(0x0A000001L)}; {@code "10.0.0.0/8"} → empty.
    */
-  public static OptionalLong parseIpv4SingleAddress(String literal) {
-    if (literal.indexOf('/') >= 0 || !looksLikeIpv4(literal)) {
+  public static OptionalLong parseIpv4SingleAddress(@Nullable String literal) {
+    if (literal == null || literal.indexOf('/') >= 0 || !looksLikeIpv4(literal)) {
       return OptionalLong.empty();
     }
     long addr = parseIpv4Address(literal);

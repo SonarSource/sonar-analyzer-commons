@@ -20,6 +20,7 @@ import java.util.OptionalLong;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.sonarsource.analyzer.commons.appsec.IpAddressClassifier.Classification;
 
@@ -197,12 +198,25 @@ class IpAddressClassifierTest {
   }
 
   @ParameterizedTest
+  @NullSource
   @ValueSource(strings = {
     // CIDR (not a single address)
     "10.0.0.0/8",
-    // Bad IPv4
+    // Bad IPv4 octet count
     "10.0.0",
+    "1.2.3.4.5",
+    // Bad IPv4 octet value
     "256.0.0.0",
+    "10.0.0.-1",
+    // Leading-zero octets — rejected to avoid octal-vs-decimal ambiguity
+    "0177.0.0.1",
+    "010.0.0.1",
+    // Non-decimal octet
+    "0x7f.0.0.1",
+    "10.0.0.a",
+    // Surrounding whitespace not accepted
+    " 10.0.0.1",
+    "10.0.0.1 ",
     // Not IP-shaped
     "not.an.ip",
     "",
