@@ -52,10 +52,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
-import static org.sonar.api.issue.impact.Severity.BLOCKER;
-import static org.sonar.api.issue.impact.Severity.HIGH;
-import static org.sonar.api.issue.impact.Severity.INFO;
-import static org.sonar.api.issue.impact.Severity.LOW;
+import static org.sonar.api.issue.impact.Severity.*;
 import static org.sonar.api.issue.impact.SoftwareQuality.MAINTAINABILITY;
 import static org.sonar.api.issue.impact.SoftwareQuality.RELIABILITY;
 import static org.sonar.api.issue.impact.SoftwareQuality.SECURITY;
@@ -131,9 +128,9 @@ public class RuleMetadataLoaderTest {
     RulesDefinition.Rule rule = repository.rule("taxonomy_rule");
     assertThat(rule).isNotNull();
     assertThat(rule.defaultImpacts()).isEqualTo(Map.ofEntries(
-      Map.entry(MAINTAINABILITY, HIGH),
-      Map.entry(SECURITY, LOW),
-      Map.entry(RELIABILITY, HIGH)
+      Map.entry(MAINTAINABILITY, MEDIUM),
+      Map.entry(SECURITY, INFO),
+      Map.entry(RELIABILITY, BLOCKER)
     ));
   }
 
