@@ -214,7 +214,12 @@ class SonarResolveTest {
           42,
           IssueResolution.Status.DEFAULT,
           Set.of(RuleKey.of("cpp", "S100")),
-          "line\nline\rline\tline\\line")));
+          "line\nline\rline\tline\\line")),
+        arguments(
+            "sonar-resolve community-foo:S100 \"line comment\"",
+            42,
+            new SonarResolve(42, 42, IssueResolution.Status.DEFAULT, Set.of(RuleKey.of("community-foo", "S100")), "line comment"))
+    );
   }
 
   private static Stream<Arguments> singleLineFailureCases() {
