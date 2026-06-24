@@ -16,5 +16,5 @@ jobs:
     with:
       publishToBinaries: true
       mavenCentralSync: true
-      slackChannel: team-analysis-notifications
+      slackChannel: squad-corelang-releases
 
