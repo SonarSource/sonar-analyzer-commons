@@ -33,8 +33,7 @@ import javax.annotation.Nullable;
 public final class SecretClassifier {
 
   /**
-   * Coarse group a skip pattern belongs to. Categories make the configuration enumerable and give a future export and
-   * per-category telemetry a stable handle. Kept package-private until a consumer needs it.
+   * Coarse group a skip pattern belongs to.
    */
   enum Category {
     /** Trivially fake or weak literals: fake words, password-like values, repeated, too-short, or masked strings. */
