@@ -53,15 +53,18 @@ public final class SecretClassifier {
   /**
    The skip patterns of a single {@link Category}, grouped to keep the configuration readable.
    */
+  @SuppressWarnings("java:S1068")
   private static final class PatternGroup {
+    private final Category category;
     private final List<Pattern> patterns;
-    @SuppressWarnings("java:S1172")
+
     PatternGroup(Category category, List<Pattern> patterns) {
+      this.category = category;
       this.patterns = patterns;
     }
 
     static PatternGroup of(Category category, String... regexes) {
-      return new PatternGroup(category, Arrays.stream(regexes).map(SecretClassifier::compile).collect(Collectors.toList()));
+      return new PatternGroup(category, Arrays.stream(regexes).map(SecretClassifier::compile).collect(Collectors.toUnmodifiableList()));
     }
 
     List<Pattern> patterns() {
@@ -70,10 +73,13 @@ public final class SecretClassifier {
   }
 
   /** Values of a single {@link Category} matched in full, case-insensitively, via a set rather than a regex. */
+  @SuppressWarnings("java:S1068")
   private static final class ExactMatchGroup {
+    private final Category category;
     private final Set<String> values;
-    @SuppressWarnings("java:S1172")
+
     ExactMatchGroup(Category category, Set<String> values) {
+      this.category = category;
       this.values = values;
     }
 
@@ -183,7 +189,7 @@ public final class SecretClassifier {
   // Flattened once: isKnownNonSecret is on every check's hot path, so avoid re-flattening PATTERN_GROUPS per call.
   private static final List<Pattern> ALL_PATTERNS = PATTERN_GROUPS.stream()
     .flatMap(group -> group.patterns().stream())
-    .collect(Collectors.toList());
+    .collect(Collectors.toUnmodifiableList());
 
   // Well-known placeholder secrets plus config/credential vocabulary, matched in full (case-insensitive).
   private static final ExactMatchGroup SECRET_VALUES = new ExactMatchGroup(Category.SECRET, Set.of(
