@@ -93,7 +93,7 @@ public final class SecretClassifier {
     // Trivially fake or weak literal values.
     PatternGroup.of(Category.FAKE_VALUE,
       // Expect minimum length of 6 characters
-      "^.{1,5}$",
+      "^.{0,5}$",
       // Words usually found in fake secrets, e.g. "samplepassword", "EXAMPLE_SECRET"
       "sample|example|placeholder|replace|change|foo|bar|test|fake|abcd",
       "redacted|cafebabe|deadbeef|whatever|123456|default|dummy|qwerty|setting|obfuscated",
