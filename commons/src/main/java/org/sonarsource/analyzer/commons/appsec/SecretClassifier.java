@@ -28,10 +28,7 @@ import javax.annotation.Nullable;
  * Classifies string values against a shared set of "skip" patterns: values that look like fake credentials,
  * placeholders, variable references, or encrypted markers and should therefore not be reported as hardcoded secrets.
  *
- * <p>Classification takes the candidate value plus a {@link Context}. The context is an extensible carrier for
- * surrounding information (for example the key a value was found under); it is empty today and exists so the
- * classification entry point can gain context-aware behavior later without changing its signature. A convenience
- * overload classifies a bare value with an empty context.
+ * <p>Classification takes the candidate value plus a {@link Context}. The context is an extensible carrier for future extensions.
  *
  * <p>Example:
  * <pre>{@code
