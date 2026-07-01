@@ -51,9 +51,7 @@ public final class SecretClassifier {
   }
 
   /**
-   * The skip patterns of a single {@link Category}, grouped to keep the configuration readable. Each pattern is
-   * compiled case-insensitively and keeps its own source via {@link Pattern#pattern()} and flags via
-   * {@link Pattern#flags()}, so the whole set can be serialized for non-JVM consumers later.
+   The skip patterns of a single {@link Category}, grouped to keep the configuration readable.
    */
   private static final class PatternGroup {
     private final List<Pattern> patterns;
