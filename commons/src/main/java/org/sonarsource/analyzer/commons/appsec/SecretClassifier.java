@@ -185,8 +185,7 @@ public final class SecretClassifier {
     .flatMap(group -> group.patterns().stream())
     .collect(Collectors.toList());
 
-  // Well-known placeholder secrets plus config/credential vocabulary, matched in full (case-insensitive) rather than
-  // as substrings, so they cannot hide a real secret that merely contains one of these words.
+  // Well-known placeholder secrets plus config/credential vocabulary, matched in full (case-insensitive).
   private static final ExactMatchGroup SECRET_VALUES = new ExactMatchGroup(Category.SECRET, Set.of(
     "hunter2", "letmein", "secret", "abc123",
     "admin", "changeme", "changeit", "unknown", "optional", "enabled", "disabled",
