@@ -37,6 +37,7 @@ class SecretClassifierTest {
   // sample here fails coverageShouldExerciseEveryPatternAndExactValue.
   static final List<String> KNOWN_NON_SECRETS = List.of(
     // FAKE_VALUE
+    "", // Empty password
     "abc", // minimum length
     "samplepassword", "EXAMPLE_SECRET", "deadbeef", "qwerty", // fake words (substring)
     "password1234", "passwd", // password-like
