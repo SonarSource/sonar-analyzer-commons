@@ -74,12 +74,12 @@
   <properties>
     <!-- versions -->
     <version.sonar.plugin.api>13.5.0.4319</version.sonar.plugin.api>
-    <sonarqube.api.impl.version>10.7.0.96327</sonarqube.api.impl.version>
+    <sonarqube.api.impl.version>26.6.0.123539</sonarqube.api.impl.version>
     <version.assertj>3.27.7</version.assertj>
     <version.jsr305>3.0.2</version.jsr305>
-    <version.mockito>3.5.7</version.mockito>
+    <version.mockito>5.23.0</version.mockito>
     <version.junit>4.13.2</version.junit>
-    <version.junit-jupiter>5.8.1</version.junit-jupiter>
+    <version.junit-jupiter>6.1.0</version.junit-jupiter>
     <!-- used for deployment to SonarSource Artifactory -->
     <gitRepositoryName>sonar-analyzer-commons</gitRepositoryName>
     <maven.compiler.release>8</maven.compiler.release>
@@ -101,7 +101,7 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.7.30</version>
+        <version>2.0.18</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
