@@ -71,7 +71,7 @@ public final class SecretClassifier {
    */
   private static final class PatternGroup {
     private final List<Pattern> patterns;
-
+    @SuppressWarnings("java:S1172")
     PatternGroup(Category category, List<Pattern> patterns) {
       this.patterns = patterns;
     }
@@ -88,7 +88,7 @@ public final class SecretClassifier {
   /** Values of a single {@link Category} matched in full, case-insensitively, via a set rather than a regex. */
   private static final class ExactMatchGroup {
     private final Set<String> values;
-
+    @SuppressWarnings("java:S1172")
     ExactMatchGroup(Category category, Set<String> values) {
       this.values = values;
     }
