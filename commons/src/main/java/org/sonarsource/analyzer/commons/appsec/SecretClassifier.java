@@ -29,13 +29,6 @@ import javax.annotation.Nullable;
  * placeholders, variable references, or encrypted markers and should therefore not be reported as hardcoded secrets.
  *
  * <p>Classification takes the candidate value plus a {@link Context}. The context is an extensible carrier for future extensions.
- *
- * <p>Example:
- * <pre>{@code
- * SecretClassifier.isKnownNonSecret("${db_password}"); // true  -> variable interpolation
- * SecretClassifier.isKnownNonSecret("example-secret"); // true  -> fake word
- * SecretClassifier.isKnownNonSecret("Xk9Lm2Qp7Rs4Tv"); // false -> looks like a real token
- * }</pre>
  */
 public final class SecretClassifier {
 
