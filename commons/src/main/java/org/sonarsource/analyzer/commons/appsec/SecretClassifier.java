@@ -305,7 +305,9 @@ public final class SecretClassifier {
      * @return a context exposing those keywords
      */
     static Context withKeywords(Collection<String> keywords) {
-      return new KeywordContext(List.copyOf(keywords));
+      return new KeywordContext(keywords.stream()
+        .filter(k -> !k.isEmpty())
+        .toList());
     }
 
     /**
