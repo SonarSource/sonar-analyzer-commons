@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -143,19 +144,17 @@ class SecretClassifierTest {
     assertThat(SecretClassifier.Context.empty()).isSameAs(SecretClassifier.Context.empty());
   }
 
-  // Keyword-based FP filtering (ACOMMONS-70):
   // When the matched credential keyword also appears in the value, the value is a label/reference, not a secret.
-
   @ParameterizedTest
-  @ValueSource(strings = {
-    "motdepasse",            // String password = "Password"
-    "somepwd",                 // String pwd = "pwd"
-    "custom.motdepasse",     // String PASSWORD_PROPERTY = "custom.password"
-    "trustStoreMotDePasse",  // String TRUSTSTORE_PASSWORD = "trustStorePassword"
-    "/users/resetUserMotdepasse", // String RESET_PASSWORD = "/users/resetUserPassword"
+  @CsvSource({
+    "motdepasse, motdepasse",             // String motdepasse = "motdepasse"
+    "pwd,        somepwd",                // String pwd = "somepwd"
+    "motdepasse, custom.motdepasse",      // String MOTDEPASSE_PROPERTY = "custom.motdepasse"
+    "motdepasse, trustStoreMotDePasse",   // String TRUSTSTORE_MOTDEPASSE = "trustStoreMotDePasse"
+    "motdepasse, /users/resetUserMotdepasse", // String RESET_MOTDEPASSE = "/users/resetUserMotdepasse"
   })
-  void shouldFilterFalsePositiveWhenKeywordAppearsInValue(String value) {
-    SecretClassifier.Context context = SecretClassifier.Context.withKeywords(List.of("motdepasse", "pwd"));
+  void shouldFilterFalsePositiveWhenKeywordAppearsInValue(String keyword, String value) {
+    SecretClassifier.Context context = SecretClassifier.Context.withKeywords(List.of(keyword));
     assertThat(SecretClassifier.isKnownNonSecret(value, context)).isTrue();
   }
 
@@ -169,10 +168,13 @@ class SecretClassifierTest {
     assertThat(SecretClassifier.isKnownNonSecret(value, context)).isFalse();
   }
 
-  @Test
-  void keywordMatchShouldBeCaseInsensitive() {
-    assertThat(SecretClassifier.isKnownNonSecret("MyMotdepasse", SecretClassifier.Context.withKeywords(List.of("motdepasse")))).isTrue();
-    assertThat(SecretClassifier.isKnownNonSecret("motdepasse", SecretClassifier.Context.withKeywords(List.of("motdepasse")))).isTrue();
+  @ParameterizedTest
+  @CsvSource({
+    "motdepasse, MyMotdepasse",  // keyword lowercase, value mixed-case
+    "MOTDEPASSE, motdepasse",    // keyword uppercase, value lowercase
+  })
+  void keywordMatchShouldBeCaseInsensitive(String keyword, String value) {
+    assertThat(SecretClassifier.isKnownNonSecret(value, SecretClassifier.Context.withKeywords(List.of(keyword)))).isTrue();
   }
 
   @Test
