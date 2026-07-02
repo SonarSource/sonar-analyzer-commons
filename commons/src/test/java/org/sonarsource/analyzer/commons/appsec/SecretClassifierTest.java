@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -141,5 +142,56 @@ class SecretClassifierTest {
   @Test
   void emptyContextShouldBeSingleton() {
     assertThat(SecretClassifier.Context.empty()).isSameAs(SecretClassifier.Context.empty());
+  }
+
+  // When the matched credential keyword also appears in the value, the value is a label/reference, not a secret.
+  @ParameterizedTest
+  @CsvSource({
+    "motdepasse, motdepasse",             // String motdepasse = "motdepasse"
+    "pwd,        somepwd",                // String pwd = "somepwd"
+    "motdepasse, custom.motdepasse",      // String MOTDEPASSE_PROPERTY = "custom.motdepasse"
+    "motdepasse, trustStoreMotDePasse",   // String TRUSTSTORE_MOTDEPASSE = "trustStoreMotDePasse"
+    "motdepasse, /users/resetUserMotdepasse", // String RESET_MOTDEPASSE = "/users/resetUserMotdepasse"
+  })
+  void shouldFilterFalsePositiveWhenKeywordAppearsInValue(String keyword, String value) {
+    SecretClassifier.Context context = SecretClassifier.Context.withKeywords(List.of(keyword));
+    assertThat(SecretClassifier.isKnownNonSecret(value, context)).isTrue();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "Xk9Lm2Qp7Rs4Tv1Wz0",  // no keyword in value → real secret
+    "9f8e7d6c5b4a392817",   // no keyword in value → real secret
+  })
+  void shouldNotFilterWhenKeywordIsAbsentFromValue(String value) {
+    SecretClassifier.Context context = SecretClassifier.Context.withKeywords(List.of("motdepasse"));
+    assertThat(SecretClassifier.isKnownNonSecret(value, context)).isFalse();
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "motdepasse, MyMotdepasse",  // keyword lowercase, value mixed-case
+    "MOTDEPASSE, motdepasse",    // keyword uppercase, value lowercase
+  })
+  void keywordMatchShouldBeCaseInsensitive(String keyword, String value) {
+    assertThat(SecretClassifier.isKnownNonSecret(value, SecretClassifier.Context.withKeywords(List.of(keyword)))).isTrue();
+  }
+
+  @Test
+  void emptyKeywordsShouldBehaveAsNoContext() {
+    SecretClassifier.Context context = SecretClassifier.Context.withKeywords(List.of());
+    assertThat(SecretClassifier.isKnownNonSecret("Xk9Lm2Qp7Rs4Tv1Wz0", context)).isFalse();
+    assertThat(SecretClassifier.isKnownNonSecret("${motdepasse}", context)).isTrue();
+  }
+
+  @Test
+  void defaultKeywordsShouldBeEmpty() {
+    assertThat(SecretClassifier.Context.empty().keywords()).isEmpty();
+  }
+
+  @Test
+  void withKeywordsShouldExposeKeywords() {
+    SecretClassifier.Context context = SecretClassifier.Context.withKeywords(List.of("password", "token"));
+    assertThat(context.keywords()).containsExactly("password", "token");
   }
 }

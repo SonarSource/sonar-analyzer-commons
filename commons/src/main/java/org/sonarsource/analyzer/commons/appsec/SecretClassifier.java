@@ -17,6 +17,7 @@
 package org.sonarsource.analyzer.commons.appsec;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -197,8 +198,19 @@ public final class SecretClassifier {
     "admin", "changeme", "changeit", "unknown", "optional", "enabled", "disabled",
     "string", "random", "token", "pass"));
 
-  // Context is an empty extension point today, so the analyzer sees instantiating it as pointless; the single shared
-  // empty instance is intentional and lets empty() return a non-null context.
+  private static final class KeywordContext implements Context {
+    private final List<String> keywords;
+
+    KeywordContext(List<String> keywords) {
+      this.keywords = keywords;
+    }
+
+    @Override
+    public List<String> keywords() {
+      return keywords;
+    }
+  }
+
   @SuppressWarnings("java:S2440")
   private static final Context EMPTY_CONTEXT = new Context() {
   };
@@ -214,17 +226,26 @@ public final class SecretClassifier {
    * Returns {@code true} when the value matches a known skip pattern, such as a fake value, a variable reference, or
    * an encrypted placeholder.
    *
+   * <p>When the context carries keywords (see {@link Context#withKeywords}), the candidate is also considered a
+   * non-secret if it contains any of those keywords. This suppresses false positives for cases where the credential
+   * vocabulary item appears in both the surrounding identifier (e.g. a variable or property name) and the value
+   * itself — for example {@code String password = "Password"} or {@code String pwd = "custom.pwd"}.
+   *
    * @param candidate the string to classify, or {@code null}
    * @param context surrounding information; pass {@link Context#empty()} when none is available
    * @return {@code true} if the value is recognized as a non-secret; {@code false} for {@code null}
    */
-  // context is unused today; it is the extension point that lets classification become context-aware later.
-  @SuppressWarnings("java:S1172")
   public static boolean isKnownNonSecret(@Nullable String candidate, Context context) {
     if (candidate == null) {
       return false;
     }
-    if (SECRET_VALUES.values().contains(candidate.toLowerCase(Locale.ROOT))) {
+    String candidateLower = candidate.toLowerCase(Locale.ROOT);
+    for (String keyword : context.keywords()) {
+      if (candidateLower.contains(keyword.toLowerCase(Locale.ROOT))) {
+        return true;
+      }
+    }
+    if (SECRET_VALUES.values().contains(candidateLower)) {
       return true;
     }
     for (Pattern pattern : ALL_PATTERNS) {
@@ -258,8 +279,8 @@ public final class SecretClassifier {
   /**
    * Surrounding information passed alongside the candidate value to {@link #isKnownNonSecret(String, Context)}.
    *
-   * <p>The interface is intentionally empty for now. It is a stable extension point: future accessors (for example the
-   * key a value was found under, or the analyzed language) can be added without changing the classification signature.
+   * <p>Use {@link #empty()} when no context is available, or {@link #withKeywords(Collection)} to supply the
+   * credential-vocabulary keywords that triggered the detection (e.g. the keywords matched against a variable name).
    */
   public interface Context {
 
@@ -270,6 +291,32 @@ public final class SecretClassifier {
      */
     static Context empty() {
       return EMPTY_CONTEXT;
+    }
+
+    /**
+     * Returns a context carrying the given keywords.
+     *
+     * <p>These are the credential-vocabulary items (e.g. {@code "password"}, {@code "token"}) that matched the
+     * surrounding identifier — a variable name, a property key, or similar. When any keyword is found as a
+     * substring of the candidate value, {@link #isKnownNonSecret(String, Context)} returns {@code true}, avoiding
+     * false positives such as {@code String password = "Password"} or {@code pwd = "custom.pwd"}.
+     *
+     * @param keywords the matched credential-vocabulary items; must not be {@code null}
+     * @return a context exposing those keywords
+     */
+    static Context withKeywords(Collection<String> keywords) {
+      return new KeywordContext(keywords.stream()
+        .filter(k -> !k.isEmpty())
+        .toList());
+    }
+
+    /**
+     * The credential-vocabulary keywords that triggered the detection.
+     *
+     * @return an unmodifiable list of keywords; empty by default
+     */
+    default List<String> keywords() {
+      return List.of();
     }
   }
 }
