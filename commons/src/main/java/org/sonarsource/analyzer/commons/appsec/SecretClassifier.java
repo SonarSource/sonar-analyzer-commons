@@ -153,7 +153,7 @@ public final class SecretClassifier {
       "^@\\w++\\([^)]*+\\)$",
       // Double-underscore-wrapped placeholders, e.g. "__some_placeholder_password__"
       "^__.+__$",
-      // Code-reminder prefix left as the full credential value, e.g. "TODO: replace with real key"
+      // Code-reminder prefix left as the full credential value, e.g. "(prefix): replace with real key"
       "^(?:todo|fixme)\\b"),
 
     // Encrypted markers wrapping a ciphertext.
