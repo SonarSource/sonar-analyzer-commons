@@ -100,10 +100,17 @@ class TestFileClassifierTest {
     assertThat(classifier(config()).looksLikeTestFile(file(path))).isFalse();
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"sonar.tests", "sonar.test.inclusions", "sonar.test.exclusions"})
-  void shouldDisableHeuristicWhenTestSourcesConfigured(String configKey) {
-    assertThat(classifier(config(configKey, "configured")).looksLikeTestFile(file("src/main/java/FooTest.java"))).isFalse();
+  @Test
+  void shouldDisableHeuristicWhenTestSourcesConfigured() {
+    assertThat(classifier(config("sonar.tests", "src/test")).looksLikeTestFile(file("src/main/java/FooTest.java"))).isFalse();
+  }
+
+  @Test
+  void shouldNotDisableHeuristicWhenOnlyInclusionsOrExclusionsConfigured() {
+    // sonar.test.inclusions/exclusions only refine an existing test-source set; they do not declare one
+    var testFile = file("src/main/java/FooTest.java");
+    assertThat(classifier(config("sonar.test.inclusions", "**/*Test.java")).looksLikeTestFile(testFile)).isTrue();
+    assertThat(classifier(config("sonar.test.exclusions", "**/generated/**")).looksLikeTestFile(testFile)).isTrue();
   }
 
   @Test
