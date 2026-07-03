@@ -52,6 +52,7 @@ class SecretClassifierTest {
     "hunter2", "letmein", "abc123",
     "changeme", "changeit", "unknown", "optional", "enabled", "disabled", "string", "random", "token",
     // PLACEHOLDER
+    "__some_placeholder_password__",
     "${secret}", "value-${pwd}", "#{{secret}}", "((db-password))",
     "$(echo $PASSWORD)", "`echo $PASSWORD`", "$foo_bar",
     "{secret}", "%{secret}", "{{secret}}",
@@ -92,7 +93,8 @@ class SecretClassifierTest {
   @ValueSource(strings = {
     "Xk9Lm2Qp7Rs4Tv1Wz0",
     "9f8e7d6c5b4a392817",
-    "Tr0ub4dor&3xpl0!t"
+    "Tr0ub4dor&3xpl0!t",
+    "__not_closed" // leading __ without closing __ should not match
   })
   void shouldNotClassifyRealisticTokensAsNonSecrets(String value) {
     assertThat(SecretClassifier.isKnownNonSecret(value)).isFalse();

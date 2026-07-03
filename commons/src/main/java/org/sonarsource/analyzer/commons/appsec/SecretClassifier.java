@@ -152,7 +152,9 @@ public final class SecretClassifier {
       // Python format string placeholders, e.g. "%(password)s"
       "^%\\([^)]++\\)s$",
       // Azure Logic Apps runtime expressions, e.g. "@variables('name')", "@body('action')"
-      "^@\\w++\\([^)]*+\\)$"),
+      "^@\\w++\\([^)]*+\\)$",
+      // Double-underscore-wrapped placeholders, e.g. "__some_placeholder_password__"
+      "^__.+__$"),
 
     // Encrypted markers wrapping a ciphertext.
     PatternGroup.of(Category.ENCRYPTED,
