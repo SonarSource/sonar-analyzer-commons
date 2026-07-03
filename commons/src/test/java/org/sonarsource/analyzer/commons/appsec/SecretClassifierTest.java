@@ -47,9 +47,10 @@ class SecretClassifierTest {
     "111111", // same character start to end
     "1fj28...askn3i", // masked
     "TODO: replace me", "FIXME", // reminder/placeholder prefix
+    "admin123", "vncpass", "super-secret-p4ssw0rd", // FAKE_VALUE
     // SECRET (exact match, case-insensitive)
-    "hunter2", "letmein", "secret", "abc123",
-    "admin", "changeme", "changeit", "unknown", "optional", "enabled", "disabled", "string", "random", "token", "pass",
+    "hunter2", "letmein", "abc123",
+    "changeme", "changeit", "unknown", "optional", "enabled", "disabled", "string", "random", "token",
     // PLACEHOLDER
     "${secret}", "value-${pwd}", "#{{secret}}", "((db-password))",
     "$(echo $PASSWORD)", "`echo $PASSWORD`", "$foo_bar",
@@ -100,11 +101,8 @@ class SecretClassifierTest {
   @ParameterizedTest
   @ValueSource(strings = {
     // Credential words are matched only as whole values, so a value that merely contains one stays a candidate.
-    "admin1",
-    "sonarPass",
-    "hardcoded-pass",
-    "another-secret",
-    "mytoken123"
+    "mytoken123",
+    "this_should_remain_unknown"
   })
   void shouldNotExcludeValuesMerelyContainingCredentialWords(String value) {
     assertThat(SecretClassifier.isKnownNonSecret(value)).isFalse();

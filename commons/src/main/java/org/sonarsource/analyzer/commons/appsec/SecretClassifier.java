@@ -96,7 +96,7 @@ public final class SecretClassifier {
       "^.{0,5}$",
       // Words usually found in fake secrets, e.g. "samplepassword", "EXAMPLE_SECRET"
       "sample|example|placeholder|replace|change|foo|bar|test|fake|abcd",
-      "redacted|cafebabe|deadbeef|whatever|123456|default|dummy|qwerty|setting|obfuscated",
+      "redacted|cafebabe|deadbeef|whatever|123456|admin|pass|secret|default|dummy|qwerty|setting|obfuscated",
       // Password-like words, e.g. "password", "passwd", "pass", "password1234"
       "^(my)?pass(word|wd)?\\d{0,5}+$",
       // Boolean / null / scalar literals, e.g. "password = undefined", "enabled: true"
@@ -193,9 +193,9 @@ public final class SecretClassifier {
 
   // Well-known placeholder secrets plus config/credential vocabulary, matched in full (case-insensitive).
   private static final ExactMatchGroup SECRET_VALUES = new ExactMatchGroup(Category.SECRET, Set.of(
-    "hunter2", "letmein", "secret", "abc123",
-    "admin", "changeme", "changeit", "unknown", "optional", "enabled", "disabled",
-    "string", "random", "token", "pass"));
+    "hunter2", "letmein", "abc123",
+    "changeme", "changeit", "unknown", "optional", "enabled", "disabled",
+    "string", "random", "token"));
 
   // Context is an empty extension point today, so the analyzer sees instantiating it as pointless; the single shared
   // empty instance is intentional and lets empty() return a non-null context.
