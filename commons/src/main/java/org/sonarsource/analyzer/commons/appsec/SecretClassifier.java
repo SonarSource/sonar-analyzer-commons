@@ -108,9 +108,7 @@ public final class SecretClassifier {
       // Same character repeated from start to end, e.g. "aa", "111111"
       "^(?<repeated>.)\\k<repeated>*+$",
       // A secret being masked or shortened, e.g. "1fj28...askn3i"
-      "\\.\\.\\.",
-      // Code-reminder placeholder markers left as a value (see the regex)
-      "^(?:todo|fixme)\\b"),
+      "\\.\\.\\."),
 
     // Templating, interpolation and env/config lookups where the value comes from elsewhere.
     PatternGroup.of(Category.PLACEHOLDER,
@@ -154,7 +152,9 @@ public final class SecretClassifier {
       // Azure Logic Apps runtime expressions, e.g. "@variables('name')", "@body('action')"
       "^@\\w++\\([^)]*+\\)$",
       // Double-underscore-wrapped placeholders, e.g. "__some_placeholder_password__"
-      "^__.+__$"),
+      "^__.+__$",
+      // Code-reminder prefix left as the full credential value, e.g. "TODO: replace with real key"
+      "^(?:todo|fixme)\\b"),
 
     // Encrypted markers wrapping a ciphertext.
     PatternGroup.of(Category.ENCRYPTED,
@@ -255,6 +255,25 @@ public final class SecretClassifier {
   /** Visible for testing: the exact-match values. */
   static Set<String> exactMatchValues() {
     return SECRET_VALUES.values();
+  }
+
+  /** Visible for testing: returns the {@link Category} that suppressed the candidate, or {@code null} when not a known non-secret. */
+  @Nullable
+  static Category classify(@Nullable String candidate) {
+    if (candidate == null) {
+      return null;
+    }
+    if (SECRET_VALUES.values().contains(candidate.toLowerCase(Locale.ROOT))) {
+      return Category.SECRET;
+    }
+    for (PatternGroup group : PATTERN_GROUPS) {
+      for (Pattern pattern : group.patterns()) {
+        if (pattern.matcher(candidate).find()) {
+          return group.category;
+        }
+      }
+    }
+    return null;
   }
 
   /**
