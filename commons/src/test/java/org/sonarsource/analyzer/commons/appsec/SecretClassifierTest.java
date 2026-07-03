@@ -47,7 +47,7 @@ class SecretClassifierTest {
     "111111", // same character start to end
     "1fj28...askn3i", // masked
     "TODO: replace me", "FIXME", // reminder/placeholder prefix
-    "admin", "pass", "secret", // FAKE_VALUE
+    "admin123", "vncpass", "super-secret-p4ssw0rd", // FAKE_VALUE
     // SECRET (exact match, case-insensitive)
     "hunter2", "letmein", "abc123",
     "changeme", "changeit", "unknown", "optional", "enabled", "disabled", "string", "random", "token",
@@ -100,8 +100,10 @@ class SecretClassifierTest {
 
   @ParameterizedTest
   @ValueSource(strings = {
-    // "token" is exact-matched, so values merely containing it stay candidates.
-    "mytoken123"
+    // Credential words are matched only as whole values, so a value that merely contains one stays a candidate.
+    "mytoken123",
+    "no_need_to_changeme",
+    "this_should_remain_unknown"
   })
   void shouldNotExcludeValuesMerelyContainingCredentialWords(String value) {
     assertThat(SecretClassifier.isKnownNonSecret(value)).isFalse();
