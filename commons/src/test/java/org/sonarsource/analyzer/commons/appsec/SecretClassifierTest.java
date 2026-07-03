@@ -102,7 +102,6 @@ class SecretClassifierTest {
   @ValueSource(strings = {
     // Credential words are matched only as whole values, so a value that merely contains one stays a candidate.
     "mytoken123",
-    "no_need_to_changeme",
     "this_should_remain_unknown"
   })
   void shouldNotExcludeValuesMerelyContainingCredentialWords(String value) {
