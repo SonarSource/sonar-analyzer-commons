@@ -18,6 +18,7 @@ package org.sonarsource.analyzer.commons.appsec;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -64,7 +65,7 @@ public final class TestFileClassifier {
   private final Predicate<Context> detector;
   private final boolean testSourcesConfigured;
   // Warn once, here, so the heuristic behaves the same for every analyzer using this classifier.
-  private boolean heuristicWarningEmitted = false;
+  private final AtomicBoolean heuristicWarningEmitted = new AtomicBoolean(false);
 
   private TestFileClassifier(List<WildcardPattern> patterns, Predicate<Context> detector, boolean testSourcesConfigured) {
     this.patterns = patterns;
@@ -100,8 +101,7 @@ public final class TestFileClassifier {
     String path = inputFile.relativePath();
     boolean detected = !testSourcesConfigured
       && (patterns.stream().anyMatch(pattern -> pattern.match(path)) || detector.test(context));
-    if (detected && !heuristicWarningEmitted) {
-      heuristicWarningEmitted = true;
+    if (detected && heuristicWarningEmitted.compareAndSet(false, true)) {
       LOG.warn(HEURISTIC_APPLIED_WARNING);
     }
     return detected;
