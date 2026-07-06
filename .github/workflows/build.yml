@@ -34,7 +34,7 @@ jobs:
           version: 2025.7.12
       - name: Build and analyze with Maven
         id: build-maven
-        uses: SonarSource/ci-github-actions/build-maven@v1
+        uses: SonarSource/ci-github-actions/build-maven@9d3488f52305895f599feb1ec8560c1a5339aa99 # 1.8.1
         with:
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
@@ -50,6 +50,6 @@ jobs:
     steps:
       - *checkout
       - name: Promote artifacts
-        uses: SonarSource/ci-github-actions/promote@v1
+        uses: SonarSource/ci-github-actions/promote@9d3488f52305895f599feb1ec8560c1a5339aa99 # 1.8.1
         with:
           promote-pull-request: true
