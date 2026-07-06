@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 http://maven.apache.org/xsd/assembly-2.2.0.xsd">
+  <!-- A .nupkg is an OPC (zip) package. build-helper re-attaches the produced .zip with type=nupkg. -->
+  <id>nupkg</id>
+  <formats>
+    <format>zip</format>
+  </formats>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <files>
+    <file>
+      <source>${project.build.directory}/packaging/nuget/[Content_Types].xml</source>
+      <outputDirectory>./</outputDirectory>
+      <destName>[Content_Types].xml</destName>
+    </file>
+    <file>
+      <source>${project.build.directory}/packaging/nuget/_rels/.rels</source>
+      <outputDirectory>_rels</outputDirectory>
+      <destName>.rels</destName>
+    </file>
+    <file>
+      <source>${project.build.directory}/packaging/nuget/sonar-analyzer-commons-configurations.nuspec</source>
+      <outputDirectory>./</outputDirectory>
+      <destName>sonar-analyzer-commons-configurations.nuspec</destName>
+    </file>
+    <file>
+      <source>${project.build.directory}/packaging/nuget/package/services/metadata/core-properties/secretpatterns.psmdcp</source>
+      <outputDirectory>package/services/metadata/core-properties</outputDirectory>
+      <destName>secretpatterns.psmdcp</destName>
+    </file>
+    <file>
+      <source>${project.build.directory}/generated-resources/secret-patterns.json</source>
+      <outputDirectory>content</outputDirectory>
+      <destName>secret-patterns.json</destName>
+    </file>
+  </files>
+</assembly>
