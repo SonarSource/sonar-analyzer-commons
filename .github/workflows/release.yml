@@ -30,7 +30,7 @@ jobs:
     with:
       publishToBinaries: true
       mavenCentralSync: true
-      slackChannel: team-analysis-notifications
+      slackChannel: : squad-corelang-release
       version: ${{ inputs.version || github.event.release.tag_name }}
       releaseId: ${{ inputs.releaseId || github.event.release.id }}
       dryRun: ${{ inputs.dryRun == true }}

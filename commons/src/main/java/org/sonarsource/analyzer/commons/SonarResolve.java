@@ -338,7 +338,7 @@ public final class SonarResolve {
       }
 
       private static boolean isRuleKeyChar(char character) {
-        return Character.isLetterOrDigit(character) || character == ':' || character == '_';
+        return Character.isLetterOrDigit(character) || character == ':' || character == '_' || character == '-';
       }
 
       private static Character closingDelimiterFor(char openingDelimiter) {
