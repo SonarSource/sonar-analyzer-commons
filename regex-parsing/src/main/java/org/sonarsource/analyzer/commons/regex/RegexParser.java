@@ -591,49 +591,23 @@ public class RegexParser {
           } else {
             return parseOctalEscape(backslash);
           }
-        case '1':
-        case '2':
-        case '3':
+        case '1', '2', '3':
           if (source.supportsFeature(RegexFeature.PYTHON_OCTAL_ESCAPE)) {
             return parsePythonOctalEscapeOrNumericalBackReference(backslash);
           } else {
             return parseNumericalBackReference(backslash);
           }
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
+        case '4', '5', '6', '7', '8', '9':
           return parseNumericalBackReference(backslash);
-        case 'b':
-        case 'B':
-        case 'A':
-        case 'G':
-        case 'Z':
-        case 'z':
+        case 'b', 'B', 'A', 'G', 'Z', 'z':
           return parseBoundary(backslash);
-        case 'w':
-        case 'W':
-        case 'd':
-        case 'D':
-        case 'S':
-        case 's':
-        case 'h':
-        case 'H':
-        case 'v':
-        case 'V':
+        case 'w', 'W', 'd', 'D', 'S', 's', 'h', 'H', 'v', 'V':
           return parseEscapedCharacterClass(backslash);
         case 'u':
           return parseUnicodeEscape(backslash);
         case 'x':
           return parseHexEscape(backslash);
-        case 't':
-        case 'n':
-        case 'r':
-        case 'f':
-        case 'a':
-        case 'e':
+        case 't', 'n', 'r', 'f', 'a', 'e':
           characters.moveNext();
           char c = simpleEscapeToCharacter(character.getCharacter());
           IndexRange range = backslash.getRange().extendTo(characters.getCurrentStartIndex());
@@ -642,8 +616,7 @@ public class RegexParser {
           return parseControlSequence(backslash);
         case 'N':
           return parseNamedUnicodeCharacter(backslash);
-        case 'R':
-        case 'X':
+        case 'R', 'X':
           characters.moveNext();
           return new MiscEscapeSequenceTree(source, backslash.getRange().extendTo(characters.getCurrentStartIndex()), activeFlags);
         case 'E':
@@ -1027,8 +1000,8 @@ public class RegexParser {
         RegexTree escape = parseEscapeSequence();
         if (escape.is(RegexTree.Kind.CHARACTER)) {
           return parseCharacterRange((CharacterTree) escape);
-        } else if (escape instanceof CharacterClassElementTree) {
-          return (CharacterClassElementTree) escape;
+        } else if (escape instanceof CharacterClassElementTree characterClassElementTree) {
+          return characterClassElementTree;
         } else {
           errors.add(new SyntaxError(escape, "Invalid escape sequence inside character class"));
           // Produce dummy AST and keep parsing to catch more errors.
@@ -1184,16 +1157,7 @@ public class RegexParser {
     }
 
     switch (c) {
-      case EOF:
-      case '(':
-      case ')':
-      case '\\':
-      case '*':
-      case '+':
-      case '?':
-      case '|':
-      case '[':
-      case '.':
+      case EOF, '(', ')', '\\', '*', '+', '?', '|', '[', '.':
         return false;
       default:
         return true;

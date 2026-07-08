@@ -51,12 +51,11 @@ public class EmptyStringRepetitionFinder extends RegexBaseVisitor {
         return ((DisjunctionTree) element).getAlternatives().stream().anyMatch(this::matchEmptyString);
       case REPETITION:
         return ((RepetitionTree) element).getQuantifier().getMinimumRepetitions() == 0;
-      case LOOK_AROUND:
-      case BOUNDARY:
+      case LOOK_AROUND, BOUNDARY:
         return true;
       default:
-        if (element instanceof GroupTree) {
-          RegexTree nestedElement = ((GroupTree) element).getElement();
+        if (element instanceof GroupTree groupTree) {
+          RegexTree nestedElement = groupTree.getElement();
           return nestedElement == null || matchEmptyString(nestedElement);
         }
         return false;

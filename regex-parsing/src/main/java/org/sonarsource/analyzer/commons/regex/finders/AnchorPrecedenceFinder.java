@@ -18,7 +18,6 @@ package org.sonarsource.analyzer.commons.regex.finders;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.BoundaryTree;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
@@ -77,7 +76,7 @@ public class AnchorPrecedenceFinder extends RegexBaseVisitor {
     SequenceTree sequence = (SequenceTree) tree;
     List<RegexTree> items = sequence.getItems().stream()
       .filter(item -> !isFlagSetter(item))
-      .collect(Collectors.toList());
+      .toList();
     if (items.isEmpty()) {
       return false;
     }
@@ -88,11 +87,7 @@ public class AnchorPrecedenceFinder extends RegexBaseVisitor {
 
   private static boolean isAnchor(BoundaryTree tree) {
     switch (tree.type()) {
-      case INPUT_START:
-      case LINE_START:
-      case INPUT_END:
-      case INPUT_END_FINAL_TERMINATOR:
-      case LINE_END:
+      case INPUT_START, LINE_START, INPUT_END, INPUT_END_FINAL_TERMINATOR, LINE_END:
         return true;
       default:
         return false;

@@ -170,8 +170,10 @@ public class XmlParserTest {
 
   @Test
   public void testText() throws Exception {
-    Document document = XmlFile.create("<foo>Hello, \nworld</foo>\n" +
-      "").getDocument();
+    Document document = XmlFile.create("""
+      <foo>Hello,\s
+      world</foo>
+      """).getDocument();
     Node text = document.getFirstChild().getFirstChild();
     assertThat(text.getNodeName()).isEqualTo("#text");
     assertThat(text.getNodeValue()).isEqualTo("Hello, \nworld");
@@ -201,9 +203,9 @@ public class XmlParserTest {
 
   @Test
   public void testInternalEntityReference() throws Exception {
-    Document document = XmlFile.create(
-      "<!DOCTYPE element [<!ENTITY abc \"abcValue\">]>\n" +
-        "<element>Before&abc;After</element>").getDocument();
+    Document document = XmlFile.create("""
+      <!DOCTYPE element [<!ENTITY abc "abcValue">]>
+      <element>Before&abc;After</element>""").getDocument();
 
     EntityReference entityReference = ((EntityReference) document.getElementsByTagName("element").item(0).getFirstChild().getNextSibling());
     assertThat(entityReference.getNodeType()).isEqualTo(Node.ENTITY_REFERENCE_NODE);
@@ -217,14 +219,14 @@ public class XmlParserTest {
 
   @Test
   public void testDoctypeElement() throws Exception {
-    Document document = XmlFile.create(
-      "<!DOCTYPE note [\n" +
-        "<!ELEMENT note (body)>\n" +
-        "<!ELEMENT body (#PCDATA)>\n" +
-        "]>\n" +
-        "<note>\n" +
-        "<body>Don't forget me this weekend</body>\n" +
-        "</note>").getDocument();
+    Document document = XmlFile.create("""
+      <!DOCTYPE note [
+      <!ELEMENT note (body)>
+      <!ELEMENT body (#PCDATA)>
+      ]>
+      <note>
+      <body>Don't forget me this weekend</body>
+      </note>""").getDocument();
 
     DocumentType doctypeElement = (DocumentType) document.getFirstChild();
     assertThat(doctypeElement.getNodeType()).isEqualTo(Node.DOCUMENT_TYPE_NODE);
@@ -245,12 +247,14 @@ public class XmlParserTest {
 
   @Test
   public void testAttributesLocations() throws Exception {
-    String testCase = "<?xml version='1.0' encoding='UTF-8'?>\n"
-      + "<data-sources>\n"
-      + "  <data-source id='attr01' provider='attr02' driver='attr03' name='attr04' save-password='attr05' read-only='attr06'>\n"
-      + "    <connection host='attr07' port='attr08' server='attr09' database='attr10' url='attr11' user='attr12' password='attr13' />\n"
-      + "  </data-source>\n"
-      + "</data-sources>\n";
+    String testCase = """
+      <?xml version='1.0' encoding='UTF-8'?>
+      <data-sources>
+        <data-source id='attr01' provider='attr02' driver='attr03' name='attr04' save-password='attr05' read-only='attr06'>
+          <connection host='attr07' port='attr08' server='attr09' database='attr10' url='attr11' user='attr12' password='attr13' />
+        </data-source>
+      </data-sources>
+      """;
 
     XmlFile xmlFile = XmlFile.create(testCase);
 
@@ -271,11 +275,13 @@ public class XmlParserTest {
 
   @Test
   public void testAttributesWithNamespacesLocations() throws Exception {
-    String testCase = "<?xml version='1.0' encoding='UTF-8'?>\n"
-      + "<a xmlns:foo='http://www.w3.org/barfoo'\n"
-      + "   xmlns:bar='http://www.w3.org/qixbar'>\n"
-      + "  <foo:b foo:attr2='yolo' bar:attr1='tututte'/>\n"
-      + "</a>\n";
+    String testCase = """
+      <?xml version='1.0' encoding='UTF-8'?>
+      <a xmlns:foo='http://www.w3.org/barfoo'
+         xmlns:bar='http://www.w3.org/qixbar'>
+        <foo:b foo:attr2='yolo' bar:attr1='tututte'/>
+      </a>
+      """;
 
     XmlFile file = XmlFile.create(testCase);
 
@@ -319,21 +325,21 @@ public class XmlParserTest {
 
   @Test
   public void testComplexTree() throws Exception {
-    Document nested = XmlFile.create(
-      "<a>1\n"
-        + "  <b>2\n"
-        + "    <c>3</c>\n"
-        + "  4</b>\n"
-        + "5</a>")
+    Document nested = XmlFile.create("""
+      <a>1
+        <b>2
+          <c>3</c>
+        4</b>
+      5</a>""")
       .getDocument();
     // c
     assertRange(nested.getElementsByTagName("c").item(0), Location.NODE, 3, 4, 3, 12);
 
-    Document twoSiblings = XmlFile.create(
-      "<a>1\n"
-        + "  <b>2</b>\n"
-        + "  <c>3</c>\n"
-        + "4</a>")
+    Document twoSiblings = XmlFile.create("""
+      <a>1
+        <b>2</b>
+        <c>3</c>
+      4</a>""")
       .getDocument();
     // c
     assertRange(twoSiblings.getElementsByTagName("c").item(0), Location.NODE, 3, 2, 3, 10);
@@ -469,15 +475,15 @@ public class XmlParserTest {
    */
   @Test
   public void testCommentInDoctypeProduceWrongLocations() throws Exception {
-    Document document = XmlFile.create(
-      "<?xml version=\"1.0\"?>\n" +
-      "<!DOCTYPE menu [\n" +
-      "<!--\n" +
-      "Some comment\n" +
-      "-->\n" +
-      "<!ELEMENT menu (modulo)* >\n" +
-      "]>\n" +
-      "<menu value=\"foo\"></menu>").getDocument();
+    Document document = XmlFile.create("""
+      <?xml version="1.0"?>
+      <!DOCTYPE menu [
+      <!--
+      Some comment
+      -->
+      <!ELEMENT menu (modulo)* >
+      ]>
+      <menu value="foo"></menu>""").getDocument();
     assertThat(document.getChildNodes().getLength()).isEqualTo(2);
     DocumentType documentType = (DocumentType) document.getFirstChild();
     assertRange(documentType, Location.NODE, 2, 0, 7, 2);
@@ -486,15 +492,15 @@ public class XmlParserTest {
     // See https://github.com/FasterXML/woodstox/issues/67
     assertRange(lastChild, Location.NODE, 7, 0, 7, 25);
 
-    document = XmlFile.create(
-      "<?xml version=\"1.0\"?>\n" +
-      "<!DOCTYPE menu [\n" +
-      "<!--" + /* extra space before NewLine */ " " + "\n" +
-      "Some comment\n" +
-      "-->\n" +
-      "<!ELEMENT menu (modulo)* >\n" +
-      "]>\n" +
-      "<menu value=\"foo\"></menu>").getDocument();
+    document = XmlFile.create("""
+      <?xml version="1.0"?>
+      <!DOCTYPE menu [
+      <!--\s
+      Some comment
+      -->
+      <!ELEMENT menu (modulo)* >
+      ]>
+      <menu value="foo"></menu>""").getDocument();
     assertThat(document.getChildNodes().getLength()).isEqualTo(2);
     documentType = (DocumentType) document.getFirstChild();
     assertRange(documentType, Location.NODE, 2, 0, 7, 2);

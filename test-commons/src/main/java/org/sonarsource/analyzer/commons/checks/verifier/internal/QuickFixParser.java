@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.sonarsource.analyzer.commons.checks.verifier.quickfix.QuickFix;
 import org.sonarsource.analyzer.commons.checks.verifier.quickfix.TextEdit;
 import org.sonarsource.analyzer.commons.checks.verifier.quickfix.TextSpan;
@@ -65,7 +64,7 @@ public class QuickFixParser {
           throw new AssertionError(String.format("[Quick Fix] Quick fix description not found for quick fix id %s", qfId));
         }
         QuickFix quickFix = QuickFix.newQuickFix(description, entry.getKey())
-          .addTextEdits(edits.stream().map(rel -> rel.toAbsoluteTextEdit(quickfixesLineReference.get(qfId))).collect(Collectors.toList()))
+          .addTextEdits(edits.stream().map(rel -> rel.toAbsoluteTextEdit(quickfixesLineReference.get(qfId))).toList())
           .build();
         expectedQuickFixes.put(qfId, quickFix);
       }

@@ -129,16 +129,16 @@ public class SingleFileVerifierTest {
 
     assertThatThrownBy(() -> verifier.assertOneOrMoreIssues())
       .isInstanceOf(ComparisonFailure.class)
-      .hasMessageContaining(
-        "[----------------------------------------------------------------------]\n" +
-          "[ '-' means expected but not raised, '+' means raised but not expected ]\n" +
-          "  <simple.js>\n" +
-          "- 002: Noncompliant {{Rule message}}\n" +
-          "+ 002: Noncompliant {{RuLe MeSsAgE}}\n" +
-          "  002:     alert(msg);\n" +
-          "- 002:           ^^^\n" +
-          "+ 002:     ^^^^^\n" +
-          "[----------------------------------------------------------------------]");
+      .hasMessageContaining("""
+        [----------------------------------------------------------------------]
+        [ '-' means expected but not raised, '+' means raised but not expected ]
+          <simple.js>
+        - 002: Noncompliant {{Rule message}}
+        + 002: Noncompliant {{RuLe MeSsAgE}}
+          002:     alert(msg);
+        - 002:           ^^^
+        + 002:     ^^^^^
+        [----------------------------------------------------------------------]""");
   }
 
   @Test

@@ -97,8 +97,7 @@ public class ImpossibleBoundaryFinder extends RegexBaseVisitor {
           checkEndBoundary(boundaryTree);
         }
         break;
-      case INPUT_END:
-      case INPUT_END_FINAL_TERMINATOR:
+      case INPUT_END, INPUT_END_FINAL_TERMINATOR:
         checkEndBoundary(boundaryTree);
         break;
       default:

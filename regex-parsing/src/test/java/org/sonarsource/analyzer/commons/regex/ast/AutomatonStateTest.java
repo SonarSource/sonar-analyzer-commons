@@ -34,34 +34,34 @@ class AutomatonStateTest {
     assertThat(allStates(assertSuccessfulParseResult(regex, RegexFeature.ESCAPED_CHARACTER_CLASS)).stream()
       .map(AutomatonStateTest::printClassAndFlags)
       .collect(Collectors.joining("\n")))
-        .isEqualTo("" +
-          "StartState\n" +
-          "SequenceTree\n" +
-          "NonCapturingGroupTree<flags: m:3>\n" +
-          "BoundaryTree<flags: m:3>\n" +
-          "NonCapturingGroupTree<flags: i:9>\n" +
-          "CharacterTree 'a' <flags: i:9>\n" +
-          "NonCapturingGroupTree<flags: s:15>\n" +
-          "DotTree<flags: s:15>\n" +
-          "NonCapturingGroupTree<flags: u:21>\n" +
-          "CapturingGroupTree<flags: u:21>\n" +
-          "SequenceTree<flags: u:21>\n" +
-          "EscapedCharacterClassTree<flags: u:21>\n" +
-          "MiscEscapeSequenceTree<flags: u:21>\n" +
-          "EndOfCapturingGroupState<flags: u:21>\n" +
-          "NonCapturingGroupTree<flags: d:34>\n" +
-          "BoundaryTree<flags: d:34>\n" +
-          "NonCapturingGroupTree<flags: U:40>\n" +
-          "CharacterTree 'ö' <flags: U:40>\n" +
-          "NonCapturingGroupTree<flags: x:52>\n" +
-          "DisjunctionTree<flags: x:52>\n" +
-          "SequenceTree<flags: x:52>\n" +
-          "CharacterClassTree<flags: x:52>\n" +
-          "LookAroundTree<flags: x:52>\n" +
-          "EscapedCharacterClassTree<flags: x:52>\n" +
-          "EndOfLookaroundState<flags: x:52>\n" +
-          "FinalState\n" +
-          "BackReferenceTree<flags: x:52>");
+        .isEqualTo("""
+          StartState
+          SequenceTree
+          NonCapturingGroupTree<flags: m:3>
+          BoundaryTree<flags: m:3>
+          NonCapturingGroupTree<flags: i:9>
+          CharacterTree 'a' <flags: i:9>
+          NonCapturingGroupTree<flags: s:15>
+          DotTree<flags: s:15>
+          NonCapturingGroupTree<flags: u:21>
+          CapturingGroupTree<flags: u:21>
+          SequenceTree<flags: u:21>
+          EscapedCharacterClassTree<flags: u:21>
+          MiscEscapeSequenceTree<flags: u:21>
+          EndOfCapturingGroupState<flags: u:21>
+          NonCapturingGroupTree<flags: d:34>
+          BoundaryTree<flags: d:34>
+          NonCapturingGroupTree<flags: U:40>
+          CharacterTree 'ö' <flags: U:40>
+          NonCapturingGroupTree<flags: x:52>
+          DisjunctionTree<flags: x:52>
+          SequenceTree<flags: x:52>
+          CharacterClassTree<flags: x:52>
+          LookAroundTree<flags: x:52>
+          EscapedCharacterClassTree<flags: x:52>
+          EndOfLookaroundState<flags: x:52>
+          FinalState
+          BackReferenceTree<flags: x:52>""");
   }
 
   @Test
@@ -70,31 +70,31 @@ class AutomatonStateTest {
     assertThat(allStates(assertSuccessfulParseResult(regex)).stream()
       .map(AutomatonStateTest::printClassAndFlags)
       .collect(Collectors.joining("\n")))
-        .isEqualTo("" +
-          "StartState\n" +
-          "DisjunctionTree\n" +
-          "SequenceTree\n" +
-          "NonCapturingGroupTree<flags: i:3>\n" +
-          "CharacterTree 'a' <flags: i:3>\n" +
-          "NonCapturingGroupTree<flags: i:3 u:8>\n" +
-          "CharacterTree 'b' <flags: i:3 u:8>\n" +
-          "FinalState<flags: i:3 U:39>\n" +
-          "SequenceTree<flags: i:3>\n" +
-          "CharacterClassTree<flags: i:3>\n" +
-          "NonCapturingGroupTree\n" +
-          "CharacterTree 'd' \n" +
-          "NonCapturingGroupTree<flags: i:3 u:25>\n" +
-          "CharacterTree 'e' <flags: i:3 u:25>\n" +
-          "CapturingGroupTree<flags: i:3 u:25>\n" +
-          "SequenceTree<flags: i:3 u:25>\n" +
-          "NonCapturingGroupTree<flags: i:3>\n" +
-          "CharacterTree 'f' <flags: i:3>\n" +
-          "EndOfCapturingGroupState<flags: i:3 u:25>\n" +
-          "CharacterTree 'g' <flags: i:3 u:25>\n" +
-          "NonCapturingGroupTree<flags: i:3 u:25 U:39>\n" +
-          "CharacterTree 'h' <flags: i:3 u:25 U:39>\n" +
-          "NonCapturingGroupTree<flags: i:3 U:39>\n" +
-          "CharacterTree 'i' <flags: i:3 U:39>");
+        .isEqualTo("""
+          StartState
+          DisjunctionTree
+          SequenceTree
+          NonCapturingGroupTree<flags: i:3>
+          CharacterTree 'a' <flags: i:3>
+          NonCapturingGroupTree<flags: i:3 u:8>
+          CharacterTree 'b' <flags: i:3 u:8>
+          FinalState<flags: i:3 U:39>
+          SequenceTree<flags: i:3>
+          CharacterClassTree<flags: i:3>
+          NonCapturingGroupTree
+          CharacterTree 'd'\s
+          NonCapturingGroupTree<flags: i:3 u:25>
+          CharacterTree 'e' <flags: i:3 u:25>
+          CapturingGroupTree<flags: i:3 u:25>
+          SequenceTree<flags: i:3 u:25>
+          NonCapturingGroupTree<flags: i:3>
+          CharacterTree 'f' <flags: i:3>
+          EndOfCapturingGroupState<flags: i:3 u:25>
+          CharacterTree 'g' <flags: i:3 u:25>
+          NonCapturingGroupTree<flags: i:3 u:25 U:39>
+          CharacterTree 'h' <flags: i:3 u:25 U:39>
+          NonCapturingGroupTree<flags: i:3 U:39>
+          CharacterTree 'i' <flags: i:3 U:39>""");
   }
 
   @Test
@@ -103,35 +103,35 @@ class AutomatonStateTest {
     assertThat(allStates(assertSuccessfulParseResult(regex, RegexFeature.ATOMIC_GROUP)).stream()
       .map(AutomatonStateTest::printClassAndFlags)
       .collect(Collectors.joining("\n")))
-        .isEqualTo("" +
-          "StartState\n" +
-          "DisjunctionTree\n" +
-          "SequenceTree\n" +
-          "NonCapturingGroupTree<flags: i:3>\n" +
-          "CharacterTree 'a' <flags: i:3>\n" +
-          "NonCapturingGroupTree<flags: i:3>\n" +
-          "SequenceTree<flags: i:3>\n" +
-          "NonCapturingGroupTree<flags: i:3 u:11>\n" +
-          "CharacterTree 'b' <flags: i:3 u:11>\n" +
-          "FinalState<flags: i:3 U:47>\n" +
-          "SequenceTree<flags: i:3>\n" +
-          "CharacterClassTree<flags: i:3>\n" +
-          "AtomicGroupTree<flags: i:3>\n" +
-          "SequenceTree<flags: i:3>\n" +
-          "NonCapturingGroupTree\n" +
-          "CharacterTree 'd' \n" +
-          "NonCapturingGroupTree<flags: i:3 u:31>\n" +
-          "CharacterTree 'e' <flags: i:3 u:31>\n" +
-          "LookAroundTree<flags: i:3 u:31>\n" +
-          "SequenceTree<flags: i:3 u:31>\n" +
-          "NonCapturingGroupTree<flags: i:3>\n" +
-          "CharacterTree 'f' <flags: i:3>\n" +
-          "EndOfLookaroundState<flags: i:3 u:31>\n" +
-          "CharacterTree 'g' <flags: i:3 u:31>\n" +
-          "NonCapturingGroupTree<flags: i:3 u:31 U:47>\n" +
-          "CharacterTree 'h' <flags: i:3 u:31 U:47>\n" +
-          "NonCapturingGroupTree<flags: i:3 U:47>\n" +
-          "CharacterTree 'i' <flags: i:3 U:47>");
+        .isEqualTo("""
+          StartState
+          DisjunctionTree
+          SequenceTree
+          NonCapturingGroupTree<flags: i:3>
+          CharacterTree 'a' <flags: i:3>
+          NonCapturingGroupTree<flags: i:3>
+          SequenceTree<flags: i:3>
+          NonCapturingGroupTree<flags: i:3 u:11>
+          CharacterTree 'b' <flags: i:3 u:11>
+          FinalState<flags: i:3 U:47>
+          SequenceTree<flags: i:3>
+          CharacterClassTree<flags: i:3>
+          AtomicGroupTree<flags: i:3>
+          SequenceTree<flags: i:3>
+          NonCapturingGroupTree
+          CharacterTree 'd'\s
+          NonCapturingGroupTree<flags: i:3 u:31>
+          CharacterTree 'e' <flags: i:3 u:31>
+          LookAroundTree<flags: i:3 u:31>
+          SequenceTree<flags: i:3 u:31>
+          NonCapturingGroupTree<flags: i:3>
+          CharacterTree 'f' <flags: i:3>
+          EndOfLookaroundState<flags: i:3 u:31>
+          CharacterTree 'g' <flags: i:3 u:31>
+          NonCapturingGroupTree<flags: i:3 u:31 U:47>
+          CharacterTree 'h' <flags: i:3 u:31 U:47>
+          NonCapturingGroupTree<flags: i:3 U:47>
+          CharacterTree 'i' <flags: i:3 U:47>""");
   }
 
   private static String printClassAndFlags(AutomatonState state) {

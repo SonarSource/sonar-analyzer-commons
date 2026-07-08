@@ -24,45 +24,53 @@ public class ReportDiffTest {
 
   @Test
   public void same_content() {
-    String a = "a\n" +
-      "b\n";
+    String a = """
+      a
+      b
+      """;
     String diff = ReportDiff.diff(a, a);
     assertThat(diff).isEmpty();
   }
 
   @Test
   public void different_content() {
-    String expected = "a\n" +
-      "b\n" +
-      "E1\n" +
-      "c\n" +
-      "d\n" +
-      "E2\n" +
-      "e\n" +
-      "f\n";
-    String actual = "a\n" +
-      "b\n" +
-      "U1\n" +
-      "c\n" +
-      "U2\n" +
-      "c\n" +
-      "d\n" +
-      "e\n" +
-      "U3\n" +
-      "f\n" +
-      "U4\n";
+    String expected = """
+      a
+      b
+      E1
+      c
+      d
+      E2
+      e
+      f
+      """;
+    String actual = """
+      a
+      b
+      U1
+      c
+      U2
+      c
+      d
+      e
+      U3
+      f
+      U4
+      """;
     String diff = ReportDiff.diff(expected, actual);
-    assertThat(diff).isEqualTo("  b\n" +
-      "- E1\n" +
-      "+ U1\n" +
-      "+ c\n" +
-      "+ U2\n" +
-      "  d\n" +
-      "- E2\n" +
-      "  e\n" +
-      "+ U3\n" +
-      "  f\n" +
-      "+ U4\n");
+    assertThat(diff).isEqualTo("""
+        b
+      - E1
+      + U1
+      + c
+      + U2
+        d
+      - E2
+        e
+      + U3
+        f
+      + U4
+      """);
   }
 
 }

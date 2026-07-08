@@ -86,8 +86,7 @@ public class RegexReachabilityChecker {
     @Override
     public boolean equals(Object o) {
       if (this == o) return true;
-      if (!(o instanceof OrderedStatePair)) return false;
-      OrderedStatePair that = (OrderedStatePair) o;
+      if (!(o instanceof OrderedStatePair that)) return false;
       return source == that.source && target == that.target;
     }
 
@@ -176,7 +175,7 @@ public class RegexReachabilityChecker {
   }
 
   private static boolean isEscapeSequence(AutomatonState state) {
-    return state instanceof CharacterTree && ((CharacterTree) state).isEscapeSequence();
+    return state instanceof CharacterTree characterTree && characterTree.isEscapeSequence();
   }
 
   private static boolean isDotall(AutomatonState currentState) {

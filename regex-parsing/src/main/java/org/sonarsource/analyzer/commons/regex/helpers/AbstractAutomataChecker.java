@@ -107,8 +107,8 @@ public abstract class AbstractAutomataChecker {
   }
 
   private static boolean isMoreThanOneFiniteRepetition(AutomatonState state) {
-    if (state instanceof RepetitionTree) {
-      Integer maximumRepetitions = ((RepetitionTree) state).getQuantifier().getMaximumRepetitions();
+    if (state instanceof RepetitionTree repetitionTree) {
+      Integer maximumRepetitions = repetitionTree.getQuantifier().getMaximumRepetitions();
       return maximumRepetitions != null && maximumRepetitions > 1;
     }
     return false;

@@ -23,63 +23,14 @@ import java.util.Set;
 import org.sonar.api.batch.sensor.issue.IssueResolution;
 import org.sonar.api.rule.RuleKey;
 
-public final class SonarResolve {
+public record SonarResolve(int directiveLine, int targetLine, IssueResolution.Status status, Set<RuleKey> ruleKeys, String justification) {
 
   public static final String KEYWORD = "sonar-resolve";
 
-  private final int directiveLine;
-  private final int targetLine;
-  private final IssueResolution.Status status;
-  private final Set<RuleKey> ruleKeys;
-  private final String justification;
-
-  public SonarResolve(int directiveLine, int targetLine, IssueResolution.Status status, Set<RuleKey> ruleKeys, String justification) {
-    this.directiveLine = directiveLine;
-    this.targetLine = targetLine;
-    this.status = Objects.requireNonNull(status);
-    this.ruleKeys = Collections.unmodifiableSet(new LinkedHashSet<>(ruleKeys));
-    this.justification = Objects.requireNonNull(justification);
-  }
-
-  public int directiveLine() {
-    return directiveLine;
-  }
-
-  public int targetLine() {
-    return targetLine;
-  }
-
-  public IssueResolution.Status status() {
-    return status;
-  }
-
-  public Set<RuleKey> ruleKeys() {
-    return ruleKeys;
-  }
-
-  public String justification() {
-    return justification;
-  }
-
-  @Override
-  public boolean equals(Object object) {
-    if (this == object) {
-      return true;
-    }
-    if (!(object instanceof SonarResolve)) {
-      return false;
-    }
-    SonarResolve other = (SonarResolve) object;
-    return directiveLine == other.directiveLine
-      && targetLine == other.targetLine
-      && status == other.status
-      && ruleKeys.equals(other.ruleKeys)
-      && justification.equals(other.justification);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(directiveLine, targetLine, status, ruleKeys, justification);
+  public SonarResolve {
+    Objects.requireNonNull(status);
+    Objects.requireNonNull(justification);
+    ruleKeys = Collections.unmodifiableSet(new LinkedHashSet<>(ruleKeys));
   }
 
   @Override
@@ -124,7 +75,7 @@ public final class SonarResolve {
     }
 
     public State finish() {
-      checkState(accumulatedDirective.length() > 0, "Cannot finish parser before consuming any lines.");
+      checkState(!accumulatedDirective.isEmpty(), "Cannot finish parser before consuming any lines.");
       if (state == State.INCOMPLETE) {
         state = State.INVALID;
         result = null;
@@ -147,7 +98,7 @@ public final class SonarResolve {
     }
 
     private void appendNormalizedLine(String normalizedLine) {
-      if (accumulatedDirective.length() > 0) {
+      if (!accumulatedDirective.isEmpty()) {
         accumulatedDirective.append('\n');
       }
       accumulatedDirective.append(normalizedLine);

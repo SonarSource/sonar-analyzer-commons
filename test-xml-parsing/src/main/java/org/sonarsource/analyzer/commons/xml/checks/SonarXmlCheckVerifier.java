@@ -174,8 +174,8 @@ public class SonarXmlCheckVerifier {
       "Expected %d secondary locations, but got %d.", secondaryLines.length, flows.size());
 
     // only contains lines
-    List<Integer> expectedLines = IntStream.of(secondaryLines).boxed().collect(Collectors.toList());
-    List<Integer> reportedLines = flows.stream().map(Flow::locations).map(locs -> locs.get(0).textRange().start().line()).collect(Collectors.toList());
+    List<Integer> expectedLines = IntStream.of(secondaryLines).boxed().toList();
+    List<Integer> reportedLines = flows.stream().map(Flow::locations).map(locs -> locs.get(0).textRange().start().line()).toList();
     reportProblem(!expectedLines.equals(reportedLines),
       "Expected secondary locations to be %s, but got %s.", expectedLines, reportedLines);
   }

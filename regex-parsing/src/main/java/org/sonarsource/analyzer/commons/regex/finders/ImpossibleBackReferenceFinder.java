@@ -101,8 +101,8 @@ public class ImpossibleBackReferenceFinder extends RegexBaseVisitor {
       return;
     }
     visited.add(start);
-    if (start instanceof EndOfCapturingGroupState) {
-      addGroup(((EndOfCapturingGroupState) start).group());
+    if (start instanceof EndOfCapturingGroupState endState) {
+      addGroup(endState.group());
     }
     for (AutomatonState successor: start.successors()) {
       findReachableGroups(successor, stop, preliminaryImpossibleReferences, visited);

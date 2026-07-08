@@ -18,7 +18,6 @@ package org.sonarsource.analyzer.commons.appsec;
 
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -105,7 +104,7 @@ class SecretClassifierTest {
     FAKE_VALUE_SAMPLES, SECRET_SAMPLES, PLACEHOLDER_SAMPLES,
     ENCRYPTED_SAMPLES, REFERENCE_SAMPLES, STRUCTURED_FORMAT_SAMPLES)
     .flatMap(List::stream)
-    .collect(Collectors.toUnmodifiableList());
+    .toList();
 
   static Stream<String> fakeValueSamples() {
     return FAKE_VALUE_SAMPLES.stream();

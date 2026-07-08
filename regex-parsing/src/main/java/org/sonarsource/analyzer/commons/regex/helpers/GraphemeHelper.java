@@ -37,8 +37,7 @@ public class GraphemeHelper {
     List<RegexIssueLocation> result = new ArrayList<>();
     List<RegexSyntaxElement> codePoints = new ArrayList<>();
     for (RegexSyntaxElement child : trees) {
-      if (child instanceof CharacterTree) {
-        CharacterTree currentCharacter = (CharacterTree) child;
+      if (child instanceof CharacterTree currentCharacter) {
         if (!currentCharacter.isEscapeSequence()) {
           if (!isMark(currentCharacter)) {
             addCurrentGrapheme(result, codePoints);

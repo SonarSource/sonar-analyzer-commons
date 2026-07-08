@@ -114,9 +114,7 @@ class XmlParser {
       finalizePreviousNode(startLocation);
 
       switch (xmlReader.getEventType()) {
-        case XMLStreamConstants.ENTITY_REFERENCE:
-        case XMLStreamConstants.COMMENT:
-        case XMLStreamConstants.PROCESSING_INSTRUCTION:
+        case XMLStreamConstants.ENTITY_REFERENCE, XMLStreamConstants.COMMENT, XMLStreamConstants.PROCESSING_INSTRUCTION:
           setNextNode();
           currentNodeStartLocation = startLocation;
           break;

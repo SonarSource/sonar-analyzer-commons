@@ -61,7 +61,7 @@ public class TextEdit {
 
   @Override
   public boolean equals(Object obj) {
-    return obj instanceof TextEdit && textSpan.equals(((TextEdit) obj).textSpan) && replacement.equals(((TextEdit) obj).replacement);
+    return obj instanceof TextEdit te && textSpan.equals(te.textSpan) && replacement.equals(te.replacement);
   }
 
   @Override

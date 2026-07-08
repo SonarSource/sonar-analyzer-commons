@@ -225,7 +225,7 @@ public class DurationMeasureMerger {
 
   private static List<Path> getSubDirectories(Path parentDirectory) throws IOException {
     try (Stream<Path> stream = Files.list(parentDirectory)) {
-      return stream.filter(Files::isDirectory).collect(Collectors.toList());
+      return stream.filter(Files::isDirectory).toList();
     }
   }
 
