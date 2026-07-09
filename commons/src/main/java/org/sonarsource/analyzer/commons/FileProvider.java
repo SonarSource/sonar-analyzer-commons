@@ -20,7 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.sonar.api.utils.WildcardPattern;
 
 public class FileProvider {
@@ -38,7 +40,7 @@ public class FileProvider {
       return walk
               .filter(p -> !Files.isDirectory(p) && pattern.match(toUnixString(baseDir.relativize(p))))
               .map(Path::toFile)
-              .toList();
+              .collect(Collectors.toCollection(ArrayList::new));
     } catch (IOException e) {
       throw new IllegalStateException("Failed to get matching files.", e);
     }
