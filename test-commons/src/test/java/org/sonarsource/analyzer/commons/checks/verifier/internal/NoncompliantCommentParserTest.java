@@ -79,10 +79,12 @@ public class NoncompliantCommentParserTest {
   public void issue_count_and_messages() throws Exception {
     assertThatThrownBy(() -> parse(file, 1, " Noncompliant 3 {{msg1}} {{msg2}} {{msg3}}"))
       .isInstanceOf(IllegalStateException.class)
-      .hasMessage("Error, you can not specify issue count and messages at line 1, you have to choose either: \n"
-        + "  Noncompliant 3\n"
-        + "or\n"
-        + "  Noncompliant {{msg1}} {{msg2}} {{msg3}}\n");
+      .hasMessage("""
+        Error, you can not specify issue count and messages at line 1, you have to choose either:\s
+          Noncompliant 3
+        or
+          Noncompliant {{msg1}} {{msg2}} {{msg3}}
+        """);
   }
 
   @Test

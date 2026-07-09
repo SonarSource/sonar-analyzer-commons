@@ -34,48 +34,58 @@ public class LineIssuesTest {
     assertMatch("#",
       "cd folder # Compliant", 1, "<null>");
     assertMatch("#",
-      "ls\n"
-        + "cd folder # Noncompliant",
-      2, ""
-        + "002: Noncompliant\n"
-        + "002: cd folder\n");
+      """
+      ls
+      cd folder # Noncompliant""",
+      2, """
+      002: Noncompliant
+      002: cd folder
+      """);
     assertMatch("//",
-      "a++; // Noncompliant {{error}}", 1, ""
-        + "001: Noncompliant {{error}}\n"
-        + "001: a++;\n");
+      "a++; // Noncompliant {{error}}", 1, """
+      001: Noncompliant {{error}}
+      001: a++;
+      """);
     assertMatch("//",
-      "a++; // Noncompliant {{error1}} {{error2}}", 1, ""
-        + "001: Noncompliant {{error1}} {{error2}}\n"
-        + "001: a++;\n");
+      "a++; // Noncompliant {{error1}} {{error2}}", 1, """
+      001: Noncompliant {{error1}} {{error2}}
+      001: a++;
+      """);
     assertMatch("//",
-      "a++; // Noncompliant 3", 1, ""
-        + "001: Noncompliant 3\n"
-        + "001: a++;\n");
+      "a++; // Noncompliant 3", 1, """
+      001: Noncompliant 3
+      001: a++;
+      """);
     assertMatch("--",
-      "\nEXEC f\n-- Noncompliant@2", 3, ""
-        + "002: Noncompliant\n"
-        + "002: EXEC f\n");
+      "\nEXEC f\n-- Noncompliant@2", 3, """
+      002: Noncompliant
+      002: EXEC f
+      """);
     assertMatch("--",
-      "\n-- Noncompliant@+1\nEXEC f\n", 2, ""
-        + "003: Noncompliant\n"
-        + "003: EXEC f\n");
+      "\n-- Noncompliant@+1\nEXEC f\n", 2, """
+      003: Noncompliant
+      003: EXEC f
+      """);
     assertMatch("--",
-      "\nEXEC f\n\n-- Noncompliant@-2", 4, ""
-        + "002: Noncompliant\n"
-        + "002: EXEC f\n");
+      "\nEXEC f\n\n-- Noncompliant@-2", 4, """
+      002: Noncompliant
+      002: EXEC f
+      """);
     assertMatch("//",
-      "i++; // Noncompliant {{error}} [[effortToFix=2]]", 1, ""
-        + "001: Noncompliant {{error}} [[effortToFix=2]]\n"
-        + "001: i++;\n");
+      "i++; // Noncompliant {{error}} [[effortToFix=2]]", 1, """
+      001: Noncompliant {{error}} [[effortToFix=2]]
+      001: i++;
+      """);
   }
 
   @Test
   public void use_another_locale() throws Exception {
     Locale.setDefault(Locale.FRANCE);
     assertMatch("//",
-      "i++; // Noncompliant {{error}} [[effortToFix=2.5]]", 1, ""
-        + "001: Noncompliant {{error}} [[effortToFix=2.5]]\n"
-        + "001: i++;\n");
+      "i++; // Noncompliant {{error}} [[effortToFix=2.5]]", 1, """
+      001: Noncompliant {{error}} [[effortToFix=2.5]]
+      001: i++;
+      """);
   }
 
   private static void assertMatch(String commentPrefix, String code, int line, String expected) {

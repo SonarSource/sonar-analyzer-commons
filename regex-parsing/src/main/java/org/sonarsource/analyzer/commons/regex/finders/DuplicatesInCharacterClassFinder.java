@@ -19,7 +19,6 @@ package org.sonarsource.analyzer.commons.regex.finders;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
@@ -55,7 +54,7 @@ public class DuplicatesInCharacterClassFinder extends RegexBaseVisitor {
       List<RegexIssueLocation> secondaries = duplicates.stream()
         .skip(1)
         .map(duplicate -> new RegexIssueLocation(duplicate, "Additional duplicate"))
-        .collect(Collectors.toList());
+        .toList();
       regexElementIssueReporter.report(duplicates.iterator().next(), MESSAGE, null, secondaries);
     }
     super.visitCharacterClassUnion(tree);

@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
@@ -72,7 +71,7 @@ public class UnicodeUnawareCharClassFinder extends RegexBaseVisitor {
     } else if (unicodeUnawareRangeSize > 1) {
       List<RegexIssueLocation> secondaries = unicodeUnawareRanges.stream()
         .map(tree -> new RegexIssueLocation(tree, "Character range"))
-        .collect(Collectors.toList());
+        .toList();
       regexElementIssueReporter.report(regexParseResult.getResult(), "Replace these character ranges with Unicode-aware character classes.", null, secondaries);
     }
 
@@ -80,7 +79,7 @@ public class UnicodeUnawareCharClassFinder extends RegexBaseVisitor {
     if (!unicodeAwareWithFlag.isEmpty() && !containsUnicodeCharacterFlag) {
       List<RegexIssueLocation> secondaries = unicodeAwareWithFlag.stream()
         .map(tree -> new RegexIssueLocation(tree, "Predefined/POSIX character class"))
-        .collect(Collectors.toList());
+        .toList();
       invocationIssueReporter.report("Enable the \"u\" flag or use a Unicode-aware alternative.", null, secondaries);
     }
   }

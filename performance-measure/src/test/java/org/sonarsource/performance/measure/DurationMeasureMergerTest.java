@@ -104,12 +104,12 @@ class DurationMeasureMergerTest {
     merger.withMaxScoreThreshold(1.06)
       .compareWithRelease(previousReleaseFolder, latestAnalysisFolder, tmpLatestAnalysisFolder, tmpGlobalPerformanceScoreFile);
 
-    assertThat(tmpGlobalPerformanceScoreFile).hasContent("" +
-      "{\n" +
-      "  \"scoreOverstepThreshold\": false,\n" +
-      "  \"score\": \"105.1%\",\n" +
-      "  \"link\": \"https://github.com/SonarSource/peachee-languages-statistics/blob/sonar-java/events/6.15.0.25780/performance.score.json\"\n" +
-      "}");
+    assertThat(tmpGlobalPerformanceScoreFile).hasContent("""
+      {
+        "scoreOverstepThreshold": false,
+        "score": "105.1%",
+        "link": "https://github.com/SonarSource/peachee-languages-statistics/blob/sonar-java/events/6.15.0.25780/performance.score.json"
+      }""");
   }
 
   @Test
@@ -126,12 +126,12 @@ class DurationMeasureMergerTest {
     Path actualScoreFile = tmpLatestAnalysisFolder.resolve("performance.score.json");
     assertSameTextContent(expectedScoreFile, actualScoreFile);
 
-    assertThat(tmpGlobalPerformanceScoreFile).hasContent("" +
-      "{\n" +
-      "  \"scoreOverstepThreshold\": false,\n" +
-      "  \"score\": \"93.5%\",\n" +
-      "  \"link\": \"https://github.com/SonarSource/peachee-languages-statistics/blob/sonar-java/events/6.15.0.25600/performance.score.json\"\n" +
-      "}");
+    assertThat(tmpGlobalPerformanceScoreFile).hasContent("""
+      {
+        "scoreOverstepThreshold": false,
+        "score": "93.5%",
+        "link": "https://github.com/SonarSource/peachee-languages-statistics/blob/sonar-java/events/6.15.0.25600/performance.score.json"
+      }""");
 
     assertThat(logger.logs().replaceAll("\\R", "\n")).isEqualTo("" +
       "[INFO] Compare Performances between release 6.14.0.25463 and latest 6.15.0.25600\n" +
@@ -163,27 +163,27 @@ class DurationMeasureMergerTest {
       .compareWithRelease(previousReleaseFolder, latestAnalysisFolder, tmpLatestAnalysisFolder, tmpGlobalPerformanceScoreFile);
 
     Path actualScoreFile = tmpLatestAnalysisFolder.resolve("performance.score.json");
-    assertThat(actualScoreFile).hasContent("" +
-      "{\n" +
-      "  \"scoreOverstepThreshold\": true,\n" +
-      "  \"score\": \"Zero Duration\",\n" +
-      "  \"durationRatioCompareToRelease\": 0.0,\n" +
-      "  \"comparedWithRelease\": \"6.14.0.25463\",\n" +
-      "  \"releaseAnalysisDuration\": \"0h00m00s\",\n" +
-      "  \"latestAnalysisDuration\": \"0h00m00s\",\n" +
-      "  \"releaseAnalysisDurationNanos\": 0,\n" +
-      "  \"latestAnalysisDurationNanos\": 0,\n" +
-      "  \"projectsMissingInRelease\": [],\n" +
-      "  \"projectsMissingInLatest\": [],\n" +
-      "  \"comparedProjects\": []\n" +
-      "}");
+    assertThat(actualScoreFile).hasContent("""
+      {
+        "scoreOverstepThreshold": true,
+        "score": "Zero Duration",
+        "durationRatioCompareToRelease": 0.0,
+        "comparedWithRelease": "6.14.0.25463",
+        "releaseAnalysisDuration": "0h00m00s",
+        "latestAnalysisDuration": "0h00m00s",
+        "releaseAnalysisDurationNanos": 0,
+        "latestAnalysisDurationNanos": 0,
+        "projectsMissingInRelease": [],
+        "projectsMissingInLatest": [],
+        "comparedProjects": []
+      }""");
 
-    assertThat(tmpGlobalPerformanceScoreFile).hasContent("" +
-      "{\n" +
-      "  \"scoreOverstepThreshold\": true,\n" +
-      "  \"score\": \"Zero Duration\",\n" +
-      "  \"link\": \"https://github.com/SonarSource/peachee-languages-statistics/blob/sonar-java/events/6.15.0.25600/performance.score.json\"\n" +
-      "}");
+    assertThat(tmpGlobalPerformanceScoreFile).hasContent("""
+      {
+        "scoreOverstepThreshold": true,
+        "score": "Zero Duration",
+        "link": "https://github.com/SonarSource/peachee-languages-statistics/blob/sonar-java/events/6.15.0.25600/performance.score.json"
+      }""");
 
     assertThat(logger.logs().replaceAll("\\R", "\n")).isEqualTo("" +
       "[INFO] Compare Performances between release 6.14.0.25463 and latest 6.15.0.25600\n" +
@@ -201,12 +201,12 @@ class DurationMeasureMergerTest {
     Path latestAnalysisFolder = Paths.get("src", "test", "resources", "events", "6.15.0.25600");
     merger.compareWithRelease(previousReleaseFolder, latestAnalysisFolder, tmpLatestAnalysisFolder, tmpGlobalPerformanceScoreFile);
 
-    assertThat(tmpGlobalPerformanceScoreFile).hasContent("" +
-      "{\n" +
-      "  \"scoreOverstepThreshold\": true,\n" +
-      "  \"score\": \"Zero Duration\",\n" +
-      "  \"link\": \"https://github.com/SonarSource/peachee-languages-statistics/blob/sonar-java/events/6.15.0.25600/performance.score.json\"\n" +
-      "}");
+    assertThat(tmpGlobalPerformanceScoreFile).hasContent("""
+      {
+        "scoreOverstepThreshold": true,
+        "score": "Zero Duration",
+        "link": "https://github.com/SonarSource/peachee-languages-statistics/blob/sonar-java/events/6.15.0.25600/performance.score.json"
+      }""");
   }
 
   static void assertSameTextContent(Path expected, Path actual) throws IOException {

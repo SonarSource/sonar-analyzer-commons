@@ -23,49 +23,49 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class MeasurementCostTest {
 
-  private static final String JSON_SAMPLE1 = "" +
-    "{ \"name\": \"root\", \"calls\": 1, \"durationNanos\": 1383187, \"children\": [\n" +
-    "    { \"name\": \"#MeasurementCost_v1\", \"calls\": 17, \"durationNanos\": 24649788, \"children\": [\n" +
-    "        { \"name\": \"createChild\", \"calls\": 17, \"durationNanos\": 3604 },\n" +
-    "        { \"name\": \"incrementChild\", \"calls\": 17, \"durationNanos\": 2753 },\n" +
-    "        { \"name\": \"nanoTime\", \"calls\": 17, \"durationNanos\": 779 },\n" +
-    "        { \"name\": \"observationCost\", \"calls\": 17, \"durationNanos\": 814 }\n" +
-    "      ]\n" +
-    "    },\n" +
-    "    { \"name\": \"child1\", \"calls\": 2, \"durationNanos\": 398244 },\n" +
-    "    { \"name\": \"child2\", \"calls\": 1, \"durationNanos\": 154332 },\n" +
-    "    { \"name\": \"child3\", \"calls\": 0, \"durationNanos\": 0 }\n" +
-    "  ]\n" +
-    "}";
+  private static final String JSON_SAMPLE1 = """
+    { "name": "root", "calls": 1, "durationNanos": 1383187, "children": [
+        { "name": "#MeasurementCost_v1", "calls": 17, "durationNanos": 24649788, "children": [
+            { "name": "createChild", "calls": 17, "durationNanos": 3604 },
+            { "name": "incrementChild", "calls": 17, "durationNanos": 2753 },
+            { "name": "nanoTime", "calls": 17, "durationNanos": 779 },
+            { "name": "observationCost", "calls": 17, "durationNanos": 814 }
+          ]
+        },
+        { "name": "child1", "calls": 2, "durationNanos": 398244 },
+        { "name": "child2", "calls": 1, "durationNanos": 154332 },
+        { "name": "child3", "calls": 0, "durationNanos": 0 }
+      ]
+    }""";
 
-  private static final String JSON_SAMPLE1_ADJUSTED = "" +
-    "{ \"name\": \"root\", \"calls\": 1, \"durationNanos\": 1382555, \"children\": [\n" +
-    "    { \"name\": \"#MeasurementCost_subtracted_v1\", \"calls\": 17, \"durationNanos\": 24649788, \"children\": [\n" +
-    "        { \"name\": \"createChild\", \"calls\": 17, \"durationNanos\": 3604 },\n" +
-    "        { \"name\": \"incrementChild\", \"calls\": 17, \"durationNanos\": 2753 },\n" +
-    "        { \"name\": \"nanoTime\", \"calls\": 17, \"durationNanos\": 779 },\n" +
-    "        { \"name\": \"observationCost\", \"calls\": 17, \"durationNanos\": 814 }\n" +
-    "      ]\n" +
-    "    },\n" +
-    "    { \"name\": \"child1\", \"calls\": 2, \"durationNanos\": 398150 },\n" +
-    "    { \"name\": \"child2\", \"calls\": 1, \"durationNanos\": 154285 },\n" +
-    "    { \"name\": \"child3\", \"calls\": 0, \"durationNanos\": 0 }\n" +
-    "  ]\n" +
-    "}";
+  private static final String JSON_SAMPLE1_ADJUSTED = """
+    { "name": "root", "calls": 1, "durationNanos": 1382555, "children": [
+        { "name": "#MeasurementCost_subtracted_v1", "calls": 17, "durationNanos": 24649788, "children": [
+            { "name": "createChild", "calls": 17, "durationNanos": 3604 },
+            { "name": "incrementChild", "calls": 17, "durationNanos": 2753 },
+            { "name": "nanoTime", "calls": 17, "durationNanos": 779 },
+            { "name": "observationCost", "calls": 17, "durationNanos": 814 }
+          ]
+        },
+        { "name": "child1", "calls": 2, "durationNanos": 398150 },
+        { "name": "child2", "calls": 1, "durationNanos": 154285 },
+        { "name": "child3", "calls": 0, "durationNanos": 0 }
+      ]
+    }""";
 
-  private static final String JSON_SAMPLE2 = "" +
-    "{ \"name\": \"root\", \"calls\": 1, \"durationNanos\": 1383187, \"children\": [\n" +
-    "    { \"name\": \"#MeasurementCost_subtracted_v1\", \"calls\": 17, \"durationNanos\": 14649788, \"children\": [\n" +
-    "        { \"name\": \"createChild\", \"calls\": 17, \"durationNanos\": 2604 },\n" +
-    "        { \"name\": \"incrementChild\", \"calls\": 17, \"durationNanos\": 1753 },\n" +
-    "        { \"name\": \"nanoTime\", \"calls\": 17, \"durationNanos\": 679 },\n" +
-    "        { \"name\": \"observationCost\", \"calls\": 17, \"durationNanos\": 714 }\n" +
-    "      ]\n" +
-    "    },\n" +
-    "    { \"name\": \"child1\", \"calls\": 2, \"durationNanos\": 398244 },\n" +
-    "    { \"name\": \"child2\", \"calls\": 1, \"durationNanos\": 154332 }\n" +
-    "  ]\n" +
-    "}";
+  private static final String JSON_SAMPLE2 = """
+    { "name": "root", "calls": 1, "durationNanos": 1383187, "children": [
+        { "name": "#MeasurementCost_subtracted_v1", "calls": 17, "durationNanos": 14649788, "children": [
+            { "name": "createChild", "calls": 17, "durationNanos": 2604 },
+            { "name": "incrementChild", "calls": 17, "durationNanos": 1753 },
+            { "name": "nanoTime", "calls": 17, "durationNanos": 679 },
+            { "name": "observationCost", "calls": 17, "durationNanos": 714 }
+          ]
+        },
+        { "name": "child1", "calls": 2, "durationNanos": 398244 },
+        { "name": "child2", "calls": 1, "durationNanos": 154332 }
+      ]
+    }""";
 
   @Test
   void observation_cost_of_v1() {
@@ -91,25 +91,25 @@ class MeasurementCostTest {
 
   @Test
   void no_observation_cost() {
-    DurationMeasure measure = DurationMeasureFiles.fromJson("" +
-      "{ \"name\": \"root\", \"calls\": 1, \"durationNanos\": 1383187, \"children\": [\n" +
-      "    { \"name\": \"child1\", \"calls\": 1, \"durationNanos\": 154332 }\n" +
-      "  ]\n" +
-      "}");
+    DurationMeasure measure = DurationMeasureFiles.fromJson("""
+      { "name": "root", "calls": 1, "durationNanos": 1383187, "children": [
+          { "name": "child1", "calls": 1, "durationNanos": 154332 }
+        ]
+      }""");
     MeasurementCost observationCost = MeasurementCost.observationCostOf(measure);
     assertThat(observationCost).isNull();
   }
 
   @Test
   void no_observation_content_error() {
-    DurationMeasure measure = DurationMeasureFiles.fromJson("" +
-      "{ \"name\": \"root\", \"calls\": 1, \"durationNanos\": 1383187, \"children\": [\n" +
-      "    { \"name\": \"#MeasurementCost_v1\", \"calls\": 17, \"durationNanos\": 24649788, \"children\": [\n" +
-      "        { \"name\": \"createChild\", \"calls\": 0, \"durationNanos\": 0 }\n" +
-      "      ]\n" +
-      "    }\n" +
-      "  ]\n" +
-      "}");
+    DurationMeasure measure = DurationMeasureFiles.fromJson("""
+      { "name": "root", "calls": 1, "durationNanos": 1383187, "children": [
+          { "name": "#MeasurementCost_v1", "calls": 17, "durationNanos": 24649788, "children": [
+              { "name": "createChild", "calls": 0, "durationNanos": 0 }
+            ]
+          }
+        ]
+      }""");
     assertThatThrownBy(() -> MeasurementCost.observationCostOf(measure))
       .isInstanceOf(IllegalStateException.class)
       .hasMessage("Missing incrementChild");

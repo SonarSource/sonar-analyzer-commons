@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 /**
@@ -64,7 +63,7 @@ public final class SecretClassifier {
     }
 
     static PatternGroup of(Category category, String... regexes) {
-      return new PatternGroup(category, Arrays.stream(regexes).map(SecretClassifier::compile).collect(Collectors.toUnmodifiableList()));
+      return new PatternGroup(category, Arrays.stream(regexes).map(SecretClassifier::compile).toList());
     }
 
     List<Pattern> patterns() {
@@ -191,7 +190,7 @@ public final class SecretClassifier {
   // Flattened once: isKnownNonSecret is on every check's hot path, so avoid re-flattening PATTERN_GROUPS per call.
   private static final List<Pattern> ALL_PATTERNS = PATTERN_GROUPS.stream()
     .flatMap(group -> group.patterns().stream())
-    .collect(Collectors.toUnmodifiableList());
+    .toList();
 
   // Well-known placeholder secrets plus config/credential vocabulary, matched in full (case-insensitive).
   private static final ExactMatchGroup SECRET_VALUES = new ExactMatchGroup(Category.SECRET, Set.of(

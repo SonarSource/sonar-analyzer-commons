@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -220,7 +219,7 @@ public final class DurationMeasureFiles {
     out.append("Total   ").append(toSeconds(totalDuration)).append("\n");
     List<DurationMeasure> checkMeasures = groupedMeasure.values().stream()
       .sorted(Comparator.comparing(c -> -c.durationNanos()))
-      .collect(Collectors.toList());
+      .toList();
     for (int i = 0; i < checkMeasures.size(); i++) {
       DurationMeasure measure = checkMeasures.get(i);
       String categoryList = "";

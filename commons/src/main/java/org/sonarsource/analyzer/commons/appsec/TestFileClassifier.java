@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +56,7 @@ public final class TestFileClassifier {
   private static final List<WildcardPattern> DEFAULT_PATTERNS =
     Stream.of("**/test/**", "**/tests/**", "**/__tests__/**")
       .map(WildcardPattern::create)
-      .collect(Collectors.toUnmodifiableList());
+      .toList();
 
   private static final Predicate<Context> NO_DETECTOR = context -> false;
 
@@ -82,7 +81,7 @@ public final class TestFileClassifier {
   public static TestFileClassifier of(Configuration configuration, Predicate<Context> detector, String... globs) {
     List<WildcardPattern> patterns = globs.length == 0
       ? DEFAULT_PATTERNS
-      : Arrays.stream(globs).map(WildcardPattern::create).collect(Collectors.toUnmodifiableList());
+      : Arrays.stream(globs).map(WildcardPattern::create).toList();
     return new TestFileClassifier(patterns, detector, isTestSourceConfigured(configuration));
   }
 

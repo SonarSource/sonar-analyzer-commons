@@ -42,8 +42,10 @@ public class PerLineLocationWriterTest {
     assertWriter(Collections.singletonList(
       new PrimaryLocation(new UnderlinedRange(42, 1, 42, 3), 0)),
       "042: int length = 300;",
-      "042: int length = 300;\n" +
-      "042: ^^^ 0\n");
+      """
+      042: int length = 300;
+      042: ^^^ 0
+      """);
   }
 
   @Test
@@ -54,9 +56,11 @@ public class PerLineLocationWriterTest {
       new PrimaryLocation(new UnderlinedRange(42, 1, 42, 3), null),
       new SecondaryLocation(new UnderlinedRange(42, 14, 42, 16), true, null, "msg2")),
       "042: int length = 300;",
-      "042: int length = 300;\n" +
-      "042: ^^^ ^^^^^^<^< {{msg1}}\n" +
-      "042:              ^^^< {{msg2}}\n");
+      """
+      042: int length = 300;
+      042: ^^^ ^^^^^^<^< {{msg1}}
+      042:              ^^^< {{msg2}}
+      """);
   }
 
   @Test
@@ -65,9 +69,11 @@ public class PerLineLocationWriterTest {
       new PrimaryLocation(new UnderlinedRange(42, 1, 42, 6), null),
       new PrimaryLocation(new UnderlinedRange(42, 7, 42, 8), null)),
       "042: length++;",
-      "042: length++;\n" +
-      "042: ^^^^^^\n" +
-      "042:       ^^\n");
+      """
+      042: length++;
+      042: ^^^^^^
+      042:       ^^
+      """);
   }
 
   private void assertWriter(List<PreciseLocation> locations, String codeLine, String expected) {

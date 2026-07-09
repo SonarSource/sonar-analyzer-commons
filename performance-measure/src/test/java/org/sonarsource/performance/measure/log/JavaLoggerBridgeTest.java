@@ -45,11 +45,12 @@ class JavaLoggerBridgeTest {
     logger.info(() -> "An info message");
     logger.warning(() -> "A warning message");
     logger.error(() -> "An error message");
-    assertThat(handler.logs).hasToString("" +
-      "[FINE] A debug message\n" +
-      "[INFO] An info message\n" +
-      "[WARNING] A warning message\n" +
-      "[SEVERE] An error message\n");
+    assertThat(handler.logs).hasToString("""
+      [FINE] A debug message
+      [INFO] An info message
+      [WARNING] A warning message
+      [SEVERE] An error message
+      """);
   }
 
   static class TestHandler extends Handler {
