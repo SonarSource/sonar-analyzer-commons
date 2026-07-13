@@ -38,6 +38,7 @@ import org.sonar.api.server.rule.RuleParamType;
 import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.utils.Version;
+import org.sonar.check.Priority;
 import org.sonar.check.Rule;
 import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKey;
 import org.sonarsource.analyzer.commons.domain.RuleManifest;
@@ -457,6 +458,62 @@ public class RuleMetadataLoaderTest {
     List<Class<?>> classes = List.of(TestRule.class);
     assertThrows("Rule not found: S404", IllegalStateException.class,
       () -> ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, classes));
+  }
+
+  @Test
+  public void load_rule_purely_from_annotation_without_resource_folder() {
+    @Rule(
+      key = "MyFirstCustomCheck",
+      name = "Return type and parameter of a method should not be the same",
+      description = "For a method having a single parameter, the types of its return value and its parameter should never be the same.",
+      priority = Priority.CRITICAL,
+      tags = {"bug"})
+    class TestRule {
+    }
+
+    ruleMetadataLoader = new RuleMetadataLoader(SONAR_RUNTIME_9_3);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("MyFirstCustomCheck");
+    assertThat(rule).isNotNull();
+    assertThat(rule.name()).isEqualTo("Return type and parameter of a method should not be the same");
+    assertThat(rule.htmlDescription())
+      .isEqualTo("For a method having a single parameter, the types of its return value and its parameter should never be the same.");
+    assertThat(rule.severity()).isEqualTo("CRITICAL");
+    // "bug" is a reserved tag: the SonarQube API converts it into the rule type and removes it from the tag list
+    assertThat(rule.type()).isEqualTo(RuleType.BUG);
+    assertThat(rule.status()).isEqualTo(RuleStatus.READY);
+    assertThat(rule.tags()).isEmpty();
+    assertThat(rule.deprecatedRuleKeys()).isEmpty();
+  }
+
+  @Test
+  public void load_rule_with_defaults_from_annotation_without_resource_folder() {
+    @Rule(key = "MyDefaultCheck", name = "My default check", description = "Description of my default check")
+    class TestRule {
+    }
+
+    ruleMetadataLoader = new RuleMetadataLoader(SONAR_RUNTIME_9_3);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("MyDefaultCheck");
+    assertThat(rule).isNotNull();
+    assertThat(rule.severity()).isEqualTo("MAJOR");
+    assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
+    assertThat(rule.status()).isEqualTo(RuleStatus.READY);
+    assertThat(rule.tags()).isEmpty();
+  }
+
+  @Test
+  public void add_rules_by_rule_key_without_resource_folder_throws() {
+    ruleMetadataLoader = new RuleMetadataLoader(SONAR_RUNTIME_9_3);
+    List<String> ruleKeys = singletonList("S100");
+    assertThrows("Resource folder is required to load a rule by its key: S100", IllegalStateException.class,
+      () -> ruleMetadataLoader.addRulesByRuleKey(newRepository, ruleKeys));
   }
 
   @Test

@@ -79,6 +79,11 @@ public class RuleMetadataLoader {
   private static final String LINEAR_FACTOR = "linearFactor";
   private static final String LINEAR_DESCRIPTION = "linearDesc";
 
+  /**
+   * Without a resource folder, rules added with {@link #addRulesByAnnotatedClass} are described entirely by the
+   * {@code org.sonar.check.Rule} annotation (name, description, priority, tags, status): no JSON/HTML resource file
+   * is read. {@link #addRulesByRuleKey} is not supported in this mode, since it has no annotation to read from.
+   */
   public RuleMetadataLoader(SonarRuntime sonarRuntime) {
     this(null, Collections.emptySet(), sonarRuntime);
   }
@@ -113,8 +118,10 @@ public class RuleMetadataLoader {
 
   private void addRuleByAnnotatedClass(NewRepository repository, Class<?> ruleClass) {
     NewRule rule = addAnnotatedRule(repository, ruleClass);
-    setDescriptionFromHtmlFile(rule);
-    setMetadataFromJsonFile(rule);
+    if (resourceFolder != null) {
+      setDescriptionFromHtmlFile(rule);
+      setMetadataFromJsonFile(rule);
+    }
     setDefaultActivation(rule);
   }
 
@@ -162,6 +169,9 @@ public class RuleMetadataLoader {
   private void addRuleByRuleKey(NewRepository repository, String ruleKey) {
     if (ruleKey.isEmpty()) {
       throw new IllegalStateException("Empty key");
+    }
+    if (resourceFolder == null) {
+      throw new IllegalStateException("Resource folder is required to load a rule by its key: " + ruleKey);
     }
     NewRule rule = repository.createRule(ruleKey);
     setDescriptionFromHtmlFile(rule);
