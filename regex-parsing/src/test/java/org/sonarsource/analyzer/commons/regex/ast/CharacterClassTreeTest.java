@@ -140,6 +140,86 @@ class CharacterClassTreeTest {
     );
   }
 
+  // Regression tests for https://github.com/SonarSource/sonar-analyzer-commons/issues/212 (ACOMMONS-3):
+  // escaped ']' and chained backslashes inside a character class must behave exactly like java.util.regex.Pattern.
+
+  @Test
+  void unclosedClassStartingWithEscapedClosingBracket() {
+    // '[\]' and '[\]a' -> the escaped ']' is a literal character and does not close the class: unclosed, like java.util.regex.Pattern.
+    assertFailParsing("[\\\\]", "Expected ']', but found the end of the regex");
+    assertFailParsing("[\\\\]a", "Expected ']', but found the end of the regex");
+  }
+
+  @Test
+  void classStartingWithEscapedClosingBracket() {
+    // '[\]a]' -> the leading '\]' is a literal ']', followed by 'a', then the class closes normally.
+    RegexTree regex = assertSuccessfulParse("[\\\\]a]");
+    CharacterClassUnionTree union = assertType(CharacterClassUnionTree.class, assertCharacterClass(false, regex));
+    assertListElements(union.getCharacterClasses(),
+      first -> assertCharacter(']', first),
+      second -> assertCharacter('a', second)
+    );
+  }
+
+  @Test
+  void classWithSingleEscapedBackslash() {
+    // '[\\]' -> a single escaped backslash, closes normally.
+    RegexTree regex = assertSuccessfulParse("[\\\\\\\\]");
+    assertCharacter('\\', assertCharacterClass(false, regex));
+  }
+
+  @Test
+  void unclosedClassWithEscapedBackslashThenEscapedClosingBracket() {
+    // '[\\\]' -> escaped backslash, then a literal (escaped) ']' that doesn't close the class: unclosed.
+    assertFailParsing("[\\\\\\\\\\\\]", "Expected ']', but found the end of the regex");
+  }
+
+  @Test
+  void unclosedClassWithEscapedBackslashThenBellEscape() {
+    // '[\\\a' -> escaped backslash, then '\a' (the alert/bell escape), but no closing ']' at all: unclosed.
+    assertFailParsing("[\\\\\\\\\\\\a", "Expected ']', but found the end of the regex");
+  }
+
+  @Test
+  void classWithEscapedBackslashThenBellEscape() {
+    // '[\\\a]' -> escaped backslash, then the alert/bell escape, closes normally.
+    RegexTree regex = assertSuccessfulParse("[\\\\\\\\\\\\a]");
+    CharacterClassUnionTree union = assertType(CharacterClassUnionTree.class, assertCharacterClass(false, regex));
+    assertListElements(union.getCharacterClasses(),
+      first -> assertCharacter('\\', first),
+      second -> assertCharacter('\u0007', second)
+    );
+  }
+
+  @Test
+  void unclosedClassWithEscapedBackslashThenEscapedClosingBracketAndChar() {
+    // '[\\\]a' -> escaped backslash, literal (escaped) ']', then 'a', but never closes: unclosed.
+    assertFailParsing("[\\\\\\\\\\\\]a", "Expected ']', but found the end of the regex");
+  }
+
+  @Test
+  void classWithEscapedBackslashThenEscapedClosingBracketAndChar() {
+    // '[\\\]a]' -> escaped backslash, literal (escaped) ']', 'a', then the class closes normally.
+    RegexTree regex = assertSuccessfulParse("[\\\\\\\\\\\\]a]");
+    CharacterClassUnionTree union = assertType(CharacterClassUnionTree.class, assertCharacterClass(false, regex));
+    assertListElements(union.getCharacterClasses(),
+      first -> assertCharacter('\\', first),
+      second -> assertCharacter(']', second),
+      third -> assertCharacter('a', third)
+    );
+  }
+
+  @Test
+  void classWithTwoEscapedBackslashes() {
+    // '[\\\\]' -> two separate escaped backslashes; both are kept in the AST, none is lost.
+    RegexTree regex = assertSuccessfulParse("[\\\\\\\\\\\\\\\\]");
+    CharacterClassUnionTree union = assertType(CharacterClassUnionTree.class, assertCharacterClass(false, regex));
+    assertListElements(union.getCharacterClasses(),
+      first -> assertCharacter('\\', first),
+      second -> assertCharacter('\\', second)
+    );
+  }
+
   @Test
   void classWithCharacterClassEscapes() {
     RegexTree regex = assertSuccessfulParse("[\\\\w\\\\s]");
