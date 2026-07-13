@@ -933,11 +933,11 @@ public class RegexParser {
   }
 
   protected CharacterClassTree parseCharacterClass() {
-    SourceCharacter openingBracket = characters.getCurrent();
-    characters.moveNext();
     // Whitespace and comments are not stripped inside character classes, even in free-spacing mode.
     boolean previousFreeSpacingMode = characters.getFreeSpacingMode();
     characters.setFreeSpacingMode(false);
+    SourceCharacter openingBracket = characters.getCurrent();
+    characters.moveNext();
     boolean negated = false;
     if (characters.currentIs('^')) {
       characters.moveNext();

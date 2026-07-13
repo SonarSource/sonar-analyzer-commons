@@ -17,6 +17,7 @@
 - '[^abc]'
 - '[^a]'
 - '[a ]': 'x' # Compliant, the space is a literal character, not a stripped whitespace
+- '[ a]': 'x' # Compliant, the leading space is a literal character, not a stripped whitespace
 - '[a]': 'x' # Noncompliant  {{Replace this character class by the character itself.}}
 - 'features': ALL | ^NESTED_CHARTER_CLASS
 - '[[a]]' # Compliant in this mode

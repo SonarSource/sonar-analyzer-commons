@@ -127,6 +127,27 @@ class CharacterClassTreeTest {
   }
 
   @Test
+  void leadingWhitespaceIsPreservedInFreeSpacingMode() {
+    RegexTree regex = assertSuccessfulParse("[ a]", Pattern.COMMENTS);
+    CharacterClassUnionTree union = assertType(CharacterClassUnionTree.class, assertCharacterClass(false, regex));
+    assertListElements(union.getCharacterClasses(),
+      first -> assertCharacter(' ', first),
+      second -> assertCharacter('a', second)
+    );
+  }
+
+  @Test
+  void leadingWhitespaceBeforeCaretPreventsNegationInFreeSpacingMode() {
+    RegexTree regex = assertSuccessfulParse("[ ^a]", Pattern.COMMENTS);
+    CharacterClassUnionTree union = assertType(CharacterClassUnionTree.class, assertCharacterClass(false, regex));
+    assertListElements(union.getCharacterClasses(),
+      first -> assertCharacter(' ', first),
+      second -> assertCharacter('^', second),
+      third -> assertCharacter('a', third)
+    );
+  }
+
+  @Test
   void negatedCharacterClass() {
     RegexTree regex = assertSuccessfulParse("[^a-z]");
     assertCharacterRange('a', 'z', assertCharacterClass(true, regex));
