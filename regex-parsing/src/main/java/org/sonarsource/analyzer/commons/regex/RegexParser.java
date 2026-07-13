@@ -933,6 +933,9 @@ public class RegexParser {
   }
 
   protected CharacterClassTree parseCharacterClass() {
+    // Whitespace and comments are not stripped inside character classes, even in free-spacing mode.
+    boolean previousFreeSpacingMode = characters.getFreeSpacingMode();
+    characters.setFreeSpacingMode(false);
     SourceCharacter openingBracket = characters.getCurrent();
     characters.moveNext();
     boolean negated = false;
@@ -946,6 +949,7 @@ public class RegexParser {
     } else {
       expected("']'");
     }
+    characters.setFreeSpacingMode(previousFreeSpacingMode);
     IndexRange range = openingBracket.getRange().extendTo(characters.getCurrentStartIndex());
     return new CharacterClassTree(source, range, openingBracket, negated, contents, activeFlags);
   }

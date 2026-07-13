@@ -96,6 +96,58 @@ class CharacterClassTreeTest {
   }
 
   @Test
+  void whitespaceIsPreservedInFreeSpacingMode() {
+    RegexTree regex = assertSuccessfulParse("[a b]", Pattern.COMMENTS);
+    CharacterClassUnionTree union = assertType(CharacterClassUnionTree.class, assertCharacterClass(false, regex));
+    assertListElements(union.getCharacterClasses(),
+      first -> assertCharacter('a', first),
+      second -> assertCharacter(' ', second),
+      third -> assertCharacter('b', third)
+    );
+  }
+
+  @Test
+  void commentsAreNotSkippedInFreeSpacingMode() {
+    RegexTree regex = assertSuccessfulParse("[a#b]", Pattern.COMMENTS);
+    CharacterClassUnionTree union = assertType(CharacterClassUnionTree.class, assertCharacterClass(false, regex));
+    assertListElements(union.getCharacterClasses(),
+      first -> assertCharacter('a', first),
+      second -> assertCharacter('#', second),
+      third -> assertCharacter('b', third)
+    );
+  }
+
+  @Test
+  void freeSpacingModeResumesAfterCharacterClass() {
+    RegexTree regex = assertSuccessfulParse("[ab] c", Pattern.COMMENTS);
+    SequenceTree sequence = assertType(SequenceTree.class, regex);
+    assertListSize(2, sequence.getItems());
+    assertCharacterClass(false, sequence.getItems().get(0));
+    assertCharacter('c', sequence.getItems().get(1));
+  }
+
+  @Test
+  void leadingWhitespaceIsPreservedInFreeSpacingMode() {
+    RegexTree regex = assertSuccessfulParse("[ a]", Pattern.COMMENTS);
+    CharacterClassUnionTree union = assertType(CharacterClassUnionTree.class, assertCharacterClass(false, regex));
+    assertListElements(union.getCharacterClasses(),
+      first -> assertCharacter(' ', first),
+      second -> assertCharacter('a', second)
+    );
+  }
+
+  @Test
+  void leadingWhitespaceBeforeCaretPreventsNegationInFreeSpacingMode() {
+    RegexTree regex = assertSuccessfulParse("[ ^a]", Pattern.COMMENTS);
+    CharacterClassUnionTree union = assertType(CharacterClassUnionTree.class, assertCharacterClass(false, regex));
+    assertListElements(union.getCharacterClasses(),
+      first -> assertCharacter(' ', first),
+      second -> assertCharacter('^', second),
+      third -> assertCharacter('a', third)
+    );
+  }
+
+  @Test
   void negatedCharacterClass() {
     RegexTree regex = assertSuccessfulParse("[^a-z]");
     assertCharacterRange('a', 'z', assertCharacterClass(true, regex));
