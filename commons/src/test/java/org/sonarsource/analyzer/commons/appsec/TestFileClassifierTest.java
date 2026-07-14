@@ -84,6 +84,8 @@ class TestFileClassifierTest {
   @Test
   void shouldFallBackToGenericTestDirectoriesWhenNoPatternsRegistered() {
     var classifier = TestFileClassifier.of(config()); // no globs registered
+    assertThat(classifier.looksLikeTestFile(file("src/Test/java/Foo.java"))).isTrue();
+    assertThat(classifier.looksLikeTestFile(file("a/Tests/Foo.java"))).isTrue();
     assertThat(classifier.looksLikeTestFile(file("src/test/java/Foo.java"))).isTrue();
     assertThat(classifier.looksLikeTestFile(file("a/tests/Foo.java"))).isTrue();
     assertThat(classifier.looksLikeTestFile(file("a/__tests__/Foo.js"))).isTrue();
