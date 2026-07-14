@@ -54,7 +54,7 @@ public final class TestFileClassifier {
 
   // Fallback when no patterns are registered: test directories only, to minimize false positives.
   private static final List<WildcardPattern> DEFAULT_PATTERNS =
-    Stream.of("**/test/**", "**/tests/**", "**/__tests__/**")
+    Stream.of("**/Test/**", "**/Tests/**", "**/test/**", "**/tests/**", "**/__tests__/**")
       .map(WildcardPattern::create)
       .toList();
 
