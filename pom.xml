@@ -77,9 +77,9 @@
     <sonarqube.api.impl.version>10.7.0.96327</sonarqube.api.impl.version>
     <version.assertj>3.27.7</version.assertj>
     <version.jsr305>3.0.2</version.jsr305>
-    <version.mockito>3.5.7</version.mockito>
+    <version.mockito>5.23.0</version.mockito>
     <version.junit>4.13.2</version.junit>
-    <version.junit-jupiter>5.8.1</version.junit-jupiter>
+    <version.junit-jupiter>5.14.3</version.junit-jupiter>
     <!-- used for deployment to SonarSource Artifactory -->
     <gitRepositoryName>sonar-analyzer-commons</gitRepositoryName>
     <artifactsToPublish>${project.groupId}:sonar-analyzer-commons:jar,${project.groupId}:sonar-analyzer-test-commons:jar,${project.groupId}:sonar-analyzer-recognizers:jar,${project.groupId}:sonar-xml-parsing:jar,${project.groupId}:test-sonar-xml-parsing:jar,${project.groupId}:sonar-regex-parsing:jar</artifactsToPublish>
