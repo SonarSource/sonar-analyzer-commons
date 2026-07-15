@@ -127,6 +127,12 @@ class TestFileClassifierTest {
   }
 
   @Test
+  void shouldDisableHeuristicOnSecretsOptOutProperty() {
+    var classifier = classifier(config(TestFileClassifier.HEURISTIC_DISABLED_KEY_SONARTEXT, "true"));
+    assertThat(classifier.looksLikeTestFile(file("a/FooTest.java"))).isFalse();
+  }
+
+  @Test
   void contextOverloadShouldMatchConvenienceOverload() {
     var classifier = classifier(config());
     var testFile = file("a/FooTest.java");

@@ -41,6 +41,9 @@ public final class TestFileClassifier {
   /** Generic opt-out: disables the test-file heuristic for every analyzer that uses this classifier. */
   public static final String HEURISTIC_DISABLED_KEY = "sonar.testFileHeuristic.disabled";
 
+  /** sonar-text's equivalent opt-out; also disables the test-file heuristic. */
+  public static final String HEURISTIC_DISABLED_KEY_SONARTEXT = "sonar.secrets.disableTestFileDetection";
+
   private static final Logger LOG = LoggerFactory.getLogger(TestFileClassifier.class);
 
   private static final String HEURISTIC_APPLIED_WARNING =
@@ -108,7 +111,8 @@ public final class TestFileClassifier {
 
   private static boolean isTestSourceConfigured(Configuration config) {
     return isSet(config, "sonar.tests")
-      || config.getBoolean(HEURISTIC_DISABLED_KEY).orElse(false);
+      || config.getBoolean(HEURISTIC_DISABLED_KEY).orElse(false)
+      || config.getBoolean(HEURISTIC_DISABLED_KEY_SONARTEXT).orElse(false);
   }
 
   private static boolean isSet(Configuration config, String key) {
