@@ -289,8 +289,8 @@ public final class SecretClassifier {
     return PATTERN_GROUPS.stream()
       .map(group -> new PatternGroupView(
         group.category.name(),
-        group.patterns().stream().map(Pattern::pattern).collect(Collectors.toUnmodifiableList())))
-      .collect(Collectors.toUnmodifiableList());
+        group.patterns().stream().map(Pattern::pattern).toList()))
+      .toList();
   }
 
   /**
@@ -302,7 +302,7 @@ public final class SecretClassifier {
   public static List<ExactMatchGroupView> exportExactMatchGroups() {
     return List.of(new ExactMatchGroupView(
       SECRET_VALUES.category.name(),
-      SECRET_VALUES.values().stream().sorted().collect(Collectors.toUnmodifiableList())));
+      SECRET_VALUES.values().stream().sorted().toList()));
   }
 
   /**

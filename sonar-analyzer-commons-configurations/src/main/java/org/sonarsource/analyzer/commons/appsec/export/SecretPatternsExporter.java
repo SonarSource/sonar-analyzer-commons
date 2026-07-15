@@ -114,7 +114,7 @@ public final class SecretPatternsExporter {
   }
 
   private static List<String> translate(List<String> regexes) {
-    return regexes.stream().map(RegexTranslator::toPortableRegex).collect(Collectors.toList());
+    return regexes.stream().map(RegexTranslator::toPortableRegex).toList();
   }
 
   /** Visible for testing: confirms the exporter's output is a compilable Java regex too. */

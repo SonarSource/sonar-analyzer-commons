@@ -62,9 +62,10 @@ class SecretPatternsExporterTest {
     // Parses back to a single JSON object.
     assertThat(new JSONParser().parse(json)).isInstanceOf(JSONObject.class);
     // Deterministic artifact that diffs cleanly: pretty-printed (indented, multi-line) and newline-terminated.
-    assertThat(json).startsWith("{\n");
-    assertThat(json).contains("\n  \"");
-    assertThat(json).endsWith("}\n");
+    assertThat(json)
+      .startsWith("{\n")
+      .contains("\n  \"")
+      .endsWith("}\n");
     assertThat(json.lines().count()).isGreaterThan(1);
   }
 

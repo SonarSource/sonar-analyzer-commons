@@ -196,6 +196,6 @@ class RegexTranslatorTest {
   private static List<String> sourceRegexes() {
     return SecretClassifier.exportPatternGroups().stream()
       .flatMap(group -> group.regexes().stream())
-      .collect(java.util.stream.Collectors.toList());
+      .toList();
   }
 }

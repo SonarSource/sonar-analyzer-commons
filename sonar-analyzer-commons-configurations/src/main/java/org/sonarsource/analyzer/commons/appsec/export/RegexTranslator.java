@@ -20,6 +20,10 @@ import org.sonarsource.analyzer.commons.appsec.SecretClassifier;
 
 public class RegexTranslator {
 
+  private RegexTranslator() {
+    // utility class
+  }
+
   /**
    * Rewrites possessive quantifiers to atomic groups so the regex is valid .NET while keeping
    * the exact same matching semantics: {@code X*+ -> (?>X*)}, {@code X++ -> (?>X+)}, {@code X?+ -> (?>X?)},
@@ -104,18 +108,15 @@ public class RegexTranslator {
       }
       char d = regex.charAt(i + 1);
       switch (d) {
-        case 'Q':
-        case 'E':
+        case 'Q', 'E':
           throw unsupportedConstruct("\\Q...\\E literal quoting", regex);
         case '0':
           throw unsupportedConstruct("\\0nn octal escape", regex);
         case 'R':
           throw unsupportedConstruct("\\R linebreak matcher", regex);
-        case 'h':
-        case 'H':
+        case 'h', 'H':
           throw unsupportedConstruct("\\h / \\H horizontal-whitespace class", regex);
-        case 'v':
-        case 'V':
+        case 'v', 'V':
           throw unsupportedConstruct("\\v / \\V vertical-whitespace class", regex);
         case 'X':
           throw unsupportedConstruct("\\X grapheme cluster", regex);
