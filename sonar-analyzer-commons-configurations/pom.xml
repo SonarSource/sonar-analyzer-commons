@@ -18,7 +18,7 @@
     <exporter.mainClass>org.sonarsource.analyzer.commons.appsec.export.SecretPatternsExporter</exporter.mainClass>
     <!-- Written by the exporter, then packaged as the raw JSON artifact and bundled into the nupkg/npm archives. -->
     <generated.json>${project.build.directory}/generated-resources/secret-patterns.json</generated.json>
-    <version.exec.plugin>3.2.0</version.exec.plugin>
+    <version.exec.plugin>3.6.3</version.exec.plugin>
     <version.build-helper.plugin>3.6.1</version.build-helper.plugin>
   </properties>
 
