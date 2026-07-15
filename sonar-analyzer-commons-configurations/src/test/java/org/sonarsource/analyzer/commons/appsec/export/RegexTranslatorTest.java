@@ -51,17 +51,17 @@ class RegexTranslatorTest {
 
   static Stream<Arguments> translationCases() {
     return Stream.of(
-      // possessive quantifiers become atomic groups
-      Arguments.of("a++", "(?>a+)"),
-      Arguments.of("a*+", "(?>a*)"),
-      Arguments.of("a?+", "(?>a?)"),
-      Arguments.of("[^}]++", "(?>[^}]+)"),
-      Arguments.of("\\d{0,5}+", "(?>\\d{0,5})"),
-      Arguments.of("\\k<repeated>*+", "(?>\\k<repeated>*)"),
-      // nested possessive quantifiers, inner and outer both rewritten
-      Arguments.of("(?:/[a-z0-9_.-]++){3,}+", "(?>(?:/(?>[a-z0-9_.-]+)){3,})"),
+      // possessive quantifiers become plain greedy quantifiers (JS/RE2 support neither possessive nor atomic groups)
+      Arguments.of("a++", "a+"),
+      Arguments.of("a*+", "a*"),
+      Arguments.of("a?+", "a?"),
+      Arguments.of("[^}]++", "[^}]+"),
+      Arguments.of("\\d{0,5}+", "\\d{0,5}"),
+      Arguments.of("\\k<repeated>*+", "\\k<repeated>*"),
+      // nested possessive quantifiers, inner and outer both rewritten to greedy
+      Arguments.of("(?:/[a-z0-9_.-]++){3,}+", "(?:/[a-z0-9_.-]+){3,}"),
       // escaped delimiters around a possessive negated class
-      Arguments.of("^%?\\{[^}]++\\}$", "^%?\\{(?>[^}]+)\\}$"),
+      Arguments.of("^%?\\{[^}]++\\}$", "^%?\\{[^}]+\\}$"),
       // greedy / lazy / fixed quantifiers are preserved
       Arguments.of("a+", "a+"),
       Arguments.of("a+?", "a+?"),
@@ -83,8 +83,42 @@ class RegexTranslatorTest {
 
   @ParameterizedTest
   @MethodSource("translationCases")
-  void shouldTranslatePossessiveQuantifiersToAtomicGroups(String input, String expected) {
+  void shouldRewritePossessiveQuantifiersToGreedy(String input, String expected) {
     assertThat(RegexTranslator.toPortableRegex(input)).isEqualTo(expected);
+  }
+
+  static Stream<String> redosProneRewrites() {
+    return Stream.of(
+      // dropping the possessive marker would leave nested unbounded quantifiers with no atomic-group guard
+      "(?:\\w+)++",
+      "(a+)*+",
+      "(?:[a-z]+)*+",
+      "(\\d+){2,}+");
+  }
+
+  @ParameterizedTest
+  @MethodSource("redosProneRewrites")
+  void shouldRejectRewritesThatWouldBecomeReDoSProne(String input) {
+    assertThatThrownBy(() -> RegexTranslator.toPortableRegex(input))
+      .isInstanceOf(IllegalArgumentException.class)
+      .hasMessageContaining("ReDoS-prone")
+      .hasMessageContaining(input);
+  }
+
+  @Test
+  void shouldAllowNestedQuantifiersSeparatedByARequiredLiteral() {
+    // Each iteration must start with '/', so this is unambiguous and safe to flatten to greedy - the shape
+    // SecretClassifier actually ships. It must not be mistaken for the ReDoS-prone nested form.
+    assertThat(RegexTranslator.toPortableRegex("(?:/[^/]++){3,}+")).isEqualTo("(?:/[^/]+){3,}");
+  }
+
+  @Test
+  void exportedPatternsShouldContainNoAtomicGroups() {
+    for (String regex : sourceRegexes()) {
+      assertThat(RegexTranslator.toPortableRegex(regex))
+        .as("atomic group remains in translated pattern (unsupported by JavaScript): %s", regex)
+        .doesNotContain("(?>");
+    }
   }
 
   static Stream<Arguments> unsupportedConstructs() {

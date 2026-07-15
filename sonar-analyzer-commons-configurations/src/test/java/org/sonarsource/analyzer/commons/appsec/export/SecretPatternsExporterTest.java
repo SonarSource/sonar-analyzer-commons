@@ -93,7 +93,7 @@ class SecretPatternsExporterTest {
         assertThat(RegexTranslator.toPortableRegex(pattern))
           .as("exported pattern is not fully translated: %s", pattern)
           .isEqualTo(pattern);
-        // ...and it is a regex the .NET-portable form still compiles as Java too.
+        // ...and the portable form still compiles as a Java regex too.
         assertThat(SecretPatternsExporter.compilePortable(pattern))
           .as("exported pattern does not compile: %s", pattern)
           .isNotNull();

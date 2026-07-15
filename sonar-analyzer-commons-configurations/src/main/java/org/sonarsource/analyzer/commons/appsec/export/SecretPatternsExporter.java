@@ -34,9 +34,11 @@ import org.sonarsource.analyzer.commons.appsec.SecretClassifier;
  * Generates the machine-readable JSON export of {@link SecretClassifier}'s secret-exclusion patterns, the single
  * source of truth shared with non-JVM analyzers (SonarJS, sonar-dotnet, …).
  *
- * <p>The JVM classifier keeps its possessive quantifiers for performance; on export they are rewritten to the
- * semantically identical atomic groups ({@code X++} &rarr; {@code (?>X+)}), which .NET supports and possessive
- * quantifiers do not. See {@link RegexTranslator#toPortableRegex(String)}.
+ * <p>The JVM classifier keeps its possessive quantifiers for performance; on export they are rewritten to plain
+ * greedy quantifiers ({@code X++} &rarr; {@code X+}) so a single regex compiles in every consumer — .NET, JavaScript
+ * and Swift. JavaScript supports neither possessive quantifiers nor atomic groups, so atomicity is dropped rather
+ * than preserved as {@code (?>X+)}; this is match-preserving for the current patterns. See
+ * {@link RegexTranslator#toPortableRegex(String)}.
  *
  * <p>Output is deterministic and pretty-printed so the artifact diffs cleanly. Run via {@code exec:java} at build time;
  * {@code main} takes the target file path as its single argument.
