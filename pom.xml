@@ -56,6 +56,7 @@
 
   <modules>
     <module>commons</module>
+    <module>sonar-analyzer-commons-configurations</module>
     <module>recognizers</module>
     <module>test-commons</module>
     <module>xml-parsing</module>
@@ -80,9 +81,10 @@
     <version.mockito>5.23.0</version.mockito>
     <version.junit>4.13.2</version.junit>
     <version.junit-jupiter>5.14.4</version.junit-jupiter>
+    <version.gson>2.14.0</version.gson>
     <!-- used for deployment to SonarSource Artifactory -->
     <gitRepositoryName>sonar-analyzer-commons</gitRepositoryName>
-    <artifactsToPublish>${project.groupId}:sonar-analyzer-commons:jar,${project.groupId}:sonar-analyzer-test-commons:jar,${project.groupId}:sonar-analyzer-recognizers:jar,${project.groupId}:sonar-xml-parsing:jar,${project.groupId}:test-sonar-xml-parsing:jar,${project.groupId}:sonar-regex-parsing:jar</artifactsToPublish>
+    <artifactsToPublish>${project.groupId}:sonar-analyzer-commons:jar,${project.groupId}:sonar-analyzer-test-commons:jar,${project.groupId}:sonar-analyzer-recognizers:jar,${project.groupId}:sonar-xml-parsing:jar,${project.groupId}:test-sonar-xml-parsing:jar,${project.groupId}:sonar-regex-parsing:jar,${project.groupId}:sonar-analyzer-commons-configurations:json</artifactsToPublish>
     <!-- this property configures the settings in parent pom -->
     <jdk.min.version>17</jdk.min.version>
     <maven.compiler.release>${jdk.min.version}</maven.compiler.release>
@@ -124,6 +126,11 @@
         <groupId>com.googlecode.json-simple</groupId>
         <artifactId>json-simple</artifactId>
         <version>1.1.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>${version.gson}</version>
       </dependency>
 
       <!-- TEST -->

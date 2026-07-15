@@ -1,0 +1,13 @@
+{
+  "name": "@sonarsource/analyzer-commons-configurations",
+  "version": "${package.version}",
+  "description": "Shared analyzer configuration data (secret-exclusion regexes) generated from the sonar-analyzer-commons SecretClassifier, for use by non-JVM SonarSource analyzers.",
+  "license": "LGPL-3.0-only",
+  "files": [
+    "secret-patterns.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SonarSource/sonar-analyzer-commons.git"
+  }
+}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 http://maven.apache.org/xsd/assembly-2.2.0.xsd">
+  <!-- An npm package is a gzipped tar whose entries all live under a top-level "package/" directory.
+       build-helper re-attaches the produced .tar.gz with type=tgz. -->
+  <id>npm</id>
+  <formats>
+    <format>tar.gz</format>
+  </formats>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <files>
+    <file>
+      <source>${project.build.directory}/packaging/npm/package.json</source>
+      <outputDirectory>package</outputDirectory>
+      <destName>package.json</destName>
+    </file>
+    <file>
+      <source>${project.build.directory}/generated-resources/secret-patterns.json</source>
+      <outputDirectory>package</outputDirectory>
+      <destName>secret-patterns.json</destName>
+    </file>
+  </files>
+</assembly>

@@ -276,6 +276,81 @@ public final class SecretClassifier {
   }
 
   /**
+   * Returns the skip-pattern groups as raw regex source strings, grouped by {@link Category}, in declaration order.
+   *
+   * <p>Exposed so the build can emit a single machine-readable export (JSON) of the very patterns the JVM classifier
+   * uses, keeping non-JVM analyzers (SonarJS, sonar-dotnet, …) in sync without duplicating the list. The patterns are
+   * applied case-insensitively with "find" (search-anywhere) semantics, matching {@link #isKnownNonSecret(String, Context)}.
+   *
+   * @return an immutable, ordered list of pattern groups
+   */
+  public static List<PatternGroupView> exportPatternGroups() {
+    return PATTERN_GROUPS.stream()
+      .map(group -> new PatternGroupView(
+        group.category.name(),
+        group.patterns().stream().map(Pattern::pattern).toList()))
+      .toList();
+  }
+
+  /**
+   * Returns the exact-match value groups, matched in full and case-insensitively, grouped by {@link Category}.
+   * Values are sorted so the export is deterministic.
+   *
+   * @return an immutable, ordered list of exact-match groups
+   */
+  public static List<ExactMatchGroupView> exportExactMatchGroups() {
+    return List.of(new ExactMatchGroupView(
+      SECRET_VALUES.category.name(),
+      SECRET_VALUES.values().stream().sorted().toList()));
+  }
+
+  /**
+   * A group of skip regexes sharing a {@link Category}, exposed for machine-readable export.
+   * The regexes are the raw Java source patterns; callers that target other engines are responsible for any
+   * translation (e.g. possessive quantifiers to atomic groups for .NET).
+   */
+  public static final class PatternGroupView {
+    private final String category;
+    private final List<String> regexes;
+
+    private PatternGroupView(String category, List<String> regexes) {
+      this.category = category;
+      this.regexes = regexes;
+    }
+
+    /** The {@link Category} name this group belongs to. */
+    public String category() {
+      return category;
+    }
+
+    /** The raw regex source strings, in declaration order. */
+    public List<String> regexes() {
+      return regexes;
+    }
+  }
+
+  /** A group of exact-match values sharing a {@link Category}, exposed for machine-readable export. */
+  public static final class ExactMatchGroupView {
+    private final String category;
+    private final List<String> values;
+
+    private ExactMatchGroupView(String category, List<String> values) {
+      this.category = category;
+      this.values = values;
+    }
+
+    /** The {@link Category} name this group belongs to. */
+    public String category() {
+      return category;
+    }
+
+    /** The exact-match values, sorted, matched in full and case-insensitively. */
+    public List<String> values() {
+      return values;
+    }
+  }
+
+  /**
    * Surrounding information passed alongside the candidate value to {@link #isKnownNonSecret(String, Context)}.
    *
    * <p>The interface is intentionally empty for now. It is a stable extension point: future accessors (for example the

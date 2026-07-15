@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.sonarsource.analyzer-commons</groupId>
+    <artifactId>sonar-analyzer-commons-parent</artifactId>
+    <version>2.28.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>sonar-analyzer-commons-configurations</artifactId>
+  <name>SonarSource Analyzers Commons Configurations</name>
+  <description>Machine-readable export (JSON, .nupkg, npm .tgz) of shared analyzer configuration generated from
+    sonar-analyzer-commons, so non-JVM analyzers can consume the same secret-exclusion patterns without drift</description>
+
+  <properties>
+    <exporter.mainClass>org.sonarsource.analyzer.commons.appsec.export.SecretPatternsExporter</exporter.mainClass>
+    <!-- Written by the exporter, then packaged as the raw JSON artifact and bundled into the nupkg/npm archives. -->
+    <generated.json>${project.build.directory}/generated-resources/secret-patterns.json</generated.json>
+    <version.exec.plugin>3.2.0</version.exec.plugin>
+    <version.build-helper.plugin>3.6.1</version.build-helper.plugin>
+  </properties>
+
+  <dependencies>
+    <!-- COMPILE -->
+    <dependency>
+      <groupId>org.sonarsource.analyzer-commons</groupId>
+      <artifactId>sonar-analyzer-commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+    </dependency>
+
+    <!-- TEST -->
+    <dependency>
+      <groupId>com.googlecode.json-simple</groupId>
+      <artifactId>json-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- 1. generate-resources is too early (before compile); generate the JSON at prepare-package,
+           after the exporter and its dependencies are compiled. -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${version.exec.plugin}</version>
+        <executions>
+          <execution>
+            <id>generate-secret-patterns-json</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>${exporter.mainClass}</mainClass>
+              <arguments>
+                <argument>${generated.json}</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- 2. Filter the NuGet/npm manifest templates with the resolved ${package.version}. Templates live outside
+           src/main/resources so they are not copied into the (unpublished) helper jar. -->
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>filter-packaging-templates</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/packaging</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.basedir}/src/main/packaging</directory>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+              <!-- Keep dotfiles such as _rels/.rels, required by the OPC (.nupkg) layout. -->
+              <useDefaultExcludes>false</useDefaultExcludes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- 3. Assemble the .nupkg (OPC zip) and npm .tgz (tar.gz) into target/. These are NOT Maven artifacts: the
+           .nupkg is signed and pushed to the Repox NuGet feed by the CI workflow, which reads it straight from
+           target/ (see .github/workflows/build.yml). Only the raw JSON is attached to the Maven reactor below. -->
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>build-configuration-packages</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <!-- Not attached to the reactor: distributed via the NuGet feed / (future) npm registry, not Maven. -->
+              <attach>false</attach>
+              <descriptors>
+                <descriptor>src/main/assembly/nupkg.xml</descriptor>
+                <descriptor>src/main/assembly/npm.xml</descriptor>
+              </descriptors>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- 4. Derive ${package.version} (initialize) and attach the raw JSON as a Maven artifact (package). The
+           .nupkg/.tgz are intentionally not attached here - they are published outside Maven (NuGet feed / npm). -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>${version.build-helper.plugin}</version>
+        <executions>
+          <execution>
+            <id>strip-snapshot-for-package-version</id>
+            <phase>initialize</phase>
+            <goals>
+              <goal>regex-property</goal>
+            </goals>
+            <configuration>
+              <name>package.version</name>
+              <value>${project.version}</value>
+              <regex>-SNAPSHOT$</regex>
+              <replacement></replacement>
+              <failIfNoMatch>false</failIfNoMatch>
+            </configuration>
+          </execution>
+          <execution>
+            <id>attach-configuration-artifacts</id>
+            <phase>package</phase>
+            <goals>
+              <goal>attach-artifact</goal>
+            </goals>
+            <configuration>
+              <artifacts>
+                <artifact>
+                  <file>${generated.json}</file>
+                  <type>json</type>
+                </artifact>
+              </artifacts>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
