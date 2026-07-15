@@ -113,6 +113,18 @@ class RegexTranslatorTest {
   }
 
   @Test
+  void shouldConservativelyRejectUnboundedClassWithTrailingDelimiter() {
+    // (?:[^/]++/){2,}+ is in fact safe (each iteration must consume the trailing '/'), but proving that requires
+    // showing the leading class excludes the delimiter, and the look-alike (?:.++/){2,}+ is the genuinely
+    // ReDoS-prone (.*/)+ form. The first-atom guard deliberately errs toward rejection here rather than build that
+    // class-exclusion analysis; see RegexTranslator#rejectNestedUnboundedQuantifier. Pinned so it is not "fixed"
+    // into silently accepting the dangerous look-alike.
+    assertThatThrownBy(() -> RegexTranslator.toPortableRegex("(?:[^/]++/){2,}+"))
+      .isInstanceOf(IllegalArgumentException.class)
+      .hasMessageContaining("ReDoS-prone");
+  }
+
+  @Test
   void exportedPatternsShouldContainNoAtomicGroups() {
     for (String regex : sourceRegexes()) {
       assertThat(RegexTranslator.toPortableRegex(regex))

@@ -279,6 +279,24 @@ public class RegexTranslator {
    * one: an unbounded quantifier applied to a group whose body itself begins with an unbounded quantifier, e.g.
    * {@code (?:X+)++} or {@code (a+)*+}. Once the possessive marker is dropped these become the classic nested
    * unbounded shape {@code (?:X+)+}, which a JavaScript/RE2 consumer has no atomic groups to guard against.
+   *
+   * <p>The test is deliberately conservative: it only inspects whether the group body <em>starts</em> with an
+   * unbounded quantifier (see {@link #groupBodyStartsWithUnboundedQuantifier}). That is the shape every current
+   * {@link SecretClassifier} pattern relies on to keep an unbounded class safe — a required delimiter at the front,
+   * as in {@code (?:/[^/]++){3,}+}, is not flagged because the leading {@code /} is a bounded literal. Two
+   * imprecisions follow from that narrow test, both acceptable for a build-time guard that must never let a
+   * ReDoS-prone regex through:
+   * <ul>
+   *   <li><b>It may over-reject.</b> A pattern that anchors its unbounded class with a <em>trailing</em> delimiter,
+   *       e.g. {@code (?:[^/]++/){2,}+}, is in fact safe (every iteration must consume the {@code /}) yet is still
+   *       rejected. Proving such a pattern safe means proving the leading class <em>excludes</em> the trailing
+   *       delimiter, and the look-alike {@code (?:.++/){2,}+} is the genuinely dangerous {@code (.&#42;/)+}. Rather than
+   *       build that class-exclusion analysis we err toward rejection. No shipped pattern hits this; a future one
+   *       that does fails the export loudly and can be revisited here.</li>
+   *   <li><b>It may under-detect.</b> Ambiguity that is not visible in the first atom, such as an unbounded
+   *       alternation branch {@code (?:a|b+)+}, is not caught. Adding such a pattern to {@link SecretClassifier}
+   *       would require extending this guard.</li>
+   * </ul>
    */
   private static void rejectNestedUnboundedQuantifier(String atom, String base, String regex) {
     if (isUnbounded(base) && !atom.isEmpty() && atom.charAt(0) == '(' && groupBodyStartsWithUnboundedQuantifier(atom)) {
@@ -294,10 +312,15 @@ public class RegexTranslator {
     return "*".equals(base) || "+".equals(base) || base.matches("\\{\\d+,}");
   }
 
-  /** Whether the first atom in the body of {@code group} (a string starting with {@code (}) carries an unbounded quantifier. */
+  /**
+   * Whether the body of {@code group} (a string starting with {@code (}) <em>starts</em> with an atom carrying an
+   * unbounded quantifier. This is the deliberately narrow, first-atom-only test described on
+   * {@link #rejectNestedUnboundedQuantifier}; it is not a general ambiguity analysis.
+   */
   private static boolean groupBodyStartsWithUnboundedQuantifier(String group) {
     int start = groupBodyStart(group, 0);
-    int close = group.length() - 1; // the group's own closing ')'
+    // the group's own closing ')'
+    int close = group.length() - 1;
     if (start >= close) {
       return false;
     }
