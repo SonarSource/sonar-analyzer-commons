@@ -77,3 +77,45 @@ jobs:
             --source-repo="sonarsource-nuget-public" \
             --copy=true
 
+  # Promote the npm package from the public build feed to the release feed. As with NuGet, the Maven
+  # release above does not handle it (the .tgz is published to the npm feed, not as a Maven artifact).
+  promote-npm:
+    needs: [release]
+    runs-on: sonar-xs-public
+    name: Promote npm to releases
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Install jfrog-cli
+        uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
+        with:
+          cache: true
+          tool_versions: |
+            jfrog-cli 2.103
+      - name: Get promoter token
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | PROMOTER_ACCESS_TOKEN;
+      - name: Promote npm package to releases
+        shell: bash
+        env:
+          PROMOTER_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).PROMOTER_ACCESS_TOKEN }}
+          # The release tag is the full 4-part version, e.g. 2.27.0.5000; the build number is its last segment.
+          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          BUILD_NAME="${GITHUB_REPOSITORY#*/}_npm"
+          BUILD_NUMBER="${RELEASE_VERSION##*.}"
+          jf config add repox \
+            --artifactory-url="https://repox.jfrog.io/artifactory" \
+            --access-token="$PROMOTER_ACCESS_TOKEN" \
+            --interactive=false
+          jf config use repox
+          jf rt build-promote "$BUILD_NAME" "$BUILD_NUMBER" "sonarsource-npm-public-releases" \
+            --status="Released" \
+            --source-repo="sonarsource-npm-public-builds" \
+            --copy=true
+
