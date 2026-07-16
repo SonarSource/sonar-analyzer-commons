@@ -241,12 +241,8 @@ jobs:
       contents: write
     steps:
       - *checkout
-      # Promote the separate `_npm` build-info with the standard action, same as the Maven `promote` job.
-      # promote-pull-request is false because npm has no -dev feed: PR builds stay in -qa, while master/
-      # branch-* builds move the .tgz to -builds (target derived from the build-info's ARTIFACTORY_DEPLOY_REPO,
-      # …-qa -> …-builds), which the virtual `npm` repo aggregates for SonarJS to consume.
       - name: Promote npm build
         uses: SonarSource/ci-github-actions/promote@v1
         with:
           build-name: ${{ github.event.repository.name }}_npm
-          promote-pull-request: false
+          promote-pull-request: true
