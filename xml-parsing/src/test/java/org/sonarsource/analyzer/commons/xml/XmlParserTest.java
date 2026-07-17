@@ -471,10 +471,10 @@ public class XmlParserTest {
   }
 
   /**
-   * Detailed in SONARXML-73, should be fixed with https://github.com/FasterXML/woodstox/issues/67
+   * Regression test for https://github.com/FasterXML/woodstox/issues/67
    */
   @Test
-  public void testCommentInDoctypeProduceWrongLocations() throws Exception {
+  public void testCommentInDoctypeProducesCorrectLocations() throws Exception {
     Document document = XmlFile.create("""
       <?xml version="1.0"?>
       <!DOCTYPE menu [
@@ -488,9 +488,7 @@ public class XmlParserTest {
     DocumentType documentType = (DocumentType) document.getFirstChild();
     assertRange(documentType, Location.NODE, 2, 0, 7, 2);
     Node lastChild = document.getLastChild();
-    // location of the node is wrong, should be line 8, events are not at the correct place
-    // See https://github.com/FasterXML/woodstox/issues/67
-    assertRange(lastChild, Location.NODE, 7, 0, 7, 25);
+    assertRange(lastChild, Location.NODE, 8, 0, 8, 25);
 
     document = XmlFile.create("""
       <?xml version="1.0"?>
@@ -505,7 +503,6 @@ public class XmlParserTest {
     documentType = (DocumentType) document.getFirstChild();
     assertRange(documentType, Location.NODE, 2, 0, 7, 2);
     lastChild = document.getLastChild();
-    // location is correct
     assertRange(lastChild, Location.NODE, 8, 0, 8, 25);
   }
 
