@@ -262,16 +262,14 @@ public class RegexTranslator {
     } else {
       return null;
     }
-    boolean possessive = false;
     boolean lazy = false;
     if (after < n && re.charAt(after) == '+') {
-      possessive = true;
       after++;
     } else if (after < n && re.charAt(after) == '?') {
       lazy = true;
       after++;
     }
-    return new RegexTranslator.Quantifier(base, possessive, lazy, after);
+    return new RegexTranslator.Quantifier(base, lazy, after);
   }
 
   /**
@@ -346,13 +344,11 @@ public class RegexTranslator {
 
   private static final class Quantifier {
     private final String base;
-    private final boolean possessive;
     private final boolean lazy;
     private final int next;
 
-    private Quantifier(String base, boolean possessive, boolean lazy, int next) {
+    private Quantifier(String base, boolean lazy, int next) {
       this.base = base;
-      this.possessive = possessive;
       this.lazy = lazy;
       this.next = next;
     }
