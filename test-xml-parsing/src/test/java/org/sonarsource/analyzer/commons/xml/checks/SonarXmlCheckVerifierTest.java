@@ -18,7 +18,7 @@ package org.sonarsource.analyzer.commons.xml.checks;
 
 import org.assertj.core.util.Lists;
 import org.junit.Test;
-import org.sonar.api.config.internal.MapSettings;
+import org.sonar.scanner.plugin.api.impl.config.MapSettings;
 import org.sonarsource.analyzer.commons.xml.XmlFile;
 import org.w3c.dom.Element;
 

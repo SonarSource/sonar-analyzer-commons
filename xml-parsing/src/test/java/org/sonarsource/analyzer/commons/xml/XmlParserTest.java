@@ -16,13 +16,13 @@
  */
 package org.sonarsource.analyzer.commons.xml;
 
+import com.sonarsource.scanner.engine.sensor.test.fixtures.TestInputFileBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import org.junit.Test;
 import org.sonar.api.batch.fs.InputFile;
-import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
 import org.sonarsource.analyzer.commons.xml.PrologElement.PrologAttribute;
 import org.sonarsource.analyzer.commons.xml.XmlFile.Location;
 import org.w3c.dom.Attr;
