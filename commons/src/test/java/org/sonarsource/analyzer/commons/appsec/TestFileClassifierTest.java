@@ -16,6 +16,7 @@
  */
 package org.sonarsource.analyzer.commons.appsec;
 
+import com.sonarsource.scanner.engine.sensor.test.fixtures.TestInputFileBuilder;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -23,10 +24,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.event.Level;
 import org.sonar.api.batch.fs.InputFile;
-import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
 import org.sonar.api.config.Configuration;
-import org.sonar.api.config.internal.MapSettings;
 import org.sonar.api.testfixtures.log.LogTesterJUnit5;
+import org.sonar.scanner.plugin.api.impl.config.MapSettings;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

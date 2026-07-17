@@ -16,6 +16,7 @@
  */
 package org.sonarsource.analyzer.commons.xml;
 
+import com.sonarsource.scanner.engine.sensor.test.fixtures.TestInputFileBuilder;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -23,7 +24,6 @@ import org.assertj.core.api.AbstractListAssert;
 import org.assertj.core.api.ObjectAssert;
 import org.junit.Test;
 import org.sonar.api.batch.fs.InputFile;
-import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
 import org.sonarsource.analyzer.commons.xml.XmlFile.Location;
 import org.w3c.dom.Attr;
 import org.w3c.dom.CDATASection;

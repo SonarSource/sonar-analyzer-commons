@@ -75,7 +75,7 @@
   <properties>
     <!-- versions -->
     <version.sonar.plugin.api>13.8.0.4399</version.sonar.plugin.api>
-    <sonarqube.api.impl.version>10.7.0.96327</sonarqube.api.impl.version>
+    <version.sonar.scanner>13.4.1.4007</version.sonar.scanner>
     <version.assertj>3.27.7</version.assertj>
     <version.jsr305>3.0.2</version.jsr305>
     <version.mockito>5.23.0</version.mockito>
@@ -106,9 +106,14 @@
         <scope>provided</scope>
       </dependency>
       <dependency>
-        <groupId>org.sonarsource.sonarqube</groupId>
-        <artifactId>sonar-plugin-api-impl</artifactId>
-        <version>${sonarqube.api.impl.version}</version>
+        <groupId>org.sonarsource.scanner.engine</groupId>
+        <artifactId>plugin-api-scanner-impl</artifactId>
+        <version>${version.sonar.scanner}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sonarsource.scanner.engine</groupId>
+        <artifactId>sensor-test-fixtures</artifactId>
+        <version>${version.sonar.scanner}</version>
       </dependency>
       <dependency>
         <groupId>org.sonarsource.api.plugin</groupId>
