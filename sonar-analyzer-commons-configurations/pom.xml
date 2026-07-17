@@ -153,6 +153,23 @@
               <failIfNoMatch>false</failIfNoMatch>
             </configuration>
           </execution>
+          <!-- npm requires a semver version, but CI stamps a 4-part Maven version (X.Y.Z.BUILD_NUMBER). Rewrite the
+               trailing build segment to a semver prerelease (X.Y.Z.BUILD -> X.Y.Z-BUILD) for the npm package.json.
+               Local -SNAPSHOT and plain 3-part versions do not match and pass through unchanged (both valid semver). -->
+          <execution>
+            <id>derive-npm-package-version</id>
+            <phase>initialize</phase>
+            <goals>
+              <goal>regex-property</goal>
+            </goals>
+            <configuration>
+              <name>npm.package.version</name>
+              <value>${project.version}</value>
+              <regex>^(\d+\.\d+\.\d+)\.(\d+)$</regex>
+              <replacement>$1-$2</replacement>
+              <failIfNoMatch>false</failIfNoMatch>
+            </configuration>
+          </execution>
           <execution>
             <id>attach-configuration-artifacts</id>
             <phase>package</phase>

@@ -25,13 +25,20 @@ public class RegexTranslator {
   }
 
   /**
-   * Rewrites possessive quantifiers to atomic groups so the regex is valid .NET while keeping
-   * the exact same matching semantics: {@code X*+ -> (?>X*)}, {@code X++ -> (?>X+)}, {@code X?+ -> (?>X?)},
-   * {@code X{n,m}+ -> (?>X{n,m})}. Named groups {@code (?<name>…)} and backrefs {@code \k<name>} are .NET-compatible
-   * and pass through unchanged. Greedy/lazy quantifiers are preserved.
+   * Rewrites the JVM classifier's possessive quantifiers to plain greedy quantifiers so a single regex is valid in
+   * every engine the export targets — .NET, JavaScript and Swift: {@code X*+ -> X*}, {@code X++ -> X+},
+   * {@code X?+ -> X?}, {@code X{n,m}+ -> X{n,m}}. .NET and Swift also accept atomic groups {@code (?>X+)} and the
+   * possessive quantifiers themselves, but JavaScript supports neither, so the portable form drops atomicity entirely.
    *
-   * @throws IllegalArgumentException if the regex uses a Java-only construct this translator cannot faithfully
-   *   render for .NET (see {@link #rejectUnsupportedConstructs(String)}).
+   * <p>Dropping atomicity is match-preserving for the current {@link SecretClassifier} patterns because every
+   * possessive quantifier there is followed either by a delimiter the preceding negated class excludes (e.g. the
+   * {@code \}} after {@code [^}]++}) or by the {@code $} anchor; in both cases greedy backtracking has nothing to
+   * give back and produces the identical match. Named groups {@code (?<name>…)} and backrefs {@code \k<name>} are
+   * portable and pass through unchanged. Greedy and lazy quantifiers are preserved.
+   *
+   * @throws IllegalArgumentException if the regex uses a construct this translator cannot faithfully render for all
+   *   target engines: a Java-only construct (see {@link #rejectUnsupportedConstructs(String)}), or a possessive
+   *   quantifier whose greedy rewrite would be ReDoS-prone (see {@link #rejectNestedUnboundedQuantifier}).
    */
   static String toPortableRegex(String regex) {
     rejectUnsupportedConstructs(regex);
@@ -67,13 +74,10 @@ public class RegexTranslator {
         out.append(atom);
       } else {
         i = q.next;
-        if (q.possessive) {
-          out.append("(?>").append(atom).append(q.base).append(')');
-        } else {
-          out.append(atom).append(q.base);
-          if (q.lazy) {
-            out.append('?');
-          }
+        rejectNestedUnboundedQuantifier(atom, q.base, regex);
+        out.append(atom).append(q.base);
+        if (q.lazy) {
+          out.append('?');
         }
       }
     }
@@ -158,24 +162,27 @@ public class RegexTranslator {
 
   /** Reconstructs the group at {@code i} with its body translated, so nested possessive quantifiers are rewritten. */
   private static String translateGroup(String re, int i) {
-    int bodyStart;
-    if (re.startsWith("(?", i)) {
-      if (re.startsWith("(?<=", i) || re.startsWith("(?<!", i)) {
-        bodyStart = i + 4;
-      } else if (re.startsWith("(?<", i)) {
-        // Named group (?<name>… ; body starts after the closing '>'.
-        bodyStart = re.indexOf('>', i + 2) + 1;
-      } else {
-        // (?:  (?=  (?!  (?>
-        bodyStart = i + 3;
-      }
-    } else {
-      bodyStart = i + 1;
-    }
+    int bodyStart = groupBodyStart(re, i);
     int close = matchingParen(re, i);
     String prefix = re.substring(i, bodyStart);
     String body = re.substring(bodyStart, close);
     return prefix + toPortableRegex(body) + ")";
+  }
+
+  /** Returns the index where the body of the group opening at {@code i} begins, skipping any {@code (?…)} prefix. */
+  private static int groupBodyStart(String re, int i) {
+    if (re.startsWith("(?", i)) {
+      if (re.startsWith("(?<=", i) || re.startsWith("(?<!", i)) {
+        return i + 4;
+      }
+      if (re.startsWith("(?<", i)) {
+        // Named group (?<name>… ; body starts after the closing '>'.
+        return re.indexOf('>', i + 2) + 1;
+      }
+      // (?:  (?=  (?!  (?>
+      return i + 3;
+    }
+    return i + 1;
   }
   /** Returns the index of the {@code )} matching the {@code (} at {@code open}, accounting for classes and escapes. */
   private static int matchingParen(String re, int open) {
@@ -266,7 +273,77 @@ public class RegexTranslator {
     }
     return new RegexTranslator.Quantifier(base, possessive, lazy, after);
   }
-  
+
+  /**
+   * Rejects the one possessive&rarr;greedy rewrite that could turn a safe pattern into a catastrophic-backtracking
+   * one: an unbounded quantifier applied to a group whose body itself begins with an unbounded quantifier, e.g.
+   * {@code (?:X+)++} or {@code (a+)*+}. Once the possessive marker is dropped these become the classic nested
+   * unbounded shape {@code (?:X+)+}, which a JavaScript/RE2 consumer has no atomic groups to guard against.
+   *
+   * <p>The test is deliberately conservative: it only inspects whether the group body <em>starts</em> with an
+   * unbounded quantifier (see {@link #groupBodyStartsWithUnboundedQuantifier}). That is the shape every current
+   * {@link SecretClassifier} pattern relies on to keep an unbounded class safe — a required delimiter at the front,
+   * as in {@code (?:/[^/]++){3,}+}, is not flagged because the leading {@code /} is a bounded literal. Two
+   * imprecisions follow from that narrow test, both acceptable for a build-time guard that must never let a
+   * ReDoS-prone regex through:
+   * <ul>
+   *   <li><b>It may over-reject.</b> A pattern that anchors its unbounded class with a <em>trailing</em> delimiter,
+   *       e.g. {@code (?:[^/]++/){2,}+}, is in fact safe (every iteration must consume the {@code /}) yet is still
+   *       rejected. Proving such a pattern safe means proving the leading class <em>excludes</em> the trailing
+   *       delimiter, and the look-alike {@code (?:.++/){2,}+} is the genuinely dangerous {@code (.&#42;/)+}. Rather than
+   *       build that class-exclusion analysis we err toward rejection. No shipped pattern hits this; a future one
+   *       that does fails the export loudly and can be revisited here.</li>
+   *   <li><b>It may under-detect.</b> Ambiguity that is not visible in the first atom, such as an unbounded
+   *       alternation branch {@code (?:a|b+)+}, is not caught. Adding such a pattern to {@link SecretClassifier}
+   *       would require extending this guard.</li>
+   * </ul>
+   */
+  private static void rejectNestedUnboundedQuantifier(String atom, String base, String regex) {
+    if (isUnbounded(base) && !atom.isEmpty() && atom.charAt(0) == '(' && groupBodyStartsWithUnboundedQuantifier(atom)) {
+      throw new IllegalArgumentException(
+        "Cannot export a portable regex: dropping the possessive quantifier would leave a ReDoS-prone nested " +
+          "unbounded quantifier (e.g. \"(?:X+)+\"), which JavaScript/RE2 cannot guard with atomic groups, in pattern: " +
+          regex);
+    }
+  }
+
+  /** Whether {@code base} repeats without an upper bound: {@code *}, {@code +} or {@code {n,}} (but not {@code {n,m}}). */
+  private static boolean isUnbounded(String base) {
+    return "*".equals(base) || "+".equals(base) || base.matches("\\{\\d+,}");
+  }
+
+  /**
+   * Whether the body of {@code group} (a string starting with {@code (}) <em>starts</em> with an atom carrying an
+   * unbounded quantifier. This is the deliberately narrow, first-atom-only test described on
+   * {@link #rejectNestedUnboundedQuantifier}; it is not a general ambiguity analysis.
+   */
+  private static boolean groupBodyStartsWithUnboundedQuantifier(String group) {
+    int start = groupBodyStart(group, 0);
+    // the group's own closing ')'
+    int close = group.length() - 1;
+    if (start >= close) {
+      return false;
+    }
+    int afterFirstAtom = endOfAtom(group, start);
+    RegexTranslator.Quantifier q = readQuantifier(group, afterFirstAtom);
+    return q != null && isUnbounded(q.base);
+  }
+
+  /** Returns the index just past the single atom starting at {@code i} (escape, class, group or lone character). */
+  private static int endOfAtom(String re, int i) {
+    char c = re.charAt(i);
+    if (c == '\\') {
+      return readEscape(re, i);
+    }
+    if (c == '[') {
+      return readClassEnd(re, i);
+    }
+    if (c == '(') {
+      return matchingParen(re, i) + 1;
+    }
+    return i + 1;
+  }
+
   private static final class Quantifier {
     private final String base;
     private final boolean possessive;
