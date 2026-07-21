@@ -45,6 +45,8 @@ class SecretClassifierTest {
     "${secret}", "#{{secret}}", "$foo_bar",
     // Password-like values
     "password1234", "passwd",
+    // Leetspeak "password" variants with "@" that the "pass" substring misses
+    "p@ssword", "p@ssw0rd",
     // Boolean / null / scalar literals
     "undefined", "true", "null",
     // "your..." prefix
