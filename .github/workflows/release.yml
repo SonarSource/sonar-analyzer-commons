@@ -119,3 +119,102 @@ jobs:
             --source-repo="sonarsource-npm-public-builds" \
             --copy=true
 
+  # sonar-dotnet and SonarJS are public repos with no RepoX access, so the NuGet/npm packages
+  # they depend on must also exist on the actual public registries, not just in RepoX.
+  publish-nuget-public:
+    needs: [ promote-nuget ]
+    runs-on: sonar-xs-public
+    name: Publish NuGet to nuget.org
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Install jfrog-cli
+        uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
+        with:
+          cache: true
+          tool_versions: |
+            jfrog-cli 2.103
+            dotnet 10
+      - name: Get secrets
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | PROMOTER_ACCESS_TOKEN;
+            development/team/languages/kv/data/nuget apikey | NUGET_API_KEY;
+      - name: Download released NuGet package from Repox
+        shell: bash
+        env:
+          PROMOTER_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).PROMOTER_ACCESS_TOKEN }}
+          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          BUILD_NAME="${GITHUB_REPOSITORY#*/}_nuget"
+          BUILD_NUMBER="${RELEASE_VERSION##*.}"
+          jf config add repox \
+            --artifactory-url="https://repox.jfrog.io/artifactory" \
+            --access-token="$PROMOTER_ACCESS_TOKEN" \
+            --interactive=false
+          jf config use repox
+          rm -rf nuget-release && mkdir nuget-release
+          jf rt download --build="${BUILD_NAME}/${BUILD_NUMBER}" --flat "sonarsource-nuget-releases/*.nupkg" nuget-release/
+      - name: Push NuGet package to nuget.org
+        if: ${{ inputs.dryRun != true }}
+        shell: bash
+        env:
+          NUGET_API_KEY: ${{ fromJSON(steps.secrets.outputs.vault).NUGET_API_KEY }}
+        run: |
+          set -euo pipefail
+          dotnet nuget push "nuget-release/*.nupkg" \
+            --api-key "$NUGET_API_KEY" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+
+  publish-npm-public:
+    needs: [ promote-npm ]
+    runs-on: github-ubuntu-latest-s # npm Trusted Publishing requires a GitHub-hosted runner
+    name: Publish npm to npmjs.org
+    environment: release
+    permissions:
+      id-token: write # consumed by npm's OIDC trusted publisher check
+      contents: read
+    steps:
+      - name: Install jfrog-cli
+        uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
+        with:
+          cache: true
+          tool_versions: |
+            jfrog-cli 2.103
+      - name: Get secrets
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | PROMOTER_ACCESS_TOKEN;
+      - name: Download released npm package from Repox
+        shell: bash
+        env:
+          PROMOTER_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).PROMOTER_ACCESS_TOKEN }}
+          # The release tag is the full 4-part version, e.g. 2.27.0.5000; the build number is its last segment.
+          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          BUILD_NAME="${GITHUB_REPOSITORY#*/}_npm"
+          BUILD_NUMBER="${RELEASE_VERSION##*.}"
+          jf config add repox \
+            --artifactory-url="https://repox.jfrog.io/artifactory" \
+            --access-token="$PROMOTER_ACCESS_TOKEN" \
+            --interactive=false
+          jf config use repox
+          rm -rf npm-release && mkdir npm-release
+          jf rt download --build="${BUILD_NAME}/${BUILD_NUMBER}" --flat "sonarsource-npm-public-releases/*.tgz" npm-release/
+      - name: Publish npm package to npmjs.org
+        if: ${{ inputs.dryRun != true }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # npm Trusted Publishing requires npm >= 11.5.1; GitHub-hosted runners may ship an older bundled npm.
+          npm install -g npm@latest
+          npm publish npm-release/*.tgz --access public --provenance
+
