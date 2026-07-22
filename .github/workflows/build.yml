@@ -44,7 +44,7 @@ jobs:
           artifactory-deployer-role: qa-deployer
           deploy-pull-request: true
 
-      # --- NuGet package: sign with the SonarSource author certificate and publish to the Repox NuGet feed. ---
+      # --- NuGet package: DigiCert-sign and publish to the Repox NuGet feed. ---
       # The Maven build only assembles the .nupkg into target/; it is NOT a Maven artifact. These steps sign it
       # and upload it to a NuGet-layout repo so .NET projects can consume it. Only runs when Maven actually deployed.
       - name: Prepare NuGet package
@@ -76,12 +76,54 @@ jobs:
             echo "version=${PKG_VERSION}"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Sign NuGet package
-        if: steps.build-maven.outputs.deployed == 'true'
-        uses: SonarSource/gh-action_azure-artifact-signing@v1
-        with:
-          mode: sign
-          files: ${{ steps.nupkg.outputs.dir }}/*.nupkg
+      # DigiCert (not Azure Trusted Signing): nuget.org requires a registered certificate
+      # thumbprint. Azure Artifact Signing certs rotate ~72h, so they cannot be registered.
+      # See Platform docs "Windows Artifact Signing - GitHub" and PREQ-7434 / NuGetGallery#10027.
+      # Sign only release branches (not PRs): DigiCert quota is limited; matches .NET / ADO practice.
+      - name: Setup DigiCert Client Tools
+        if: ${{ steps.build-maven.outputs.deployed == 'true' && github.event_name != 'pull_request' && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-')) }}
+        uses: SonarSource/ci-github-actions/code-signing@v1
+      - name: Sign NuGet package with DigiCert
+        if: ${{ steps.build-maven.outputs.deployed == 'true' && github.event_name != 'pull_request' && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-')) }}
+        shell: bash
+        env:
+          NUPKG_DIR: ${{ steps.nupkg.outputs.dir }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          pkgs=("${NUPKG_DIR}"/*.nupkg)
+          if [[ ${#pkgs[@]} -eq 0 ]]; then
+            echo "::error::No .nupkg found under ${NUPKG_DIR}"
+            exit 1
+          fi
+          # Prefer smctl + jsign (ci-github-actions docs). jsign DIGICERTONE REST against
+          # this host failed in CI with a non-JSON keypair response after resolving cert_*.
+          PKCS11_CFG="${SMTOOLS_PATH}/pkcs11properties.cfg"
+          if [[ ! -f "${PKCS11_CFG}" ]]; then
+            echo "::error::Missing DigiCert PKCS#11 config at ${PKCS11_CFG}"
+            ls -la "${SMTOOLS_PATH}" || true
+            exit 1
+          fi
+          KEYPAIR_ALIAS="$(smctl keypair ls 2>/dev/null | awk 'NR > 1 && toupper($0) ~ /ACTIVE/ { print $2; exit }')"
+          if [[ -z "${KEYPAIR_ALIAS}" ]]; then
+            # Legacy SonarSource DigiCert keypair used by other public NuGet / Windows signers.
+            KEYPAIR_ALIAS=key_525594307
+            echo "smctl keypair ls did not yield an ACTIVE alias; falling back to ${KEYPAIR_ALIAS}"
+          fi
+          echo "Using DigiCert keypair alias: ${KEYPAIR_ALIAS}"
+          for pkg in "${pkgs[@]}"; do
+            smctl sign \
+              --keypair-alias="${KEYPAIR_ALIAS}" \
+              --config-file "${PKCS11_CFG}" \
+              --input "${pkg}" \
+              --tool jsign
+            if ! jsign extract "${pkg}" > /dev/null 2>&1; then
+              echo "::error::No signature found on ${pkg}"
+              exit 1
+            fi
+            rm -f "${pkg}.sig"
+            echo "Signature verified on ${pkg}"
+          done
 
       - name: Install jfrog-cli
         if: steps.build-maven.outputs.deployed == 'true'
