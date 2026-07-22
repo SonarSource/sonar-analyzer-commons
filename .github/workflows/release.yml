@@ -207,8 +207,6 @@ jobs:
         with:
           secrets: |
             development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | PROMOTER_ACCESS_TOKEN;
-            # First publish of a new package cannot use Trusted Publishing alone (package must exist on npmjs).
-            # Vault token is still required until a Trusted Publisher is configured for subsequent releases.
             development/kv/data/npmjs sonartech_npm_token | NPM_TOKEN;
       - name: Download released npm package from Repox
         shell: bash
