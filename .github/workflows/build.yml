@@ -44,7 +44,7 @@ jobs:
           artifactory-deployer-role: qa-deployer
           deploy-pull-request: true
 
-      # --- NuGet package: sign with the SonarSource author certificate and publish to the Repox NuGet feed. ---
+      # --- NuGet package: DigiCert-sign and publish to the Repox NuGet feed. ---
       # The Maven build only assembles the .nupkg into target/; it is NOT a Maven artifact. These steps sign it
       # and upload it to a NuGet-layout repo so .NET projects can consume it. Only runs when Maven actually deployed.
       - name: Prepare NuGet package
@@ -76,12 +76,41 @@ jobs:
             echo "version=${PKG_VERSION}"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Sign NuGet package
+      # DigiCert (not Azure Trusted Signing): nuget.org requires a registered certificate
+      # thumbprint. Azure Artifact Signing certs rotate ~72h, so they cannot be registered.
+      # See Platform docs "Windows Artifact Signing - GitHub" and PREQ-7434 / NuGetGallery#10027.
+      - name: Setup DigiCert Client Tools
         if: steps.build-maven.outputs.deployed == 'true'
-        uses: SonarSource/gh-action_azure-artifact-signing@v1
-        with:
-          mode: sign
-          files: ${{ steps.nupkg.outputs.dir }}/*.nupkg
+        uses: SonarSource/ci-github-actions/code-signing@v1
+      - name: Sign NuGet package with DigiCert
+        if: steps.build-maven.outputs.deployed == 'true'
+        shell: bash
+        env:
+          NUPKG_DIR: ${{ steps.nupkg.outputs.dir }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          pkgs=("${NUPKG_DIR}"/*.nupkg)
+          if [[ ${#pkgs[@]} -eq 0 ]]; then
+            echo "::error::No .nupkg found under ${NUPKG_DIR}"
+            exit 1
+          fi
+          jsign \
+            --storetype DIGICERTONE \
+            --keystore "${SM_HOST}" \
+            --storepass "${SM_API_KEY}|${SM_CLIENT_CERT_FILE}|${SM_CLIENT_CERT_PASSWORD}" \
+            --alias "${SM_CODE_SIGNING_CERT_SHA1_HASH}" \
+            --tsaurl http://timestamp.digicert.com \
+            --replace \
+            "${pkgs[@]}"
+          for pkg in "${pkgs[@]}"; do
+            if ! jsign extract "${pkg}" > /dev/null 2>&1; then
+              echo "::error::No signature found on ${pkg}"
+              exit 1
+            fi
+            rm -f "${pkg}.sig"
+            echo "Signature verified on ${pkg}"
+          done
 
       - name: Install jfrog-cli
         if: steps.build-maven.outputs.deployed == 'true'
