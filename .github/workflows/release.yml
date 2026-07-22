@@ -62,7 +62,7 @@ jobs:
         env:
           PROMOTER_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).PROMOTER_ACCESS_TOKEN }}
           # The release tag is the full 4-part version, e.g. 2.27.0.5000; the build number is its last segment.
-          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+          RELEASE_VERSION: ${{ inputs.version || github.event.release.tag_name }}
         run: |
           set -euo pipefail
           BUILD_NAME="${GITHUB_REPOSITORY#*/}_nuget"
@@ -104,7 +104,7 @@ jobs:
         env:
           PROMOTER_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).PROMOTER_ACCESS_TOKEN }}
           # The release tag is the full 4-part version, e.g. 2.27.0.5000; the build number is its last segment.
-          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+          RELEASE_VERSION: ${{ inputs.version || github.event.release.tag_name }}
         run: |
           set -euo pipefail
           BUILD_NAME="${GITHUB_REPOSITORY#*/}_npm"
@@ -147,7 +147,7 @@ jobs:
         shell: bash
         env:
           PROMOTER_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).PROMOTER_ACCESS_TOKEN }}
-          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+          RELEASE_VERSION: ${{ inputs.version || github.event.release.tag_name }}
         run: |
           set -euo pipefail
           BUILD_NAME="${GITHUB_REPOSITORY#*/}_nuget"
@@ -197,7 +197,7 @@ jobs:
         env:
           PROMOTER_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).PROMOTER_ACCESS_TOKEN }}
           # The release tag is the full 4-part version, e.g. 2.27.0.5000; the build number is its last segment.
-          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+          RELEASE_VERSION: ${{ inputs.version || github.event.release.tag_name }}
         run: |
           set -euo pipefail
           BUILD_NAME="${GITHUB_REPOSITORY#*/}_npm"
