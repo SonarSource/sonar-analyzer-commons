@@ -132,6 +132,9 @@ jobs:
   # they depend on must also exist on the actual public registries, not just in RepoX.
   publish-nuget-public:
     needs: [ promote-nuget ]
+    # Explicit condition required: when `release` is skipped (publishPackagesOnly), GitHub skips
+    # downstream jobs that lack an if, even if promote-nuget succeeded.
+    if: ${{ !cancelled() && needs.promote-nuget.result == 'success' }}
     runs-on: sonar-xs-public
     name: Publish NuGet to nuget.org
     permissions:
@@ -182,6 +185,9 @@ jobs:
 
   publish-npm-public:
     needs: [ promote-npm ]
+    # Explicit condition required: when `release` is skipped (publishPackagesOnly), GitHub skips
+    # downstream jobs that lack an if, even if promote-npm succeeded.
+    if: ${{ !cancelled() && needs.promote-npm.result == 'success' }}
     runs-on: github-ubuntu-latest-s # npm Trusted Publishing requires a GitHub-hosted runner
     name: Publish npm to npmjs.org
     environment: release
