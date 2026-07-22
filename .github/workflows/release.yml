@@ -14,15 +14,20 @@ on:
         required: true
       releaseId:
         type: string
-        description: Release ID
-        required: true
+        description: GitHub release ID (required for a full release; unused when publishPackagesOnly=true)
+        required: false
       dryRun:
         type: boolean
         description: Flag to enable the dry-run execution
         default: false
+      publishPackagesOnly:
+        type: boolean
+        description: Skip Maven/binaries release; only promote and publish npm/NuGet to public registries
+        default: false
 
 jobs:
   release:
+    if: ${{ github.event_name == 'release' || inputs.publishPackagesOnly != true }}
     permissions:
       id-token: write
       contents: write
@@ -39,6 +44,8 @@ jobs:
   # release above does not handle it (the .nupkg is published to the NuGet feed, not as a Maven artifact).
   promote-nuget:
     needs: [release]
+    # Run after a successful release, or when release was skipped via publishPackagesOnly.
+    if: ${{ !cancelled() && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
     runs-on: sonar-xs-public
     name: Promote NuGet to releases
     permissions:
@@ -81,6 +88,8 @@ jobs:
   # release above does not handle it (the .tgz is published to the npm feed, not as a Maven artifact).
   promote-npm:
     needs: [release]
+    # Run after a successful release, or when release was skipped via publishPackagesOnly.
+    if: ${{ !cancelled() && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
     runs-on: sonar-xs-public
     name: Promote npm to releases
     permissions:
@@ -217,4 +226,3 @@ jobs:
           # npm Trusted Publishing requires npm >= 11.5.1; GitHub-hosted runners may ship an older bundled npm.
           npm install -g npm@latest
           npm publish npm-release/*.tgz --access public --provenance
-
