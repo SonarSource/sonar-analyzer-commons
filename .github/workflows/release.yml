@@ -207,6 +207,9 @@ jobs:
         with:
           secrets: |
             development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | PROMOTER_ACCESS_TOKEN;
+            # First publish of a new package cannot use Trusted Publishing alone (package must exist on npmjs).
+            # Vault token is still required until a Trusted Publisher is configured for subsequent releases.
+            development/kv/data/npmjs sonartech_npm_token | NPM_TOKEN;
       - name: Download released npm package from Repox
         shell: bash
         env:
@@ -227,10 +230,14 @@ jobs:
       - name: Publish npm package to npmjs.org
         if: ${{ inputs.dryRun != true }}
         shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).NPM_TOKEN }}
         run: |
           set -euo pipefail
           # npm Trusted Publishing requires npm >= 11.5.1; GitHub-hosted runners may ship an older bundled npm.
           npm install -g npm@latest
+          # Auth for first publish / until Trusted Publisher is configured for this package.
+          printf '%s\n' "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > "${HOME}/.npmrc"
           # Use ./ prefix: without it, npm treats "npm-release/foo.tgz" as a github: shorthand (EALLOWGIT).
           shopt -s nullglob
           pkgs=(./npm-release/*.tgz)
@@ -241,5 +248,6 @@ jobs:
           for pkg in "${pkgs[@]}"; do
             echo "Publishing ${pkg}"
             # Build-style versions (e.g. 2.29.0-5104) are semver prereleases; npm requires --tag.
-            npm publish "${pkg}" --access public --provenance --tag latest
+            # Omit --provenance here: provenance is tied to Trusted Publishing OIDC; token publish is for bootstrap.
+            npm publish "${pkg}" --access public --tag latest
           done
