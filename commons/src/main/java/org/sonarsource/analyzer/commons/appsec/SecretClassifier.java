@@ -98,6 +98,8 @@ public final class SecretClassifier {
       "redacted|cafebabe|deadbeef|whatever|123456|admin|pass|secret|default|dummy|qwerty|setting|obfuscated",
       // Password-like words, e.g. "password", "passwd", "pass", "password1234"
       "^(my)?pass(word|wd)?\\d{0,5}+$",
+      // Leetspeak "password" variants the "pass" substring misses, e.g. "p@ssword", "p@ssw0rd"
+      "p[@a]ssw[o0]rd",
       // Boolean / null / scalar literals, e.g. "password = undefined", "enabled: true"
       "^(?:none|undefined|null|true|false|yes|no|1|0)$",
       // Starts with "your", e.g. "yourpassword", "your_super_secret"
