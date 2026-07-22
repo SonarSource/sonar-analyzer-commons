@@ -240,5 +240,6 @@ jobs:
           fi
           for pkg in "${pkgs[@]}"; do
             echo "Publishing ${pkg}"
-            npm publish "${pkg}" --access public --provenance
+            # Build-style versions (e.g. 2.29.0-5104) are semver prereleases; npm requires --tag.
+            npm publish "${pkg}" --access public --provenance --tag latest
           done
