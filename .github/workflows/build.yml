@@ -79,11 +79,12 @@ jobs:
       # DigiCert (not Azure Trusted Signing): nuget.org requires a registered certificate
       # thumbprint. Azure Artifact Signing certs rotate ~72h, so they cannot be registered.
       # See Platform docs "Windows Artifact Signing - GitHub" and PREQ-7434 / NuGetGallery#10027.
+      # Sign only release branches (not PRs): DigiCert quota is limited; matches .NET / ADO practice.
       - name: Setup DigiCert Client Tools
-        if: steps.build-maven.outputs.deployed == 'true'
+        if: ${{ steps.build-maven.outputs.deployed == 'true' && github.event_name != 'pull_request' && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-')) }}
         uses: SonarSource/ci-github-actions/code-signing@v1
       - name: Sign NuGet package with DigiCert
-        if: steps.build-maven.outputs.deployed == 'true'
+        if: ${{ steps.build-maven.outputs.deployed == 'true' && github.event_name != 'pull_request' && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-')) }}
         shell: bash
         env:
           NUPKG_DIR: ${{ steps.nupkg.outputs.dir }}
@@ -95,26 +96,27 @@ jobs:
             echo "::error::No .nupkg found under ${NUPKG_DIR}"
             exit 1
           fi
-          # DigiCert ONE --alias is the certificate alias/id from Software Trust Manager,
-          # not the Vault cert_fp SHA1 (that fails with "Unable to retrieve DigiCert ONE certificate").
-          # Same resolution as sonarcloud-task-manager Windows signing.
-          CERT_ALIAS="$(smctl certificate ls | awk 'NR > 1 && toupper($4) == "ACTIVE" { print $2; exit }')"
-          if [[ -z "${CERT_ALIAS}" ]]; then
-            echo "::error::Could not resolve an ACTIVE DigiCert certificate alias via smctl"
-            smctl certificate ls || true
+          # Prefer smctl + jsign (ci-github-actions docs). jsign DIGICERTONE REST against
+          # this host failed in CI with a non-JSON keypair response after resolving cert_*.
+          PKCS11_CFG="${SMTOOLS_PATH}/pkcs11properties.cfg"
+          if [[ ! -f "${PKCS11_CFG}" ]]; then
+            echo "::error::Missing DigiCert PKCS#11 config at ${PKCS11_CFG}"
+            ls -la "${SMTOOLS_PATH}" || true
             exit 1
           fi
-          echo "Using DigiCert certificate alias: ${CERT_ALIAS}"
-          jsign \
-            --storetype DIGICERTONE \
-            --keystore "${SM_HOST}" \
-            --storepass "${SM_API_KEY}|${SM_CLIENT_CERT_FILE}|${SM_CLIENT_CERT_PASSWORD}" \
-            --alias "${CERT_ALIAS}" \
-            --tsaurl http://timestamp.digicert.com \
-            --alg SHA-256 \
-            --replace \
-            "${pkgs[@]}"
+          KEYPAIR_ALIAS="$(smctl keypair ls 2>/dev/null | awk 'NR > 1 && toupper($0) ~ /ACTIVE/ { print $2; exit }')"
+          if [[ -z "${KEYPAIR_ALIAS}" ]]; then
+            # Legacy SonarSource DigiCert keypair used by other public NuGet / Windows signers.
+            KEYPAIR_ALIAS=key_525594307
+            echo "smctl keypair ls did not yield an ACTIVE alias; falling back to ${KEYPAIR_ALIAS}"
+          fi
+          echo "Using DigiCert keypair alias: ${KEYPAIR_ALIAS}"
           for pkg in "${pkgs[@]}"; do
+            smctl sign \
+              --keypair-alias="${KEYPAIR_ALIAS}" \
+              --config-file "${PKCS11_CFG}" \
+              --input "${pkg}" \
+              --tool jsign
             if ! jsign extract "${pkg}" > /dev/null 2>&1; then
               echo "::error::No signature found on ${pkg}"
               exit 1
