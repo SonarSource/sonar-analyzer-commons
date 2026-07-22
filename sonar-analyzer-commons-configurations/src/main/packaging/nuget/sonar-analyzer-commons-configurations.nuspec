@@ -7,6 +7,8 @@
     <owners>SonarSource</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">LGPL-3.0-only</license>
+    <!-- Required by nuget.org when a license expression is set (legacy clients). See https://aka.ms/invalidNuGetLicenseUrl -->
+    <licenseUrl>https://licenses.nuget.org/LGPL-3.0-only</licenseUrl>
     <projectUrl>https://github.com/SonarSource/sonar-analyzer-commons</projectUrl>
     <description>Shared analyzer configuration data (secret-exclusion regexes) generated from the sonar-analyzer-commons
       SecretClassifier, for use by non-JVM SonarSource analyzers. The payload is content/secret-patterns.json.</description>
