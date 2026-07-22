@@ -132,6 +132,9 @@ jobs:
   # they depend on must also exist on the actual public registries, not just in RepoX.
   publish-nuget-public:
     needs: [ promote-nuget ]
+    # Explicit condition required: when `release` is skipped (publishPackagesOnly), GitHub skips
+    # downstream jobs that lack an if, even if promote-nuget succeeded.
+    if: ${{ !cancelled() && needs.promote-nuget.result == 'success' }}
     runs-on: sonar-xs-public
     name: Publish NuGet to nuget.org
     permissions:
@@ -182,6 +185,9 @@ jobs:
 
   publish-npm-public:
     needs: [ promote-npm ]
+    # Explicit condition required: when `release` is skipped (publishPackagesOnly), GitHub skips
+    # downstream jobs that lack an if, even if promote-npm succeeded.
+    if: ${{ !cancelled() && needs.promote-npm.result == 'success' }}
     runs-on: github-ubuntu-latest-s # npm Trusted Publishing requires a GitHub-hosted runner
     name: Publish npm to npmjs.org
     environment: release
@@ -201,6 +207,7 @@ jobs:
         with:
           secrets: |
             development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | PROMOTER_ACCESS_TOKEN;
+            development/kv/data/npmjs sonartech_npm_token | NPM_TOKEN;
       - name: Download released npm package from Repox
         shell: bash
         env:
@@ -221,8 +228,24 @@ jobs:
       - name: Publish npm package to npmjs.org
         if: ${{ inputs.dryRun != true }}
         shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).NPM_TOKEN }}
         run: |
           set -euo pipefail
           # npm Trusted Publishing requires npm >= 11.5.1; GitHub-hosted runners may ship an older bundled npm.
           npm install -g npm@latest
-          npm publish npm-release/*.tgz --access public --provenance
+          # Auth for first publish / until Trusted Publisher is configured for this package.
+          printf '%s\n' "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > "${HOME}/.npmrc"
+          # Use ./ prefix: without it, npm treats "npm-release/foo.tgz" as a github: shorthand (EALLOWGIT).
+          shopt -s nullglob
+          pkgs=(./npm-release/*.tgz)
+          if [[ ${#pkgs[@]} -eq 0 ]]; then
+            echo "::error::No .tgz found under ./npm-release"
+            exit 1
+          fi
+          for pkg in "${pkgs[@]}"; do
+            echo "Publishing ${pkg}"
+            # Build-style versions (e.g. 2.29.0-5104) are semver prereleases; npm requires --tag.
+            # Omit --provenance here: provenance is tied to Trusted Publishing OIDC; token publish is for bootstrap.
+            npm publish "${pkg}" --access public --tag latest
+          done
