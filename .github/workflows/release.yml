@@ -231,4 +231,14 @@ jobs:
           set -euo pipefail
           # npm Trusted Publishing requires npm >= 11.5.1; GitHub-hosted runners may ship an older bundled npm.
           npm install -g npm@latest
-          npm publish npm-release/*.tgz --access public --provenance
+          # Use ./ prefix: without it, npm treats "npm-release/foo.tgz" as a github: shorthand (EALLOWGIT).
+          shopt -s nullglob
+          pkgs=(./npm-release/*.tgz)
+          if [[ ${#pkgs[@]} -eq 0 ]]; then
+            echo "::error::No .tgz found under ./npm-release"
+            exit 1
+          fi
+          for pkg in "${pkgs[@]}"; do
+            echo "Publishing ${pkg}"
+            npm publish "${pkg}" --access public --provenance
+          done
