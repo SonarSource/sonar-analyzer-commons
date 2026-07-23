@@ -227,7 +227,7 @@ jobs:
           rm -rf npm-release && mkdir npm-release
           jf rt download --build="${BUILD_NAME}/${BUILD_NUMBER}" --flat "sonarsource-npm-public-releases/*.tgz" npm-release/
       - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           # Trusted Publishing needs npm >= 11.5.1 / Node >= 22.14; Node 24 ships a compatible npm.
           node-version: "24"
