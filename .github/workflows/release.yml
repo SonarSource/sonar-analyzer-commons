@@ -188,7 +188,8 @@ jobs:
     # Explicit condition required: when `release` is skipped (publishPackagesOnly), GitHub skips
     # downstream jobs that lack an if, even if promote-npm succeeded.
     if: ${{ !cancelled() && needs.promote-npm.result == 'success' }}
-    runs-on: github-ubuntu-latest-s # npm Trusted Publishing requires a GitHub-hosted runner
+    # npm Trusted Publishing requires a GitHub-hosted runner (OIDC); self-hosted is not supported.
+    runs-on: github-ubuntu-latest-s
     name: Publish npm to npmjs.org
     environment: release
     permissions:
@@ -205,9 +206,9 @@ jobs:
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
         with:
+          # Promoter token only — npm auth is OIDC Trusted Publisher (no Vault npm token).
           secrets: |
             development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | PROMOTER_ACCESS_TOKEN;
-            development/kv/data/npmjs sonartech_npm_token | NPM_TOKEN;
       - name: Download released npm package from Repox
         shell: bash
         env:
@@ -225,27 +226,34 @@ jobs:
           jf config use repox
           rm -rf npm-release && mkdir npm-release
           jf rt download --build="${BUILD_NAME}/${BUILD_NUMBER}" --flat "sonarsource-npm-public-releases/*.tgz" npm-release/
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          # Trusted Publishing needs npm >= 11.5.1 / Node >= 22.14; Node 24 ships a compatible npm.
+          node-version: "24"
+          # Do not set registry-url: setup-node would write an empty _authToken and disable OIDC.
       - name: Publish npm package to npmjs.org
         if: ${{ inputs.dryRun != true }}
         shell: bash
         env:
-          NODE_AUTH_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).NPM_TOKEN }}
+          # Ensure classic token auth cannot short-circuit OIDC.
+          NODE_AUTH_TOKEN: ""
+          NPM_TOKEN: ""
         run: |
           set -euo pipefail
-          # npm Trusted Publishing requires npm >= 11.5.1; GitHub-hosted runners may ship an older bundled npm.
-          npm install -g npm@latest
-          # Auth for first publish / until Trusted Publisher is configured for this package.
-          printf '%s\n' "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > "${HOME}/.npmrc"
-          # Use ./ prefix: without it, npm treats "npm-release/foo.tgz" as a github: shorthand (EALLOWGIT).
+          rm -f "${HOME}/.npmrc"
           shopt -s nullglob
           pkgs=(./npm-release/*.tgz)
           if [[ ${#pkgs[@]} -eq 0 ]]; then
             echo "::error::No .tgz found under ./npm-release"
             exit 1
           fi
+          # Extract and publish from a package dir (same as gh-action_release Trusted Publisher path)
+          # so --provenance attests against the workflow OIDC identity.
           for pkg in "${pkgs[@]}"; do
-            echo "Publishing ${pkg}"
-            # Build-style versions (e.g. 2.29.0-5104) are semver prereleases; npm requires --tag.
-            # Omit --provenance here: provenance is tied to Trusted Publishing OIDC; token publish is for bootstrap.
-            npm publish "${pkg}" --access public --tag latest
+            rm -rf npm-package && mkdir npm-package
+            tar -xzf "${pkg}" -C npm-package --strip-components=1
+            echo "Publishing ${pkg} via npm Trusted Publisher (OIDC)"
+            # Build-style versions (e.g. 2.29.0-5138) are semver prereleases; npm requires --tag.
+            (cd npm-package && npm publish --provenance --access public --tag latest)
           done
