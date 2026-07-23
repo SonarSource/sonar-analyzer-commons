@@ -12,6 +12,11 @@ on:
   pull_request:
   merge_group:
   workflow_dispatch:
+    inputs:
+      forceDigicertSign:
+        type: boolean
+        description: Force DigiCert NuGet signing (test outside master/branch-*; uses DigiCert quota)
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -79,15 +84,15 @@ jobs:
       # DigiCert (not Azure Trusted Signing): nuget.org requires a registered certificate
       # thumbprint. Azure Artifact Signing certs rotate ~72h, so they cannot be registered.
       # See Platform docs "Windows Artifact Signing - GitHub" and PREQ-7434 / NuGetGallery#10027.
-      # Sign only release branches (not PRs): DigiCert quota is limited; matches .NET / ADO practice.
+      # Sign only release branches (not PRs), or workflow_dispatch with forceDigicertSign=true for pre-merge tests.
       - name: Setup DigiCert Client Tools
-        if: ${{ steps.build-maven.outputs.deployed == 'true' && github.event_name != 'pull_request' && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-')) }}
+        if: ${{ steps.build-maven.outputs.deployed == 'true' && (inputs.forceDigicertSign == true || (github.event_name != 'pull_request' && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-')))) }}
         uses: SonarSource/ci-github-actions/code-signing@v1
         with:
           # 7.2 DIGICERTONE keypair fetch returned HTML/non-JSON in CI; use a newer jsign.
           jsign-version: "7.5"
       - name: Sign NuGet package with DigiCert
-        if: ${{ steps.build-maven.outputs.deployed == 'true' && github.event_name != 'pull_request' && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-')) }}
+        if: ${{ steps.build-maven.outputs.deployed == 'true' && (inputs.forceDigicertSign == true || (github.event_name != 'pull_request' && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-')))) }}
         shell: bash
         env:
           NUPKG_DIR: ${{ steps.nupkg.outputs.dir }}
