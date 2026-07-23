@@ -34,5 +34,10 @@
       <outputDirectory>content</outputDirectory>
       <destName>secret-patterns.json</destName>
     </file>
+    <file>
+      <source>${project.build.directory}/packaging/nuget/README.md</source>
+      <outputDirectory>./</outputDirectory>
+      <destName>README.md</destName>
+    </file>
   </files>
 </assembly>
