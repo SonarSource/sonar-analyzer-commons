@@ -52,9 +52,11 @@ jobs:
       # --- NuGet package: DigiCert-sign and publish to the Repox NuGet feed. ---
       # The Maven build only assembles the .nupkg into target/; it is NOT a Maven artifact. These steps sign it
       # and upload it to a NuGet-layout repo so .NET projects can consume it. Only runs when Maven actually deployed.
+      # Also runs for workflow_dispatch forceDigicertSign: feature branches only mvn verify (deployed=false)
+      # but still produce the nupkg under target/, which is enough to exercise DigiCert before merge.
       - name: Prepare NuGet package
         id: nupkg
-        if: steps.build-maven.outputs.deployed == 'true'
+        if: ${{ steps.build-maven.outputs.deployed == 'true' || inputs.forceDigicertSign == true }}
         shell: bash
         env:
           PROJECT_VERSION: ${{ steps.build-maven.outputs.project-version }}
@@ -86,13 +88,13 @@ jobs:
       # See Platform docs "Windows Artifact Signing - GitHub" and PREQ-7434 / NuGetGallery#10027.
       # Sign only release branches (not PRs), or workflow_dispatch with forceDigicertSign=true for pre-merge tests.
       - name: Setup DigiCert Client Tools
-        if: ${{ steps.build-maven.outputs.deployed == 'true' && (inputs.forceDigicertSign == true || (github.event_name != 'pull_request' && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-')))) }}
+        if: ${{ inputs.forceDigicertSign == true || (steps.build-maven.outputs.deployed == 'true' && github.event_name != 'pull_request' && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-'))) }}
         uses: SonarSource/ci-github-actions/code-signing@v1
         with:
           # 7.2 DIGICERTONE keypair fetch returned HTML/non-JSON in CI; use a newer jsign.
           jsign-version: "7.5"
       - name: Sign NuGet package with DigiCert
-        if: ${{ steps.build-maven.outputs.deployed == 'true' && (inputs.forceDigicertSign == true || (github.event_name != 'pull_request' && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-')))) }}
+        if: ${{ inputs.forceDigicertSign == true || (steps.build-maven.outputs.deployed == 'true' && github.event_name != 'pull_request' && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-'))) }}
         shell: bash
         env:
           NUPKG_DIR: ${{ steps.nupkg.outputs.dir }}
@@ -269,6 +271,8 @@ jobs:
 
   promote:
     needs: [ build ]
+    # Skip on DigiCert-only pre-merge tests (feature-branch dispatch has nothing to promote).
+    if: ${{ inputs.forceDigicertSign != true }}
     runs-on: sonar-xs
     name: Promote
     permissions:
