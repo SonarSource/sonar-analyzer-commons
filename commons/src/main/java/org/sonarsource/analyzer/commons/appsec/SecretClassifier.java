@@ -105,9 +105,7 @@ public final class SecretClassifier {
       // Starts with "your", e.g. "yourpassword", "your_super_secret"
       "^your",
       // Same character 4 times in a row, e.g. "abbbbc"
-      "(?<char>[\\w\\*\\.])\\k<char>{3}",
-      // Same character repeated from start to end, e.g. "aa", "111111"
-      "^(?<repeated>.)\\k<repeated>*+$",
+      "(?<repeated>.)\\k<repeated>{3}",
       // A secret being masked or shortened, e.g. "1fj28...askn3i"
       "\\.\\.\\."),
 
