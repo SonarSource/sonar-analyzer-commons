@@ -241,10 +241,10 @@ class RegexBaseVisitorTest {
       @Override
       public void visitCharacter(CharacterTree tree) {
         switch (tree.characterAsString()) {
-          case "a": case "c": case "f":
+          case "a", "c", "f":
             assertActiveFlags(tree, true, false, false);
             break;
-          case "b": case "e": case "g":
+          case "b", "e", "g":
             assertActiveFlags(tree, true, true, false);
             break;
           case "d":

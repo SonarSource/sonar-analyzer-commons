@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 /**
@@ -64,7 +63,7 @@ public final class SecretClassifier {
     }
 
     static PatternGroup of(Category category, String... regexes) {
-      return new PatternGroup(category, Arrays.stream(regexes).map(SecretClassifier::compile).collect(Collectors.toUnmodifiableList()));
+      return new PatternGroup(category, Arrays.stream(regexes).map(SecretClassifier::compile).toList());
     }
 
     List<Pattern> patterns() {
@@ -96,21 +95,19 @@ public final class SecretClassifier {
       "^.{0,5}$",
       // Words usually found in fake secrets, e.g. "samplepassword", "EXAMPLE_SECRET"
       "sample|example|placeholder|replace|change|foo|bar|test|fake|abcd",
-      "redacted|cafebabe|deadbeef|whatever|123456|default|dummy|qwerty|setting|obfuscated",
+      "redacted|cafebabe|deadbeef|whatever|123456|admin|pass|secret|default|dummy|qwerty|setting|obfuscated",
       // Password-like words, e.g. "password", "passwd", "pass", "password1234"
       "^(my)?pass(word|wd)?\\d{0,5}+$",
+      // Leetspeak "password" variants the "pass" substring misses, e.g. "p@ssword", "p@ssw0rd"
+      "p[@a]ssw[o0]rd",
       // Boolean / null / scalar literals, e.g. "password = undefined", "enabled: true"
       "^(?:none|undefined|null|true|false|yes|no|1|0)$",
       // Starts with "your", e.g. "yourpassword", "your_super_secret"
       "^your",
       // Same character 4 times in a row, e.g. "abbbbc"
-      "(?<char>[\\w\\*\\.])\\k<char>{3}",
-      // Same character repeated from start to end, e.g. "aa", "111111"
-      "^(?<repeated>.)\\k<repeated>*+$",
+      "(?<repeated>.)\\k<repeated>{3}",
       // A secret being masked or shortened, e.g. "1fj28...askn3i"
-      "\\.\\.\\.",
-      // Code-reminder placeholder markers left as a value (see the regex)
-      "^(?:todo|fixme)\\b"),
+      "\\.\\.\\."),
 
     // Templating, interpolation and env/config lookups where the value comes from elsewhere.
     PatternGroup.of(Category.PLACEHOLDER,
@@ -152,7 +149,11 @@ public final class SecretClassifier {
       // Python format string placeholders, e.g. "%(password)s"
       "^%\\([^)]++\\)s$",
       // Azure Logic Apps runtime expressions, e.g. "@variables('name')", "@body('action')"
-      "^@\\w++\\([^)]*+\\)$"),
+      "^@\\w++\\([^)]*+\\)$",
+      // Double-underscore-wrapped placeholders, e.g. "__some_placeholder_password__"
+      "^__.+__$",
+      // Code-reminder prefix left as the full credential value, e.g. "(prefix): replace with real key"
+      "^(?:todo|fixme)\\b"),
 
     // Encrypted markers wrapping a ciphertext.
     PatternGroup.of(Category.ENCRYPTED,
@@ -189,13 +190,13 @@ public final class SecretClassifier {
   // Flattened once: isKnownNonSecret is on every check's hot path, so avoid re-flattening PATTERN_GROUPS per call.
   private static final List<Pattern> ALL_PATTERNS = PATTERN_GROUPS.stream()
     .flatMap(group -> group.patterns().stream())
-    .collect(Collectors.toUnmodifiableList());
+    .toList();
 
   // Well-known placeholder secrets plus config/credential vocabulary, matched in full (case-insensitive).
   private static final ExactMatchGroup SECRET_VALUES = new ExactMatchGroup(Category.SECRET, Set.of(
-    "hunter2", "letmein", "secret", "abc123",
-    "admin", "changeme", "changeit", "unknown", "optional", "enabled", "disabled",
-    "string", "random", "token", "pass"));
+    "hunter2", "letmein", "abc123",
+    "changeme", "changeit", "unknown", "optional", "enabled", "disabled",
+    "string", "random", "token"));
 
   // Context is an empty extension point today, so the analyzer sees instantiating it as pointless; the single shared
   // empty instance is intentional and lets empty() return a non-null context.
@@ -253,6 +254,100 @@ public final class SecretClassifier {
   /** Visible for testing: the exact-match values. */
   static Set<String> exactMatchValues() {
     return SECRET_VALUES.values();
+  }
+
+  /** Visible for testing: returns the {@link Category} that suppressed the candidate, or {@code null} when not a known non-secret. */
+  @Nullable
+  static Category classify(@Nullable String candidate) {
+    if (candidate == null) {
+      return null;
+    }
+    if (SECRET_VALUES.values().contains(candidate.toLowerCase(Locale.ROOT))) {
+      return Category.SECRET;
+    }
+    for (PatternGroup group : PATTERN_GROUPS) {
+      for (Pattern pattern : group.patterns()) {
+        if (pattern.matcher(candidate).find()) {
+          return group.category;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Returns the skip-pattern groups as raw regex source strings, grouped by {@link Category}, in declaration order.
+   *
+   * <p>Exposed so the build can emit a single machine-readable export (JSON) of the very patterns the JVM classifier
+   * uses, keeping non-JVM analyzers (SonarJS, sonar-dotnet, …) in sync without duplicating the list. The patterns are
+   * applied case-insensitively with "find" (search-anywhere) semantics, matching {@link #isKnownNonSecret(String, Context)}.
+   *
+   * @return an immutable, ordered list of pattern groups
+   */
+  public static List<PatternGroupView> exportPatternGroups() {
+    return PATTERN_GROUPS.stream()
+      .map(group -> new PatternGroupView(
+        group.category.name(),
+        group.patterns().stream().map(Pattern::pattern).toList()))
+      .toList();
+  }
+
+  /**
+   * Returns the exact-match value groups, matched in full and case-insensitively, grouped by {@link Category}.
+   * Values are sorted so the export is deterministic.
+   *
+   * @return an immutable, ordered list of exact-match groups
+   */
+  public static List<ExactMatchGroupView> exportExactMatchGroups() {
+    return List.of(new ExactMatchGroupView(
+      SECRET_VALUES.category.name(),
+      SECRET_VALUES.values().stream().sorted().toList()));
+  }
+
+  /**
+   * A group of skip regexes sharing a {@link Category}, exposed for machine-readable export.
+   * The regexes are the raw Java source patterns; callers that target other engines are responsible for any
+   * translation (e.g. possessive quantifiers to atomic groups for .NET).
+   */
+  public static final class PatternGroupView {
+    private final String category;
+    private final List<String> regexes;
+
+    private PatternGroupView(String category, List<String> regexes) {
+      this.category = category;
+      this.regexes = regexes;
+    }
+
+    /** The {@link Category} name this group belongs to. */
+    public String category() {
+      return category;
+    }
+
+    /** The raw regex source strings, in declaration order. */
+    public List<String> regexes() {
+      return regexes;
+    }
+  }
+
+  /** A group of exact-match values sharing a {@link Category}, exposed for machine-readable export. */
+  public static final class ExactMatchGroupView {
+    private final String category;
+    private final List<String> values;
+
+    private ExactMatchGroupView(String category, List<String> values) {
+      this.category = category;
+      this.values = values;
+    }
+
+    /** The {@link Category} name this group belongs to. */
+    public String category() {
+      return category;
+    }
+
+    /** The exact-match values, sorted, matched in full and case-insensitively. */
+    public List<String> values() {
+      return values;
+    }
   }
 
   /**

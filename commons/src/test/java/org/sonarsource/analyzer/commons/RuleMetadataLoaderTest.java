@@ -16,6 +16,7 @@
  */
 package org.sonarsource.analyzer.commons;
 
+import com.sonarsource.scanner.engine.sensor.test.fixtures.TestSonarRuntime;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -24,20 +25,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.sonar.api.SonarRuntime;
-import org.sonar.api.internal.SonarRuntimeImpl;
 import org.sonar.api.rule.RuleKey;
 import org.sonar.api.rule.RuleScope;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.debt.DebtRemediationFunction;
 import org.sonar.api.server.rule.RuleParamType;
-import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
+import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.utils.Version;
+import org.sonar.check.Priority;
 import org.sonar.check.Rule;
 import org.sonarsource.analyzer.commons.annotations.DeprecatedRuleKey;
 import org.sonarsource.analyzer.commons.domain.RuleManifest;
@@ -70,15 +70,15 @@ public class RuleMetadataLoaderTest {
   private NewRepository newRepository;
   private RuleMetadataLoader ruleMetadataLoader;
   // using SonarLint for simplicity (it requires fewer parameters)
-  private static final SonarRuntime SONAR_RUNTIME_9_2 = SonarRuntimeImpl.forSonarLint(Version.create(9, 2));
-  private static final SonarRuntime SONAR_RUNTIME_9_3 = SonarRuntimeImpl.forSonarLint(Version.create(9, 3));
-  private static final SonarRuntime SONAR_RUNTIME_9_5 = SonarRuntimeImpl.forSonarLint(Version.create(9, 5));
-  private static final SonarRuntime SONAR_RUNTIME_9_9 = SonarRuntimeImpl.forSonarLint(Version.create(9, 9));
-  private static final SonarRuntime SONAR_RUNTIME_10_1 = SonarRuntimeImpl.forSonarLint(Version.create(10, 1));
-  private static final SonarRuntime SONAR_RUNTIME_10_10 = SonarRuntimeImpl.forSonarLint(Version.create(10, 10));
-  private static final SonarRuntime SONAR_RUNTIME_10_11 = SonarRuntimeImpl.forSonarLint(Version.create(10, 11));
-  private static final SonarRuntime SONAR_RUNTIME_11_4 = SonarRuntimeImpl.forSonarLint(Version.create(11, 4));
-  private static final SonarRuntime SONAR_RUNTIME_13_3 = SonarRuntimeImpl.forSonarLint(Version.create(13, 3));
+  private static final SonarRuntime SONAR_RUNTIME_9_2 = TestSonarRuntime.forSonarLint(Version.create(9, 2));
+  private static final SonarRuntime SONAR_RUNTIME_9_3 = TestSonarRuntime.forSonarLint(Version.create(9, 3));
+  private static final SonarRuntime SONAR_RUNTIME_9_5 = TestSonarRuntime.forSonarLint(Version.create(9, 5));
+  private static final SonarRuntime SONAR_RUNTIME_9_9 = TestSonarRuntime.forSonarLint(Version.create(9, 9));
+  private static final SonarRuntime SONAR_RUNTIME_10_1 = TestSonarRuntime.forSonarLint(Version.create(10, 1));
+  private static final SonarRuntime SONAR_RUNTIME_10_10 = TestSonarRuntime.forSonarLint(Version.create(10, 10));
+  private static final SonarRuntime SONAR_RUNTIME_10_11 = TestSonarRuntime.forSonarLint(Version.create(10, 11));
+  private static final SonarRuntime SONAR_RUNTIME_11_4 = TestSonarRuntime.forSonarLint(Version.create(11, 4));
+  private static final SonarRuntime SONAR_RUNTIME_13_3 = TestSonarRuntime.forSonarLint(Version.create(13, 3));
 
   @Before
   public void setup() {
@@ -457,6 +457,62 @@ public class RuleMetadataLoaderTest {
     List<Class<?>> classes = List.of(TestRule.class);
     assertThrows("Rule not found: S404", IllegalStateException.class,
       () -> ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, classes));
+  }
+
+  @Test
+  public void load_rule_purely_from_annotation_without_resource_folder() {
+    @Rule(
+      key = "MyFirstCustomCheck",
+      name = "Return type and parameter of a method should not be the same",
+      description = "For a method having a single parameter, the types of its return value and its parameter should never be the same.",
+      priority = Priority.CRITICAL,
+      tags = {"bug"})
+    class TestRule {
+    }
+
+    ruleMetadataLoader = new RuleMetadataLoader(SONAR_RUNTIME_9_3);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("MyFirstCustomCheck");
+    assertThat(rule).isNotNull();
+    assertThat(rule.name()).isEqualTo("Return type and parameter of a method should not be the same");
+    assertThat(rule.htmlDescription())
+      .isEqualTo("For a method having a single parameter, the types of its return value and its parameter should never be the same.");
+    assertThat(rule.severity()).isEqualTo("CRITICAL");
+    // "bug" is a reserved tag: the SonarQube API converts it into the rule type and removes it from the tag list
+    assertThat(rule.type()).isEqualTo(RuleType.BUG);
+    assertThat(rule.status()).isEqualTo(RuleStatus.READY);
+    assertThat(rule.tags()).isEmpty();
+    assertThat(rule.deprecatedRuleKeys()).isEmpty();
+  }
+
+  @Test
+  public void load_rule_with_defaults_from_annotation_without_resource_folder() {
+    @Rule(key = "MyDefaultCheck", name = "My default check", description = "Description of my default check")
+    class TestRule {
+    }
+
+    ruleMetadataLoader = new RuleMetadataLoader(SONAR_RUNTIME_9_3);
+    ruleMetadataLoader.addRulesByAnnotatedClass(newRepository, singletonList(TestRule.class));
+    newRepository.done();
+
+    RulesDefinition.Repository repository = context.repository(RULE_REPOSITORY_KEY);
+    RulesDefinition.Rule rule = repository.rule("MyDefaultCheck");
+    assertThat(rule).isNotNull();
+    assertThat(rule.severity()).isEqualTo("MAJOR");
+    assertThat(rule.type()).isEqualTo(RuleType.CODE_SMELL);
+    assertThat(rule.status()).isEqualTo(RuleStatus.READY);
+    assertThat(rule.tags()).isEmpty();
+  }
+
+  @Test
+  public void add_rules_by_rule_key_without_resource_folder_throws() {
+    ruleMetadataLoader = new RuleMetadataLoader(SONAR_RUNTIME_9_3);
+    List<String> ruleKeys = singletonList("S100");
+    assertThrows("Resource folder is required to load a rule by its key: S100", IllegalStateException.class,
+      () -> ruleMetadataLoader.addRulesByRuleKey(newRepository, ruleKeys));
   }
 
   @Test

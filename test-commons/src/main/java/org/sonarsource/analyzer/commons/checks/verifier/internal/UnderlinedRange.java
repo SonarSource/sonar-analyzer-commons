@@ -70,7 +70,7 @@ public class UnderlinedRange implements Comparable<UnderlinedRange> {
 
   @Override
   public boolean equals(Object other) {
-    return other instanceof UnderlinedRange && this.compareTo((UnderlinedRange) other) == 0;
+    return other instanceof UnderlinedRange range && this.compareTo(range) == 0;
   }
 
   @Override
@@ -104,7 +104,7 @@ public class UnderlinedRange implements Comparable<UnderlinedRange> {
     for (int i = textLine.length(); i < (indent + column) - 1; i++) {
       textLine.append(' ');
     }
-    if (textLine.length() > 0 && textLine.charAt(textLine.length() - 1) == '^') {
+    if (!textLine.isEmpty() && textLine.charAt(textLine.length() - 1) == '^') {
       textLine.append(' ');
     }
     if (textLine.length() >= (indent + column) || endLine != line) {

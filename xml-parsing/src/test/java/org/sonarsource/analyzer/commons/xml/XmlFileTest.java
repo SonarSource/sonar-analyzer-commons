@@ -16,6 +16,7 @@
  */
 package org.sonarsource.analyzer.commons.xml;
 
+import com.sonarsource.scanner.engine.sensor.test.fixtures.TestInputFileBuilder;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -23,7 +24,6 @@ import org.assertj.core.api.AbstractListAssert;
 import org.assertj.core.api.ObjectAssert;
 import org.junit.Test;
 import org.sonar.api.batch.fs.InputFile;
-import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
 import org.sonarsource.analyzer.commons.xml.XmlFile.Location;
 import org.w3c.dom.Attr;
 import org.w3c.dom.CDATASection;
@@ -99,11 +99,11 @@ public class XmlFileTest {
 
   @Test
   public void testNodeAttribute() throws Exception {
-    XmlFile xmlFile = XmlFile.create(
-      "<a attr='foo'>\n"
-        + "  <!-- comment -->\n"
-        + "  <b>world</b>\n"
-        + "</a>");
+    XmlFile xmlFile = XmlFile.create("""
+      <a attr='foo'>
+        <!-- comment -->
+        <b>world</b>
+      </a>""");
 
     Node aNode = xmlFile.getDocument().getFirstChild();
     assertThat(XmlFile.nodeAttribute(aNode, "attr")).isNotNull();

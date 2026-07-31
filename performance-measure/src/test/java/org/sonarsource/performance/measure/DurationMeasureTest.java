@@ -99,7 +99,7 @@ class DurationMeasureTest {
   void sorted_children() {
     DurationMeasure root = new DurationMeasure("root", 1, 100, null);
     Supplier<List<String>> extractChildNames = () -> root.sortedChildren().stream()
-      .map(DurationMeasure::name).collect(Collectors.toList());
+      .map(DurationMeasure::name).toList();
 
     assertThat(extractChildNames.get()).isEmpty();
 
@@ -115,28 +115,28 @@ class DurationMeasureTest {
 
   @Test
   void recursive_merge_on_upper_level() {
-    String json = "" +
-      "{ \"name\": \"Root\", \"calls\": 1, \"durationNanos\": 1234, \"children\": [\n" +
-      "    { \"name\": \"A\", \"calls\": 5, \"durationNanos\": 622, \"children\": [\n" +
-      "        { \"name\": \"Cache\", \"calls\": 3, \"durationNanos\": 300 }\n" +
-      "      ]\n" +
-      "    },\n" +
-      "    { \"name\": \"B\", \"calls\": 3, \"durationNanos\": 321, \"children\": [\n" +
-      "        { \"name\": \"Cache\", \"calls\": 2, \"durationNanos\": 100 }\n" +
-      "      ]\n" +
-      "    }\n" +
-      "  ]\n" +
-      "}";
+    String json = """
+      { "name": "Root", "calls": 1, "durationNanos": 1234, "children": [
+          { "name": "A", "calls": 5, "durationNanos": 622, "children": [
+              { "name": "Cache", "calls": 3, "durationNanos": 300 }
+            ]
+          },
+          { "name": "B", "calls": 3, "durationNanos": 321, "children": [
+              { "name": "Cache", "calls": 2, "durationNanos": 100 }
+            ]
+          }
+        ]
+      }""";
 
     DurationMeasure measure = DurationMeasureFiles.fromJson(json);
     measure.recursiveMergeOnUpperLevel("Cache");
-    assertThat(DurationMeasureFiles.toJson(measure)).isEqualTo("" +
-      "{ \"name\": \"Root\", \"calls\": 1, \"durationNanos\": 1234, \"children\": [\n" +
-      "    { \"name\": \"A\", \"calls\": 5, \"durationNanos\": 322 },\n" +
-      "    { \"name\": \"B\", \"calls\": 3, \"durationNanos\": 221 },\n" +
-      "    { \"name\": \"Cache\", \"calls\": 5, \"durationNanos\": 400 }\n" +
-      "  ]\n" +
-      "}");
+    assertThat(DurationMeasureFiles.toJson(measure)).isEqualTo("""
+      { "name": "Root", "calls": 1, "durationNanos": 1234, "children": [
+          { "name": "A", "calls": 5, "durationNanos": 322 },
+          { "name": "B", "calls": 3, "durationNanos": 221 },
+          { "name": "Cache", "calls": 5, "durationNanos": 400 }
+        ]
+      }""");
   }
 
   private static Map<String, DurationMeasure> toMap(DurationMeasure... measures) {

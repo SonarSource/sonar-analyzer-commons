@@ -10,7 +10,7 @@
 
   <groupId>org.sonarsource.analyzer-commons</groupId>
   <artifactId>sonar-analyzer-commons-parent</artifactId>
-  <version>2.25.0-SNAPSHOT</version>
+  <version>2.30.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>SonarSource Analyzers Commons Parent</name>
@@ -56,6 +56,7 @@
 
   <modules>
     <module>commons</module>
+    <module>sonar-analyzer-commons-configurations</module>
     <module>recognizers</module>
     <module>test-commons</module>
     <module>xml-parsing</module>
@@ -73,19 +74,19 @@
 
   <properties>
     <!-- versions -->
-    <version.sonar.plugin.api>13.5.0.4319</version.sonar.plugin.api>
-    <sonarqube.api.impl.version>10.7.0.96327</sonarqube.api.impl.version>
-    <version.assertj>3.17.1</version.assertj>
+    <version.sonar.plugin.api>13.8.0.4399</version.sonar.plugin.api>
+    <version.sonar.scanner>13.5.0.4089</version.sonar.scanner>
+    <version.assertj>3.27.7</version.assertj>
     <version.jsr305>3.0.2</version.jsr305>
-    <version.mockito>3.5.7</version.mockito>
+    <version.mockito>5.23.0</version.mockito>
     <version.junit>4.13.2</version.junit>
-    <version.junit-jupiter>5.8.1</version.junit-jupiter>
+    <version.junit-jupiter>6.1.2</version.junit-jupiter>
+    <version.gson>2.14.0</version.gson>
     <!-- used for deployment to SonarSource Artifactory -->
     <gitRepositoryName>sonar-analyzer-commons</gitRepositoryName>
-    <maven.compiler.release>8</maven.compiler.release>
-    <artifactsToPublish>${project.groupId}:sonar-analyzer-commons:jar,${project.groupId}:sonar-analyzer-test-commons:jar,${project.groupId}:sonar-analyzer-recognizers:jar,${project.groupId}:sonar-xml-parsing:jar,${project.groupId}:test-sonar-xml-parsing:jar,${project.groupId}:sonar-regex-parsing:jar</artifactsToPublish>
+    <artifactsToPublish>${project.groupId}:sonar-analyzer-commons:jar,${project.groupId}:sonar-analyzer-test-commons:jar,${project.groupId}:sonar-analyzer-recognizers:jar,${project.groupId}:sonar-xml-parsing:jar,${project.groupId}:test-sonar-xml-parsing:jar,${project.groupId}:sonar-regex-parsing:jar,${project.groupId}:sonar-analyzer-commons-configurations:json</artifactsToPublish>
     <!-- this property configures the settings in parent pom -->
-    <jdk.min.version>11</jdk.min.version>
+    <jdk.min.version>17</jdk.min.version>
     <maven.compiler.release>${jdk.min.version}</maven.compiler.release>
   </properties>
 
@@ -101,13 +102,18 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.7.30</version>
+        <version>1.7.36</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
-        <groupId>org.sonarsource.sonarqube</groupId>
-        <artifactId>sonar-plugin-api-impl</artifactId>
-        <version>${sonarqube.api.impl.version}</version>
+        <groupId>org.sonarsource.scanner.engine</groupId>
+        <artifactId>plugin-api-scanner-impl</artifactId>
+        <version>${version.sonar.scanner}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sonarsource.scanner.engine</groupId>
+        <artifactId>sensor-test-fixtures</artifactId>
+        <version>${version.sonar.scanner}</version>
       </dependency>
       <dependency>
         <groupId>org.sonarsource.api.plugin</groupId>
@@ -125,6 +131,11 @@
         <groupId>com.googlecode.json-simple</groupId>
         <artifactId>json-simple</artifactId>
         <version>1.1.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>${version.gson}</version>
       </dependency>
 
       <!-- TEST -->

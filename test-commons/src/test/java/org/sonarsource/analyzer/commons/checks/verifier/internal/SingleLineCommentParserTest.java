@@ -31,12 +31,12 @@ public class SingleLineCommentParserTest {
 
   @Test
   public void parse() throws Exception {
-    List<Comment> comments = parser.parse(new FileContent(path, "" +
-      "abc // Comment1\n" +
-      "def\n" +
-      "// Comment2\r" +
-      "ghi // Comment3\r\n" +
-      "// Comment4"));
+    List<Comment> comments = parser.parse(new FileContent(path, """
+      abc // Comment1
+      def
+      // Comment2\r\
+      ghi // Comment3\r
+      // Comment4"""));
 
     assertThat(comments).hasSize(4);
     assertThat(comments.get(0)).hasToString("(file.js,1,5,7, Comment1)");

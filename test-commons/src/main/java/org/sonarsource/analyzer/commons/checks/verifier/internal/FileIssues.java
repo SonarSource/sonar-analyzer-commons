@@ -71,8 +71,8 @@ public class FileIssues {
   }
 
   private void addLocation(PreciseLocation location) {
-    if (location instanceof PrimaryLocation) {
-      addPrimary((PrimaryLocation) location);
+    if (location instanceof PrimaryLocation primary) {
+      addPrimary(primary);
     } else {
       addSecondary((SecondaryLocation) location);
     }
@@ -104,8 +104,7 @@ public class FileIssues {
   }
 
   private static void addSecondaryTo(SecondaryLocation secondary, PrimaryLocation primary) {
-    if (secondary instanceof FlowLocation) {
-      FlowLocation flow = (FlowLocation) secondary;
+    if (secondary instanceof FlowLocation flow) {
       for (int flowId = primary.flowLocations.size(); flowId <= flow.flowIndex; flowId++) {
         primary.flowLocations.add(new ArrayList<>());
       }

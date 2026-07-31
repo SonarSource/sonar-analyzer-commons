@@ -117,6 +117,8 @@ public final class CleartextProtocolFilter {
     "^schema\\.org|" +
     // Spring Framework XML schemas
     "^www\\.springframework\\.org|" +
+    // MuleSoft Mule application XML schemas
+    "^www\\.mulesoft\\.org|" +
     // Maven POM / XSD
     "^maven\\.apache\\.org|" +
     // Dublin Core legacy URIs

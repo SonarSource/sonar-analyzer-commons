@@ -248,12 +248,16 @@ public final class RegexFinderVerifier {
 
     @Override
     protected void visit(Node node) {
-      comments.addAll(node.getBlockComments());
-      comments.addAll(node.getInLineComments());
-      if (node.getEndComments() != null) {
-        comments.addAll(node.getEndComments());
-      }
+      addComments(node.getBlockComments());
+      addComments(node.getInLineComments());
+      addComments(node.getEndComments());
       super.visit(node);
+    }
+
+    private void addComments(@Nullable List<CommentLine> nodeComments) {
+      if (nodeComments != null) {
+        comments.addAll(nodeComments);
+      }
     }
   }
 

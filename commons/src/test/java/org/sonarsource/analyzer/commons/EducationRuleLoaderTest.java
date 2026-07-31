@@ -16,6 +16,7 @@
  */
 package org.sonarsource.analyzer.commons;
 
+import com.sonarsource.scanner.engine.sensor.test.fixtures.TestSonarRuntime;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,12 +30,11 @@ import org.slf4j.event.Level;
 import org.sonar.api.SonarEdition;
 import org.sonar.api.SonarQubeSide;
 import org.sonar.api.SonarRuntime;
-import org.sonar.api.internal.SonarRuntimeImpl;
 import org.sonar.api.server.rule.RuleDescriptionSection;
-import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinition.Context;
 import org.sonar.api.server.rule.RulesDefinition.NewRepository;
 import org.sonar.api.server.rule.RulesDefinition.Repository;
+import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinitionAnnotationLoader;
 import org.sonar.api.testfixtures.log.LogTester;
 import org.sonar.api.utils.Version;
@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class EducationRuleLoaderTest {
 
-  private static final SonarRuntime RUNTIME = SonarRuntimeImpl.forSonarQube(Version.create(9, 8), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
+  private static final SonarRuntime RUNTIME = TestSonarRuntime.forSonarQube(Version.create(9, 8), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
   private static final Path EDUCATION_TEST_FILES_DIRECTORY = Paths.get("src/test/resources/org/sonarsource/analyzer/commons/education");
   private static final String RULE_REPOSITORY_KEY = "rule-definition-test";
 
@@ -65,24 +65,24 @@ public class EducationRuleLoaderTest {
 
   @Test
   public void supports_education_rules_descriptions() {
-    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarQube(Version.create(9, 5), SonarQubeSide.SERVER, SonarEdition.DEVELOPER)).isEducationRuleDescriptionSupported()).isTrue();
-    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarQube(Version.create(9, 4), SonarQubeSide.SERVER, SonarEdition.DEVELOPER)).isEducationRuleDescriptionSupported()).isFalse();
-    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarQube(Version.create(9, 6), SonarQubeSide.SERVER, SonarEdition.SONARCLOUD)).isEducationRuleDescriptionSupported()).isTrue();
-    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarLint(Version.create(9, 6))).isEducationRuleDescriptionSupported()).isTrue();
+    assertThat(new EducationRuleLoader(TestSonarRuntime.forSonarQube(Version.create(9, 5), SonarQubeSide.SERVER, SonarEdition.DEVELOPER)).isEducationRuleDescriptionSupported()).isTrue();
+    assertThat(new EducationRuleLoader(TestSonarRuntime.forSonarQube(Version.create(9, 4), SonarQubeSide.SERVER, SonarEdition.DEVELOPER)).isEducationRuleDescriptionSupported()).isFalse();
+    assertThat(new EducationRuleLoader(TestSonarRuntime.forSonarQube(Version.create(9, 6), SonarQubeSide.SERVER, SonarEdition.SONARCLOUD)).isEducationRuleDescriptionSupported()).isTrue();
+    assertThat(new EducationRuleLoader(TestSonarRuntime.forSonarLint(Version.create(9, 6))).isEducationRuleDescriptionSupported()).isTrue();
   }
 
   @Test
   public void supports_education_principles_metadata() {
-    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarQube(Version.create(9, 8), SonarQubeSide.SERVER, SonarEdition.DEVELOPER)).isEducationPrinciplesMetadataSupported()).isTrue();
-    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarQube(Version.create(9, 8), SonarQubeSide.SERVER, SonarEdition.SONARCLOUD)).isEducationPrinciplesMetadataSupported()).isTrue();
-    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarLint(Version.create(9, 8))).isEducationPrinciplesMetadataSupported()).isTrue();
-    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarQube(Version.create(9, 7), SonarQubeSide.SERVER, SonarEdition.DEVELOPER)).isEducationPrinciplesMetadataSupported()).isFalse();
-    assertThat(new EducationRuleLoader(SonarRuntimeImpl.forSonarLint(Version.create(9, 7))).isEducationPrinciplesMetadataSupported()).isFalse();
+    assertThat(new EducationRuleLoader(TestSonarRuntime.forSonarQube(Version.create(9, 8), SonarQubeSide.SERVER, SonarEdition.DEVELOPER)).isEducationPrinciplesMetadataSupported()).isTrue();
+    assertThat(new EducationRuleLoader(TestSonarRuntime.forSonarQube(Version.create(9, 8), SonarQubeSide.SERVER, SonarEdition.SONARCLOUD)).isEducationPrinciplesMetadataSupported()).isTrue();
+    assertThat(new EducationRuleLoader(TestSonarRuntime.forSonarLint(Version.create(9, 8))).isEducationPrinciplesMetadataSupported()).isTrue();
+    assertThat(new EducationRuleLoader(TestSonarRuntime.forSonarQube(Version.create(9, 7), SonarQubeSide.SERVER, SonarEdition.DEVELOPER)).isEducationPrinciplesMetadataSupported()).isFalse();
+    assertThat(new EducationRuleLoader(TestSonarRuntime.forSonarLint(Version.create(9, 7))).isEducationPrinciplesMetadataSupported()).isFalse();
   }
 
   @Test
   public void education_description_content_unsupported_product_runtime() throws IOException {
-    SonarRuntime invalidRuntime = SonarRuntimeImpl.forSonarQube(Version.create(9, 4), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
+    SonarRuntime invalidRuntime = TestSonarRuntime.forSonarQube(Version.create(9, 4), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
     EducationRuleLoader educationRuleLoader = new EducationRuleLoader(invalidRuntime);
     String testFileContent = getTestFileContent("valid/S100.html");
     String fallbackDescription = educationRuleLoader.setEducationDescriptionFromHtml(newRule, testFileContent);
@@ -249,7 +249,7 @@ public class EducationRuleLoaderTest {
 
   @Test
   public void education_metadata() {
-    SonarRuntime invalidRuntime = SonarRuntimeImpl.forSonarQube(Version.create(9, 4), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
+    SonarRuntime invalidRuntime = TestSonarRuntime.forSonarQube(Version.create(9, 4), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
 
     RulesDefinition.Rule rule = invokeSetEducationMetadataFromJson(invalidRuntime, Map.of("educationPrinciples", List.of("defense_in_depth", "never_trust_user_input")));
     assertThat(rule.educationPrincipleKeys()).isEmpty();

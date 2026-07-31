@@ -81,8 +81,8 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
 
   protected String makePossessiveOrGreedy(Quantifier quantifier, boolean possessive) {
     String possessiveAddition = possessive ? "+" : "";
-    if (quantifier instanceof SimpleQuantifier) {
-      return ((SimpleQuantifier) quantifier).getKind() + possessiveAddition;
+    if (quantifier instanceof SimpleQuantifier simpleQuantifier) {
+      return simpleQuantifier.getKind() + possessiveAddition;
     } else {
       String max = Optional.ofNullable(quantifier.getMaximumRepetitions()).map(Object::toString).orElse("");
       return String.format("{%d,%s}%s", quantifier.getMinimumRepetitions(), max, possessiveAddition);
@@ -90,7 +90,7 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
   }
 
   private static Optional<String> findNegatedCharacterClassFor(RegexTree tree, @Nullable EscapedCharacterClassTree base) {
-    if (tree instanceof CharacterClassElementTree && hasNoIntersection(((CharacterClassElementTree) tree), base)) {
+    if (tree instanceof CharacterClassElementTree element && hasNoIntersection(element, base)) {
       return Optional.empty();
     }
     String result;

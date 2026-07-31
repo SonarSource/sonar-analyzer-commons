@@ -54,9 +54,9 @@ public class IndexRange {
 
   @Override
   public boolean equals(Object other) {
-    return other instanceof IndexRange
-      && beginningOffset == ((IndexRange) other).beginningOffset
-      && endingOffset == ((IndexRange) other).endingOffset;
+    return other instanceof IndexRange ir
+      && beginningOffset == ir.beginningOffset
+      && endingOffset == ir.endingOffset;
   }
 
   @Override

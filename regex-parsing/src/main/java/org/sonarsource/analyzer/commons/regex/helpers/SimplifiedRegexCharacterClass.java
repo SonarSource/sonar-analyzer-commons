@@ -65,10 +65,10 @@ public class SimplifiedRegexCharacterClass {
 
   @Nullable
   public static SimplifiedRegexCharacterClass of(AutomatonState tree) {
-    if (tree instanceof CharacterClassElementTree) {
-      return new SimplifiedRegexCharacterClass((CharacterClassElementTree) tree);
-    } else if (tree instanceof DotTree) {
-      return new SimplifiedRegexCharacterClass((DotTree) tree);
+    if (tree instanceof CharacterClassElementTree characterClassElementTree) {
+      return new SimplifiedRegexCharacterClass(characterClassElementTree);
+    } else if (tree instanceof DotTree dotTree) {
+      return new SimplifiedRegexCharacterClass(dotTree);
     } else {
       return null;
     }

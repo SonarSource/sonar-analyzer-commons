@@ -208,6 +208,8 @@ class CleartextProtocolFilterTest {
       "http://graphml.graphdrawing.org/graphml",
       "http://json-schema.org/draft-07/schema",
       "http://www.eclipse.org/emf/2002/Ecore",
+      "http://www.mulesoft.org/schema/mule/core",
+      "http://www.mulesoft.org/schema/mule/http",
 
       // Case insensitivity and surrounding whitespace
       "HTTP://LOCALHOST:8080",
@@ -314,6 +316,7 @@ class CleartextProtocolFilterTest {
       "http://metadata.google.internal.evil.com",
       "http://www.w3.org.evil.com/x",
       "http://schema.org.evil.com/Person",
+      "http://www.mulesoft.org.evil.com/schema",
 
       // Userinfo — safe-looking host before @ must not grant safety
       "http://www.w3.org@evil.com",

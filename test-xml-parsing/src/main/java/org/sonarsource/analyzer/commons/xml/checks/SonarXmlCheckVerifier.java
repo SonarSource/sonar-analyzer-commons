@@ -16,6 +16,8 @@
  */
 package org.sonarsource.analyzer.commons.xml.checks;
 
+import com.sonarsource.scanner.engine.sensor.test.fixtures.SensorContextTester;
+import com.sonarsource.scanner.engine.sensor.test.fixtures.TestInputFileBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -29,14 +31,12 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.fs.TextRange;
-import org.sonar.api.batch.fs.internal.DefaultInputFile;
-import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
-import org.sonar.api.batch.sensor.internal.SensorContextTester;
-import org.sonar.api.batch.sensor.issue.Issue;
 import org.sonar.api.batch.sensor.issue.Issue.Flow;
+import org.sonar.api.batch.sensor.issue.Issue;
 import org.sonar.api.batch.sensor.issue.IssueLocation;
-import org.sonar.api.config.internal.MapSettings;
 import org.sonar.api.rule.RuleKey;
+import org.sonar.scanner.plugin.api.impl.config.MapSettings;
+import org.sonar.scanner.plugin.api.impl.fs.DefaultInputFile;
 import org.sonarsource.analyzer.commons.checks.verifier.SingleFileVerifier;
 import org.sonarsource.analyzer.commons.xml.XmlFile;
 import org.sonarsource.analyzer.commons.xml.XmlTextRange;
@@ -174,8 +174,8 @@ public class SonarXmlCheckVerifier {
       "Expected %d secondary locations, but got %d.", secondaryLines.length, flows.size());
 
     // only contains lines
-    List<Integer> expectedLines = IntStream.of(secondaryLines).boxed().collect(Collectors.toList());
-    List<Integer> reportedLines = flows.stream().map(Flow::locations).map(locs -> locs.get(0).textRange().start().line()).collect(Collectors.toList());
+    List<Integer> expectedLines = IntStream.of(secondaryLines).boxed().toList();
+    List<Integer> reportedLines = flows.stream().map(Flow::locations).map(locs -> locs.get(0).textRange().start().line()).toList();
     reportProblem(!expectedLines.equals(reportedLines),
       "Expected secondary locations to be %s, but got %s.", expectedLines, reportedLines);
   }

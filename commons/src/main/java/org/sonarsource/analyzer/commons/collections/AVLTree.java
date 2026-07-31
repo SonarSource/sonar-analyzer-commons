@@ -448,8 +448,7 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
       if (this == obj) {
         return true;
       }
-      if (obj instanceof Node) {
-        final Node other = (Node) obj;
+      if (obj instanceof Node other) {
         return this.hashCode() == other.hashCode()
           && Equals.compute(this, other);
       }
@@ -500,7 +499,7 @@ abstract class AVLTree<K, V> implements PMap<K, V>, PSet<K> {
 
     @Override
     public boolean equals(Object obj) {
-      return (obj instanceof AVLTree) && ((AVLTree) obj).isEmpty();
+      return obj instanceof AVLTree avlTree && avlTree.isEmpty();
     }
 
     @Override

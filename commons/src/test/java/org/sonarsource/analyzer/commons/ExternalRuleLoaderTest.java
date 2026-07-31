@@ -16,6 +16,7 @@
  */
 package org.sonarsource.analyzer.commons;
 
+import com.sonarsource.scanner.engine.sensor.test.fixtures.TestSonarRuntime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -25,17 +26,14 @@ import org.junit.Test;
 import org.sonar.api.SonarEdition;
 import org.sonar.api.SonarQubeSide;
 import org.sonar.api.SonarRuntime;
-import org.sonar.api.batch.fs.internal.DefaultInputProject;
 import org.sonar.api.batch.rule.Severity;
 import org.sonar.api.batch.sensor.issue.NewExternalIssue;
-import org.sonar.api.batch.sensor.issue.internal.DefaultExternalIssue;
-import org.sonar.api.internal.SonarRuntimeImpl;
 import org.sonar.api.issue.impact.SoftwareQuality;
 import org.sonar.api.rules.CleanCodeAttribute;
 import org.sonar.api.rules.RuleType;
-import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.server.rule.RulesDefinition.Repository;
 import org.sonar.api.server.rule.RulesDefinition.Rule;
+import org.sonar.api.server.rule.RulesDefinition;
 import org.sonar.api.utils.Version;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,8 +56,8 @@ import static org.sonar.api.rules.RuleType.VULNERABILITY;
 
 public class ExternalRuleLoaderTest {
 
-  private static final SonarRuntime RUNTIME_10_0 = SonarRuntimeImpl.forSonarQube(Version.create(10, 0), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
-  private static final SonarRuntime RUNTIME_10_1 = SonarRuntimeImpl.forSonarQube(Version.create(10, 1), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
+  private static final SonarRuntime RUNTIME_10_0 = TestSonarRuntime.forSonarQube(Version.create(10, 0), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
+  private static final SonarRuntime RUNTIME_10_1 = TestSonarRuntime.forSonarQube(Version.create(10, 1), SonarQubeSide.SERVER, SonarEdition.DEVELOPER);
 
   @Test
   public void test_null_runtime() {

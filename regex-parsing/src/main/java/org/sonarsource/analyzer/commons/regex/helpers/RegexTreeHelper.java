@@ -78,9 +78,7 @@ public class RegexTreeHelper {
       return false;
     }
     switch (((BoundaryTree) state).type()) {
-      case LINE_END:
-      case INPUT_END:
-      case INPUT_END_FINAL_TERMINATOR:
+      case LINE_END, INPUT_END, INPUT_END_FINAL_TERMINATOR:
         return true;
       default:
         return false;

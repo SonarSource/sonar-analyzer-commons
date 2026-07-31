@@ -23,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.CapturingGroupTree;
@@ -52,7 +51,7 @@ public class RedundantRegexAlternativesFinder extends RegexBaseVisitor {
     List<RegexTree> alternatives = tree.getAlternatives().stream()
       // We don't handle POSIX character classes correctly (SONARPHP-1239)
       .filter(t -> !hasPosixCharacterClass(t))
-      .collect(Collectors.toList());
+      .toList();
     for (int i = 0; i + 1 < alternatives.size(); i++) {
       for (int j = i + 1; j < alternatives.size(); j++) {
         collector.evaluate(alternatives.get(i), alternatives.get(j));

@@ -38,7 +38,7 @@ public class EmptyGroupFinder extends RegexBaseVisitor {
   public void visitGroup(GroupTree groupTree) {
     RegexTree element = groupTree.getElement();
     if (element != null) {
-      if (element instanceof SequenceTree && ((SequenceTree) element).getItems().isEmpty()) {
+      if (element instanceof SequenceTree sequenceTree && sequenceTree.getItems().isEmpty()) {
         regexElementIssueReporter.report(groupTree, MESSAGE, null, Collections.emptyList());
       } else {
         super.visit(element);

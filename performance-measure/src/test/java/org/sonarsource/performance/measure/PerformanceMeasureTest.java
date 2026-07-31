@@ -115,21 +115,22 @@ class PerformanceMeasureTest {
     duration_2.stop();
 
     duration.stop();
-    assertThat(logger.logs()).isEqualTo("" +
-      "[DEBUG] Performance Measures:\n" +
-      "{ \"name\": \"root\", \"calls\": 1, \"durationNanos\": 1266481046, \"children\": [\n" +
-      "    { \"name\": \"cat-1\", \"calls\": 1, \"durationNanos\": 1195595137, \"children\": [\n" +
-      "        { \"name\": \"sub-cat-1\", \"calls\": 1, \"durationNanos\": 234453959 },\n" +
-      "        { \"name\": \"sub-cat-2\", \"calls\": 1, \"durationNanos\": 700123346 }\n" +
-      "      ]\n" +
-      "    },\n" +
-      "    { \"name\": \"cat-2\", \"calls\": 1, \"durationNanos\": 70885906, \"children\": [\n" +
-      "        { \"name\": \"ArrayList\", \"calls\": 1, \"durationNanos\": 32553813 },\n" +
-      "        { \"name\": \"sub-cat-2\", \"calls\": 0, \"durationNanos\": 0 }\n" +
-      "      ]\n" +
-      "    }\n" +
-      "  ]\n" +
-      "}\n");
+    assertThat(logger.logs()).isEqualTo("""
+      [DEBUG] Performance Measures:
+      { "name": "root", "calls": 1, "durationNanos": 1266481046, "children": [
+          { "name": "cat-1", "calls": 1, "durationNanos": 1195595137, "children": [
+              { "name": "sub-cat-1", "calls": 1, "durationNanos": 234453959 },
+              { "name": "sub-cat-2", "calls": 1, "durationNanos": 700123346 }
+            ]
+          },
+          { "name": "cat-2", "calls": 1, "durationNanos": 70885906, "children": [
+              { "name": "ArrayList", "calls": 1, "durationNanos": 32553813 },
+              { "name": "sub-cat-2", "calls": 0, "durationNanos": 0 }
+            ]
+          }
+        ]
+      }
+      """);
   }
 
   @Test
@@ -144,9 +145,10 @@ class PerformanceMeasureTest {
     PerformanceMeasure.Duration duration_1_1 = PerformanceMeasure.start("cat-1");
     duration_1_1.stop();
 
-    assertThat(logger.logs()).isEqualTo("" +
-      "[DEBUG] Performance Measures:\n" +
-      "{ \"name\": \"root\", \"calls\": 1, \"durationNanos\": 1 }\n");
+    assertThat(logger.logs()).isEqualTo("""
+      [DEBUG] Performance Measures:
+      { "name": "root", "calls": 1, "durationNanos": 1 }
+      """);
   }
 
   @Test
@@ -161,17 +163,17 @@ class PerformanceMeasureTest {
     duration_1.stop();
 
     String jsonContent = new String(Files.readAllBytes(performanceFile), UTF_8);
-    assertThat(jsonContent).isEqualTo("" +
-      "{ \"name\": \"root\", \"calls\": 1, \"durationNanos\": 1383187, \"children\": [\n" +
-      "    { \"name\": \"#MeasurementCost_v1\", \"calls\": 1, \"durationNanos\": 995, \"children\": [\n" +
-      "        { \"name\": \"createChild\", \"calls\": 1, \"durationNanos\": 3 },\n" +
-      "        { \"name\": \"incrementChild\", \"calls\": 1, \"durationNanos\": 3 },\n" +
-      "        { \"name\": \"nanoTime\", \"calls\": 1, \"durationNanos\": 1 },\n" +
-      "        { \"name\": \"observationCost\", \"calls\": 1, \"durationNanos\": 1 }\n" +
-      "      ]\n" +
-      "    }\n" +
-      "  ]\n" +
-      "}");
+    assertThat(jsonContent).isEqualTo("""
+      { "name": "root", "calls": 1, "durationNanos": 1383187, "children": [
+          { "name": "#MeasurementCost_v1", "calls": 1, "durationNanos": 995, "children": [
+              { "name": "createChild", "calls": 1, "durationNanos": 3 },
+              { "name": "incrementChild", "calls": 1, "durationNanos": 3 },
+              { "name": "nanoTime", "calls": 1, "durationNanos": 1 },
+              { "name": "observationCost", "calls": 1, "durationNanos": 1 }
+            ]
+          }
+        ]
+      }""");
 
     assertThat(logger.logs()).isEqualTo("" +
       "[INFO] Saving performance measures into: " + performanceFile + "\n");
@@ -203,10 +205,11 @@ class PerformanceMeasureTest {
       "[INFO] Saving performance measures into: " + performanceFile + "\n");
 
     String jsonContent = new String(Files.readAllBytes(performanceFile), UTF_8);
-    assertThat(jsonContent).isEqualTo("{ \"name\": \"root\", \"calls\": 1, \"durationNanos\": 51280435, \"children\": [\n" +
-      "    { \"name\": \"child-1\", \"calls\": 1, \"durationNanos\": 47442122 }\n" +
-      "  ]\n" +
-      "}");
+    assertThat(jsonContent).isEqualTo("""
+      { "name": "root", "calls": 1, "durationNanos": 51280435, "children": [
+          { "name": "child-1", "calls": 1, "durationNanos": 47442122 }
+        ]
+      }""");
 
     logger.clear();
 
@@ -236,11 +239,12 @@ class PerformanceMeasureTest {
       "[INFO] Adding performance measures into: " + performanceFile + "\n");
 
     jsonContent = new String(Files.readAllBytes(performanceFile), UTF_8);
-    assertThat(jsonContent).isEqualTo("{ \"name\": \"root\", \"calls\": 2, \"durationNanos\": 111739198, \"children\": [\n" +
-      "    { \"name\": \"child-1\", \"calls\": 2, \"durationNanos\": 79920246 },\n" +
-      "    { \"name\": \"child-2\", \"calls\": 1, \"durationNanos\": 13237124 }\n" +
-      "  ]\n" +
-      "}");
+    assertThat(jsonContent).isEqualTo("""
+      { "name": "root", "calls": 2, "durationNanos": 111739198, "children": [
+          { "name": "child-1", "calls": 2, "durationNanos": 79920246 },
+          { "name": "child-2", "calls": 1, "durationNanos": 13237124 }
+        ]
+      }""");
   }
 
   @Test

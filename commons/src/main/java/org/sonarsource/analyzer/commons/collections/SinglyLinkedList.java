@@ -154,8 +154,7 @@ final class SinglyLinkedList<E> implements PStack<E> {
     if (this == obj) {
       return true;
     }
-    if (obj instanceof SinglyLinkedList) {
-      final SinglyLinkedList other = (SinglyLinkedList) obj;
+    if (obj instanceof SinglyLinkedList other) {
       return this.element.equals(other.element)
         && Objects.equals(this.next, other.next);
     }

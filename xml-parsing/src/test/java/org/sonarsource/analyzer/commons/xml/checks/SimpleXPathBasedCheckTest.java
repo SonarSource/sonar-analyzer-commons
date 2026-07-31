@@ -16,6 +16,7 @@
  */
 package org.sonarsource.analyzer.commons.xml.checks;
 
+import com.sonarsource.scanner.engine.sensor.test.fixtures.TestInputFileBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -28,10 +29,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.event.Level;
 import org.sonar.api.batch.fs.InputFile;
-import org.sonar.api.batch.fs.internal.DefaultInputFile;
-import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
 import org.sonar.api.rule.RuleKey;
 import org.sonar.api.testfixtures.log.LogTester;
+import org.sonar.scanner.plugin.api.impl.fs.DefaultInputFile;
 import org.sonarsource.analyzer.commons.xml.XmlFile;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
