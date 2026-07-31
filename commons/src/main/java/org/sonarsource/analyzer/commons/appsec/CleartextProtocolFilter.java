@@ -144,7 +144,9 @@ public final class CleartextProtocolFilter {
     // GraphML
     "^graphml\\.graphdrawing\\.org|" +
     // JSON Schema
-    "^json-schema\\.org" +
+    "^json-schema\\.org|" +
+    // Eclipse EMF/Ecore
+    "^www\\.eclipse\\.org" +
     ")(?=:|$)", Pattern.CASE_INSENSITIVE);
 
   // --- IANA-reserved documentation / placeholder domains --------------------------------

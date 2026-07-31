@@ -207,6 +207,7 @@ class CleartextProtocolFilterTest {
       "http://docbook.org/ns/docbook",
       "http://graphml.graphdrawing.org/graphml",
       "http://json-schema.org/draft-07/schema",
+      "http://www.eclipse.org/emf/2002/Ecore",
       "http://www.mulesoft.org/schema/mule/core",
       "http://www.mulesoft.org/schema/mule/http",
 
