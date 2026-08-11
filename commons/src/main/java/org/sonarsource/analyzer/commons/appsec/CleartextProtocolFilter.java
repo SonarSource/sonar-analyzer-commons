@@ -277,15 +277,15 @@ public final class CleartextProtocolFilter {
     if (host == null) {
       return false;
     }
-    return isSafeHost(host) || isSingleLabelHost(host);
+    return isSafeHost(host);
   }
 
   private static boolean isSafeHost(String host) {
-    return isInternalHost(host) || isNamespaceUriAuthority(host) || isDocumentationHost(host);
+    return isInternalHost(host) || isNamespaceUriAuthority(host) || isDocumentationHost(host) || isSingleLabelHost(host);
   }
 
   // Single-integer IPv4 literal written in hexadecimal, e.g. 0x7f000001 (== 127.0.0.1).
-  private static final Pattern HEX_IP_LITERAL = Pattern.compile("^0[xX][0-9a-fA-F]+$");
+  private static final Pattern HEX_IP_LITERAL = Pattern.compile("^0[xX][0-9a-fA-F]++$");
 
   // Single-label hostnames (no dot) cannot resolve on the public internet; excludes IPv6
   // literals ("[...]") and numeric IP literals (decimal, e.g. 2130706433, and hexadecimal,
