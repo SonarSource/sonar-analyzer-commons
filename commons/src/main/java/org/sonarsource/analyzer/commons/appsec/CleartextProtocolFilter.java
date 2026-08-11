@@ -284,17 +284,22 @@ public final class CleartextProtocolFilter {
     return isInternalHost(host) || isNamespaceUriAuthority(host) || isDocumentationHost(host);
   }
 
+  // Single-integer IPv4 literal written in hexadecimal, e.g. 0x7f000001 (== 127.0.0.1).
+  private static final Pattern HEX_IP_LITERAL = Pattern.compile("^0[xX][0-9a-fA-F]+$");
+
   // Single-label hostnames (no dot) cannot resolve on the public internet; excludes IPv6
-  // literals ("[...]") and all-digit hosts, which are IP addresses rather than DNS names.
+  // literals ("[...]") and numeric IP literals (decimal, e.g. 2130706433, and hexadecimal,
+  // e.g. 0x7f000001 — octal single-integer literals are all-digit and match the decimal case
+  // too), which are IP addresses rather than DNS names.
   // Only applied to hosts parsed by java.net.URI: the lenient fallback in isSafeWithoutTls(String)
   // can extract a truncated fake "host" from malformed input (e.g. a URL containing a space),
   // and that value must not be trusted by this rule.
   private static boolean isSingleLabelHost(String host) {
-    return !host.isEmpty() && !host.startsWith("[") && host.indexOf('.') < 0 && !isAllDigits(host);
+    return !host.isEmpty() && !host.startsWith("[") && host.indexOf('.') < 0 && !isNumericIpLiteral(host);
   }
 
-  private static boolean isAllDigits(String host) {
-    return host.chars().allMatch(Character::isDigit);
+  private static boolean isNumericIpLiteral(String host) {
+    return host.chars().allMatch(Character::isDigit) || HEX_IP_LITERAL.matcher(host).matches();
   }
 
   private static boolean isInternalHost(String host) {

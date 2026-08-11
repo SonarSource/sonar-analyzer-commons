@@ -288,7 +288,9 @@ class CleartextProtocolFilterTest {
       URI.create("http:not-hierarchical"),
       // Single-label host exclusions — IP addresses, not DNS names
       URI.create("http://2130706433"),
-      URI.create("http://[2001:db8::1]")
+      URI.create("http://[2001:db8::1]"),
+      URI.create("http://0x7f000001"),
+      URI.create("http://0X7F000001")
     );
   }
 
@@ -352,7 +354,9 @@ class CleartextProtocolFilterTest {
 
       // Single-label host exclusions — IP addresses, not DNS names
       "http://2130706433/",
-      "http://[2001:db8::1]/path"
+      "http://[2001:db8::1]/path",
+      "http://0x7f000001/",
+      "http://0X7F000001/"
     );
   }
 }
