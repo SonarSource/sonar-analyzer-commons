@@ -277,11 +277,15 @@ public final class CleartextProtocolFilter {
     if (host == null) {
       return false;
     }
-    return isSafeHost(host);
+    // isSingleLabelHost is deliberately called here rather than folded into isSafeHost: isSafeHost
+    // is also used by the lenient string-fallback path in isSafeWithoutTls(String), which can
+    // extract a truncated fake "host" from malformed input (e.g. a URL containing a space) that
+    // must not be trusted by this rule. See isSingleLabelHost for details.
+    return isSafeHost(host) || isSingleLabelHost(host);
   }
 
   private static boolean isSafeHost(String host) {
-    return isInternalHost(host) || isNamespaceUriAuthority(host) || isDocumentationHost(host) || isSingleLabelHost(host);
+    return isInternalHost(host) || isNamespaceUriAuthority(host) || isDocumentationHost(host);
   }
 
   // Single-integer IPv4 literal written in hexadecimal, e.g. 0x7f000001 (== 127.0.0.1).
@@ -291,9 +295,6 @@ public final class CleartextProtocolFilter {
   // literals ("[...]") and numeric IP literals (decimal, e.g. 2130706433, and hexadecimal,
   // e.g. 0x7f000001 — octal single-integer literals are all-digit and match the decimal case
   // too), which are IP addresses rather than DNS names.
-  // Only applied to hosts parsed by java.net.URI: the lenient fallback in isSafeWithoutTls(String)
-  // can extract a truncated fake "host" from malformed input (e.g. a URL containing a space),
-  // and that value must not be trusted by this rule.
   private static boolean isSingleLabelHost(String host) {
     return !host.isEmpty() && !host.startsWith("[") && host.indexOf('.') < 0 && !isNumericIpLiteral(host);
   }
