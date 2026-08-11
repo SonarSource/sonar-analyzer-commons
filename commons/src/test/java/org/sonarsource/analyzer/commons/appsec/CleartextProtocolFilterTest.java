@@ -211,6 +211,13 @@ class CleartextProtocolFilterTest {
       "http://www.mulesoft.org/schema/mule/core",
       "http://www.mulesoft.org/schema/mule/http",
 
+      // Single-label hostnames — cannot resolve on the public internet
+      "http://estimate-translations-dev/meanings",
+      "http://estimate-globalization-localization-dev/",
+      "http://my-service/path",
+      "http://my-service:8080/path",
+      "ws://my-service",
+
       // Case insensitivity and surrounding whitespace
       "HTTP://LOCALHOST:8080",
       "FTP://127.0.0.1",
@@ -257,7 +264,9 @@ class CleartextProtocolFilterTest {
       // Documentation domain
       URI.create("http://example.com/path"),
       URI.create("http://api.example.com/v1"),
-      URI.create("http://myapi.test")
+      URI.create("http://myapi.test"),
+      // Single-label hostname
+      URI.create("http://my-service/path")
     );
   }
 
@@ -276,7 +285,10 @@ class CleartextProtocolFilterTest {
       URI.create("http://localhost@evil.com"),
       URI.create("http://www.w3.org@evil.com"),
       // Opaque URI — http scheme but no host component (getHost() == null)
-      URI.create("http:not-hierarchical")
+      URI.create("http:not-hierarchical"),
+      // Single-label host exclusions — IP addresses, not DNS names
+      URI.create("http://2130706433"),
+      URI.create("http://[2001:db8::1]")
     );
   }
 
@@ -336,7 +348,11 @@ class CleartextProtocolFilterTest {
 
       // Malformed — cannot be parsed as a URI (URISyntaxException → false)
       "http://foo bar.com",
-      "http://[unclosed"
+      "http://[unclosed",
+
+      // Single-label host exclusions — IP addresses, not DNS names
+      "http://2130706433/",
+      "http://[2001:db8::1]/path"
     );
   }
 }

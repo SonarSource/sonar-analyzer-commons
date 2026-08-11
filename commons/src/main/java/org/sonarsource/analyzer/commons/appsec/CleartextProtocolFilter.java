@@ -51,6 +51,9 @@ import java.util.stream.Collectors;
  *       {@code example.net}, and {@code example.org} and their subdomains, plus the
  *       reserved TLDs {@code .example}, {@code .test}, and {@code .localhost} (RFC 6761).
  *       Their use in source code is almost always a placeholder, not a real connection.</li>
+ *   <li><b>Single-label hostnames</b> — hostnames with no dot (e.g. {@code my-service}),
+ *       other than IP addresses. These cannot resolve on the public internet and are
+ *       typically Kubernetes/Docker Compose service names or other intranet hosts.</li>
  * </ul>
  * <p>
  * Usage: extract the raw URL string from the AST node and call {@link #isSafeWithoutTls(String)}
@@ -274,11 +277,24 @@ public final class CleartextProtocolFilter {
     if (host == null) {
       return false;
     }
-    return isSafeHost(host);
+    return isSafeHost(host) || isSingleLabelHost(host);
   }
 
   private static boolean isSafeHost(String host) {
     return isInternalHost(host) || isNamespaceUriAuthority(host) || isDocumentationHost(host);
+  }
+
+  // Single-label hostnames (no dot) cannot resolve on the public internet; excludes IPv6
+  // literals ("[...]") and all-digit hosts, which are IP addresses rather than DNS names.
+  // Only applied to hosts parsed by java.net.URI: the lenient fallback in isSafeWithoutTls(String)
+  // can extract a truncated fake "host" from malformed input (e.g. a URL containing a space),
+  // and that value must not be trusted by this rule.
+  private static boolean isSingleLabelHost(String host) {
+    return !host.isEmpty() && !host.startsWith("[") && host.indexOf('.') < 0 && !isAllDigits(host);
+  }
+
+  private static boolean isAllDigits(String host) {
+    return host.chars().allMatch(Character::isDigit);
   }
 
   private static boolean isInternalHost(String host) {
