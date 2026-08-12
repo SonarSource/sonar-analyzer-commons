@@ -51,6 +51,9 @@ import java.util.stream.Collectors;
  *       {@code example.net}, and {@code example.org} and their subdomains, plus the
  *       reserved TLDs {@code .example}, {@code .test}, and {@code .localhost} (RFC 6761).
  *       Their use in source code is almost always a placeholder, not a real connection.</li>
+ *   <li><b>Single-label hostnames</b> — hostnames with no dot (e.g. {@code my-service}),
+ *       other than IP addresses. These cannot resolve on the public internet and are
+ *       typically Kubernetes/Docker Compose service names or other intranet hosts.</li>
  * </ul>
  * <p>
  * Usage: extract the raw URL string from the AST node and call {@link #isSafeWithoutTls(String)}
@@ -66,6 +69,8 @@ public final class CleartextProtocolFilter {
     "^localhost|" +
     // IPv4 loopback (127.0.0.0/8) — 2–4 octet forms (127.1, 127.0.1, 127.0.0.1)
     "^127(?:\\.\\d+){1,3}|" +
+    // IPv4 loopback (127.0.0.0/8) written as a single hexadecimal literal (0x7f000000-0x7fffffff)
+    "^0x7f[0-9a-f]{6}|" +
     // IPv6 loopback (::1)
     "^\\[(?:0*:){7}:?0*1\\]|^\\[::1\\]|" +
     // IPv4 link-local (169.254.0.0/16, RFC 3927) — AWS/Azure/GCP/OCI IMDS
@@ -274,11 +279,26 @@ public final class CleartextProtocolFilter {
     if (host == null) {
       return false;
     }
-    return isSafeHost(host);
+    return isSafeHost(host) || isSingleLabelHost(host);
   }
 
   private static boolean isSafeHost(String host) {
     return isInternalHost(host) || isNamespaceUriAuthority(host) || isDocumentationHost(host);
+  }
+
+  // Single-integer IPv4 literal written in hexadecimal, e.g. 0x7f000001 (== 127.0.0.1).
+  private static final Pattern HEX_IP_LITERAL = Pattern.compile("^0[xX][0-9a-fA-F]++$");
+
+  // Single-label hostnames (no dot) cannot resolve on the public internet; excludes IPv6
+  // literals ("[...]") and numeric IP literals (decimal, e.g. 2130706433, and hexadecimal,
+  // e.g. 0x7f000001 — octal single-integer literals are all-digit and match the decimal case
+  // too), which are IP addresses rather than DNS names.
+  private static boolean isSingleLabelHost(String host) {
+    return !host.isEmpty() && !host.startsWith("[") && host.indexOf('.') < 0 && !isNumericIpLiteral(host);
+  }
+
+  private static boolean isNumericIpLiteral(String host) {
+    return host.chars().allMatch(Character::isDigit) || HEX_IP_LITERAL.matcher(host).matches();
   }
 
   private static boolean isInternalHost(String host) {
