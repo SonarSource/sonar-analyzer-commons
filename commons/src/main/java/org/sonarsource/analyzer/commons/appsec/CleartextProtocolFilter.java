@@ -279,8 +279,8 @@ public final class CleartextProtocolFilter {
     }
     // isSingleLabelHost is deliberately called here rather than folded into isSafeHost: isSafeHost
     // is also used by the lenient string-fallback path in isSafeWithoutTls(String), which can
-    // extract a truncated fake "host" from malformed input (e.g. a URL containing a space) that
-    // must not be trusted by this rule. See isSingleLabelHost for details.
+    // extract a truncated fake "host" from malformed input (e.g. a URL like http://user:pass@${placeholder})
+    // that must not be trusted by this rule.
     return isSafeHost(host) || isSingleLabelHost(host);
   }
 

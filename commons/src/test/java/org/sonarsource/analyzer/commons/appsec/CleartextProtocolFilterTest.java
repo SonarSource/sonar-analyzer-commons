@@ -212,10 +212,8 @@ class CleartextProtocolFilterTest {
       "http://www.mulesoft.org/schema/mule/http",
 
       // Single-label hostnames — cannot resolve on the public internet
-      "http://estimate-translations-dev/meanings",
-      "http://estimate-globalization-localization-dev/",
-      "http://my-service/path",
-      "http://my-service:8080/path",
+      "http://local-kubernetes-hostname/something",
+      "http://local-kubernetes-hostname:8080/something",
       "ws://my-service",
 
       // Case insensitivity and surrounding whitespace
