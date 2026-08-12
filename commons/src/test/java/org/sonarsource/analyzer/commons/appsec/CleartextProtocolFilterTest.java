@@ -216,6 +216,11 @@ class CleartextProtocolFilterTest {
       "http://local-kubernetes-hostname:8080/something",
       "ws://my-service",
 
+      // IPv4 loopback (127.0.0.0/8) written as a single hexadecimal literal
+      "http://0x7f000001/",
+      "http://0X7F000001/",
+      "http://0x7fffffff/",
+
       // Case insensitivity and surrounding whitespace
       "HTTP://LOCALHOST:8080",
       "FTP://127.0.0.1",
@@ -286,9 +291,9 @@ class CleartextProtocolFilterTest {
       URI.create("http:not-hierarchical"),
       // Single-label host exclusions — IP addresses, not DNS names
       URI.create("http://2130706433"),
-      URI.create("http://[2001:db8::1]"),
-      URI.create("http://0x7f000001"),
-      URI.create("http://0X7F000001")
+      // 8.8.8.8 as hexadecimal literal
+      URI.create("http://0x08080808"),
+      URI.create("http://[2001:db8::1]")
     );
   }
 
@@ -352,9 +357,7 @@ class CleartextProtocolFilterTest {
 
       // Single-label host exclusions — IP addresses, not DNS names
       "http://2130706433/",
-      "http://[2001:db8::1]/path",
-      "http://0x7f000001/",
-      "http://0X7F000001/"
+      "http://[2001:db8::1]/path"
     );
   }
 }

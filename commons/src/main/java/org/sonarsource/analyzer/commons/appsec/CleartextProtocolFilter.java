@@ -69,6 +69,8 @@ public final class CleartextProtocolFilter {
     "^localhost|" +
     // IPv4 loopback (127.0.0.0/8) — 2–4 octet forms (127.1, 127.0.1, 127.0.0.1)
     "^127(?:\\.\\d+){1,3}|" +
+    // IPv4 loopback (127.0.0.0/8) written as a single hexadecimal literal (0x7f000000-0x7fffffff)
+    "^0x7f[0-9a-f]{6}|" +
     // IPv6 loopback (::1)
     "^\\[(?:0*:){7}:?0*1\\]|^\\[::1\\]|" +
     // IPv4 link-local (169.254.0.0/16, RFC 3927) — AWS/Azure/GCP/OCI IMDS
