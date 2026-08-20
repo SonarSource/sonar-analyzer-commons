@@ -30,6 +30,3 @@ Desktop.ini
 
 # ---- Sonar
 .sonar
-
-# ---- Claude Code
-.mcp.json
