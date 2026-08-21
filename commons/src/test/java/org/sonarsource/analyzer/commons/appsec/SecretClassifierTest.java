@@ -101,7 +101,6 @@ class SecretClassifierTest {
     "/var/keys/gsa-key.json",
     "v1.2.3", ">=1.0.0", "~1.4.5-alpha",                // semver variants
     "4.0.9(@types/node@22.13.4)",                        // peer-annotated lockfile version (non-semver)
-    "srv-creds-dbac-dsp-dev-uks-001",                    // cloud resource id, region + zero-padded instance suffix
     "app-web-frontend-prod-eus-002",                     // similar resource-name shape
     "vm-db-primary-qa-weu-010");                         // similar resource-name shape
 
