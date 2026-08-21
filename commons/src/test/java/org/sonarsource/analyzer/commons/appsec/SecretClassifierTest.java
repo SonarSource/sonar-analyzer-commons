@@ -100,7 +100,10 @@ class SecretClassifierTest {
   static final List<String> STRUCTURED_FORMAT_SAMPLES = List.of(
     "/var/keys/gsa-key.json",
     "v1.2.3", ">=1.0.0", "~1.4.5-alpha",                // semver variants
-    "4.0.9(@types/node@22.13.4)");                       // peer-annotated lockfile version (non-semver)
+    "4.0.9(@types/node@22.13.4)",                        // peer-annotated lockfile version (non-semver)
+    "srv-creds-dbac-dsp-dev-uks-001",                    // cloud resource id, region + zero-padded instance suffix
+    "app-web-frontend-prod-eus-002",                     // similar resource-name shape
+    "vm-db-primary-qa-weu-010");                         // similar resource-name shape
 
   static final List<String> KNOWN_NON_SECRETS = Stream.of(
     FAKE_VALUE_SAMPLES, SECRET_SAMPLES, PLACEHOLDER_SAMPLES,
@@ -197,7 +200,11 @@ class SecretClassifierTest {
     "Xk9Lm2Qp7Rs4Tv1Wz0",
     "9f8e7d6c5b4a392817",
     "Tr0ub4dor&3xpl0!t",
-    "__not_closed" // leading __ without closing __ should not match
+    "__not_closed", // leading __ without closing __ should not match
+    // Real-looking secret shapes must not be caught by the resource-identifier pattern either.
+    "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",             // 32-char hex token
+    "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXo1Njc4OTA=", // base64 token
+    "6ba7b810-9dad-11d1-80b4-00c04fd430c8"          // UUID-shaped value
   })
   void shouldNotClassifyRealisticTokensAsNonSecrets(String value) {
     assertThat(SecretClassifier.isKnownNonSecret(value)).isFalse();

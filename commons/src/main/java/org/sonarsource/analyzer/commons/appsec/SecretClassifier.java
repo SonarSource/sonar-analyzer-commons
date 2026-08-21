@@ -185,7 +185,12 @@ public final class SecretClassifier {
         + "(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
       // Resolved / peer-annotated version strings from package lockfiles, e.g. "4.0.9(@types/node@22.13.4)".
       // Stopgap: such values may instead be excluded by ignoring lockfiles by path.
-      "^v?\\d++(?:\\.\\d++)++(?:\\([^()]*+\\))++$"));
+      "^v?\\d++(?:\\.\\d++)++(?:\\([^()]*+\\))++$",
+      // Kebab-case cloud-resource identifiers following a naming convention, ending in a short region/environment-style
+      // abbreviation plus a zero-padded instance number, e.g. "srv-creds-dbac-dsp-dev-uks-001". At least 5 lowercase
+      // alphanumeric segments are required so the shape stays specific: a high-entropy secret essentially never has
+      // this many hyphen-separated segments capped by a short alpha suffix and a padded numeric instance id.
+      "^[a-z][a-z0-9]*+(?:-[a-z0-9]++){2,}-[a-z]{2,4}-\\d{2,4}$"));
 
   // Flattened once: isKnownNonSecret is on every check's hot path, so avoid re-flattening PATTERN_GROUPS per call.
   private static final List<Pattern> ALL_PATTERNS = PATTERN_GROUPS.stream()
