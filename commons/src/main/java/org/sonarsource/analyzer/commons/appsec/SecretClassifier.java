@@ -187,7 +187,7 @@ public final class SecretClassifier {
       // Stopgap: such values may instead be excluded by ignoring lockfiles by path.
       "^v?\\d++(?:\\.\\d++)++(?:\\([^()]*+\\))++$",
       // Kebab-case cloud-resource identifiers following a naming convention, ending in a short region/environment-style
-      // abbreviation plus a zero-padded instance number, e.g. "srv-creds-dbac-dsp-dev-uks-001". At least 5 lowercase
+      // abbreviation plus a zero-padded instance number. At least 5 lowercase
       // alphanumeric segments are required so the shape stays specific: a high-entropy secret essentially never has
       // this many hyphen-separated segments capped by a short alpha suffix and a padded numeric instance id.
       "^[a-z][a-z0-9]*+(?:-[a-z0-9]++){2,}-[a-z]{2,4}-\\d{2,4}$"));
