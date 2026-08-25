@@ -40,9 +40,9 @@ import java.util.stream.Collectors;
  * Three categories of safe cleartext URLs are recognised:
  * <ul>
  *   <li><b>Internal hosts</b> — loopback addresses, cloud instance metadata endpoints
- *       (AWS, Azure, GCP, Alibaba, and others), Docker-internal hostnames, and
- *       Kubernetes cluster-internal service DNS. None of these are reachable from the
- *       public internet.</li>
+ *       (AWS, Azure, GCP, Alibaba, and others), the Android emulator's special network,
+ *       Docker-internal hostnames, and Kubernetes cluster-internal service DNS. None of
+ *       these are reachable from the public internet.</li>
  *   <li><b>Namespace URI authorities</b> — well-known authorities (W3C, Android,
  *       OASIS, HL7, …) whose {@code http://} URIs are opaque namespace identifiers
  *       used in XML, JSON-LD, RDF, and similar formats. They carry a protocol prefix
@@ -81,6 +81,8 @@ public final class CleartextProtocolFilter {
     "^168\\.63\\.129\\.16|" +
     // Alibaba Cloud ECS IMDS
     "^100\\.100\\.100\\.200|" +
+    // Android emulator special network — https://developer.android.com/studio/run/emulator-networking-address
+    "^10\\.0\\.2\\.\\d+|" +
     // GCP/generic cloud IMDS hostnames
     "^metadata\\.google\\.internal|^metadata\\.internal|" +
     // Docker internal hostnames
