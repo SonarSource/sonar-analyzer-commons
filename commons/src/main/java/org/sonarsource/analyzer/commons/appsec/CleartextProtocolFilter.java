@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * {@code stomp}. Any other scheme is considered safe (e.g. {@code https}, {@code wss},
  * {@code sftp}).
  * <p>
- * Three categories of safe cleartext URLs are recognised:
+ * The following categories of safe cleartext URLs are recognised:
  * <ul>
  *   <li><b>Internal hosts</b> — loopback addresses, cloud instance metadata endpoints
  *       (AWS, Azure, GCP, Alibaba, and others), the Android emulator's special network,
@@ -81,8 +81,9 @@ public final class CleartextProtocolFilter {
     "^168\\.63\\.129\\.16|" +
     // Alibaba Cloud ECS IMDS
     "^100\\.100\\.100\\.200|" +
-    // Android emulator special network — https://developer.android.com/studio/run/emulator-networking-address
-    "^10\\.0\\.2\\.\\d+|" +
+    // Android emulator special network — router (.1), host loopback alias (.2), DNS (.3-.6),
+    // device (.15-.16) — https://developer.android.com/studio/run/emulator-networking-address
+    "^10\\.0\\.2\\.(?:1[56]|[1-6])|" +
     // GCP/generic cloud IMDS hostnames
     "^metadata\\.google\\.internal|^metadata\\.internal|" +
     // Docker internal hostnames
@@ -203,9 +204,10 @@ public final class CleartextProtocolFilter {
 
   // Lenient fallback: extracts the authority from a cleartext URL without strict URI validation.
   // Used when java.net.URI rejects the string (e.g. template placeholders) or returns a null
-  // host (e.g. underscores in hostnames).
+  // host (e.g. underscores in hostnames). The trailing lookahead requires "rest" to end at a
+  // real URI boundary.
   private static final Pattern CLEARTEXT_AUTHORITY = Pattern.compile(
-    "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]++@)?(?<rest>[^\\s/?#]++)", Pattern.CASE_INSENSITIVE);
+    "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]++@)?(?<rest>[^\\s/?#]++)(?=[/?#]|$)", Pattern.CASE_INSENSITIVE);
 
   private CleartextProtocolFilter() {
   }
@@ -260,7 +262,8 @@ public final class CleartextProtocolFilter {
     }
     var matcher = CLEARTEXT_AUTHORITY.matcher(stripped);
     if (matcher.find()) {
-      return isSafeHost(matcher.group("rest"));
+      var rest = matcher.group("rest");
+      return isSafeHost(rest) || isSingleLabelHost(rest.split(":", 2)[0]);
     }
     var lower = stripped.toLowerCase(Locale.ROOT);
     return CLEARTEXT_SCHEME_PREFIXES.stream().noneMatch(lower::startsWith);

@@ -220,6 +220,9 @@ class CleartextProtocolFilterTest {
       "http://local-kubernetes-hostname/something",
       "http://local-kubernetes-hostname:8080/something",
       "ws://my-service",
+      // Single-label host via the lenient fallback (port placeholder / underscore)
+      "http://my-service:${port}/api",
+      "http://my_service/path",
 
       // IPv4 loopback (127.0.0.0/8) written as a single hexadecimal literal
       "http://0x7f000001/",
@@ -345,6 +348,10 @@ class CleartextProtocolFilterTest {
       "http://10.0.1.2/",
       "http://10.0.3.2/",
 
+      // Within 10.0.2.0/24 but outside the documented emulator addresses — must not match
+      "http://10.0.2.100/",
+      "http://10.0.2.2555/",
+
       // Userinfo — safe-looking host before @ must not grant safety
       "http://www.w3.org@evil.com",
       "http://localhost@evil.com",
@@ -367,7 +374,9 @@ class CleartextProtocolFilterTest {
 
       // Single-label host exclusions — IP addresses, not DNS names
       "http://2130706433/",
-      "http://[2001:db8::1]/path"
+      "http://[2001:db8::1]/path",
+      // Numeric IP with a templated port — must not be treated as a single-label host
+      "http://2130706433:${port}/path"
     );
   }
 }
