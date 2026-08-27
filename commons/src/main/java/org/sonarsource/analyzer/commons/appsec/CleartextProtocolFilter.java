@@ -204,10 +204,9 @@ public final class CleartextProtocolFilter {
 
   // Lenient fallback: extracts the authority from a cleartext URL without strict URI validation.
   // Used when java.net.URI rejects the string (e.g. template placeholders) or returns a null
-  // host (e.g. underscores in hostnames). The trailing lookahead requires "rest" to end at a
-  // real URI boundary.
+  // host (e.g. underscores in hostnames).
   private static final Pattern CLEARTEXT_AUTHORITY = Pattern.compile(
-    "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]++@)?(?<rest>[^\\s/?#]++)(?=[/?#]|$)", Pattern.CASE_INSENSITIVE);
+    "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]++@)?(?<rest>[^\\s/?#]++)", Pattern.CASE_INSENSITIVE);
 
   private CleartextProtocolFilter() {
   }
@@ -262,8 +261,7 @@ public final class CleartextProtocolFilter {
     }
     var matcher = CLEARTEXT_AUTHORITY.matcher(stripped);
     if (matcher.find()) {
-      var rest = matcher.group("rest");
-      return isSafeHost(rest) || isSingleLabelHost(rest.split(":", 2)[0]);
+      return isSafeHost(matcher.group("rest"));
     }
     var lower = stripped.toLowerCase(Locale.ROOT);
     return CLEARTEXT_SCHEME_PREFIXES.stream().noneMatch(lower::startsWith);

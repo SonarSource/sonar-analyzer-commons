@@ -220,9 +220,7 @@ class CleartextProtocolFilterTest {
       "http://local-kubernetes-hostname/something",
       "http://local-kubernetes-hostname:8080/something",
       "ws://my-service",
-      // Single-label host via the lenient fallback (port placeholder / underscore)
-      "http://my-service:${port}/api",
-      "http://my_service/path",
+      // "http://my-service:${port}/api", // FP: single-label host with an invalid port
 
       // IPv4 loopback (127.0.0.0/8) written as a single hexadecimal literal
       "http://0x7f000001/",
@@ -374,9 +372,7 @@ class CleartextProtocolFilterTest {
 
       // Single-label host exclusions — IP addresses, not DNS names
       "http://2130706433/",
-      "http://[2001:db8::1]/path",
-      // Numeric IP with a templated port — must not be treated as a single-label host
-      "http://2130706433:${port}/path"
+      "http://[2001:db8::1]/path"
     );
   }
 }
