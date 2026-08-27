@@ -37,12 +37,12 @@ import java.util.stream.Collectors;
  * {@code stomp}. Any other scheme is considered safe (e.g. {@code https}, {@code wss},
  * {@code sftp}).
  * <p>
- * Three categories of safe cleartext URLs are recognised:
+ * The following categories of safe cleartext URLs are recognised:
  * <ul>
  *   <li><b>Internal hosts</b> — loopback addresses, cloud instance metadata endpoints
- *       (AWS, Azure, GCP, Alibaba, and others), Docker-internal hostnames, and
- *       Kubernetes cluster-internal service DNS. None of these are reachable from the
- *       public internet.</li>
+ *       (AWS, Azure, GCP, Alibaba, and others), the Android emulator's special network,
+ *       Docker-internal hostnames, and Kubernetes cluster-internal service DNS. None of
+ *       these are reachable from the public internet.</li>
  *   <li><b>Namespace URI authorities</b> — well-known authorities (W3C, Android,
  *       OASIS, HL7, …) whose {@code http://} URIs are opaque namespace identifiers
  *       used in XML, JSON-LD, RDF, and similar formats. They carry a protocol prefix
@@ -81,6 +81,9 @@ public final class CleartextProtocolFilter {
     "^168\\.63\\.129\\.16|" +
     // Alibaba Cloud ECS IMDS
     "^100\\.100\\.100\\.200|" +
+    // Android emulator special network — router (.1), host loopback alias (.2), DNS (.3-.6),
+    // device (.15-.16) — https://developer.android.com/studio/run/emulator-networking-address
+    "^10\\.0\\.2\\.(?:1[56]|[1-6])|" +
     // GCP/generic cloud IMDS hostnames
     "^metadata\\.google\\.internal|^metadata\\.internal|" +
     // Docker internal hostnames

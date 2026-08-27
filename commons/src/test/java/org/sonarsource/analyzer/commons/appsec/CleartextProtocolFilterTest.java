@@ -103,6 +103,11 @@ class CleartextProtocolFilterTest {
       "http://metadata.google.internal/computeMetadata/v1",
       "http://metadata.internal/",
 
+      // Android emulator special network
+      "http://10.0.2.2/",
+      "http://10.0.2.3/",
+      "http://10.0.2.15/",
+
       // Docker
       "http://host.docker.internal:8085/metrics",
       "http://gateway.docker.internal",
@@ -215,6 +220,7 @@ class CleartextProtocolFilterTest {
       "http://local-kubernetes-hostname/something",
       "http://local-kubernetes-hostname:8080/something",
       "ws://my-service",
+      // "http://my-service:${port}/api", // FP: single-label host with an invalid port
 
       // IPv4 loopback (127.0.0.0/8) written as a single hexadecimal literal
       "http://0x7f000001/",
@@ -334,6 +340,15 @@ class CleartextProtocolFilterTest {
       "http://www.w3.org.evil.com/x",
       "http://schema.org.evil.com/Person",
       "http://www.mulesoft.org.evil.com/schema",
+      "http://10.0.2.2.evil.com",
+
+      // Adjacent /24 ranges outside the Android emulator network — must not match
+      "http://10.0.1.2/",
+      "http://10.0.3.2/",
+
+      // Within 10.0.2.0/24 but outside the documented emulator addresses — must not match
+      "http://10.0.2.100/",
+      "http://10.0.2.2555/",
 
       // Userinfo — safe-looking host before @ must not grant safety
       "http://www.w3.org@evil.com",
