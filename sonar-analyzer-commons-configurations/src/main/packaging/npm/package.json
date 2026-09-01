@@ -4,7 +4,8 @@
   "description": "Shared analyzer configuration data (secret-exclusion regexes) generated from the sonar-analyzer-commons SecretClassifier, for use by non-JVM SonarSource analyzers.",
   "license": "LGPL-3.0-only",
   "files": [
-    "secret-patterns.json"
+    "secret-patterns.json",
+    "secret-exclusion-corpus.json"
   ],
   "repository": {
     "type": "git",

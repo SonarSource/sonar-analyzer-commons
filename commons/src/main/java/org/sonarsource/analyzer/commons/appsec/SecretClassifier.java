@@ -87,6 +87,29 @@ public final class SecretClassifier {
     }
   }
 
+  /**
+   * The corpus samples of a single {@link Category}, kept next to the pattern groups they exercise so that a new
+   * pattern and its sample are added together.
+   */
+  @SuppressWarnings("java:S1068")
+  private static final class SampleGroup {
+    private final Category category;
+    private final List<String> samples;
+
+    private SampleGroup(Category category, List<String> samples) {
+      this.category = category;
+      this.samples = samples;
+    }
+
+    static SampleGroup of(Category category, String... samples) {
+      return new SampleGroup(category, List.of(samples));
+    }
+
+    List<String> samples() {
+      return samples;
+    }
+  }
+
   private static final List<PatternGroup> PATTERN_GROUPS = List.of(
 
     // Trivially fake or weak literal values.
@@ -198,6 +221,97 @@ public final class SecretClassifier {
     "changeme", "changeit", "unknown", "optional", "enabled", "disabled",
     "string", "random", "token"));
 
+  /**
+   * One representative sample per skip pattern and per exact-match value, grouped by the {@link Category} that must
+   * suppress it. Each sample is suppressed by the category it is listed under, not by an earlier group; adding a
+   * pattern without adding a sample here fails the classifier's coverage test.
+   *
+   * <p>Declared in main scope rather than in the test so the build can publish it as a validation corpus, letting
+   * non-JVM analyzers assert their own regex engine reproduces this behavior instead of hand-copying the samples.
+   */
+  private static final List<SampleGroup> KNOWN_NON_SECRET_SAMPLES = List.of(
+
+    SampleGroup.of(Category.FAKE_VALUE,
+      // Minimum length
+      "", "abc",
+      // Fake-word substrings
+      "samplepassword", "EXAMPLE_SECRET", "deadbeef", "qwerty",
+      // Templates whose placeholder names contain credential words - FAKE_VALUE wins before PLACEHOLDER
+      "${secret}", "#{{secret}}", "$foo_bar",
+      // Password-like values
+      "password1234", "passwd",
+      // Leetspeak "password" variants with "@" that the "pass" substring misses
+      "p@ssword", "p@ssw0rd",
+      // Boolean / null / scalar literals
+      "undefined", "true", "null",
+      // "your..." prefix
+      "yourpassword",
+      // Same-character repetitions
+      "abbbbc", "111111",
+      // Masked value
+      "1fj28...askn3i",
+      // Other fake keywords
+      "admin123", "vncpass", "super-secret-p4ssw0rd",
+      // "secret" in "secretsmanager" triggers FAKE_VALUE before REFERENCE; kept here for REFERENCE ARN pattern coverage
+      "arn:aws:secretsmanager:us-east-1:123456789012:secret:db-pass"),
+
+    SampleGroup.of(Category.SECRET,
+      "hunter2", "letmein", "abc123",
+      "changeme", "changeit", "unknown", "optional", "enabled", "disabled", "string", "random", "token"),
+
+    SampleGroup.of(Category.PLACEHOLDER,
+      "__api_key__",                      // double-underscore-wrapped
+      "TODO: fill in", "FIXME: fill in",  // code-reminder prefix
+      "${env_var}", "value-${env_var}",   // variable interpolation
+      "#{{db_host}}",                     // hash-brace interpolation
+      "((vault_ref))",                    // Concourse vars
+      "$(get_key)",                       // shell command substitution
+      "`get_key`",                        // backtick command substitution
+      "$MY_VAR",                          // bare variable reference
+      "{db_host}", "%{db_host}",          // template interpolation
+      "{{db_host}}",                      // double-brace interpolation
+      "System.getenv(\"DB_HOST\")",       // env access
+      "process.env.HOST",                 // Node.js process.env
+      "%GITHUB_TOKEN%",                   // %VAR% syntax
+      "config['db_url']",                 // config access
+      "Read-Host",                        // PowerShell
+      "<db-host>",                        // short angle-bracket placeholder
+      "<api_endpoint>",                   // long angle-bracket placeholder
+      "(config_ref)",                     // parenthesised placeholder
+      "[db_url]",                         // square-bracket placeholder
+      "%(db_url)s",                       // Python format-string placeholder
+      "@variables('host')"),              // Azure Logic Apps expression
+
+    SampleGroup.of(Category.ENCRYPTED,
+      "encrypted:YWJjZGVm",
+      "{cipher}1e3faa2cdab2deae117dca102e52922a",
+      "enc[QUJDRA==]",
+      "ENC{QUJDRA==}", "%enc{QUJDRA==}", "ENC(QUJDRA==)"),
+
+    SampleGroup.of(Category.REFERENCE,
+      "op://vault/item/key",
+      "VAULT[path/to/key access_token]"),
+
+    SampleGroup.of(Category.STRUCTURED_FORMAT,
+      "/var/keys/gsa-key.json",
+      "v1.2.3", ">=1.0.0", "~1.4.5-alpha",  // semver variants
+      "4.0.9(@types/node@22.13.4)"));       // peer-annotated lockfile version (non-semver)
+
+  /**
+   * Values that must NOT be classified as known non-secrets: realistic credentials plus near-misses of the skip
+   * patterns above. Published alongside {@link #KNOWN_NON_SECRET_SAMPLES} because a pattern that is too broad in a
+   * foreign regex engine silently hides real hardcoded secrets, which the positive samples alone cannot detect.
+   */
+  private static final List<String> SECRET_CANDIDATE_SAMPLES = List.of(
+    "Xk9Lm2Qp7Rs4Tv1Wz0",
+    "9f8e7d6c5b4a392817",
+    "Tr0ub4dor&3xpl0!t",
+    // Leading "__" without a closing "__"
+    "__not_closed",
+    // Credential words are matched only as whole values, so a value that merely contains one stays a candidate
+    "mytoken123",
+    "this_should_remain_unknown");
+
   // Context is an empty extension point today, so the analyzer sees instantiating it as pointless; the single shared
   // empty instance is intentional and lets empty() return a non-null context.
   @SuppressWarnings("java:S2440")
@@ -305,6 +419,36 @@ public final class SecretClassifier {
   }
 
   /**
+   * Returns representative samples that must be classified as known non-secrets, grouped by the {@link Category} that
+   * suppresses them, in declaration order. Every skip pattern and every exact-match value is exercised by at least one
+   * sample; the classifier's own tests fail if that stops being true.
+   *
+   * <p>Exposed so the build can publish a validation corpus next to the pattern export, letting non-JVM analyzers
+   * (SonarJS, sonar-dotnet, …) assert their regex engine reproduces the JVM behavior rather than hand-copying samples.
+   *
+   * <p>The category is informational - it records which group suppresses the value in this implementation, which is
+   * first-match-wins and therefore not a stable contract. Consumers should not assert on it.
+   *
+   * @return an immutable, ordered list of sample groups
+   */
+  public static List<SampleGroupView> exportKnownNonSecretSamples() {
+    return KNOWN_NON_SECRET_SAMPLES.stream()
+      .map(group -> new SampleGroupView(group.category.name(), group.samples()))
+      .toList();
+  }
+
+  /**
+   * Returns values that must NOT be classified as known non-secrets: realistic credentials and near-misses of the skip
+   * patterns. Published with {@link #exportKnownNonSecretSamples()} so a consumer can also detect a pattern that is
+   * over-broad in its own regex engine, which would silently suppress real hardcoded secrets.
+   *
+   * @return an immutable, ordered list of values that stay secret candidates
+   */
+  public static List<String> exportSecretCandidateSamples() {
+    return SECRET_CANDIDATE_SAMPLES;
+  }
+
+  /**
    * A group of skip regexes sharing a {@link Category}, exposed for machine-readable export.
    * The regexes are the raw Java source patterns; callers that target other engines are responsible for any
    * translation (e.g. possessive quantifiers to atomic groups for .NET).
@@ -345,6 +489,27 @@ public final class SecretClassifier {
     }
 
     /** The exact-match values, sorted, matched in full and case-insensitively. */
+    public List<String> values() {
+      return values;
+    }
+  }
+
+  /** A group of corpus samples sharing a {@link Category}, exposed for machine-readable export. */
+  public static final class SampleGroupView {
+    private final String category;
+    private final List<String> values;
+
+    private SampleGroupView(String category, List<String> values) {
+      this.category = category;
+      this.values = values;
+    }
+
+    /** The {@link Category} name expected to suppress these samples. Informational; not a stable contract. */
+    public String category() {
+      return category;
+    }
+
+    /** The sample values, in declaration order. */
     public List<String> values() {
       return values;
     }

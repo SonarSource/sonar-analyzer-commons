@@ -35,6 +35,11 @@
       <destName>secret-patterns.json</destName>
     </file>
     <file>
+      <source>${project.build.directory}/generated-resources/secret-exclusion-corpus.json</source>
+      <outputDirectory>content</outputDirectory>
+      <destName>secret-exclusion-corpus.json</destName>
+    </file>
+    <file>
       <source>${project.build.directory}/packaging/nuget/README.md</source>
       <outputDirectory>./</outputDirectory>
       <destName>README.md</destName>

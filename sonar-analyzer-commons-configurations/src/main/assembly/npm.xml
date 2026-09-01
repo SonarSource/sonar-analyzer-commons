@@ -20,5 +20,10 @@
       <outputDirectory>package</outputDirectory>
       <destName>secret-patterns.json</destName>
     </file>
+    <file>
+      <source>${project.build.directory}/generated-resources/secret-exclusion-corpus.json</source>
+      <outputDirectory>package</outputDirectory>
+      <destName>secret-exclusion-corpus.json</destName>
+    </file>
   </files>
 </assembly>

@@ -16,16 +16,8 @@
  */
 package org.sonarsource.analyzer.commons.appsec.export;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.sonarsource.analyzer.commons.appsec.SecretClassifier;
@@ -42,17 +34,15 @@ import org.sonarsource.analyzer.commons.appsec.SecretClassifier;
  *
  * <p>Output is deterministic and pretty-printed so the artifact diffs cleanly. Run via {@code exec:java} at build time;
  * {@code main} takes the target file path as its single argument.
+ *
+ * <p>The samples that these patterns must reproduce in every engine are published separately by
+ * {@link SecretExclusionCorpusExporter}.
  */
 public final class SecretPatternsExporter {
 
   private static final String DESCRIPTION = "Secret-exclusion patterns generated from SecretClassifier in " +
     "sonar-analyzer-commons. Do not edit by hand. Regexes are applied case-insensitively with \"find\" " +
     "(search-anywhere) semantics; exact values are matched in full, case-insensitively.";
-
-  private static final Gson GSON = new GsonBuilder()
-    .setPrettyPrinting()
-    .disableHtmlEscaping()
-    .create();
 
   private SecretPatternsExporter() {
   }
@@ -61,13 +51,7 @@ public final class SecretPatternsExporter {
     if (args.length < 1) {
       throw new IllegalArgumentException("Usage: SecretPatternsExporter <output-json-path>");
     }
-    Path output = Paths.get(args[0]).toAbsolutePath();
-    try {
-      Files.createDirectories(output.getParent());
-      Files.write(output, toJson().getBytes(StandardCharsets.UTF_8));
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+    JsonExports.write(args[0], toJson());
   }
 
   /**
@@ -91,7 +75,7 @@ public final class SecretPatternsExporter {
     for (SecretClassifier.PatternGroupView group : SecretClassifier.exportPatternGroups()) {
       JsonObject json = new JsonObject();
       json.addProperty("category", group.category());
-      json.add("patterns", toArray(translate(group.regexes())));
+      json.add("patterns", JsonExports.toArray(translate(group.regexes())));
       patternGroups.add(json);
     }
     root.add("patternGroups", patternGroups);
@@ -100,18 +84,12 @@ public final class SecretPatternsExporter {
     for (SecretClassifier.ExactMatchGroupView group : SecretClassifier.exportExactMatchGroups()) {
       JsonObject json = new JsonObject();
       json.addProperty("category", group.category());
-      json.add("values", toArray(group.values()));
+      json.add("values", JsonExports.toArray(group.values()));
       exactMatchGroups.add(json);
     }
     root.add("exactMatchGroups", exactMatchGroups);
 
-    return GSON.toJson(root) + "\n";
-  }
-
-  private static JsonArray toArray(List<String> values) {
-    JsonArray array = new JsonArray();
-    values.forEach(array::add);
-    return array;
+    return JsonExports.GSON.toJson(root) + "\n";
   }
 
   private static List<String> translate(List<String> regexes) {

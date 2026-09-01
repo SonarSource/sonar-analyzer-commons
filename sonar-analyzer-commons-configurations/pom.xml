@@ -12,12 +12,15 @@
   <artifactId>sonar-analyzer-commons-configurations</artifactId>
   <name>SonarSource Analyzers Commons Configurations</name>
   <description>Machine-readable export (JSON, .nupkg, npm .tgz) of shared analyzer configuration generated from
-    sonar-analyzer-commons, so non-JVM analyzers can consume the same secret-exclusion patterns without drift</description>
+    sonar-analyzer-commons, so non-JVM analyzers can consume the same secret-exclusion patterns - and the corpus that
+    validates them against their own regex engine - without drift</description>
 
   <properties>
     <exporter.mainClass>org.sonarsource.analyzer.commons.appsec.export.SecretPatternsExporter</exporter.mainClass>
-    <!-- Written by the exporter, then packaged as the raw JSON artifact and bundled into the nupkg/npm archives. -->
+    <corpus.exporter.mainClass>org.sonarsource.analyzer.commons.appsec.export.SecretExclusionCorpusExporter</corpus.exporter.mainClass>
+    <!-- Written by the exporters, then packaged as the raw JSON artifacts and bundled into the nupkg/npm archives. -->
     <generated.json>${project.build.directory}/generated-resources/secret-patterns.json</generated.json>
+    <generated.corpus.json>${project.build.directory}/generated-resources/secret-exclusion-corpus.json</generated.corpus.json>
     <version.exec.plugin>3.6.3</version.exec.plugin>
     <version.build-helper.plugin>3.6.1</version.build-helper.plugin>
   </properties>
@@ -76,6 +79,19 @@
               <mainClass>${exporter.mainClass}</mainClass>
               <arguments>
                 <argument>${generated.json}</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-secret-exclusion-corpus-json</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>${corpus.exporter.mainClass}</mainClass>
+              <arguments>
+                <argument>${generated.corpus.json}</argument>
               </arguments>
             </configuration>
           </execution>
@@ -181,6 +197,11 @@
                 <artifact>
                   <file>${generated.json}</file>
                   <type>json</type>
+                </artifact>
+                <artifact>
+                  <file>${generated.corpus.json}</file>
+                  <type>json</type>
+                  <classifier>${configurations.corpus.classifier}</classifier>
                 </artifact>
               </artifacts>
             </configuration>
