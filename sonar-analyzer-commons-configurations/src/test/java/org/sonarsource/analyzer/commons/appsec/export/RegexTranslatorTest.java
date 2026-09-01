@@ -29,25 +29,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RegexTranslatorTest {
-  private static final List<String> SAMPLES = List.of(
-    "", "abc", "samplepassword", "EXAMPLE_SECRET", "deadbeef", "qwerty",
-    "password1234", "passwd", "undefined", "true", "null", "yourpassword",
-    "abbbbc", "111111", "1fj28...askn3i", "TODO: replace me", "FIXME",
-    "admin123", "vncpass", "super-secret-p4ssw0rd",
-    "hunter2", "letmein", "abc123", "changeme", "changeit", "unknown", "optional",
-    "enabled", "disabled", "string", "random", "token",
-    "${secret}", "value-${pwd}", "#{{secret}}", "((db-password))",
-    "$(echo $PASSWORD)", "`echo $PASSWORD`", "$foo_bar",
-    "{secret}", "%{secret}", "{{secret}}",
-    "System.getenv(\"secret\")", "process.env.MY_SECRET", "%GITHUB_TOKEN%", "config['secret']", "Read-Host",
-    "<password>", "(password)", "[password]", "%(password)s", "@variables('name')",
-    "encrypted:YWJjZGVm", "{cipher}1e3faa2cdab2deae117dca102e52922a", "enc[QUJDRA==]", "ENC{abcdef}",
-    "%enc{QUJDRA==}", "ENC(abcdef)",
-    "arn:aws:secretsmanager:us-east-1:123456789012:secret:db-pass", "op://vault/item/password",
-    "VAULT[path/to/secret access_token]",
-    "/var/keys/gsa-key.json", "v1.2.3", ">=1.0.0", "~1.4.5-alpha", "4.0.9(@types/node@22.13.4)",
-    // realistic values that should NOT be excluded
-    "Xk9Lm2Qp7Rs4Tv1Wz0", "9f8e7d6c5b4a392817", "Tr0ub4dor&3xpl0!t", "mytoken123", "this_should_remain_unknown");
+  /**
+   * Translation edge cases the published corpus cannot carry: every corpus sample must classify under the category it
+   * is declared in, and {@code "FIXME"} is caught by the minimum-length pattern first. It is kept here because it is
+   * the only sample that puts a {@code \b} at end of input, a boundary engines can disagree on.
+   */
+  private static final List<String> TRANSLATION_EDGE_CASES = List.of("FIXME");
+
+  /**
+   * Derived from the published validation corpus rather than hand-copied, so a sample added there is exercised here
+   * too - this class is the guard that translation preserves matching, and a duplicated list silently drifts.
+   */
+  private static final List<String> SAMPLES = Stream.of(
+    SecretClassifier.exportKnownNonSecretSamples().stream().flatMap(group -> group.values().stream()).toList(),
+    SecretClassifier.exportSecretCandidateSamples(),
+    TRANSLATION_EDGE_CASES)
+    .flatMap(List::stream)
+    .toList();
 
   static Stream<Arguments> translationCases() {
     return Stream.of(

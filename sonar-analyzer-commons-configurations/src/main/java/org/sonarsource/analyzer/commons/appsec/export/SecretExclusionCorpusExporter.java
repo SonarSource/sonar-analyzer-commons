@@ -37,9 +37,10 @@ public final class SecretExclusionCorpusExporter {
 
   private static final String DESCRIPTION = "Validation corpus for secret-patterns.json, generated from " +
     "SecretClassifier in sonar-analyzer-commons. Do not edit by hand. Every \"knownNonSecrets\" value must be " +
-    "suppressed by the patterns in secret-patterns.json, and no \"secretCandidates\" value may be. A known " +
-    "non-secret's \"category\" records which pattern group suppresses it in the JVM implementation, which is " +
-    "first-match-wins; it is informational and not part of the contract.";
+    "suppressed by secret-patterns.json - either matched by a \"patternGroups\" regex or equal to an " +
+    "\"exactMatchGroups\" value, following the \"match\" semantics declared there - and no \"secretCandidates\" " +
+    "value may be. A known non-secret's \"category\" records which pattern group suppresses it in the JVM " +
+    "implementation, which is first-match-wins; it is informational and not part of the contract.";
 
   private SecretExclusionCorpusExporter() {
   }
