@@ -260,27 +260,48 @@ public final class SecretClassifier {
       "changeme", "changeit", "unknown", "optional", "enabled", "disabled", "string", "random", "token"),
 
     SampleGroup.of(Category.PLACEHOLDER,
-      "__api_key__",                      // double-underscore-wrapped
-      "TODO: fill in", "FIXME: fill in",  // code-reminder prefix
-      "${env_var}", "value-${env_var}",   // variable interpolation
-      "#{{db_host}}",                     // hash-brace interpolation
-      "((vault_ref))",                    // Concourse vars
-      "$(get_key)",                       // shell command substitution
-      "`get_key`",                        // backtick command substitution
-      "$MY_VAR",                          // bare variable reference
-      "{db_host}", "%{db_host}",          // template interpolation
-      "{{db_host}}",                      // double-brace interpolation
-      "System.getenv(\"DB_HOST\")",       // env access
-      "process.env.HOST",                 // Node.js process.env
-      "%GITHUB_TOKEN%",                   // %VAR% syntax
-      "config['db_url']",                 // config access
-      "Read-Host",                        // PowerShell
-      "<db-host>",                        // short angle-bracket placeholder
-      "<api_endpoint>",                   // long angle-bracket placeholder
-      "(config_ref)",                     // parenthesised placeholder
-      "[db_url]",                         // square-bracket placeholder
-      "%(db_url)s",                       // Python format-string placeholder
-      "@variables('host')"),              // Azure Logic Apps expression
+      // double-underscore-wrapped
+      "__api_key__",
+      // code-reminder prefix
+      "TODO: fill in", "FIXME: fill in",
+      // variable interpolation
+      "${env_var}", "value-${env_var}",
+      // hash-brace interpolation
+      "#{{db_host}}",
+      // Concourse vars
+      "((vault_ref))",
+      // shell command substitution
+      "$(get_key)",
+      // backtick command substitution
+      "`get_key`",
+      // bare variable reference
+      "$MY_VAR",
+      // template interpolation
+      "{db_host}", "%{db_host}",
+      // double-brace interpolation
+      "{{db_host}}",
+      // env access
+      "System.getenv(\"DB_HOST\")",
+      // Node.js process.env
+      "process.env.HOST",
+      // %VAR% syntax
+      "%GITHUB_TOKEN%",
+      // config access
+      "config['db_url']",
+      // PowerShell
+      "Read-Host",
+      // short angle-bracket placeholder
+      "<db-host>",
+      // long angle-bracket placeholder
+      "<api_endpoint>",
+      // parenthesised placeholder
+      "(config_ref)",
+      // square-bracket placeholder
+      "[db_url]",
+      // Python format-string placeholder
+      "%(db_url)s",
+      // Azure Logic Apps expression
+      "@variables('host')"),
 
     SampleGroup.of(Category.ENCRYPTED,
       "encrypted:YWJjZGVm",
