@@ -49,8 +49,10 @@ class SecretClassifierTest {
   void shouldBeSuppressedByTheCategoryTheyAreDeclaredUnder(SecretClassifier.Category category) {
     List<String> samples = SecretClassifier.exportKnownNonSecretSamples(category);
 
-    assertThat(samples).as("no samples declared for %s", category).isNotEmpty();
-    assertThat(samples).allSatisfy(sample -> assertThat(SecretClassifier.classify(sample))
+    assertThat(samples)
+      .as("no samples declared for %s", category)
+      .isNotEmpty()
+      .allSatisfy(sample -> assertThat(SecretClassifier.classify(sample))
       .as("sample <%s>", sample)
       .isEqualTo(category));
   }
