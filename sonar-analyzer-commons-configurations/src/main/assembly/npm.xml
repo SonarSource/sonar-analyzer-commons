@@ -16,9 +16,19 @@
       <destName>package.json</destName>
     </file>
     <file>
+      <source>${project.build.directory}/packaging/npm/README.md</source>
+      <outputDirectory>package</outputDirectory>
+      <destName>README.md</destName>
+    </file>
+    <file>
       <source>${project.build.directory}/generated-resources/secret-patterns.json</source>
       <outputDirectory>package</outputDirectory>
       <destName>secret-patterns.json</destName>
+    </file>
+    <file>
+      <source>${project.build.directory}/generated-resources/secret-exclusion-corpus.json</source>
+      <outputDirectory>package</outputDirectory>
+      <destName>secret-exclusion-corpus.json</destName>
     </file>
   </files>
 </assembly>

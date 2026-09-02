@@ -17,8 +17,11 @@
 package org.sonarsource.analyzer.commons.appsec;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
@@ -32,9 +35,10 @@ import javax.annotation.Nullable;
 public final class SecretClassifier {
 
   /**
-   * Coarse group a skip pattern belongs to.
+   * Coarse group a skip pattern belongs to, and the key the corpus samples are declared under; see
+   * {@link #exportKnownNonSecretSamples(Category)}.
    */
-  enum Category {
+  public enum Category {
     /** Trivially fake or weak literals: fake words, password-like values, repeated, too-short, or masked strings. */
     FAKE_VALUE,
     /** Well-known literal placeholder secrets matched in full, e.g. {@code hunter2}, {@code letmein}. */
@@ -198,6 +202,120 @@ public final class SecretClassifier {
     "changeme", "changeit", "unknown", "optional", "enabled", "disabled",
     "string", "random", "token"));
 
+  /**
+   * One representative sample per skip pattern and per exact-match value, keyed by the {@link Category} that must
+   * suppress it. Each sample is suppressed by the category it is listed under, not by an earlier group; adding a
+   * pattern without adding a sample here fails the classifier's coverage test.
+   *
+   * <p>Declared in main scope rather than in the test so the build can publish it as a validation corpus, letting
+   * non-JVM analyzers assert their own regex engine reproduces this behavior instead of hand-copying the samples.
+   */
+  private static final Map<Category, List<String>> KNOWN_NON_SECRET_SAMPLES = Collections.unmodifiableMap(new EnumMap<>(Map.of(
+
+    Category.FAKE_VALUE, List.of(
+      // Minimum length
+      "", "abc",
+      // Fake-word substrings
+      "samplepassword", "EXAMPLE_SECRET", "deadbeef", "qwerty",
+      // Templates whose placeholder names contain credential words - FAKE_VALUE wins before PLACEHOLDER
+      "${secret}", "#{{secret}}", "$foo_bar",
+      // Password-like values
+      "password1234", "passwd",
+      // Leetspeak "password" variants with "@" that the "pass" substring misses
+      "p@ssword", "p@ssw0rd",
+      // Boolean / null / scalar literals
+      "undefined", "true", "null",
+      // "your..." prefix
+      "yourpassword",
+      // Same-character repetitions
+      "abbbbc", "111111",
+      // Masked value
+      "1fj28...askn3i",
+      // Other fake keywords
+      "admin123", "vncpass", "super-secret-p4ssw0rd",
+      // "secret" in "secretsmanager" triggers FAKE_VALUE before REFERENCE; kept here for REFERENCE ARN pattern coverage
+      "arn:aws:secretsmanager:us-east-1:123456789012:secret:db-pass"),
+
+    Category.SECRET, List.of(
+      "hunter2", "letmein", "abc123",
+      "changeme", "changeit", "unknown", "optional", "enabled", "disabled", "string", "random", "token"),
+
+    Category.PLACEHOLDER, List.of(
+      // double-underscore-wrapped
+      "__api_key__",
+      // code-reminder prefix
+      "TODO: fill in", "FIXME: fill in",
+      // variable interpolation
+      "${env_var}", "value-${env_var}",
+      // hash-brace interpolation
+      "#{{db_host}}",
+      // Concourse vars
+      "((vault_ref))",
+      // shell command substitution
+      "$(get_key)",
+      // backtick command substitution
+      "`get_key`",
+      // bare variable reference
+      "$MY_VAR",
+      // template interpolation
+      "{db_host}", "%{db_host}",
+      // double-brace interpolation
+      "{{db_host}}",
+      // env access
+      "System.getenv(\"DB_HOST\")",
+      // Node.js process.env
+      "process.env.HOST",
+      // %VAR% syntax
+      "%GITHUB_TOKEN%",
+      // config access
+      "config['db_url']",
+      // PowerShell
+      "Read-Host",
+      // short angle-bracket placeholder
+      "<db-host>",
+      // long angle-bracket placeholder
+      "<api_endpoint>",
+      // parenthesised placeholder
+      "(config_ref)",
+      // square-bracket placeholder
+      "[db_url]",
+      // Python format-string placeholder
+      "%(db_url)s",
+      // Azure Logic Apps expression
+      "@variables('host')"),
+
+    Category.ENCRYPTED, List.of(
+      "encrypted:YWJjZGVm",
+      "{cipher}1e3faa2cdab2deae117dca102e52922a",
+      "enc[QUJDRA==]",
+      "ENC{QUJDRA==}", "%enc{QUJDRA==}", "ENC(QUJDRA==)"),
+
+    Category.REFERENCE, List.of(
+      "op://vault/item/key",
+      "VAULT[path/to/key access_token]"),
+
+    Category.STRUCTURED_FORMAT, List.of(
+      "/var/keys/gsa-key.json",
+      // semver variants
+      "v1.2.3", ">=1.0.0", "~1.4.5-alpha",
+      // peer-annotated lockfile version (non-semver)
+      "4.0.9(@types/node@22.13.4)"))));
+
+  /**
+   * Values that must NOT be classified as known non-secrets: realistic credentials plus near-misses of the skip
+   * patterns above. Published alongside {@link #KNOWN_NON_SECRET_SAMPLES} because a pattern that is too broad in a
+   * foreign regex engine silently hides real hardcoded secrets, which the positive samples alone cannot detect.
+   */
+  private static final List<String> SECRET_CANDIDATE_SAMPLES = List.of(
+    "Xk9Lm2Qp7Rs4Tv1Wz0",
+    "9f8e7d6c5b4a392817",
+    "Tr0ub4dor&3xpl0!t",
+    // Leading "__" without a closing "__"
+    "__not_closed",
+    // Credential words are matched only as whole values, so a value that merely contains one stays a candidate
+    "mytoken123",
+    "this_should_remain_unknown");
+
   // Context is an empty extension point today, so the analyzer sees instantiating it as pointless; the single shared
   // empty instance is intentional and lets empty() return a non-null context.
   @SuppressWarnings("java:S2440")
@@ -302,6 +420,35 @@ public final class SecretClassifier {
     return List.of(new ExactMatchGroupView(
       SECRET_VALUES.category.name(),
       SECRET_VALUES.values().stream().sorted().toList()));
+  }
+
+  /**
+   * Returns the representative samples that must be classified as known non-secrets by the given {@link Category}, in
+   * declaration order. Every skip pattern and every exact-match value is exercised by at least one sample; the
+   * classifier's own tests fail if that stops being true.
+   *
+   * <p>Exposed so the build can publish a validation corpus next to the pattern export, letting non-JVM analyzers
+   * (SonarJS, sonar-dotnet, …) assert their regex engine reproduces the JVM behavior rather than hand-copying samples.
+   *
+   * <p>The category a sample is declared under is informational - it records which group suppresses the value in this
+   * implementation, which is first-match-wins and therefore not a stable contract. Consumers should not assert on it.
+   *
+   * @param category the category whose samples to return
+   * @return an immutable, ordered list of samples, empty when the category declares none
+   */
+  public static List<String> exportKnownNonSecretSamples(Category category) {
+    return KNOWN_NON_SECRET_SAMPLES.getOrDefault(category, List.of());
+  }
+
+  /**
+   * Returns values that must NOT be classified as known non-secrets: realistic credentials and near-misses of the skip
+   * patterns. Published with {@link #exportKnownNonSecretSamples(Category)} so a consumer can also detect a pattern
+   * that is over-broad in its own regex engine, which would silently suppress real hardcoded secrets.
+   *
+   * @return an immutable, ordered list of values that stay secret candidates
+   */
+  public static List<String> exportSecretCandidateSamples() {
+    return SECRET_CANDIDATE_SAMPLES;
   }
 
   /**
