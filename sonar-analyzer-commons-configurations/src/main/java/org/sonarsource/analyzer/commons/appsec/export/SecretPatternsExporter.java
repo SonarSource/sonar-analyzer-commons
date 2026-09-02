@@ -89,7 +89,7 @@ public final class SecretPatternsExporter {
     }
     root.add("exactMatchGroups", exactMatchGroups);
 
-    return JsonExports.GSON.toJson(root) + "\n";
+    return JsonExports.render(root);
   }
 
   private static List<String> translate(List<String> regexes) {

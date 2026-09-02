@@ -34,7 +34,8 @@ class RegexTranslatorTest {
    * too - this class is the guard that translation preserves matching, and a duplicated list silently drifts.
    */
   private static final List<String> SAMPLES = Stream.concat(
-    SecretClassifier.exportKnownNonSecretSamples().stream().flatMap(group -> group.values().stream()),
+    Stream.of(SecretClassifier.Category.values())
+      .flatMap(category -> SecretClassifier.exportKnownNonSecretSamples(category).stream()),
     SecretClassifier.exportSecretCandidateSamples().stream())
     .toList();
 

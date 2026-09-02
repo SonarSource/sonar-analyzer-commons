@@ -16,12 +16,11 @@
  */
 package org.sonarsource.analyzer.commons.appsec.export;
 
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -29,16 +28,16 @@ import java.util.List;
 
 final class JsonExports {
 
-  /**
-   * Pretty-printed so the generated artifacts diff cleanly, with HTML escaping disabled so regex metacharacters stay
-   * readable rather than being emitted as {@code <} escapes.
-   */
-  static final Gson GSON = new GsonBuilder()
-    .setPrettyPrinting()
-    .disableHtmlEscaping()
-    .create();
-
   private JsonExports() {
+    // util class
+  }
+
+  static String render(JsonObject root) {
+    return new GsonBuilder()
+      .setPrettyPrinting()
+      .disableHtmlEscaping()
+      .create()
+      .toJson(root) + "\n";
   }
 
   static JsonArray toArray(List<String> values) {
@@ -51,7 +50,7 @@ final class JsonExports {
     Path output = Paths.get(path).toAbsolutePath();
     try {
       Files.createDirectories(output.getParent());
-      Files.write(output, content.getBytes(StandardCharsets.UTF_8));
+      Files.writeString(output, content);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

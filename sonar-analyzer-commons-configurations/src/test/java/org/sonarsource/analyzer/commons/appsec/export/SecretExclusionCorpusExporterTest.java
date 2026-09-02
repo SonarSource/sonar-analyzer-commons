@@ -87,11 +87,11 @@ class SecretExclusionCorpusExporterTest {
   @Test
   void knownNonSecretsShouldMirrorSecretClassifierSamplesWithTheirCategory() throws ParseException {
     List<JSONObject> expected = new ArrayList<>();
-    for (SecretClassifier.SampleGroupView group : SecretClassifier.exportKnownNonSecretSamples()) {
-      for (String value : group.values()) {
+    for (SecretClassifier.Category category : SecretClassifier.Category.values()) {
+      for (String value : SecretClassifier.exportKnownNonSecretSamples(category)) {
         JSONObject sample = new JSONObject();
         sample.put("value", value);
-        sample.put("category", group.category());
+        sample.put("category", category.name());
         expected.add(sample);
       }
     }

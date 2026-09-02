@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -28,80 +29,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * The samples themselves live in {@link SecretClassifier} (main scope) so the build can publish them as
- * {@code secret-exclusion-corpus.json}; see {@link SecretClassifier#exportKnownNonSecretSamples()}. This test stays
- * the gate that keeps that corpus complete and correctly categorized: it is what fails when a pattern is added
- * without a sample, or when a sample is suppressed by a group other than the one it is declared under.
+ * {@code secret-exclusion-corpus.json}; see
+ * {@link SecretClassifier#exportKnownNonSecretSamples(SecretClassifier.Category)}. This test stays the gate that keeps
+ * that corpus complete and correctly categorized: it is what fails when a pattern is added without a sample, or when a
+ * sample is suppressed by a group other than the one it is declared under.
  */
 class SecretClassifierTest {
 
-  static final List<String> KNOWN_NON_SECRETS = SecretClassifier.exportKnownNonSecretSamples().stream()
-    .flatMap(group -> group.values().stream())
+  static final List<String> KNOWN_NON_SECRETS = Stream.of(SecretClassifier.Category.values())
+    .flatMap(category -> SecretClassifier.exportKnownNonSecretSamples(category).stream())
     .toList();
 
-  private static Stream<String> samplesOf(SecretClassifier.Category category) {
-    return SecretClassifier.exportKnownNonSecretSamples().stream()
-      .filter(group -> group.category().equals(category.name()))
-      .flatMap(group -> group.values().stream());
-  }
-
-  static Stream<String> fakeValueSamples() {
-    return samplesOf(SecretClassifier.Category.FAKE_VALUE);
-  }
-
-  static Stream<String> secretSamples() {
-    return samplesOf(SecretClassifier.Category.SECRET);
-  }
-
-  static Stream<String> placeholderSamples() {
-    return samplesOf(SecretClassifier.Category.PLACEHOLDER);
-  }
-
-  static Stream<String> encryptedSamples() {
-    return samplesOf(SecretClassifier.Category.ENCRYPTED);
-  }
-
-  static Stream<String> referenceSamples() {
-    return samplesOf(SecretClassifier.Category.REFERENCE);
-  }
-
-  static Stream<String> structuredFormatSamples() {
-    return samplesOf(SecretClassifier.Category.STRUCTURED_FORMAT);
-  }
-
+  /**
+   * Every category must declare samples, and each of them must be suppressed by the category it is declared under -
+   * not by an earlier group, which is what would silently happen if a new pattern overlapped an existing one.
+   */
   @ParameterizedTest
-  @MethodSource("fakeValueSamples")
-  void shouldBeSuppressedByFakeValueCategory(String value) {
-    assertThat(SecretClassifier.classify(value)).isEqualTo(SecretClassifier.Category.FAKE_VALUE);
-  }
+  @EnumSource(SecretClassifier.Category.class)
+  void shouldBeSuppressedByTheCategoryTheyAreDeclaredUnder(SecretClassifier.Category category) {
+    List<String> samples = SecretClassifier.exportKnownNonSecretSamples(category);
 
-  @ParameterizedTest
-  @MethodSource("secretSamples")
-  void shouldBeSuppressedBySecretCategory(String value) {
-    assertThat(SecretClassifier.classify(value)).isEqualTo(SecretClassifier.Category.SECRET);
-  }
-
-  @ParameterizedTest
-  @MethodSource("placeholderSamples")
-  void shouldBeSuppressedByPlaceholderCategory(String value) {
-    assertThat(SecretClassifier.classify(value)).isEqualTo(SecretClassifier.Category.PLACEHOLDER);
-  }
-
-  @ParameterizedTest
-  @MethodSource("encryptedSamples")
-  void shouldBeSuppressedByEncryptedCategory(String value) {
-    assertThat(SecretClassifier.classify(value)).isEqualTo(SecretClassifier.Category.ENCRYPTED);
-  }
-
-  @ParameterizedTest
-  @MethodSource("referenceSamples")
-  void shouldBeSuppressedByReferenceCategory(String value) {
-    assertThat(SecretClassifier.classify(value)).isEqualTo(SecretClassifier.Category.REFERENCE);
-  }
-
-  @ParameterizedTest
-  @MethodSource("structuredFormatSamples")
-  void shouldBeSuppressedByStructuredFormatCategory(String value) {
-    assertThat(SecretClassifier.classify(value)).isEqualTo(SecretClassifier.Category.STRUCTURED_FORMAT);
+    assertThat(samples).as("no samples declared for %s", category).isNotEmpty();
+    assertThat(samples).allSatisfy(sample -> assertThat(SecretClassifier.classify(sample))
+      .as("sample <%s>", sample)
+      .isEqualTo(category));
   }
 
   static Stream<String> knownNonSecrets() {
@@ -126,16 +77,6 @@ class SecretClassifierTest {
         .as("no sample exercises exact value: %s", exact)
         .anyMatch(sample -> sample.equalsIgnoreCase(exact));
     }
-  }
-
-  @Test
-  void everyCategoryShouldContributeSamplesInDeclarationOrder() {
-    List<SecretClassifier.SampleGroupView> groups = SecretClassifier.exportKnownNonSecretSamples();
-
-    assertThat(groups)
-      .extracting(SecretClassifier.SampleGroupView::category)
-      .containsExactlyElementsOf(Stream.of(SecretClassifier.Category.values()).map(Enum::name).toList());
-    assertThat(groups).allSatisfy(group -> assertThat(group.values()).as("no samples for %s", group.category()).isNotEmpty());
   }
 
   static Stream<String> secretCandidates() {

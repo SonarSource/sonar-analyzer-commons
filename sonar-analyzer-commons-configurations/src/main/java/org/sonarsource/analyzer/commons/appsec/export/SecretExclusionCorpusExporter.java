@@ -53,26 +53,26 @@ public final class SecretExclusionCorpusExporter {
   }
 
   /**
-   * Builds the JSON document from the classifier's exported samples. The known non-secrets are flattened to one entry
-   * per value, each carrying its category, rather than nested per category: consumers assert on the values and would
-   * otherwise all have to flatten the groups themselves.
+   * Builds the JSON document from the classifier's exported samples, in {@link SecretClassifier.Category} declaration
+   * order. The known non-secrets are flattened to one entry per value, each carrying its category, rather than nested
+   * per category: consumers assert on the values and would otherwise all have to flatten the groups themselves.
    */
   public static String toJson() {
     JsonObject root = new JsonObject();
     root.addProperty("description", DESCRIPTION);
 
     JsonArray knownNonSecrets = new JsonArray();
-    for (SecretClassifier.SampleGroupView group : SecretClassifier.exportKnownNonSecretSamples()) {
-      for (String value : group.values()) {
+    for (SecretClassifier.Category category : SecretClassifier.Category.values()) {
+      for (String value : SecretClassifier.exportKnownNonSecretSamples(category)) {
         JsonObject sample = new JsonObject();
         sample.addProperty("value", value);
-        sample.addProperty("category", group.category());
+        sample.addProperty("category", category.name());
         knownNonSecrets.add(sample);
       }
     }
     root.add("knownNonSecrets", knownNonSecrets);
     root.add("secretCandidates", JsonExports.toArray(SecretClassifier.exportSecretCandidateSamples()));
 
-    return JsonExports.GSON.toJson(root) + "\n";
+    return JsonExports.render(root);
   }
 }

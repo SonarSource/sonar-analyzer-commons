@@ -17,8 +17,11 @@
 package org.sonarsource.analyzer.commons.appsec;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
@@ -32,9 +35,10 @@ import javax.annotation.Nullable;
 public final class SecretClassifier {
 
   /**
-   * Coarse group a skip pattern belongs to.
+   * Coarse group a skip pattern belongs to, and the key the corpus samples are declared under; see
+   * {@link #exportKnownNonSecretSamples(Category)}.
    */
-  enum Category {
+  public enum Category {
     /** Trivially fake or weak literals: fake words, password-like values, repeated, too-short, or masked strings. */
     FAKE_VALUE,
     /** Well-known literal placeholder secrets matched in full, e.g. {@code hunter2}, {@code letmein}. */
@@ -84,29 +88,6 @@ public final class SecretClassifier {
 
     Set<String> values() {
       return values;
-    }
-  }
-
-  /**
-   * The corpus samples of a single {@link Category}, kept next to the pattern groups they exercise so that a new
-   * pattern and its sample are added together.
-   */
-  @SuppressWarnings("java:S1068")
-  private static final class SampleGroup {
-    private final Category category;
-    private final List<String> samples;
-
-    private SampleGroup(Category category, List<String> samples) {
-      this.category = category;
-      this.samples = samples;
-    }
-
-    static SampleGroup of(Category category, String... samples) {
-      return new SampleGroup(category, List.of(samples));
-    }
-
-    List<String> samples() {
-      return samples;
     }
   }
 
@@ -222,16 +203,16 @@ public final class SecretClassifier {
     "string", "random", "token"));
 
   /**
-   * One representative sample per skip pattern and per exact-match value, grouped by the {@link Category} that must
+   * One representative sample per skip pattern and per exact-match value, keyed by the {@link Category} that must
    * suppress it. Each sample is suppressed by the category it is listed under, not by an earlier group; adding a
    * pattern without adding a sample here fails the classifier's coverage test.
    *
    * <p>Declared in main scope rather than in the test so the build can publish it as a validation corpus, letting
    * non-JVM analyzers assert their own regex engine reproduces this behavior instead of hand-copying the samples.
    */
-  private static final List<SampleGroup> KNOWN_NON_SECRET_SAMPLES = List.of(
+  private static final Map<Category, List<String>> KNOWN_NON_SECRET_SAMPLES = Collections.unmodifiableMap(new EnumMap<>(Map.of(
 
-    SampleGroup.of(Category.FAKE_VALUE,
+    Category.FAKE_VALUE, List.of(
       // Minimum length
       "", "abc",
       // Fake-word substrings
@@ -255,11 +236,11 @@ public final class SecretClassifier {
       // "secret" in "secretsmanager" triggers FAKE_VALUE before REFERENCE; kept here for REFERENCE ARN pattern coverage
       "arn:aws:secretsmanager:us-east-1:123456789012:secret:db-pass"),
 
-    SampleGroup.of(Category.SECRET,
+    Category.SECRET, List.of(
       "hunter2", "letmein", "abc123",
       "changeme", "changeit", "unknown", "optional", "enabled", "disabled", "string", "random", "token"),
 
-    SampleGroup.of(Category.PLACEHOLDER,
+    Category.PLACEHOLDER, List.of(
       // double-underscore-wrapped
       "__api_key__",
       // code-reminder prefix
@@ -303,22 +284,22 @@ public final class SecretClassifier {
       // Azure Logic Apps expression
       "@variables('host')"),
 
-    SampleGroup.of(Category.ENCRYPTED,
+    Category.ENCRYPTED, List.of(
       "encrypted:YWJjZGVm",
       "{cipher}1e3faa2cdab2deae117dca102e52922a",
       "enc[QUJDRA==]",
       "ENC{QUJDRA==}", "%enc{QUJDRA==}", "ENC(QUJDRA==)"),
 
-    SampleGroup.of(Category.REFERENCE,
+    Category.REFERENCE, List.of(
       "op://vault/item/key",
       "VAULT[path/to/key access_token]"),
 
-    SampleGroup.of(Category.STRUCTURED_FORMAT,
+    Category.STRUCTURED_FORMAT, List.of(
       "/var/keys/gsa-key.json",
       // semver variants
       "v1.2.3", ">=1.0.0", "~1.4.5-alpha",
       // peer-annotated lockfile version (non-semver)
-      "4.0.9(@types/node@22.13.4)"));
+      "4.0.9(@types/node@22.13.4)"))));
 
   /**
    * Values that must NOT be classified as known non-secrets: realistic credentials plus near-misses of the skip
@@ -442,28 +423,27 @@ public final class SecretClassifier {
   }
 
   /**
-   * Returns representative samples that must be classified as known non-secrets, grouped by the {@link Category} that
-   * suppresses them, in declaration order. Every skip pattern and every exact-match value is exercised by at least one
-   * sample; the classifier's own tests fail if that stops being true.
+   * Returns the representative samples that must be classified as known non-secrets by the given {@link Category}, in
+   * declaration order. Every skip pattern and every exact-match value is exercised by at least one sample; the
+   * classifier's own tests fail if that stops being true.
    *
    * <p>Exposed so the build can publish a validation corpus next to the pattern export, letting non-JVM analyzers
    * (SonarJS, sonar-dotnet, …) assert their regex engine reproduces the JVM behavior rather than hand-copying samples.
    *
-   * <p>The category is informational - it records which group suppresses the value in this implementation, which is
-   * first-match-wins and therefore not a stable contract. Consumers should not assert on it.
+   * <p>The category a sample is declared under is informational - it records which group suppresses the value in this
+   * implementation, which is first-match-wins and therefore not a stable contract. Consumers should not assert on it.
    *
-   * @return an immutable, ordered list of sample groups
+   * @param category the category whose samples to return
+   * @return an immutable, ordered list of samples, empty when the category declares none
    */
-  public static List<SampleGroupView> exportKnownNonSecretSamples() {
-    return KNOWN_NON_SECRET_SAMPLES.stream()
-      .map(group -> new SampleGroupView(group.category.name(), group.samples()))
-      .toList();
+  public static List<String> exportKnownNonSecretSamples(Category category) {
+    return KNOWN_NON_SECRET_SAMPLES.getOrDefault(category, List.of());
   }
 
   /**
    * Returns values that must NOT be classified as known non-secrets: realistic credentials and near-misses of the skip
-   * patterns. Published with {@link #exportKnownNonSecretSamples()} so a consumer can also detect a pattern that is
-   * over-broad in its own regex engine, which would silently suppress real hardcoded secrets.
+   * patterns. Published with {@link #exportKnownNonSecretSamples(Category)} so a consumer can also detect a pattern
+   * that is over-broad in its own regex engine, which would silently suppress real hardcoded secrets.
    *
    * @return an immutable, ordered list of values that stay secret candidates
    */
@@ -512,27 +492,6 @@ public final class SecretClassifier {
     }
 
     /** The exact-match values, sorted, matched in full and case-insensitively. */
-    public List<String> values() {
-      return values;
-    }
-  }
-
-  /** A group of corpus samples sharing a {@link Category}, exposed for machine-readable export. */
-  public static final class SampleGroupView {
-    private final String category;
-    private final List<String> values;
-
-    private SampleGroupView(String category, List<String> values) {
-      this.category = category;
-      this.values = values;
-    }
-
-    /** The {@link Category} name expected to suppress these samples. Informational; not a stable contract. */
-    public String category() {
-      return category;
-    }
-
-    /** The sample values, in declaration order. */
     public List<String> values() {
       return values;
     }
