@@ -315,8 +315,10 @@ public final class SecretClassifier {
 
     SampleGroup.of(Category.STRUCTURED_FORMAT,
       "/var/keys/gsa-key.json",
-      "v1.2.3", ">=1.0.0", "~1.4.5-alpha",  // semver variants
-      "4.0.9(@types/node@22.13.4)"));       // peer-annotated lockfile version (non-semver)
+      // semver variants
+      "v1.2.3", ">=1.0.0", "~1.4.5-alpha",
+      // peer-annotated lockfile version (non-semver)
+      "4.0.9(@types/node@22.13.4)"));
 
   /**
    * Values that must NOT be classified as known non-secrets: realistic credentials plus near-misses of the skip
