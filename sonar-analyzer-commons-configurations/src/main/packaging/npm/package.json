@@ -1,9 +1,10 @@
 {
   "name": "@sonarsource/analyzer-commons-configurations",
   "version": "${npm.package.version}",
-  "description": "Shared analyzer configuration data (secret-exclusion regexes) generated from the sonar-analyzer-commons SecretClassifier, for use by non-JVM SonarSource analyzers.",
+  "description": "Shared analyzer configuration data (secret-exclusion regexes) generated from the sonar-analyzer-commons SecretClassifier, for use by non-JVM SonarSource analyzers. The payload is secret-patterns.json, with the sample values those patterns must reproduce in secret-exclusion-corpus.json.",
   "license": "LGPL-3.0-only",
   "files": [
+    "README.md",
     "secret-patterns.json",
     "secret-exclusion-corpus.json"
   ],

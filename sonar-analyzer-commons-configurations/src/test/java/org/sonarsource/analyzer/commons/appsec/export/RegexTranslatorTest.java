@@ -30,21 +30,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RegexTranslatorTest {
   /**
-   * Translation edge cases the published corpus cannot carry: every corpus sample must classify under the category it
-   * is declared in, and {@code "FIXME"} is caught by the minimum-length pattern first. It is kept here because it is
-   * the only sample that puts a {@code \b} at end of input, a boundary engines can disagree on.
-   */
-  private static final List<String> TRANSLATION_EDGE_CASES = List.of("FIXME");
-
-  /**
    * Derived from the published validation corpus rather than hand-copied, so a sample added there is exercised here
    * too - this class is the guard that translation preserves matching, and a duplicated list silently drifts.
    */
-  private static final List<String> SAMPLES = Stream.of(
-    SecretClassifier.exportKnownNonSecretSamples().stream().flatMap(group -> group.values().stream()).toList(),
-    SecretClassifier.exportSecretCandidateSamples(),
-    TRANSLATION_EDGE_CASES)
-    .flatMap(List::stream)
+  private static final List<String> SAMPLES = Stream.concat(
+    SecretClassifier.exportKnownNonSecretSamples().stream().flatMap(group -> group.values().stream()),
+    SecretClassifier.exportSecretCandidateSamples().stream())
     .toList();
 
   static Stream<Arguments> translationCases() {
@@ -188,7 +179,6 @@ class RegexTranslatorTest {
       assertThat(RegexTranslator.toPortableRegex(once)).isEqualTo(once);
     }
   }
-
 
   @Test
   void translatedPatternsShouldMatchTheSameSamplesAsTheSource() {
