@@ -100,12 +100,6 @@
         <scope>provided</scope>
       </dependency>
       <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-api</artifactId>
-        <version>2.0.18</version>
-        <scope>provided</scope>
-      </dependency>
-      <dependency>
         <groupId>org.sonarsource.scanner.engine</groupId>
         <artifactId>plugin-api-scanner-impl</artifactId>
         <version>${version.sonar.scanner}</version>
