@@ -47,6 +47,11 @@ import java.util.stream.Collectors;
  *       OASIS, HL7, …) whose {@code http://} URIs are opaque namespace identifiers
  *       used in XML, JSON-LD, RDF, and similar formats. They carry a protocol prefix
  *       by convention and do not imply an actual HTTP connection.</li>
+ *   <li><b>Well-known identifier URLs</b> — specific {@code http://} URLs (or URL
+ *       prefixes) that are opaque protocol/feature identifiers rather than real
+ *       endpoints, on hosts that otherwise serve ordinary content (e.g. XMPP
+ *       protocol namespaces under {@code jabber.org/protocol/}, or Xerces/JAXP XML
+ *       parser feature flags under {@code apache.org/xml/features/}).</li>
  *   <li><b>IANA-reserved documentation domains</b> — {@code example.com},
  *       {@code example.net}, and {@code example.org} and their subdomains, plus the
  *       reserved TLDs {@code .example}, {@code .test}, and {@code .localhost} (RFC 6761).
@@ -156,6 +161,18 @@ public final class CleartextProtocolFilter {
     // Eclipse EMF/Ecore
     "^www\\.eclipse\\.org" +
     ")(?=:|$)", Pattern.CASE_INSENSITIVE);
+
+  // --- Well-known identifier URLs (host + path) -------------------------------------------
+  // Unlike the namespace URI authorities above, these hosts also serve ordinary content,
+  // so only the specific path(s) below — opaque protocol/feature identifiers, not real
+  // endpoints — are considered safe. Matched against "host + path" of the URI.
+  private static final Pattern SAFE_URL_PATH_PREFIXES = Pattern.compile("(?:" +
+    // XMPP protocol namespaces (XEPs)
+    "^jabber\\.org/protocol/|" +
+    // Xerces/JAXP XML parser features to disable DTD loading
+    "^apache\\.org/xml/features/nonvalidating/load-dtd-grammar$|" +
+    "^apache\\.org/xml/features/nonvalidating/load-external-dtd$" +
+    ")", Pattern.CASE_INSENSITIVE);
 
   // --- IANA-reserved documentation / placeholder domains --------------------------------
   // example.com/net/org are well-known IANA-delegated documentation domains.
@@ -282,7 +299,7 @@ public final class CleartextProtocolFilter {
     if (host == null) {
       return false;
     }
-    return isSafeHost(host) || isSingleLabelHost(host);
+    return isSafeHost(host) || isSingleLabelHost(host) || isKnownIdentifierUrl(host, url.getRawPath());
   }
 
   private static boolean isSafeHost(String host) {
@@ -310,6 +327,11 @@ public final class CleartextProtocolFilter {
 
   private static boolean isNamespaceUriAuthority(String host) {
     return NAMESPACE_URI_AUTHORITIES.matcher(host).find();
+  }
+
+  private static boolean isKnownIdentifierUrl(String host, String path) {
+    var hostAndPath = host + (path == null ? "" : path);
+    return SAFE_URL_PATH_PREFIXES.matcher(hostAndPath).find();
   }
 
   private static boolean isDocumentationHost(String host) {

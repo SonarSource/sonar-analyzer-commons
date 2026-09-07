@@ -216,6 +216,13 @@ class CleartextProtocolFilterTest {
       "http://www.mulesoft.org/schema/mule/core",
       "http://www.mulesoft.org/schema/mule/http",
 
+      // Well-known identifier URLs — XMPP protocol namespaces and Xerces/JAXP XML parser features
+      "http://jabber.org/protocol/muc",
+      "http://jabber.org/protocol/disco#items",
+      "http://jabber.org/protocol/pubsub#owner",
+      "http://apache.org/xml/features/nonvalidating/load-dtd-grammar",
+      "http://apache.org/xml/features/nonvalidating/load-external-dtd",
+
       // Single-label hostnames — cannot resolve on the public internet
       "http://local-kubernetes-hostname/something",
       "http://local-kubernetes-hostname:8080/something",
@@ -341,6 +348,13 @@ class CleartextProtocolFilterTest {
       "http://schema.org.evil.com/Person",
       "http://www.mulesoft.org.evil.com/schema",
       "http://10.0.2.2.evil.com",
+
+      // Well-known identifier URLs — host without the safe path, or lookalike host — must not match
+      "http://jabber.org/",
+      "http://jabber.org/other",
+      "http://apache.org/",
+      "http://apache.org/xml/features/nonvalidating/load-dtd-grammar-extra",
+      "http://apache.org.evil.com/xml/features/nonvalidating/load-dtd-grammar",
 
       // Adjacent /24 ranges outside the Android emulator network — must not match
       "http://10.0.1.2/",
