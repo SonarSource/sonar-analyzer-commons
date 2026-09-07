@@ -333,9 +333,10 @@ public final class CleartextProtocolFilter {
     return NAMESPACE_URI_AUTHORITIES.matcher(host).find();
   }
 
+  // path is never null here: URI.getRawPath() is non-null whenever getHost() is non-null,
+  // and the lenient fallback derives path from String.split(), which never returns null.
   private static boolean isKnownIdentifierUrl(String host, String path) {
-    var hostAndPath = host + (path == null ? "" : path);
-    return SAFE_URL_PATH_PREFIXES.matcher(hostAndPath).find();
+    return SAFE_URL_PATH_PREFIXES.matcher(host + path).find();
   }
 
   private static boolean isDocumentationHost(String host) {
