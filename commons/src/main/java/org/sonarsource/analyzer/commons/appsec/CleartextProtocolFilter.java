@@ -164,14 +164,15 @@ public final class CleartextProtocolFilter {
 
   // --- Well-known identifier URLs (host + path) -------------------------------------------
   // Unlike the namespace URI authorities above, these hosts also serve ordinary content,
-  // so only the specific path(s) below — opaque protocol/feature identifiers, not real
-  // endpoints — are considered safe. Matched against "host + path" of the URI.
+  // so only the specific path prefix(es) below — opaque protocol/feature identifiers, not
+  // real endpoints — are considered safe. Matched against "host + path" of the URI.
   private static final Pattern SAFE_URL_PATH_PREFIXES = Pattern.compile("(?:" +
     // XMPP protocol namespaces (XEPs)
     "^jabber\\.org/protocol/|" +
-    // Xerces/JAXP XML parser features to disable DTD loading
-    "^apache\\.org/xml/features/nonvalidating/load-dtd-grammar$|" +
-    "^apache\\.org/xml/features/nonvalidating/load-external-dtd$" +
+    // Xerces/JAXP XML parser feature flags (nonvalidating/load-external-dtd,
+    // disallow-doctype-decl, dom/create-entity-ref-nodes, …) — opaque identifiers,
+    // never real HTTP endpoints: https://xerces.apache.org/xerces2-j/features.html
+    "^apache\\.org/xml/features/" +
     ")", Pattern.CASE_INSENSITIVE);
 
   // --- IANA-reserved documentation / placeholder domains --------------------------------
@@ -278,7 +279,10 @@ public final class CleartextProtocolFilter {
     }
     var matcher = CLEARTEXT_AUTHORITY.matcher(stripped);
     if (matcher.find()) {
-      return isSafeHost(matcher.group("rest"));
+      var rest = matcher.group("rest");
+      var path = stripped.substring(matcher.end()).split("[?#]", 2)[0];
+      var host = rest.replaceFirst(":\\d*$", "");
+      return isSafeHost(rest) || isKnownIdentifierUrl(host, path);
     }
     var lower = stripped.toLowerCase(Locale.ROOT);
     return CLEARTEXT_SCHEME_PREFIXES.stream().noneMatch(lower::startsWith);

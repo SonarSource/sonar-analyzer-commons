@@ -222,6 +222,13 @@ class CleartextProtocolFilterTest {
       "http://jabber.org/protocol/pubsub#owner",
       "http://apache.org/xml/features/nonvalidating/load-dtd-grammar",
       "http://apache.org/xml/features/nonvalidating/load-external-dtd",
+      "http://apache.org/xml/features/disallow-doctype-decl",
+      "http://apache.org/xml/features/dom/create-entity-ref-nodes",
+
+      // Well-known identifier URLs with a template placeholder — URI parsing fails,
+      // lenient fallback must still recognise the safe path prefix
+      "http://jabber.org/protocol/${node}",
+      "http://apache.org/xml/features/${feature}",
 
       // Single-label hostnames — cannot resolve on the public internet
       "http://local-kubernetes-hostname/something",
@@ -353,8 +360,10 @@ class CleartextProtocolFilterTest {
       "http://jabber.org/",
       "http://jabber.org/other",
       "http://apache.org/",
-      "http://apache.org/xml/features/nonvalidating/load-dtd-grammar-extra",
+      "http://apache.org/xml/featuresx/disallow-doctype-decl",
       "http://apache.org.evil.com/xml/features/nonvalidating/load-dtd-grammar",
+      // Template placeholder with a path outside the safe prefix — lenient fallback must not grant safety
+      "http://jabber.org/other/${x}",
 
       // Adjacent /24 ranges outside the Android emulator network — must not match
       "http://10.0.1.2/",
