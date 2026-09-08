@@ -313,7 +313,9 @@ class CleartextProtocolFilterTest {
       URI.create("http://2130706433"),
       // 8.8.8.8 as hexadecimal literal
       URI.create("http://0x08080808"),
-      URI.create("http://[2001:db8::1]")
+      URI.create("http://[2001:db8::1]"),
+      // Credentials before a known-identifier host so the prefix check does not match
+      URI.create("http://user:pass@jabber.org/protocol/muc")
     );
   }
 
@@ -362,6 +364,11 @@ class CleartextProtocolFilterTest {
       "http://apache.org/",
       "http://apache.org/xml/featuresx/disallow-doctype-decl",
       "http://apache.org.evil.com/xml/features/nonvalidating/load-dtd-grammar",
+      // Credentials before a known-identifier host — must not match: real endpoint could
+      // still be reached with attacker-supplied credentials, and the prefix check is only
+      // ever applied to the literal string, which now starts with the userinfo, not "http://"
+      "http://user:pass@jabber.org/protocol/muc",
+      "http://user:pass@apache.org/xml/features/disallow-doctype-decl",
       // Template placeholder with a path outside the safe prefix — lenient fallback must not grant safety
       "http://jabber.org/other/${x}",
 

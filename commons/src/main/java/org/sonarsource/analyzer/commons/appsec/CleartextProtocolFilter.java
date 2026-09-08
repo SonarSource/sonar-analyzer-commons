@@ -164,14 +164,11 @@ public final class CleartextProtocolFilter {
 
   // --- Well-known identifier URLs -------------------------------------------------------
   // Unlike the namespace URI authorities above, these hosts also serve ordinary content, so
-  // only full http:// URLs starting with one of these prefixes — opaque protocol/feature
-  // identifiers, not real endpoints — are considered safe.
+  // only full http:// URLs starting with one of these prefixes are considered safe.
   private static final Set<String> SAFE_URL_PREFIXES = Set.of(
     // XMPP protocol namespaces (XEPs)
     "http://jabber.org/protocol/",
-    // Xerces/JAXP XML parser feature flags (nonvalidating/load-external-dtd,
-    // disallow-doctype-decl, dom/create-entity-ref-nodes, …) — opaque identifiers,
-    // never real HTTP endpoints: https://xerces.apache.org/xerces2-j/features.html
+    // Xerces/JAXP XML parser feature flags
     "http://apache.org/xml/features/"
   );
 
@@ -303,10 +300,7 @@ public final class CleartextProtocolFilter {
     if (host == null) {
       return false;
     }
-    if (isSafeHost(host) || isSingleLabelHost(host)) {
-      return true;
-    }
-    return isKnownIdentifierUrl(scheme + "://" + host + url.getRawPath());
+    return isSafeHost(host) || isSingleLabelHost(host) || isKnownIdentifierUrl(url.toString());
   }
 
   private static boolean isSafeHost(String host) {
