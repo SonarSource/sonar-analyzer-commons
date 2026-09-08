@@ -364,9 +364,7 @@ class CleartextProtocolFilterTest {
       "http://apache.org/",
       "http://apache.org/xml/featuresx/disallow-doctype-decl",
       "http://apache.org.evil.com/xml/features/nonvalidating/load-dtd-grammar",
-      // Credentials before a known-identifier host — must not match: real endpoint could
-      // still be reached with attacker-supplied credentials, and the prefix check is only
-      // ever applied to the literal string, which now starts with the userinfo, not "http://"
+      // Credentials before a known-identifier host must not match
       "http://user:pass@jabber.org/protocol/muc",
       "http://user:pass@apache.org/xml/features/disallow-doctype-decl",
       // Template placeholder with a path outside the safe prefix — lenient fallback must not grant safety
