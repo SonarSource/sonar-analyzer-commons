@@ -162,18 +162,18 @@ public final class CleartextProtocolFilter {
     "^www\\.eclipse\\.org" +
     ")(?=:|$)", Pattern.CASE_INSENSITIVE);
 
-  // --- Well-known identifier URLs (host + path) -------------------------------------------
-  // Unlike the namespace URI authorities above, these hosts also serve ordinary content,
-  // so only the specific path prefix(es) below — opaque protocol/feature identifiers, not
-  // real endpoints — are considered safe. Matched against "host + path" of the URI.
-  private static final Pattern SAFE_URL_PATH_PREFIXES = Pattern.compile("(?:" +
+  // --- Well-known identifier URLs -------------------------------------------------------
+  // Unlike the namespace URI authorities above, these hosts also serve ordinary content, so
+  // only full http:// URLs starting with one of these prefixes — opaque protocol/feature
+  // identifiers, not real endpoints — are considered safe.
+  private static final Set<String> SAFE_URL_PREFIXES = Set.of(
     // XMPP protocol namespaces (XEPs)
-    "^jabber\\.org/protocol/|" +
+    "http://jabber.org/protocol/",
     // Xerces/JAXP XML parser feature flags (nonvalidating/load-external-dtd,
     // disallow-doctype-decl, dom/create-entity-ref-nodes, …) — opaque identifiers,
     // never real HTTP endpoints: https://xerces.apache.org/xerces2-j/features.html
-    "^apache\\.org/xml/features/" +
-    ")", Pattern.CASE_INSENSITIVE);
+    "http://apache.org/xml/features/"
+  );
 
   // --- IANA-reserved documentation / placeholder domains --------------------------------
   // example.com/net/org are well-known IANA-delegated documentation domains.
@@ -269,6 +269,9 @@ public final class CleartextProtocolFilter {
    */
   public static boolean isSafeWithoutTls(String url) {
     var stripped = url.strip();
+    if (isKnownIdentifierUrl(stripped)) {
+      return true;
+    }
     try {
       var uri = new URI(stripped);
       if (uri.getScheme() != null && uri.getHost() != null) {
@@ -279,10 +282,7 @@ public final class CleartextProtocolFilter {
     }
     var matcher = CLEARTEXT_AUTHORITY.matcher(stripped);
     if (matcher.find()) {
-      var rest = matcher.group("rest");
-      var path = stripped.substring(matcher.end()).split("[?#]", 2)[0];
-      var host = rest.replaceFirst(":\\d*$", "");
-      return isSafeHost(rest) || isKnownIdentifierUrl(host, path);
+      return isSafeHost(matcher.group("rest"));
     }
     var lower = stripped.toLowerCase(Locale.ROOT);
     return CLEARTEXT_SCHEME_PREFIXES.stream().noneMatch(lower::startsWith);
@@ -303,7 +303,10 @@ public final class CleartextProtocolFilter {
     if (host == null) {
       return false;
     }
-    return isSafeHost(host) || isSingleLabelHost(host) || isKnownIdentifierUrl(host, url.getRawPath());
+    if (isSafeHost(host) || isSingleLabelHost(host)) {
+      return true;
+    }
+    return isKnownIdentifierUrl(scheme + "://" + host + url.getRawPath());
   }
 
   private static boolean isSafeHost(String host) {
@@ -333,10 +336,9 @@ public final class CleartextProtocolFilter {
     return NAMESPACE_URI_AUTHORITIES.matcher(host).find();
   }
 
-  // path is never null here: URI.getRawPath() is non-null whenever getHost() is non-null,
-  // and the lenient fallback derives path from String.split(), which never returns null.
-  private static boolean isKnownIdentifierUrl(String host, String path) {
-    return SAFE_URL_PATH_PREFIXES.matcher(host + path).find();
+  private static boolean isKnownIdentifierUrl(String url) {
+    var lower = url.toLowerCase(Locale.ROOT);
+    return SAFE_URL_PREFIXES.stream().anyMatch(lower::startsWith);
   }
 
   private static boolean isDocumentationHost(String host) {
