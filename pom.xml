@@ -75,7 +75,7 @@
   <properties>
     <!-- versions -->
     <version.sonar.plugin.api>14.0.0.4498</version.sonar.plugin.api>
-    <version.sonar.scanner>13.10.0.4657</version.sonar.scanner>
+    <version.sonar.scanner>13.11.0.5929</version.sonar.scanner>
     <version.assertj>3.27.7</version.assertj>
     <version.jsr305>3.0.2</version.jsr305>
     <version.mockito>5.23.0</version.mockito>
