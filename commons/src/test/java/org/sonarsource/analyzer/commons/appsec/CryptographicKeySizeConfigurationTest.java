@@ -112,15 +112,18 @@ class CryptographicKeySizeConfigurationTest {
     "prime192v2, 192",
     "sect163k1, 163",
     "c2tnb191v1, 191",
+    "SECP256R1, 256",
+    "Prime192v2, 192",
+    "SECT163K1, 163",
   })
-  void extractEcKeySize_recognizesStandardCurves(String curveName, int expectedBits) {
+  void extractEcKeySize_recognizesStandardCurvesCaseInsensitively(String curveName, int expectedBits) {
     assertThat(CryptographicKeySizeConfiguration.extractEcKeySize(curveName))
       .isEqualTo(OptionalInt.of(expectedBits));
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"EC", "some123v123", "primee123v23", "unknown"})
-  void extractEcKeySize_returnsEmptyForUnrecognizedNames(String curveName) {
+  @ValueSource(strings = {"EC", "some123v123", "primee123v23", "unknown", "secp99999999999999999999"})
+  void extractEcKeySize_returnsEmptyForUnrecognizedOrOverflowingNames(String curveName) {
     assertThat(CryptographicKeySizeConfiguration.extractEcKeySize(curveName)).isEmpty();
   }
 }

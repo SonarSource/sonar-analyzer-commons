@@ -46,7 +46,7 @@ public final class CryptographicKeySizeConfiguration {
    * Pattern that matches standard EC curve names (e.g. {@code secp256r1}, {@code prime192v2})
    * and captures the key-bit count as group 2.
    */
-  public static final Pattern EC_CURVE_KEY_PATTERN = Pattern.compile("^(secp|prime|sect|c2tnb)(\\d+)");
+  public static final Pattern EC_CURVE_KEY_PATTERN = Pattern.compile("^(secp|prime|sect|c2tnb)(\\d+)", Pattern.CASE_INSENSITIVE);
 
   private CryptographicKeySizeConfiguration() {
   }
@@ -102,7 +102,11 @@ public final class CryptographicKeySizeConfiguration {
   public static OptionalInt extractEcKeySize(String curveName) {
     Matcher matcher = EC_CURVE_KEY_PATTERN.matcher(curveName);
     if (matcher.find()) {
-      return OptionalInt.of(Integer.parseInt(matcher.group(2)));
+      try {
+        return OptionalInt.of(Integer.parseInt(matcher.group(2)));
+      } catch (NumberFormatException e) {
+        // digit run exceeds Integer range — treat as unrecognized curve
+      }
     }
     return OptionalInt.empty();
   }
