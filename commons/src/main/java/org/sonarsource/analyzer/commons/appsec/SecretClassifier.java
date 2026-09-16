@@ -189,7 +189,9 @@ public final class SecretClassifier {
         + "(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
       // Resolved / peer-annotated version strings from package lockfiles, e.g. "4.0.9(@types/node@22.13.4)".
       // Stopgap: such values may instead be excluded by ignoring lockfiles by path.
-      "^v?\\d++(?:\\.\\d++)++(?:\\([^()]*+\\))++$"));
+      "^v?\\d++(?:\\.\\d++)++(?:\\([^()]*+\\))++$",
+      // URIs with authority, e.g. "https://example.com/path"
+      "^[a-zA-Z][a-zA-Z0-9+.-]*+://\\S++$"));
 
   // Flattened once: isKnownNonSecret is on every check's hot path, so avoid re-flattening PATTERN_GROUPS per call.
   private static final List<Pattern> ALL_PATTERNS = PATTERN_GROUPS.stream()
@@ -299,7 +301,11 @@ public final class SecretClassifier {
       // semver variants
       "v1.2.3", ">=1.0.0", "~1.4.5-alpha",
       // peer-annotated lockfile version (non-semver)
-      "4.0.9(@types/node@22.13.4)"))));
+      "4.0.9(@types/node@22.13.4)",
+      // URI with authority
+      "oci://localhost:5001",
+      // URI with authority and secrets in userinfo, path, query and fragment - we do not look for embedded secrets.
+      "https://svc:Xk9Lm2Qp7Rs4Tv1Wz0@db.internal:5432/Xk9Lm2Qp7Rs4Tv1Wz0?token=Xk9Lm2Qp7Rs4Tv1Wz0#Xk9Lm2Qp7Rs4Tv1Wz0"))));
 
   /**
    * Values that must NOT be classified as known non-secrets: realistic credentials plus near-misses of the skip
