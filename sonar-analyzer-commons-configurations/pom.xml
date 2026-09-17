@@ -21,7 +21,7 @@
     <!-- Written by the exporters, then packaged as the raw JSON artifacts and bundled into the nupkg/npm archives. -->
     <generated.json>${project.build.directory}/generated-resources/secret-patterns.json</generated.json>
     <generated.corpus.json>${project.build.directory}/generated-resources/secret-exclusion-corpus.json</generated.corpus.json>
-    <version.exec.plugin>3.6.3</version.exec.plugin>
+    <version.exec.plugin>3.6.4</version.exec.plugin>
     <version.build-helper.plugin>3.6.1</version.build-helper.plugin>
   </properties>
 
