@@ -57,6 +57,7 @@ jobs:
           name: build-output-${{ steps.build-maven.outputs.BUILD_NUMBER }}
           path: '**/target'
           retention-days: 3
+          overwrite: true
 
       # --- NuGet package: DigiCert-sign and publish to the Repox NuGet feed. ---
       # The Maven build only assembles the .nupkg into target/; it is NOT a Maven artifact. These steps sign it
