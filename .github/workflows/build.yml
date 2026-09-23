@@ -42,13 +42,23 @@ jobs:
         uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
           version: 2026.9.11
-      - name: Build and analyze with Maven
+      - name: Build with Maven
         id: build-maven
         uses: SonarSource/ci-github-actions/build-maven@v1
         with:
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
           deploy-pull-request: true
+          sonar-platform: none
+          maven-args: -Pcoverage
+
+      - name: Upload build output for scanning
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: build-output-${{ steps.build-maven.outputs.BUILD_NUMBER }}
+          path: '**/target'
+          retention-days: 3
+          overwrite: true
 
       # --- NuGet package: DigiCert-sign and publish to the Repox NuGet feed. ---
       # The Maven build only assembles the .nupkg into target/; it is NOT a Maven artifact. These steps sign it
@@ -270,8 +280,34 @@ jobs:
           jf rt build-collect-env "$BUILD_NAME" "$BUILD_NUMBER"
           jf rt build-publish "$BUILD_NAME" "$BUILD_NUMBER"
 
+  scan:
+    name: Scan
+    needs: build
+    runs-on: sonar-xs
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      BUILD_NUMBER: ${{ needs.build.outputs.build-number }}
+    steps:
+      - *checkout
+      - name: Setup development environment with mise
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          version: 2026.9.11
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: build-output-${{ needs.build.outputs.build-number }}
+      - uses: SonarSource/ci-github-actions/build-maven@66c890622c26a71ea49efeb7e269bd58be455e77 # PR 348; re-pin to @v1 once merged
+        with:
+          deploy: false
+          skip-build: true
+          sonar-platform: next
+          artifactory-reader-role: private-reader
+          artifactory-deployer-role: qa-deployer
+
   promote:
-    needs: [ build ]
+    needs: [ build, scan ]
     # Skip on DigiCert-only pre-merge tests (feature-branch dispatch has nothing to promote).
     if: ${{ inputs.forceDigicertSign != true }}
     runs-on: sonar-xs
@@ -287,7 +323,7 @@ jobs:
           promote-pull-request: true
 
   promote-nuget:
-    needs: [ build ]
+    needs: [ build, scan ]
     if: needs.build.outputs.deployed == 'true'
     runs-on: sonar-xs
     name: Promote NuGet
@@ -342,7 +378,7 @@ jobs:
           echo "Verified ${FOUND} NuGet package(s) from ${BUILD_NAME}/${BUILD_NUMBER} in ${TARGET_REPO}"
 
   promote-npm:
-    needs: [ build ]
+    needs: [ build, scan ]
     if: needs.build.outputs.deployed == 'true'
     runs-on: sonar-xs
     name: Promote npm
