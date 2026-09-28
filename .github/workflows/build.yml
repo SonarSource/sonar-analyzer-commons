@@ -43,7 +43,7 @@ jobs:
           version: 2026.8.6
       - name: Build and analyze with Maven
         id: build-maven
-        uses: SonarSource/ci-github-actions/build-maven@v1
+        uses: SonarSource/ci-github-actions/build-maven@v2
         with:
           artifactory-reader-role: private-reader
           artifactory-deployer-role: qa-deployer
@@ -89,7 +89,7 @@ jobs:
       # Sign only release branches (not PRs), or workflow_dispatch with forceDigicertSign=true for pre-merge tests.
       - name: Setup DigiCert Client Tools
         if: ${{ inputs.forceDigicertSign == true || (steps.build-maven.outputs.deployed == 'true' && github.event_name != 'pull_request' && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-'))) }}
-        uses: SonarSource/ci-github-actions/code-signing@v1
+        uses: SonarSource/ci-github-actions/code-signing@v2
         with:
           # 7.2 DIGICERTONE keypair fetch returned HTML/non-JSON in CI; use a newer jsign.
           jsign-version: "7.5"
@@ -281,7 +281,7 @@ jobs:
     steps:
       - *checkout
       - name: Promote artifacts
-        uses: SonarSource/ci-github-actions/promote@v1
+        uses: SonarSource/ci-github-actions/promote@v2
         with:
           promote-pull-request: true
 
@@ -351,7 +351,7 @@ jobs:
     steps:
       - *checkout
       - name: Promote npm build
-        uses: SonarSource/ci-github-actions/promote@v1
+        uses: SonarSource/ci-github-actions/promote@v2
         with:
           build-name: ${{ github.event.repository.name }}_npm
           promote-pull-request: true
