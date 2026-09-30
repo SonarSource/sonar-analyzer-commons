@@ -361,7 +361,7 @@ jobs:
     needs: [ build, promote, promote-nuget, promote-npm ]
     if: >-
       always()
-      && (github.ref_name == 'master' || startsWith(github.ref_name, 'branch-') || startsWith(github.ref_name, 'dogfood-on-'))
+      && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-') || startsWith(github.ref_name, 'dogfood-on-'))
       && contains(needs.*.result, 'failure')
     runs-on: sonar-xs
     name: Notify build failure
