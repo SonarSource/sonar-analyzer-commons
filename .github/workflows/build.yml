@@ -52,12 +52,12 @@ jobs:
           sonar-platform: none
           maven-args: -Pcoverage
 
-      - name: Upload build output for scanning
+      - name: Upload Maven build as pipeline artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: build-output-${{ steps.build-maven.outputs.BUILD_NUMBER }}
           path: '**/target'
-          retention-days: 3
+          retention-days: 7
           overwrite: true
 
       # --- NuGet package: DigiCert-sign and publish to the Repox NuGet feed. ---
@@ -280,8 +280,8 @@ jobs:
           jf rt build-collect-env "$BUILD_NAME" "$BUILD_NUMBER"
           jf rt build-publish "$BUILD_NAME" "$BUILD_NUMBER"
 
-  scan:
-    name: Scan
+  analysis:
+    name: NEXT analysis
     needs: build
     runs-on: sonar-xs
     permissions:
@@ -298,16 +298,15 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: build-output-${{ needs.build.outputs.build-number }}
-      - uses: SonarSource/ci-github-actions/build-maven@66c890622c26a71ea49efeb7e269bd58be455e77 # PR 348; re-pin to @v1 once merged
+      - uses: SonarSource/ci-github-actions/build-maven@66c890622c26a71ea49efeb7e269bd58be455e77 # PR 348; re-pin after skip-build ships in @v2
         with:
           deploy: false
           skip-build: true
           sonar-platform: next
           artifactory-reader-role: private-reader
-          artifactory-deployer-role: qa-deployer
 
   promote:
-    needs: [ build, scan ]
+    needs: [ build, analysis ]
     # Skip on DigiCert-only pre-merge tests (feature-branch dispatch has nothing to promote).
     if: ${{ inputs.forceDigicertSign != true }}
     runs-on: sonar-xs
@@ -323,7 +322,7 @@ jobs:
           promote-pull-request: true
 
   promote-nuget:
-    needs: [ build, scan ]
+    needs: [ build, analysis ]
     if: needs.build.outputs.deployed == 'true'
     runs-on: sonar-xs
     name: Promote NuGet
@@ -378,7 +377,7 @@ jobs:
           echo "Verified ${FOUND} NuGet package(s) from ${BUILD_NAME}/${BUILD_NUMBER} in ${TARGET_REPO}"
 
   promote-npm:
-    needs: [ build, scan ]
+    needs: [ build, analysis ]
     if: needs.build.outputs.deployed == 'true'
     runs-on: sonar-xs
     name: Promote npm
