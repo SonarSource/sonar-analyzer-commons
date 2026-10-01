@@ -37,16 +37,21 @@ import java.util.stream.Collectors;
  * {@code stomp}. Any other scheme is considered safe (e.g. {@code https}, {@code wss},
  * {@code sftp}).
  * <p>
- * Three categories of safe cleartext URLs are recognised:
+ * The following categories of safe cleartext URLs are recognised:
  * <ul>
  *   <li><b>Internal hosts</b> — loopback addresses, cloud instance metadata endpoints
- *       (AWS, Azure, GCP, Alibaba, and others), Docker-internal hostnames, and
- *       Kubernetes cluster-internal service DNS. None of these are reachable from the
- *       public internet.</li>
+ *       (AWS, Azure, GCP, Alibaba, and others), the Android emulator's special network,
+ *       Docker-internal hostnames, and Kubernetes cluster-internal service DNS. None of
+ *       these are reachable from the public internet.</li>
  *   <li><b>Namespace URI authorities</b> — well-known authorities (W3C, Android,
  *       OASIS, HL7, …) whose {@code http://} URIs are opaque namespace identifiers
  *       used in XML, JSON-LD, RDF, and similar formats. They carry a protocol prefix
  *       by convention and do not imply an actual HTTP connection.</li>
+ *   <li><b>Well-known identifier URLs</b> — specific {@code http://} URLs (or URL
+ *       prefixes) that are opaque protocol/feature identifiers rather than real
+ *       endpoints, on hosts that otherwise serve ordinary content (e.g. XMPP
+ *       protocol namespaces under {@code jabber.org/protocol/}, or Xerces/JAXP XML
+ *       parser feature flags under {@code apache.org/xml/features/}).</li>
  *   <li><b>IANA-reserved documentation domains</b> — {@code example.com},
  *       {@code example.net}, and {@code example.org} and their subdomains, plus the
  *       reserved TLDs {@code .example}, {@code .test}, and {@code .localhost} (RFC 6761).
@@ -81,6 +86,9 @@ public final class CleartextProtocolFilter {
     "^168\\.63\\.129\\.16|" +
     // Alibaba Cloud ECS IMDS
     "^100\\.100\\.100\\.200|" +
+    // Android emulator special network — router (.1), host loopback alias (.2), DNS (.3-.6),
+    // device (.15-.16) — https://developer.android.com/studio/run/emulator-networking-address
+    "^10\\.0\\.2\\.(?:1[56]|[1-6])|" +
     // GCP/generic cloud IMDS hostnames
     "^metadata\\.google\\.internal|^metadata\\.internal|" +
     // Docker internal hostnames
@@ -153,6 +161,16 @@ public final class CleartextProtocolFilter {
     // Eclipse EMF/Ecore
     "^www\\.eclipse\\.org" +
     ")(?=:|$)", Pattern.CASE_INSENSITIVE);
+
+  // --- Well-known identifier URLs -------------------------------------------------------
+  // Unlike the namespace URI authorities above, these hosts also serve ordinary content, so
+  // only full http:// URLs starting with one of these prefixes are considered safe.
+  private static final Set<String> SAFE_URL_PREFIXES = Set.of(
+    // XMPP protocol namespaces (XEPs)
+    "http://jabber.org/protocol/",
+    // Xerces/JAXP XML parser feature flags
+    "http://apache.org/xml/features/"
+  );
 
   // --- IANA-reserved documentation / placeholder domains --------------------------------
   // example.com/net/org are well-known IANA-delegated documentation domains.
@@ -248,6 +266,9 @@ public final class CleartextProtocolFilter {
    */
   public static boolean isSafeWithoutTls(String url) {
     var stripped = url.strip();
+    if (isKnownIdentifierUrl(stripped)) {
+      return true;
+    }
     try {
       var uri = new URI(stripped);
       if (uri.getScheme() != null && uri.getHost() != null) {
@@ -279,7 +300,7 @@ public final class CleartextProtocolFilter {
     if (host == null) {
       return false;
     }
-    return isSafeHost(host) || isSingleLabelHost(host);
+    return isSafeHost(host) || isSingleLabelHost(host) || isKnownIdentifierUrl(url.toString());
   }
 
   private static boolean isSafeHost(String host) {
@@ -307,6 +328,11 @@ public final class CleartextProtocolFilter {
 
   private static boolean isNamespaceUriAuthority(String host) {
     return NAMESPACE_URI_AUTHORITIES.matcher(host).find();
+  }
+
+  private static boolean isKnownIdentifierUrl(String url) {
+    var lower = url.toLowerCase(Locale.ROOT);
+    return SAFE_URL_PREFIXES.stream().anyMatch(lower::startsWith);
   }
 
   private static boolean isDocumentationHost(String host) {

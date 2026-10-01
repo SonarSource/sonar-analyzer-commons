@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.sonarsource.parent</groupId>
     <artifactId>parent</artifactId>
-    <version>87.0.0.3057</version>
+    <version>88.0.0.3367</version>
   </parent>
 
   <groupId>org.sonarsource.analyzer-commons</groupId>
   <artifactId>sonar-analyzer-commons-parent</artifactId>
-  <version>2.31-SNAPSHOT</version>
+  <version>2.34-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>SonarSource Analyzers Commons Parent</name>
@@ -74,19 +74,20 @@
 
   <properties>
     <!-- versions -->
-    <version.sonar.plugin.api>13.11.0.4459</version.sonar.plugin.api>
-    <version.sonar.scanner>13.8.0.4534</version.sonar.scanner>
+    <version.sonar.plugin.api>14.0.0.4498</version.sonar.plugin.api>
+    <version.sonar.scanner>13.14.0.6149</version.sonar.scanner>
     <version.assertj>3.27.7</version.assertj>
     <version.jsr305>3.0.2</version.jsr305>
-    <version.mockito>5.23.0</version.mockito>
+    <version.mockito>5.24.0</version.mockito>
     <version.junit>4.13.2</version.junit>
     <version.junit-jupiter>6.1.3</version.junit-jupiter>
     <version.gson>2.14.0</version.gson>
     <!-- used for deployment to SonarSource Artifactory -->
     <gitRepositoryName>sonar-analyzer-commons</gitRepositoryName>
-    <artifactsToPublish>${project.groupId}:sonar-analyzer-commons:jar,${project.groupId}:sonar-analyzer-test-commons:jar,${project.groupId}:sonar-analyzer-recognizers:jar,${project.groupId}:sonar-xml-parsing:jar,${project.groupId}:test-sonar-xml-parsing:jar,${project.groupId}:sonar-regex-parsing:jar,${project.groupId}:sonar-analyzer-commons-configurations:json</artifactsToPublish>
+    <configurations.corpus.classifier>secret-exclusion-corpus</configurations.corpus.classifier>
+    <artifactsToPublish>${project.groupId}:sonar-analyzer-commons:jar,${project.groupId}:sonar-analyzer-test-commons:jar,${project.groupId}:sonar-analyzer-recognizers:jar,${project.groupId}:sonar-xml-parsing:jar,${project.groupId}:test-sonar-xml-parsing:jar,${project.groupId}:sonar-regex-parsing:jar,${project.groupId}:sonar-analyzer-commons-configurations:json,${project.groupId}:sonar-analyzer-commons-configurations:json:${configurations.corpus.classifier}</artifactsToPublish>
     <!-- this property configures the settings in parent pom -->
-    <jdk.min.version>17</jdk.min.version>
+    <jdk.min.version>21</jdk.min.version>
     <maven.compiler.release>${jdk.min.version}</maven.compiler.release>
   </properties>
 
@@ -97,12 +98,6 @@
         <groupId>org.sonarsource.api.plugin</groupId>
         <artifactId>sonar-plugin-api</artifactId>
         <version>${version.sonar.plugin.api}</version>
-        <scope>provided</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-api</artifactId>
-        <version>1.7.36</version>
         <scope>provided</scope>
       </dependency>
       <dependency>

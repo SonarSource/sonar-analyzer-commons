@@ -103,6 +103,11 @@ class CleartextProtocolFilterTest {
       "http://metadata.google.internal/computeMetadata/v1",
       "http://metadata.internal/",
 
+      // Android emulator special network
+      "http://10.0.2.2/",
+      "http://10.0.2.3/",
+      "http://10.0.2.15/",
+
       // Docker
       "http://host.docker.internal:8085/metrics",
       "http://gateway.docker.internal",
@@ -211,10 +216,25 @@ class CleartextProtocolFilterTest {
       "http://www.mulesoft.org/schema/mule/core",
       "http://www.mulesoft.org/schema/mule/http",
 
+      // Well-known identifier URLs — XMPP protocol namespaces and Xerces/JAXP XML parser features
+      "http://jabber.org/protocol/muc",
+      "http://jabber.org/protocol/disco#items",
+      "http://jabber.org/protocol/pubsub#owner",
+      "http://apache.org/xml/features/nonvalidating/load-dtd-grammar",
+      "http://apache.org/xml/features/nonvalidating/load-external-dtd",
+      "http://apache.org/xml/features/disallow-doctype-decl",
+      "http://apache.org/xml/features/dom/create-entity-ref-nodes",
+
+      // Well-known identifier URLs with a template placeholder — URI parsing fails,
+      // lenient fallback must still recognise the safe path prefix
+      "http://jabber.org/protocol/${node}",
+      "http://apache.org/xml/features/${feature}",
+
       // Single-label hostnames — cannot resolve on the public internet
       "http://local-kubernetes-hostname/something",
       "http://local-kubernetes-hostname:8080/something",
       "ws://my-service",
+      // "http://my-service:${port}/api", // FP: single-label host with an invalid port
 
       // IPv4 loopback (127.0.0.0/8) written as a single hexadecimal literal
       "http://0x7f000001/",
@@ -293,7 +313,9 @@ class CleartextProtocolFilterTest {
       URI.create("http://2130706433"),
       // 8.8.8.8 as hexadecimal literal
       URI.create("http://0x08080808"),
-      URI.create("http://[2001:db8::1]")
+      URI.create("http://[2001:db8::1]"),
+      // Credentials before a known-identifier host so the prefix check does not match
+      URI.create("http://user:pass@jabber.org/protocol/muc")
     );
   }
 
@@ -334,6 +356,27 @@ class CleartextProtocolFilterTest {
       "http://www.w3.org.evil.com/x",
       "http://schema.org.evil.com/Person",
       "http://www.mulesoft.org.evil.com/schema",
+      "http://10.0.2.2.evil.com",
+
+      // Well-known identifier URLs — host without the safe path, or lookalike host — must not match
+      "http://jabber.org/",
+      "http://jabber.org/other",
+      "http://apache.org/",
+      "http://apache.org/xml/featuresx/disallow-doctype-decl",
+      "http://apache.org.evil.com/xml/features/nonvalidating/load-dtd-grammar",
+      // Credentials before a known-identifier host must not match
+      "http://user:pass@jabber.org/protocol/muc",
+      "http://user:pass@apache.org/xml/features/disallow-doctype-decl",
+      // Template placeholder with a path outside the safe prefix — lenient fallback must not grant safety
+      "http://jabber.org/other/${x}",
+
+      // Adjacent /24 ranges outside the Android emulator network — must not match
+      "http://10.0.1.2/",
+      "http://10.0.3.2/",
+
+      // Within 10.0.2.0/24 but outside the documented emulator addresses — must not match
+      "http://10.0.2.100/",
+      "http://10.0.2.2555/",
 
       // Userinfo — safe-looking host before @ must not grant safety
       "http://www.w3.org@evil.com",

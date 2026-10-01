@@ -12,7 +12,8 @@
     <projectUrl>https://github.com/SonarSource/sonar-analyzer-commons</projectUrl>
     <readme>README.md</readme>
     <description>Shared analyzer configuration data (secret-exclusion regexes) generated from the sonar-analyzer-commons
-      SecretClassifier, for use by non-JVM SonarSource analyzers. The payload is content/secret-patterns.json.</description>
+      SecretClassifier, for use by non-JVM SonarSource analyzers. The payload is content/secret-patterns.json, with the
+      sample values those patterns must reproduce in content/secret-exclusion-corpus.json.</description>
     <tags>sonarsource analyzer secrets configuration</tags>
   </metadata>
 </package>
