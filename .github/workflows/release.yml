@@ -248,12 +248,29 @@ jobs:
             echo "::error::No .tgz found under ./npm-release"
             exit 1
           fi
-          # Extract and publish from a package dir (same as gh-action_release Trusted Publisher path)
-          # so --provenance attests against the workflow OIDC identity.
+          # Publish the exact Repox archive: publishing an extracted directory repacks it,
+          # producing different integrity hashes for public and internal consumers.
           for pkg in "${pkgs[@]}"; do
-            rm -rf npm-package && mkdir npm-package
-            tar -xzf "${pkg}" -C npm-package --strip-components=1
+            package_spec=$(tar -xOzf "$pkg" package/package.json | node -e '
+              let input = "";
+              process.stdin.on("data", chunk => input += chunk);
+              process.stdin.on("end", () => {
+                const { name, version } = JSON.parse(input);
+                process.stdout.write(`${name}@${version}`);
+              });
+            ')
+            expected_integrity=$(node -e '
+              const fs = require("node:fs");
+              const crypto = require("node:crypto");
+              process.stdout.write("sha512-" + crypto.createHash("sha512")
+                .update(fs.readFileSync(process.argv[1])).digest("base64"));
+            ' "$pkg")
             echo "Publishing ${pkg} via npm Trusted Publisher (OIDC)"
             # Build-style versions (e.g. 2.29.0-5138) are semver prereleases; npm requires --tag.
-            (cd npm-package && npm publish --provenance --access public --tag latest)
+            npm publish "$pkg" --registry=https://registry.npmjs.org/ --provenance --access public --tag latest
+            published_integrity=$(npm view "$package_spec" dist.integrity --registry=https://registry.npmjs.org/)
+            if [[ "$published_integrity" != "$expected_integrity" ]]; then
+              echo "::error::Published integrity for ${package_spec} differs from the Repox archive"
+              exit 1
+            fi
           done
