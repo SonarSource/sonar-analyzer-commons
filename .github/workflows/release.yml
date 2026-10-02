@@ -248,12 +248,9 @@ jobs:
             echo "::error::No .tgz found under ./npm-release"
             exit 1
           fi
-          # Extract and publish from a package dir (same as gh-action_release Trusted Publisher path)
-          # so --provenance attests against the workflow OIDC identity.
+          # Publish the exact Repox archive so both registries serve identical bytes.
           for pkg in "${pkgs[@]}"; do
-            rm -rf npm-package && mkdir npm-package
-            tar -xzf "${pkg}" -C npm-package --strip-components=1
             echo "Publishing ${pkg} via npm Trusted Publisher (OIDC)"
             # Build-style versions (e.g. 2.29.0-5138) are semver prereleases; npm requires --tag.
-            (cd npm-package && npm publish --provenance --access public --tag latest)
+            npm publish "$pkg" --registry=https://registry.npmjs.org/ --provenance --access public --tag latest
           done
