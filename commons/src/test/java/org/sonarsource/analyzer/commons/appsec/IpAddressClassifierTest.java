@@ -198,6 +198,11 @@ class IpAddressClassifierTest {
     "1.2.3.٤",
     ".1:2",
     "1.2.3.4.",
+    // Misplaced or IPv4 zones are rejected; the base address must be valid
+    "fe80::1/64%eth0",
+    "1.2.3.4%eth0",
+    "gggg::1%eth0",
+    "[fe80::1%eth0]"
   })
   void shouldClassifyMalformedAsUnparseable(String literal) {
     assertThat(IpAddressClassifier.parse(literal)).isEmpty();
@@ -296,6 +301,8 @@ class IpAddressClassifierTest {
     // JDK accepts extra leading zeros
     "::00000:1, true",
     "::ffff:127.00.0.1, true",
+    // Zones are opaque and preserve the CIDR suffix
+    "::ffff:127.0.0.1%eth0/104, true",
     // Abbreviated inet_aton forms — not supported (classifier requires 4 octets)
     "127.1,            false", // FN: expands to 127.0.0.1
     "127.0.1,          false", // FN: expands to 127.0.0.1
@@ -327,6 +334,11 @@ class IpAddressClassifierTest {
     "fe80::1,          true",
     "febf::1,          true",
     "fe80::/10,        true",
+    "fe80::1%1, true",
+    "fe80::1%, true",
+    "fe80::1%/64, true",
+    "fe80::1%interface-that-does-not-exist/64, true",
+    "fe80::1%接口, true",
     "::ffff:169.254.1.2, true",
     // Not link-local
     "10.0.0.1,         false",
@@ -462,6 +474,7 @@ class IpAddressClassifierTest {
     "10.0.0.0/0,       true",
     "::ffff:127.0.0.1/0, true",
     "::ffff:0:127.0.0.1/0, true",
+    "::%eth0/0, true",
     "::ffff:8.8.8.8/96, false",
     "::ffff:0:8.8.8.8/96, false",
     // Not unrestricted
