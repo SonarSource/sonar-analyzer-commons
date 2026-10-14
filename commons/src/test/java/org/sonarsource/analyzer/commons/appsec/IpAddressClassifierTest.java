@@ -22,6 +22,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.sonarsource.analyzer.commons.appsec.IpAddressClassifier.ParsedIp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -119,6 +120,28 @@ class IpAddressClassifierTest {
   })
   void shouldClassifyStraddlingCidrAsNotReserved(String literal) {
     assertThat(IpAddressClassifier.parse(literal).orElseThrow().isReserved()).isFalse();
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "224.0.0.0, true",
+    "239.255.255.255, true",
+    "223.255.255.255, false",
+    "240.0.0.0, false",
+    "224.0.0.1/4, true",
+    "224.0.0.1/3, false",
+    "ff02::1/8, true",
+    "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff, true",
+    "feff:ffff:ffff:ffff:ffff:ffff:ffff:ffff, false",
+    "ff02::1/7, false",
+    "::ffff:224.0.0.1, true"
+  })
+  void detectsMulticastWithoutChangingReservedClassification(String literal, boolean expected) {
+    ParsedIp parsed = IpAddressClassifier.parse(literal).orElseThrow();
+    assertThat(parsed.isMulticast()).isEqualTo(expected);
+    if (expected) {
+      assertThat(parsed.isReserved()).isFalse();
+    }
   }
 
   @ParameterizedTest
