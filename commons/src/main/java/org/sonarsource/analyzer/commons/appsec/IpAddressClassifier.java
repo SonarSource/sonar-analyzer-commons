@@ -108,6 +108,7 @@ public final class IpAddressClassifier {
    * Returns empty for malformed input, host names, or brackets.
    * Numeric spellings follow the JDK parser, including extra leading zeros in hexadecimal groups.
    * Multi-digit decimal octets starting with zero are rejected in IPv4 and dotted IPv6 tails to avoid octal ambiguity.
+   * IPv6 zone suffixes, including empty ones, are ignored for classification.
    * The returned value can be queried repeatedly without parsing again.
    *
    * @throws NullPointerException if {@code literal} is null
@@ -352,6 +353,12 @@ public final class IpAddressClassifier {
 
   @Nullable
   private static BigInteger parseNumericAddress(String literal, boolean ipv6) {
+    if (ipv6) {
+      int zone = literal.indexOf('%');
+      if (zone >= 0) {
+        literal = literal.substring(0, zone);
+      }
+    }
     if (ipv6 ? (literal.indexOf(':') < 0 || !IPV6_LIKE.matcher(literal).matches()) : !IPV4_LIKE.matcher(literal).matches()) {
       return null;
     }
@@ -362,6 +369,7 @@ public final class IpAddressClassifier {
     // Delegate numeric parsing to InetAddress.getByName while preventing DNS and interface lookup.
     // Every InetAddress.getByName input contains a colon and starts with an ASCII hex digit or ':',
     // keeping malformed literals on the numeric parsing path without DNS fallback.
+    // IPv6 zone identifiers are stripped before parsing to avoid network-interface lookup.
     String numeric = ipv6 ? literal : ("::ffff:" + literal);
     try {
       byte[] bytes = InetAddress.getByName(numeric).getAddress();
