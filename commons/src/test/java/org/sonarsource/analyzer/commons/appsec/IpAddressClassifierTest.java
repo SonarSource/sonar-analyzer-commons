@@ -292,6 +292,15 @@ class IpAddressClassifierTest {
     "::1/127,          false",
     "::0.0.0.1,        true",
     "0:0:0:0:0:0:0.0.0.1, true",
+    // Mapped and translated payloads, including native IPv6 prefix lengths
+    "::ffff:127.0.0.1, true",
+    "::FFFF:7f00:1, true",
+    "0:0:0:0:ffff:0:7f00:1, true",
+    "::ffff:127.12.34.56/104, true",
+    "::ffff:0:127.0.0.1/104, true",
+    "::ffff:127.0.0.1/103, false",
+    "::ffff:127.0.0.1/95, false",
+    "::ffff:0:127.0.0.1/95, false",
     "::127.0.0.1, false",
     // JDK accepts extra leading zeros in hexadecimal groups
     "::00000:1, true",
@@ -326,6 +335,7 @@ class IpAddressClassifierTest {
     "fe80::1,          true",
     "febf::1,          true",
     "fe80::/10,        true",
+    "::ffff:169.254.1.2, true",
     // Not link-local
     "10.0.0.1,         false",
     "127.0.0.1,        false",
@@ -357,6 +367,7 @@ class IpAddressClassifierTest {
     "fc99:1234::42,    true",
     "fc00::1,          true",
     "fc00::/7,         true",
+    "::ffff:10.0.0.1, true",
     // Not private — adjacent or other reserved
     "127.0.0.1,        false",
     "169.254.169.254,  false",
@@ -388,6 +399,7 @@ class IpAddressClassifierTest {
     "3fff:0fff::1,            true",
     "3fff::/20,               true",
     "2001:db8::127.0.0.1, true",
+    "::ffff:203.0.113.42/120, true",
     "64:ff9b::192.0.2.1, false",
     "3fff:1000::1, false",
     "3fff::1/19, false",
@@ -411,6 +423,7 @@ class IpAddressClassifierTest {
     "::,               true",
     "::/128,           true",
     "::0.0.0.0,       true",
+    "::ffff:0:0.0.0.0, true",
     // Not any-address — these belong to other categories
     "0.0.0.0/0,        false",
     "::/0,             false",
@@ -432,13 +445,14 @@ class IpAddressClassifierTest {
   @CsvSource({
     "255.255.255.255,     true",
     "255.255.255.255/32,  true",
+    "::ffff:0:255.255.255.255, true",
     // Not broadcast
     "255.255.255.254,     false",
     "255.255.255.255/31,  false",
     "240.0.0.0/4,         false",
     "0.0.0.0,             false",
     "::,                  false",
-    "::ffff:ffff:ffff,    false",
+    "::ffff:ffff:ffff,    true",
     "bogus,               false",
     // Malformed IPv4 — exercise the parsed-null short-circuit
     "256.0.0.0,           false"
