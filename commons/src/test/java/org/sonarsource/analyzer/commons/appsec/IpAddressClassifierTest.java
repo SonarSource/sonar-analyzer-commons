@@ -22,7 +22,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.sonarsource.analyzer.commons.appsec.IpAddressClassifier.Classification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -65,9 +64,7 @@ class IpAddressClassifierTest {
     "255.255.255.255"
   })
   void shouldClassifyReservedIpv4SingleAsReserved(String literal) {
-    assertThat(IpAddressClassifier.classify(literal)).isEqualTo(Classification.RESERVED);
     assertThat(IpAddressClassifier.isReserved(literal)).isTrue();
-    assertThat(IpAddressClassifier.isInternetRoutable(literal)).isFalse();
   }
 
   @ParameterizedTest
@@ -84,10 +81,8 @@ class IpAddressClassifierTest {
     "192.52.193.0", // AMT (RFC 7450)
     "192.175.48.0" // AS112 Direct Delegation (RFC 7534)
   })
-  void shouldClassifyPublicIpv4SingleAsPublic(String literal) {
-    assertThat(IpAddressClassifier.classify(literal)).isEqualTo(Classification.PUBLIC);
+  void shouldClassifyPublicIpv4SingleAsNotReserved(String literal) {
     assertThat(IpAddressClassifier.isReserved(literal)).isFalse();
-    assertThat(IpAddressClassifier.isInternetRoutable(literal)).isTrue();
   }
 
   @ParameterizedTest
@@ -107,7 +102,7 @@ class IpAddressClassifierTest {
     "240.0.0.0/4"
   })
   void shouldClassifyReservedIpv4CidrAsReserved(String literal) {
-    assertThat(IpAddressClassifier.classify(literal)).isEqualTo(Classification.RESERVED);
+    assertThat(IpAddressClassifier.parse(literal).orElseThrow().isReserved()).isTrue();
   }
 
   @ParameterizedTest
@@ -122,42 +117,42 @@ class IpAddressClassifierTest {
     // Straddles 192.0.0.0/24 boundary
     "192.0.0.0/16"
   })
-  void shouldClassifyStraddlingCidrAsPublic(String literal) {
-    assertThat(IpAddressClassifier.classify(literal)).isEqualTo(Classification.PUBLIC);
+  void shouldClassifyStraddlingCidrAsNotReserved(String literal) {
+    assertThat(IpAddressClassifier.parse(literal).orElseThrow().isReserved()).isFalse();
   }
 
   @ParameterizedTest
   @CsvSource({
     // Loopback (::1/128) — the block is a singleton
-    "::1,                     RESERVED",
-    "::1/128,                 RESERVED",
+    "::1,                     true",
+    "::1/128,                 true",
     // Unique Local Addresses (fc00::/7) — middle of each half, plus block
-    "fc99:1234::42,           RESERVED",
-    "fd12:3456::1,            RESERVED",
-    "fd00:ec2::254,           RESERVED", // AWS IMDSv6
-    "fd20:ce::254,            RESERVED", // GCP IMDSv6
-    "fc00::/7,                RESERVED",
+    "fc99:1234::42,           true",
+    "fd12:3456::1,            true",
+    "fd00:ec2::254,           true", // AWS IMDSv6
+    "fd20:ce::254,            true", // GCP IMDSv6
+    "fc00::/7,                true",
     // Link-local (fe80::/10) — middle and boundary
-    "fea0::42,                RESERVED",
-    "fe80::1,                 RESERVED",
+    "fea0::42,                true",
+    "fe80::1,                 true",
     // Documentation 2001:db8::/32 — middle and block
-    "2001:db8:1234:5678::42,  RESERVED",
-    "2001:db8::1,             RESERVED",
-    "2001:db8::/32,           RESERVED",
+    "2001:db8:1234:5678::42,  true",
+    "2001:db8::1,             true",
+    "2001:db8::/32,           true",
     // Documentation 3fff::/20 — middle, upper boundary, and block
-    "3fff:0800::42,           RESERVED",
-    "3fff::1,                 RESERVED",
-    "3fff:0fff::1,            RESERVED",
-    "3fff::/20,               RESERVED",
+    "3fff:0800::42,           true",
+    "3fff::1,                 true",
+    "3fff:0fff::1,            true",
+    "3fff::/20,               true",
     // Default route, straddles everything
-    "::/0,                    PUBLIC",
+    "::/0,                    false",
     // Ordinary public
-    "2001::1,                 PUBLIC",
-    "2606:4700::1,            PUBLIC",
-    "4000::1,                 PUBLIC"
+    "2001::1,                 false",
+    "2606:4700::1,            false",
+    "4000::1,                 false"
   })
-  void shouldClassifyIpv6Correctly(String literal, Classification expected) {
-    assertThat(IpAddressClassifier.classify(literal)).isEqualTo(expected);
+  void shouldClassifyIpv6Correctly(String literal, boolean expected) {
+    assertThat(IpAddressClassifier.isReserved(literal)).isEqualTo(expected);
   }
 
   @ParameterizedTest
@@ -189,9 +184,8 @@ class IpAddressClassifierTest {
     "::fffff"
   })
   void shouldClassifyMalformedAsUnparseable(String literal) {
-    assertThat(IpAddressClassifier.classify(literal)).isEqualTo(Classification.UNPARSEABLE);
+    assertThat(IpAddressClassifier.parse(literal)).isEmpty();
     assertThat(IpAddressClassifier.isReserved(literal)).isFalse();
-    assertThat(IpAddressClassifier.isInternetRoutable(literal)).isFalse();
   }
 
   @Test

@@ -21,12 +21,13 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
 /**
- * Classifies an IP-address literal (plain or CIDR, IPv4 or IPv6) as reserved for private/special-purpose use, internet-routable, or unparseable.
+ * Classifies an IP-address literal (plain or CIDR, IPv4 or IPv6) as reserved for private/special-purpose use, non-reserved, or unparseable.
  *
  * <p>CIDR (Classless Inter-Domain Routing) semantics: a literal is reserved only if its <em>entire</em> range fits inside one reserved block.
  * For example, {@code 10.0.0.0/1} is NOT reserved.
@@ -61,16 +62,6 @@ import javax.annotation.Nullable;
  * }</pre>
  */
 public final class IpAddressClassifier {
-
-  /** Result of classifying an IP literal. Package-private — boolean predicates expose what callers need. */
-  enum Classification {
-    /** Literal parses; its entire range fits inside a reserved special-purpose block. */
-    RESERVED,
-    /** Literal parses; its range falls outside every reserved block. */
-    PUBLIC,
-    /** Literal does not parse as an IP address or CIDR. */
-    UNPARSEABLE
-  }
 
   // IPv4 special-purpose blocks per IANA, restricted to entries that are NOT
   // globally reachable.
@@ -107,30 +98,26 @@ public final class IpAddressClassifier {
   }
 
   /**
-   * Classifies the literal into {@link Classification#RESERVED}, {@link Classification#PUBLIC}, or {@link Classification#UNPARSEABLE}.
-   * The literal must be non-null; pre-filter {@code Optional} results with {@code orElse} first.
-   * Package-private — boolean predicates ({@link #isReserved}, {@link #isInternetRoutable}, the per-kind variants) are the public surface.
+   * Parses a numeric IPv4 or IPv6 address, optionally followed by a CIDR prefix, without DNS or interface lookup.
+   * Returns empty for malformed input, host names, or brackets.
+   * The returned value can be queried repeatedly without parsing again.
+   *
+   * @throws NullPointerException if {@code literal} is null
    */
-  static Classification classify(String literal) {
-    if (looksLikeIpv4(literal)) {
-      Range4 parsed = parseIpv4Cidr(literal);
-      if (parsed == null) {
-        return Classification.UNPARSEABLE;
-      }
-      return RESERVED_IPV4_BLOCKS.stream().anyMatch(b -> b.range.contains(parsed))
-        ? Classification.RESERVED
-        : Classification.PUBLIC;
+  public static Optional<ParsedIp> parse(String literal) {
+    boolean ipv6 = !looksLikeIpv4(literal);
+    if (ipv6 && (literal.indexOf(':') < 0 || !IPV6_LIKE.matcher(literal).matches())) {
+      return Optional.empty();
     }
-    if (literal.indexOf(':') >= 0 && IPV6_LIKE.matcher(literal).matches()) {
-      Range6 parsed = parseIpv6Cidr(literal);
-      if (parsed == null) {
-        return Classification.UNPARSEABLE;
-      }
-      return RESERVED_IPV6_BLOCKS.stream().anyMatch(b -> b.range.contains(parsed))
-        ? Classification.RESERVED
-        : Classification.PUBLIC;
+    int maxBits = ipv6 ? 128 : 32;
+    int slash = literal.indexOf('/');
+    String address = slash < 0 ? literal : literal.substring(0, slash);
+    int prefix = slash < 0 ? maxBits : parsePrefix(literal.substring(slash + 1), maxBits);
+    if (prefix < 0) {
+      return Optional.empty();
     }
-    return Classification.UNPARSEABLE;
+    AddressRange range = ipv6 ? parseIpv6Range(address, prefix) : parseIpv4Range(address, prefix);
+    return Optional.ofNullable(range).map(parsed -> new ParsedIp(parsed, prefix));
   }
 
   /**
@@ -138,16 +125,7 @@ public final class IpAddressClassifier {
    * Examples: {@code "10.0.0.1"} → true; {@code "10.0.0.0/1"} → false (straddles a reserved boundary).
    */
   public static boolean isReserved(String literal) {
-    return classify(literal) == Classification.RESERVED;
-  }
-
-  /**
-   * True if the literal parses and its entire range falls outside every reserved block; false otherwise (including unparseable).
-   * Examples: {@code "8.8.8.8"} → true; {@code "10.0.0.1"} → false; {@code "bogus"} → false.
-   * Package-private — exposed only for callers that need PUBLIC distinct from UNPARSEABLE (which {@code !isReserved} cannot tell apart).
-   */
-  static boolean isInternetRoutable(String literal) {
-    return classify(literal) == Classification.PUBLIC;
+    return parse(literal).map(ParsedIp::isReserved).orElse(false);
   }
 
   /**
@@ -155,7 +133,7 @@ public final class IpAddressClassifier {
    * Examples: {@code "127.0.0.1"} → true; {@code "::1"} → true; {@code "10.0.0.1"} → false.
    */
   public static boolean isLoopback(String literal) {
-    return matchesKind(literal, BlockKind.LOOPBACK);
+    return parse(literal).map(ParsedIp::isLoopback).orElse(false);
   }
 
   /**
@@ -163,7 +141,7 @@ public final class IpAddressClassifier {
    * Examples: {@code "169.254.169.254"} → true; {@code "fe80::1"} → true; {@code "10.0.0.1"} → false.
    */
   public static boolean isLinkLocal(String literal) {
-    return matchesKind(literal, BlockKind.LINK_LOCAL);
+    return parse(literal).map(ParsedIp::isLinkLocal).orElse(false);
   }
 
   /**
@@ -175,8 +153,7 @@ public final class IpAddressClassifier {
    * Does not cover CGNAT, link-local, loopback, or documentation; query those via their own predicates.
    */
   public static boolean isPrivate(String literal) {
-    return matchesKind(literal, BlockKind.RFC1918_PRIVATE)
-      || matchesKind(literal, BlockKind.UNIQUE_LOCAL);
+    return parse(literal).map(ParsedIp::isPrivate).orElse(false);
   }
 
   /**
@@ -189,7 +166,7 @@ public final class IpAddressClassifier {
    * Examples: {@code "192.0.2.10"} → true; {@code "3fff::1"} → true; {@code "10.0.0.1"} → false.
    */
   public static boolean isDocumentation(String literal) {
-    return matchesKind(literal, BlockKind.DOCUMENTATION);
+    return parse(literal).map(ParsedIp::isDocumentation).orElse(false);
   }
 
   /**
@@ -198,17 +175,7 @@ public final class IpAddressClassifier {
    * Returns false for the {@code /0} CIDR {@code 0.0.0.0/0} — use {@link #isUnrestrictedCidr(String)} for that.
    */
   public static boolean isAnyAddress(String literal) {
-    if (looksLikeIpv4(literal)) {
-      Range4 parsed = parseIpv4Cidr(literal);
-      return parsed != null && parsed.startInclusive == 0L && parsed.endInclusive == 0L;
-    }
-    if (literal.indexOf(':') >= 0 && IPV6_LIKE.matcher(literal).matches()) {
-      Range6 parsed = parseIpv6Cidr(literal);
-      return parsed != null
-        && parsed.startInclusive.signum() == 0
-        && parsed.endInclusive.signum() == 0;
-    }
-    return false;
+    return parse(literal).map(ParsedIp::isAnyAddress).orElse(false);
   }
 
   /**
@@ -216,13 +183,7 @@ public final class IpAddressClassifier {
    * IPv6 has no broadcast equivalent, so every IPv6 literal returns false.
    */
   public static boolean isBroadcast(String literal) {
-    if (!looksLikeIpv4(literal)) {
-      return false;
-    }
-    Range4 parsed = parseIpv4Cidr(literal);
-    return parsed != null
-      && parsed.startInclusive == 0xFFFFFFFFL
-      && parsed.endInclusive == 0xFFFFFFFFL;
+    return parse(literal).map(ParsedIp::isBroadcast).orElse(false);
   }
 
   /**
@@ -231,22 +192,7 @@ public final class IpAddressClassifier {
    * Plain singletons like {@code 0.0.0.0} return false — use {@link #isAnyAddress(String)} for the bind-anywhere sentinel.
    */
   public static boolean isUnrestrictedCidr(String literal) {
-    if (looksLikeIpv4(literal)) {
-      Range4 parsed = parseIpv4Cidr(literal);
-      return parsed != null
-        && parsed.startInclusive == 0L
-        && parsed.endInclusive == 0xFFFFFFFFL;
-    }
-    if (literal.indexOf(':') >= 0 && IPV6_LIKE.matcher(literal).matches()) {
-      Range6 parsed = parseIpv6Cidr(literal);
-      if (parsed == null) {
-        return false;
-      }
-      BigInteger maxIpv6 = BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE);
-      return parsed.startInclusive.signum() == 0
-        && maxIpv6.equals(parsed.endInclusive);
-    }
-    return false;
+    return parse(literal).map(ParsedIp::isUnrestrictedCidr).orElse(false);
   }
 
   /**
@@ -275,20 +221,70 @@ public final class IpAddressClassifier {
     return RESERVED_IPV4_BLOCKS.stream().anyMatch(b -> b.range.contains(range));
   }
 
-  private static boolean matchesKind(String literal, BlockKind kind) {
-    if (looksLikeIpv4(literal)) {
-      Range4 parsed = parseIpv4Cidr(literal);
-      return parsed != null && RESERVED_IPV4_BLOCKS.stream()
-        .filter(b -> b.kind == kind)
-        .anyMatch(b -> b.range.contains(parsed));
+  /**
+   * An immutable parsed address or CIDR range. Predicates classify the entire range.
+   */
+  public static final class ParsedIp {
+    private final int prefixLength;
+    private final AddressRange classificationRange;
+
+    private ParsedIp(AddressRange range, int prefixLength) {
+      this.prefixLength = prefixLength;
+      this.classificationRange = range;
     }
-    if (literal.indexOf(':') >= 0 && IPV6_LIKE.matcher(literal).matches()) {
-      Range6 parsed = parseIpv6Cidr(literal);
-      return parsed != null && RESERVED_IPV6_BLOCKS.stream()
-        .filter(b -> b.kind == kind)
-        .anyMatch(b -> b.range.contains(parsed));
+
+    /** True if the entire range fits inside one reserved block. */
+    public boolean isReserved() {
+      return switch (classificationRange) {
+        case Range4 range -> RESERVED_IPV4_BLOCKS.stream().anyMatch(b -> b.range.contains(range));
+        case Range6 range -> RESERVED_IPV6_BLOCKS.stream().anyMatch(b -> b.range.contains(range));
+      };
     }
-    return false;
+
+    /** @see IpAddressClassifier#isLoopback(String) */
+    public boolean isLoopback() {
+      return matchesKind(BlockKind.LOOPBACK);
+    }
+
+    /** @see IpAddressClassifier#isLinkLocal(String) */
+    public boolean isLinkLocal() {
+      return matchesKind(BlockKind.LINK_LOCAL);
+    }
+
+    /** @see IpAddressClassifier#isPrivate(String) */
+    public boolean isPrivate() {
+      return matchesKind(BlockKind.RFC1918_PRIVATE) || matchesKind(BlockKind.UNIQUE_LOCAL);
+    }
+
+    /** @see IpAddressClassifier#isDocumentation(String) */
+    public boolean isDocumentation() {
+      return matchesKind(BlockKind.DOCUMENTATION);
+    }
+
+    /** @see IpAddressClassifier#isAnyAddress(String) */
+    public boolean isAnyAddress() {
+      return switch (classificationRange) {
+        case Range4 range -> range.startInclusive == 0L && range.endInclusive == 0L;
+        case Range6 range -> range.startInclusive.signum() == 0 && range.endInclusive.signum() == 0;
+      };
+    }
+
+    /** @see IpAddressClassifier#isBroadcast(String) */
+    public boolean isBroadcast() {
+      return classificationRange instanceof Range4 range && range.startInclusive == 0xFFFFFFFFL && range.endInclusive == 0xFFFFFFFFL;
+    }
+
+    /** @see IpAddressClassifier#isUnrestrictedCidr(String) */
+    public boolean isUnrestrictedCidr() {
+      return prefixLength == 0;
+    }
+
+    private boolean matchesKind(BlockKind kind) {
+      return switch (classificationRange) {
+        case Range4 range -> RESERVED_IPV4_BLOCKS.stream().filter(b -> b.kind == kind).anyMatch(b -> b.range.contains(range));
+        case Range6 range -> RESERVED_IPV6_BLOCKS.stream().filter(b -> b.kind == kind).anyMatch(b -> b.range.contains(range));
+      };
+    }
   }
 
   // ---------- IPv4 parsing ----------
@@ -303,13 +299,7 @@ public final class IpAddressClassifier {
     return dots == 3;
   }
 
-  private static Range4 parseIpv4Cidr(String literal) {
-    int slash = literal.indexOf('/');
-    String addressPart = slash < 0 ? literal : literal.substring(0, slash);
-    int prefix = slash < 0 ? 32 : parsePrefix(literal.substring(slash + 1), 32);
-    if (prefix < 0) {
-      return null;
-    }
+  private static Range4 parseIpv4Range(String addressPart, int prefix) {
     long address = parseIpv4Address(addressPart);
     if (address < 0) {
       return null;
@@ -349,13 +339,7 @@ public final class IpAddressClassifier {
 
   // ---------- IPv6 parsing ----------
 
-  private static Range6 parseIpv6Cidr(String literal) {
-    int slash = literal.indexOf('/');
-    String addressPart = slash < 0 ? literal : literal.substring(0, slash);
-    int prefix = slash < 0 ? 128 : parsePrefix(literal.substring(slash + 1), 128);
-    if (prefix < 0) {
-      return null;
-    }
+  private static Range6 parseIpv6Range(String addressPart, int prefix) {
     BigInteger address = parseIpv6Address(addressPart);
     if (address == null) {
       return null;
@@ -391,7 +375,8 @@ public final class IpAddressClassifier {
   }
 
   private static Block4 block4(String cidr, BlockKind kind) {
-    Range4 range = parseIpv4Cidr(cidr);
+    int slash = cidr.indexOf('/');
+    Range4 range = parseIpv4Range(cidr.substring(0, slash), parsePrefix(cidr.substring(slash + 1), 32));
     if (range == null) {
       throw new IllegalStateException("Invalid hardcoded IPv4 CIDR: " + cidr);
     }
@@ -399,7 +384,8 @@ public final class IpAddressClassifier {
   }
 
   private static Block6 block6(String cidr, BlockKind kind) {
-    Range6 range = parseIpv6Cidr(cidr);
+    int slash = cidr.indexOf('/');
+    Range6 range = parseIpv6Range(cidr.substring(0, slash), parsePrefix(cidr.substring(slash + 1), 128));
     if (range == null) {
       throw new IllegalStateException("Invalid hardcoded IPv6 CIDR: " + cidr);
     }
@@ -439,7 +425,10 @@ public final class IpAddressClassifier {
     }
   }
 
-  private static final class Range4 {
+  private sealed interface AddressRange permits Range4, Range6 {
+  }
+
+  private static final class Range4 implements AddressRange {
     final long startInclusive;
     final long endInclusive;
 
@@ -453,7 +442,7 @@ public final class IpAddressClassifier {
     }
   }
 
-  private static final class Range6 {
+  private static final class Range6 implements AddressRange {
     final BigInteger startInclusive;
     final BigInteger endInclusive;
 
