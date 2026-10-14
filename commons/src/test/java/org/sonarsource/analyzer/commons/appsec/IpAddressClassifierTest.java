@@ -166,10 +166,14 @@ class IpAddressClassifierTest {
     "1.2.3.4.5",
     // Bad IPv4 octet value
     "256.0.0.0",
-    // Leading-zero octets — rejected to avoid octal-vs-decimal ambiguity (0177.0.0.1 looks like loopback)
-    "0177.0.0.1",
+    // Ambiguous leading-zero decimal octets, including CIDRs and dotted IPv6 tails
     "010.0.0.1",
+    "0177.0.0.1",
     "127.0.0.01",
+    "010.0.0.1/8",
+    "::ffff:127.00.0.1",
+    "::ffff:0:010.0.0.1/104",
+    "2001:db8::010.0.0.1",
     // Bad IPv4 CIDR mask
     "10.0.0.1/33",
     "10.0.0.1/-1",
@@ -178,10 +182,30 @@ class IpAddressClassifierTest {
     "2001:db8::/129",
     // Bad IPv6 hex
     "gggg::1",
-    // IPV6_LIKE-shaped but fail InetAddress.getByName (covers parseIpv6Cidr null-return + UnknownHostException catch)
+    // Malformed numeric IPv6
     "1:",
     ":::",
-    "::fffff"
+    "::fffff",
+    "1:2:3:4:5:6:7",
+    "1:2:3:4:5:6:7:8:9",
+    "1:2:3:4::5:6:7:8",
+    ":1:2:3:4:5:6:7",
+    "1:2:3:4:5:6:7:",
+    "1::2::3",
+    "10.0.0.1/+8",
+    "10.0.0.1/-0",
+    "10.0.0.1/８",
+    "10.0.0.1/9999999999999999999999999",
+    "::1/+128",
+    // Mixed notation must still be a complete numeric address
+    "::ffff:256.1.2.3",
+    "::ffff:1.2.3",
+    "1:2:3:4:5:6:7:1.2.3.4",
+    "1.2.3.4::",
+    "1.2.3.+4",
+    "1.2.3.٤",
+    ".1:2",
+    "1.2.3.4.",
   })
   void shouldClassifyMalformedAsUnparseable(String literal) {
     assertThat(IpAddressClassifier.parse(literal)).isEmpty();
@@ -206,9 +230,8 @@ class IpAddressClassifierTest {
     // Bad IPv4 octet value
     "256.0.0.0",
     "10.0.0.-1",
-    // Leading-zero octets — rejected to avoid octal-vs-decimal ambiguity
+    // Ambiguous leading-zero decimal octet
     "0177.0.0.1",
-    "010.0.0.1",
     // Non-decimal octet
     "0x7f.0.0.1",
     "10.0.0.a",
@@ -266,6 +289,12 @@ class IpAddressClassifierTest {
     // IPv6 loopback (::1/128) — the block is a singleton
     "::1,              true",
     "::1/128,          true",
+    "::1/127,          false",
+    "::0.0.0.1,        true",
+    "0:0:0:0:0:0:0.0.0.1, true",
+    "::127.0.0.1, false",
+    // JDK accepts extra leading zeros in hexadecimal groups
+    "::00000:1, true",
     // Abbreviated inet_aton forms — not supported (classifier requires 4 octets)
     "127.1,            false", // FN: expands to 127.0.0.1
     "127.0.1,          false", // FN: expands to 127.0.0.1
@@ -358,6 +387,10 @@ class IpAddressClassifierTest {
     "3fff::1,                 true",
     "3fff:0fff::1,            true",
     "3fff::/20,               true",
+    "2001:db8::127.0.0.1, true",
+    "64:ff9b::192.0.2.1, false",
+    "3fff:1000::1, false",
+    "3fff::1/19, false",
     // Not documentation
     "10.0.0.1,                false",
     "127.0.0.1,                false",
@@ -377,6 +410,7 @@ class IpAddressClassifierTest {
     "0.0.0.0/32,       true",
     "::,               true",
     "::/128,           true",
+    "::0.0.0.0,       true",
     // Not any-address — these belong to other categories
     "0.0.0.0/0,        false",
     "::/0,             false",
@@ -420,6 +454,10 @@ class IpAddressClassifierTest {
     "::/0,             true",
     "0::0/0,           true",
     "10.0.0.0/0,       true",
+    "::ffff:127.0.0.1/0, true",
+    "::ffff:0:127.0.0.1/0, true",
+    "::ffff:8.8.8.8/96, false",
+    "::ffff:0:8.8.8.8/96, false",
     // Not unrestricted
     "0.0.0.0,          false",
     "::,               false",
