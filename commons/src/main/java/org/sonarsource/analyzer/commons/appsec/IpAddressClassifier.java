@@ -33,6 +33,12 @@ import javax.annotation.Nullable;
  *
  * <p>Reserved ranges follow the IANA IPv4/IPv6 Special-Purpose Address registries' "not globally reachable" entries.
  *
+ * <p>IPv4-mapped and IPv4-translated IPv6 addresses are classfied according to the content of the IPv4 address they carry.
+ * CIDRs keep their native IPv6 prefix length: address classification applies only to ranges entirely inside either family.
+ * For example, {@code ::ffff:127.0.0.1/104} has the same loopback classification as {@code 127.0.0.0/8}.
+ * {@link #isUnrestrictedCidr(String)} always requires the entire native address space:
+ * {@code ::ffff:0:0/96} is not unrestricted, while {@code ::/0} is.
+ *
  * <h2>Usage examples</h2>
  *
  * <p>S6329 ("public network access") — flag any firewall-rule literal not provably reserved (unparseable literals stay flagged on the safe side):
@@ -62,7 +68,9 @@ import javax.annotation.Nullable;
  */
 public final class IpAddressClassifier {
 
+  private static final BigInteger IPV4_MASK = BigInteger.ONE.shiftLeft(32).subtract(BigInteger.ONE);
   private static final BigInteger MAPPED_PREFIX = BigInteger.valueOf(0xffff);
+  private static final BigInteger TRANSLATED_PREFIX = BigInteger.valueOf(0xffff0000L);
   private static final Pattern IPV4_LIKE = Pattern.compile("[0-9]+(?:\\.[0-9]+){3}");
   private static final Pattern IPV6_LIKE = Pattern.compile("[0-9a-fA-F:][0-9a-fA-F:.]*");
 
@@ -175,7 +183,7 @@ public final class IpAddressClassifier {
 
   /**
    * True if the literal is the IPv4 limited-broadcast address {@code 255.255.255.255} (or {@code /32}).
-   * IPv6 has no broadcast equivalent, so every IPv6 literal returns false.
+   * IPv6 literals return false except mapped and translated addresses, which use the IPv4 payload classification.
    */
   public static boolean isBroadcast(String literal) {
     return parse(literal).map(ParsedIp::isBroadcast).orElse(false);
@@ -218,6 +226,10 @@ public final class IpAddressClassifier {
 
   /**
    * An immutable parsed address or CIDR range. Predicates classify the entire range.
+   * Mapped and translated IPv4 ranges contained within their IPv6 family use IPv4 classification,
+   * while {@link #isUnrestrictedCidr()} retains the native address-family meaning.
+   * For example, {@code ::ffff:0:0/96} covers all mapped IPv4 addresses but is not unrestricted.
+   * A native {@code /0}, such as {@code ::/0} or {@code 0.0.0.0/0}, is unrestricted.
    */
   public static final class ParsedIp {
     private final int prefixLength;
@@ -225,7 +237,12 @@ public final class IpAddressClassifier {
 
     private ParsedIp(AddressRange range, int prefixLength) {
       this.prefixLength = prefixLength;
-      this.classificationRange = range;
+      if (range instanceof Range6 ipv6) {
+        Range4 payload = embeddedIpv4Range(ipv6);
+        classificationRange = payload == null ? range : payload;
+      } else {
+        classificationRange = range;
+      }
     }
 
     /** True if the entire range fits inside one reserved block. */
@@ -331,6 +348,23 @@ public final class IpAddressClassifier {
     } catch (UnknownHostException e) {
       return null;
     }
+  }
+
+  // Extract the IPv4 payload range only when the entire range shares the same mapped or translated 96-bit prefix.
+  @Nullable
+  private static Range4 embeddedIpv4Range(Range6 range) {
+    BigInteger prefix = range.startInclusive.shiftRight(32);
+    if (!prefix.equals(range.endInclusive.shiftRight(32))
+      || (!prefix.equals(MAPPED_PREFIX)
+        // Old IPv4-translated IPv6 addresses (RFC 2765, sections 1 and 2.1) are meant to be routable, with a network
+        // gateway using SIIT to translate them to IPv4 when the receiver is on an IPv4-only network.
+        // Translated addresses corresponding to IPv4 addresses in special ranges (loopback, link-local, etc.) are
+        // not really the intended use, so treating them like mapped addresses and classifying them in the same way
+        // is not a "standard-endorsed" semantic. We do it anyway, for simplicity.
+        && !prefix.equals(TRANSLATED_PREFIX))) {
+      return null;
+    }
+    return new Range4(range.startInclusive.and(IPV4_MASK).longValue(), range.endInclusive.and(IPV4_MASK).longValue());
   }
 
   // ---------- common ----------
