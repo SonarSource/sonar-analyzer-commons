@@ -99,6 +99,10 @@ public final class IpAddressClassifier {
     block6("fc00::/7", BlockKind.UNIQUE_LOCAL),
     block6("fe80::/10", BlockKind.LINK_LOCAL));
 
+  // Multicast is independent of reserved-range classification.
+  private static final Block4 MULTICAST_IPV4_BLOCK = block4("224.0.0.0/4", BlockKind.MULTICAST);
+  private static final Block6 MULTICAST_IPV6_BLOCK = block6("ff00::/8", BlockKind.MULTICAST);
+
   private IpAddressClassifier() {
   }
 
@@ -287,6 +291,14 @@ public final class IpAddressClassifier {
       return classificationRange instanceof Range4 range && range.startInclusive == 0xFFFFFFFFL && range.endInclusive == 0xFFFFFFFFL;
     }
 
+    /** True if the entire range fits within IPv4 {@code 224.0.0.0/4} or IPv6 {@code ff00::/8}. */
+    public boolean isMulticast() {
+      return switch (classificationRange) {
+        case Range4 range -> MULTICAST_IPV4_BLOCK.range.contains(range);
+        case Range6 range -> MULTICAST_IPV6_BLOCK.range.contains(range);
+      };
+    }
+
     /** @see IpAddressClassifier#isUnrestrictedCidr(String) */
     public boolean isUnrestrictedCidr() {
       return prefixLength == 0;
@@ -420,7 +432,8 @@ public final class IpAddressClassifier {
     DOCUMENTATION,
     BENCHMARKING,
     RESERVED_FUTURE,
-    UNIQUE_LOCAL
+    UNIQUE_LOCAL,
+    MULTICAST
   }
 
   private static final class Block4 {
