@@ -17,7 +17,6 @@
 package org.sonarsource.analyzer.commons.appsec;
 
 import java.math.BigInteger;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -63,6 +62,11 @@ import javax.annotation.Nullable;
  */
 public final class IpAddressClassifier {
 
+  private static final BigInteger MAPPED_PREFIX = BigInteger.valueOf(0xffff);
+  // Leading-zero decimal octets are ambiguous because some consumers interpret them as octal.
+  private static final Pattern IPV4_LIKE = Pattern.compile("(?:0|[1-9]\\d{0,2})(?:\\.(?:0|[1-9]\\d{0,2})){3}");
+  private static final Pattern IPV6_LIKE = Pattern.compile("[0-9a-fA-F:][0-9a-fA-F:.]*");
+
   // IPv4 special-purpose blocks per IANA, restricted to entries that are NOT
   // globally reachable.
   @SuppressWarnings("java:S1313")
@@ -88,27 +92,20 @@ public final class IpAddressClassifier {
     block6("fc00::/7", BlockKind.UNIQUE_LOCAL),
     block6("fe80::/10", BlockKind.LINK_LOCAL));
 
-  // Lexical pre-filter for IPv6; prevents {@link InetAddress#getByName} from
-  // attempting a DNS lookup on strings outside the IPv6 alphabet. Dots are
-  // intentionally excluded: IPv4-mapped IPv6 literals (e.g. ::ffff:1.2.3.4)
-  // are not supported.
-  private static final Pattern IPV6_LIKE = Pattern.compile("[\\da-fA-F:]+(/\\d+)?");
-
   private IpAddressClassifier() {
   }
 
   /**
    * Parses a numeric IPv4 or IPv6 address, optionally followed by a CIDR prefix, without DNS or interface lookup.
    * Returns empty for malformed input, host names, or brackets.
+   * Numeric spellings follow the JDK parser, including extra leading zeros in hexadecimal groups.
+   * Multi-digit decimal octets starting with zero are rejected in IPv4 and dotted IPv6 tails to avoid octal ambiguity.
    * The returned value can be queried repeatedly without parsing again.
    *
    * @throws NullPointerException if {@code literal} is null
    */
   public static Optional<ParsedIp> parse(String literal) {
-    boolean ipv6 = !looksLikeIpv4(literal);
-    if (ipv6 && (literal.indexOf(':') < 0 || !IPV6_LIKE.matcher(literal).matches())) {
-      return Optional.empty();
-    }
+    boolean ipv6 = literal.indexOf(':') >= 0;
     int maxBits = ipv6 ? 128 : 32;
     int slash = literal.indexOf('/');
     String address = slash < 0 ? literal : literal.substring(0, slash);
@@ -201,7 +198,7 @@ public final class IpAddressClassifier {
    * Example: {@code "10.0.0.1"} → {@code OptionalLong.of(0x0A000001L)}; {@code "10.0.0.0/8"} → empty.
    */
   public static OptionalLong parseIpv4SingleAddress(@Nullable String literal) {
-    if (literal == null || literal.indexOf('/') >= 0 || !looksLikeIpv4(literal)) {
+    if (literal == null || literal.indexOf('/') >= 0) {
       return OptionalLong.empty();
     }
     long addr = parseIpv4Address(literal);
@@ -289,16 +286,6 @@ public final class IpAddressClassifier {
 
   // ---------- IPv4 parsing ----------
 
-  private static boolean looksLikeIpv4(String literal) {
-    int dots = 0;
-    for (int i = 0; i < literal.length(); i++) {
-      if (literal.charAt(i) == '.') {
-        dots++;
-      }
-    }
-    return dots == 3;
-  }
-
   private static Range4 parseIpv4Range(String addressPart, int prefix) {
     long address = parseIpv4Address(addressPart);
     if (address < 0) {
@@ -312,35 +299,14 @@ public final class IpAddressClassifier {
   }
 
   private static long parseIpv4Address(String dotted) {
-    String[] parts = dotted.split("\\.", -1);
-    if (parts.length != 4) {
-      return -1L;
-    }
-    long result = 0L;
-    for (String part : parts) {
-      // Reject leading-zero octets so octal-looking literals (e.g. "0177.0.0.1") become UNPARSEABLE
-      // rather than being silently reinterpreted as decimal (0177 -> 177, hiding the loopback address).
-      if (part.isEmpty() || part.length() > 3 || (part.length() > 1 && part.charAt(0) == '0')) {
-        return -1L;
-      }
-      int octet;
-      try {
-        octet = Integer.parseInt(part);
-      } catch (NumberFormatException e) {
-        return -1L;
-      }
-      if (octet < 0 || octet > 255) {
-        return -1L;
-      }
-      result = (result << 8) | octet;
-    }
-    return result;
+    BigInteger address = parseNumericAddress(dotted, false);
+    return address == null ? -1L : address.longValue();
   }
 
   // ---------- IPv6 parsing ----------
 
   private static Range6 parseIpv6Range(String addressPart, int prefix) {
-    BigInteger address = parseIpv6Address(addressPart);
+    BigInteger address = parseNumericAddress(addressPart, true);
     if (address == null) {
       return null;
     }
@@ -350,13 +316,24 @@ public final class IpAddressClassifier {
     return new Range6(start, end);
   }
 
-  private static BigInteger parseIpv6Address(String literal) {
+  @Nullable
+  private static BigInteger parseNumericAddress(String literal, boolean ipv6) {
+    if (ipv6 ? (literal.indexOf(':') < 0 || !IPV6_LIKE.matcher(literal).matches()) : !IPV4_LIKE.matcher(literal).matches()) {
+      return null;
+    }
+    if (ipv6 && literal.indexOf('.') >= 0
+      && !IPV4_LIKE.matcher(literal.substring(literal.lastIndexOf(':') + 1)).matches()) {
+      return null;
+    }
+    // Delegate numeric parsing to InetAddress.getByName while preventing DNS and interface lookup.
+    // Every InetAddress.getByName input contains a colon and starts with an ASCII hex digit or ':',
+    // keeping malformed literals on the numeric parsing path without DNS fallback.
+    String numeric = ipv6 ? literal : ("::ffff:" + literal);
     try {
-      InetAddress addr = InetAddress.getByName(literal);
-      if (!(addr instanceof Inet6Address)) {
-        return null;
-      }
-      return new BigInteger(1, addr.getAddress());
+      byte[] bytes = InetAddress.getByName(numeric).getAddress();
+      BigInteger address = new BigInteger(1, bytes);
+      // The JDK returns mapped IPv6 addresses as four bytes. Restore their 128-bit value before applying a CIDR prefix.
+      return (ipv6 && bytes.length == 4) ? MAPPED_PREFIX.shiftLeft(32).or(address) : address;
     } catch (UnknownHostException e) {
       return null;
     }
@@ -365,6 +342,11 @@ public final class IpAddressClassifier {
   // ---------- common ----------
 
   private static int parsePrefix(String text, int maxBits) {
+    // parseInt also accepts signs and non-ASCII digits.
+    // CIDR prefixes should contain ASCII digits only.
+    if (!text.matches("\\d+")) {
+      return -1;
+    }
     int prefix;
     try {
       prefix = Integer.parseInt(text);
