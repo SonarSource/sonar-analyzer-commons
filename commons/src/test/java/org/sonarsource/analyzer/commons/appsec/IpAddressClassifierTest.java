@@ -431,17 +431,18 @@ class IpAddressClassifierTest {
     "2001:db8:1234:5678::42,  true",
     "2001:db8::1,             true",
     "2001:db8::/32,           true",
+    "2001:db8::127.0.0.1,     true",
     // IPv6 3fff::/20 — middle, upper-boundary, CIDR
     "3fff:0800::42,           true",
     "3fff::1,                 true",
     "3fff:0fff::1,            true",
     "3fff::/20,               true",
-    "2001:db8::127.0.0.1, true",
+    // IPv4-mapped documentation address
     "::ffff:203.0.113.42/120, true",
-    "64:ff9b::192.0.2.1, false",
-    "3fff:1000::1, false",
-    "3fff::1/19, false",
     // Not documentation
+    "64:ff9b::192.0.2.1,       false",
+    "3fff:1000::1,            false",
+    "3fff::1/19,              false",
     "10.0.0.1,                false",
     "127.0.0.1,                false",
     "192.0.0.0,                false",
