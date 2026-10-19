@@ -70,6 +70,7 @@ public final class IpAddressClassifier {
   // Leading-zero decimal octets are ambiguous because some consumers interpret them as octal.
   private static final Pattern IPV4_LIKE = Pattern.compile("(?:0|[1-9]\\d{0,2})(?:\\.(?:0|[1-9]\\d{0,2})){3}");
   private static final Pattern IPV6_LIKE = Pattern.compile("[0-9a-fA-F:][0-9a-fA-F:.]*");
+  private static final Pattern CIDR_PREFIX_PATTERN = Pattern.compile("\\d+");
 
   // IPv4 special-purpose blocks per IANA, restricted to entries that are NOT
   // globally reachable.
@@ -406,7 +407,7 @@ public final class IpAddressClassifier {
   private static int parsePrefix(String text, int maxBits) {
     // parseInt also accepts signs and non-ASCII digits.
     // CIDR prefixes should contain ASCII digits only.
-    if (!text.matches("\\d+")) {
+    if (!CIDR_PREFIX_PATTERN.matcher(text).matches()) {
       return -1;
     }
     int prefix;
