@@ -365,6 +365,7 @@ class IpAddressClassifierTest {
     "fe80::1,          true",
     "febf::1,          true",
     "fe80::/10,        true",
+    // IPv6 link-local with zone suffix
     "fe80::1%1, true",
     "fe80::1%, true",
     "fe80::1%/64, true",
