@@ -484,6 +484,7 @@ class IpAddressClassifierTest {
     "255.255.255.255,     true",
     "255.255.255.255/32,  true",
     "::ffff:0:255.255.255.255, true",
+    "::ffff:255.255.255.255, true",
     // Not broadcast
     "255.255.255.254,     false",
     "255.255.255.255/31,  false",
