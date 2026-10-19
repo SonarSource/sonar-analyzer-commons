@@ -320,7 +320,7 @@ class IpAddressClassifierTest {
     "::1/127,          false",
     "::0.0.0.1,        true",
     "0:0:0:0:0:0:0.0.0.1, true",
-    // Mapped and translated payloads, including native IPv6 prefix lengths
+    // IPv4-mapped and IPv4-translated addresses, including native IPv6 prefix lengths
     "::ffff:127.0.0.1, true",
     "::FFFF:7f00:1, true",
     "0:0:0:0:ffff:0:7f00:1, true",

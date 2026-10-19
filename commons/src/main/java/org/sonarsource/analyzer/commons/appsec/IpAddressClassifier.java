@@ -187,7 +187,8 @@ public final class IpAddressClassifier {
 
   /**
    * True if the literal is the IPv4 limited-broadcast address {@code 255.255.255.255} (or {@code /32}).
-   * IPv6 literals return false except mapped and translated addresses, which use the IPv4 payload classification.
+   * IPv6 literals return false except mapped and translated addresses,
+   * which are classified according to their embedded IPv4 address.
    */
   public static boolean isBroadcast(String literal) {
     return parse(literal).map(ParsedIp::isBroadcast).orElse(false);
@@ -242,8 +243,8 @@ public final class IpAddressClassifier {
     private ParsedIp(AddressRange range, int prefixLength) {
       this.prefixLength = prefixLength;
       if (range instanceof Range6 ipv6) {
-        Range4 payload = embeddedIpv4Range(ipv6);
-        classificationRange = payload == null ? range : payload;
+        Range4 embeddedRange = embeddedIpv4Range(ipv6);
+        classificationRange = embeddedRange == null ? range : embeddedRange;
       } else {
         classificationRange = range;
       }
@@ -313,7 +314,7 @@ public final class IpAddressClassifier {
       return isLoopback() || isAnyAddress() || isBroadcast() || isDocumentation() || isMulticast();
     }
 
-    // Extract the IPv4 payload range only when the entire range shares the same mapped or translated 96-bit prefix.
+    // Extract the embedded IPv4 range only when the entire range shares the same mapped or translated 96-bit prefix.
     @Nullable
     private static Range4 embeddedIpv4Range(Range6 range) {
       BigInteger prefix = range.startInclusive.shiftRight(32);
