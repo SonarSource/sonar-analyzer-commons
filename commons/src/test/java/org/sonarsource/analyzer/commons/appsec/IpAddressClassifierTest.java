@@ -402,7 +402,10 @@ class IpAddressClassifierTest {
     "fc99:1234::42,    true",
     "fc00::1,          true",
     "fc00::/7,         true",
+    // IPv4-mapped RFC 1918 private addresses
     "::ffff:10.0.0.1, true",
+    "::ffff:172.16.0.1, true",
+    "::ffff:192.168.0.1, true",
     // Not private — adjacent or other reserved
     "127.0.0.1,        false",
     "169.254.169.254,  false",
