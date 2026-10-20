@@ -146,6 +146,21 @@ class IpAddressClassifierTest {
 
   @ParameterizedTest
   @CsvSource({
+    "127.0.0.1, true", // Loopback
+    "0.0.0.0, true", // Any-address
+    "255.255.255.255, true", // Broadcast
+    "192.0.2.1, true", // Documentation
+    "224.0.0.1, true", // Multicast
+    "8.8.8.8, false", // Public
+    "10.0.0.1, false", // Private
+    "169.254.169.254, false" // Link-local
+  })
+  void shouldDetectAddressesAllowedToBeHardcoded(String literal, boolean expected) {
+    assertThat(IpAddressClassifier.parse(literal).orElseThrow().isAllowedToBeHardcoded()).isEqualTo(expected);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
     // Loopback (::1/128) — the block is a singleton
     "::1,                     true",
     "::1/128,                 true",
