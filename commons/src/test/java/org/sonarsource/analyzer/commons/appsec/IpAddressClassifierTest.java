@@ -30,6 +30,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class IpAddressClassifierTest {
 
   @ParameterizedTest
+  @ValueSource(strings = {"2.5.255.255", "10.1.2.3/8", "::FFFF:127.0.0.1", "FE80::1%eth0/64"})
+  void shouldPreserveParsedLiteral(String literal) {
+    assertThat(IpAddressClassifier.parse(literal).orElseThrow().literal()).isEqualTo(literal);
+  }
+
+  @ParameterizedTest
   @ValueSource(strings = {
     // "This network" (0.0.0.0/8)
     "0.0.0.0", // singleton sentinel
