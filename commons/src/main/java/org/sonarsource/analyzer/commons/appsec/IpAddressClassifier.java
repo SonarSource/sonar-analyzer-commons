@@ -55,7 +55,7 @@ import javax.annotation.Nullable;
  * }
  * }</pre>
  *
- * <p>S1313 ("hardcoded IP") — exempt only documentation, loopback, any-address, broadcast sentinels, and multicast; still flag private RFC 1918 leakage:
+ * <p>S1313 ("hardcoded IP") — exempt only documentation, loopback, any-address, and broadcast sentinels; still flag private RFC 1918 leakage:
  * <pre>{@code
  * IpAddressClassifier.parse(literal)
  *   .filter(ip -> !ip.isAllowedToBeHardcoded())
@@ -307,13 +307,13 @@ public final class IpAddressClassifier {
 
     /**
      * True if the address or CIDR range is allowed to be hardcoded:
-     * the entire range must be loopback, any-address, broadcast, documentation, or multicast.
-     * Private and link-local addresses remain reportable.
+     * the entire range must be loopback, any-address, broadcast, or documentation.
+     * Private, link-local, and multicast addresses remain reportable.
      *
      * Analyzers are encouraged to use this method to achieve consistent behavior for S1313 across languages.
      */
     public boolean isAllowedToBeHardcoded() {
-      return isLoopback() || isAnyAddress() || isBroadcast() || isDocumentation() || isMulticast();
+      return isLoopback() || isAnyAddress() || isBroadcast() || isDocumentation();
     }
 
     // Extract the embedded IPv4 range only when the entire range shares the same mapped or translated 96-bit prefix.

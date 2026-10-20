@@ -150,7 +150,7 @@ class IpAddressClassifierTest {
     "0.0.0.0, true", // Any-address
     "255.255.255.255, true", // Broadcast
     "192.0.2.1, true", // Documentation
-    "224.0.0.1, true", // Multicast
+    "224.0.0.1, false", // Multicast
     "8.8.8.8, false", // Public
     "10.0.0.1, false", // Private
     "169.254.169.254, false" // Link-local
