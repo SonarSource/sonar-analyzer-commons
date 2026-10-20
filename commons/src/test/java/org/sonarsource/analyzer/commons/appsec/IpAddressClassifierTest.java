@@ -22,7 +22,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.sonarsource.analyzer.commons.appsec.IpAddressClassifier.Classification;
+import org.sonarsource.analyzer.commons.appsec.IpAddressClassifier.ParsedIp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -65,9 +65,7 @@ class IpAddressClassifierTest {
     "255.255.255.255"
   })
   void shouldClassifyReservedIpv4SingleAsReserved(String literal) {
-    assertThat(IpAddressClassifier.classify(literal)).isEqualTo(Classification.RESERVED);
     assertThat(IpAddressClassifier.isReserved(literal)).isTrue();
-    assertThat(IpAddressClassifier.isInternetRoutable(literal)).isFalse();
   }
 
   @ParameterizedTest
@@ -84,10 +82,8 @@ class IpAddressClassifierTest {
     "192.52.193.0", // AMT (RFC 7450)
     "192.175.48.0" // AS112 Direct Delegation (RFC 7534)
   })
-  void shouldClassifyPublicIpv4SingleAsPublic(String literal) {
-    assertThat(IpAddressClassifier.classify(literal)).isEqualTo(Classification.PUBLIC);
+  void shouldClassifyPublicIpv4SingleAsNotReserved(String literal) {
     assertThat(IpAddressClassifier.isReserved(literal)).isFalse();
-    assertThat(IpAddressClassifier.isInternetRoutable(literal)).isTrue();
   }
 
   @ParameterizedTest
@@ -107,7 +103,7 @@ class IpAddressClassifierTest {
     "240.0.0.0/4"
   })
   void shouldClassifyReservedIpv4CidrAsReserved(String literal) {
-    assertThat(IpAddressClassifier.classify(literal)).isEqualTo(Classification.RESERVED);
+    assertThat(IpAddressClassifier.parse(literal).orElseThrow().isReserved()).isTrue();
   }
 
   @ParameterizedTest
@@ -122,42 +118,79 @@ class IpAddressClassifierTest {
     // Straddles 192.0.0.0/24 boundary
     "192.0.0.0/16"
   })
-  void shouldClassifyStraddlingCidrAsPublic(String literal) {
-    assertThat(IpAddressClassifier.classify(literal)).isEqualTo(Classification.PUBLIC);
+  void shouldClassifyStraddlingCidrAsNotReserved(String literal) {
+    assertThat(IpAddressClassifier.parse(literal).orElseThrow().isReserved()).isFalse();
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "224.0.0.0, true",
+    "239.255.255.255, true",
+    "223.255.255.255, false",
+    "240.0.0.0, false",
+    "224.0.0.1/4, true",
+    "224.0.0.1/3, false",
+    "ff02::1/8, true",
+    "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff, true",
+    "feff:ffff:ffff:ffff:ffff:ffff:ffff:ffff, false",
+    "ff02::1/7, false",
+    "::ffff:224.0.0.1, true"
+  })
+  void detectsMulticastWithoutChangingReservedClassification(String literal, boolean expected) {
+    ParsedIp parsed = IpAddressClassifier.parse(literal).orElseThrow();
+    assertThat(parsed.isMulticast()).isEqualTo(expected);
+    if (expected) {
+      assertThat(parsed.isReserved()).isFalse();
+    }
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "127.0.0.1, true", // Loopback
+    "0.0.0.0, true", // Any-address
+    "255.255.255.255, true", // Broadcast
+    "192.0.2.1, true", // Documentation
+    "224.0.0.1, false", // Multicast
+    "8.8.8.8, false", // Public
+    "10.0.0.1, false", // Private
+    "169.254.169.254, false" // Link-local
+  })
+  void shouldDetectAddressesAllowedToBeHardcoded(String literal, boolean expected) {
+    assertThat(IpAddressClassifier.parse(literal).orElseThrow().isAllowedToBeHardcoded()).isEqualTo(expected);
   }
 
   @ParameterizedTest
   @CsvSource({
     // Loopback (::1/128) — the block is a singleton
-    "::1,                     RESERVED",
-    "::1/128,                 RESERVED",
+    "::1,                     true",
+    "::1/128,                 true",
     // Unique Local Addresses (fc00::/7) — middle of each half, plus block
-    "fc99:1234::42,           RESERVED",
-    "fd12:3456::1,            RESERVED",
-    "fd00:ec2::254,           RESERVED", // AWS IMDSv6
-    "fd20:ce::254,            RESERVED", // GCP IMDSv6
-    "fc00::/7,                RESERVED",
+    "fc99:1234::42,           true",
+    "fd12:3456::1,            true",
+    "fd00:ec2::254,           true", // AWS IMDSv6
+    "fd20:ce::254,            true", // GCP IMDSv6
+    "fc00::/7,                true",
     // Link-local (fe80::/10) — middle and boundary
-    "fea0::42,                RESERVED",
-    "fe80::1,                 RESERVED",
+    "fea0::42,                true",
+    "fe80::1,                 true",
     // Documentation 2001:db8::/32 — middle and block
-    "2001:db8:1234:5678::42,  RESERVED",
-    "2001:db8::1,             RESERVED",
-    "2001:db8::/32,           RESERVED",
+    "2001:db8:1234:5678::42,  true",
+    "2001:db8::1,             true",
+    "2001:db8::/32,           true",
     // Documentation 3fff::/20 — middle, upper boundary, and block
-    "3fff:0800::42,           RESERVED",
-    "3fff::1,                 RESERVED",
-    "3fff:0fff::1,            RESERVED",
-    "3fff::/20,               RESERVED",
+    "3fff:0800::42,           true",
+    "3fff::1,                 true",
+    "3fff:0fff::1,            true",
+    "3fff::/20,               true",
     // Default route, straddles everything
-    "::/0,                    PUBLIC",
+    "::/0,                    false",
     // Ordinary public
-    "2001::1,                 PUBLIC",
-    "2606:4700::1,            PUBLIC",
-    "4000::1,                 PUBLIC"
+    "2001::1,                 false",
+    "2606:4700::1,            false",
+    "4000::1,                 false"
   })
-  void shouldClassifyIpv6Correctly(String literal, Classification expected) {
-    assertThat(IpAddressClassifier.classify(literal)).isEqualTo(expected);
+  void shouldClassifyIpv6Correctly(String literal, boolean expected) {
+    assertThat(IpAddressClassifier.isReserved(literal)).isEqualTo(expected);
   }
 
   @ParameterizedTest
@@ -171,10 +204,14 @@ class IpAddressClassifierTest {
     "1.2.3.4.5",
     // Bad IPv4 octet value
     "256.0.0.0",
-    // Leading-zero octets — rejected to avoid octal-vs-decimal ambiguity (0177.0.0.1 looks like loopback)
-    "0177.0.0.1",
+    // Ambiguous leading-zero decimal octets, including CIDRs and dotted IPv6 tails
     "010.0.0.1",
+    "0177.0.0.1",
     "127.0.0.01",
+    "010.0.0.1/8",
+    "::ffff:127.00.0.1",
+    "::ffff:0:010.0.0.1/104",
+    "2001:db8::010.0.0.1",
     // Bad IPv4 CIDR mask
     "10.0.0.1/33",
     "10.0.0.1/-1",
@@ -183,15 +220,39 @@ class IpAddressClassifierTest {
     "2001:db8::/129",
     // Bad IPv6 hex
     "gggg::1",
-    // IPV6_LIKE-shaped but fail InetAddress.getByName (covers parseIpv6Cidr null-return + UnknownHostException catch)
+    // Malformed numeric IPv6
     "1:",
     ":::",
-    "::fffff"
+    "::fffff",
+    "1:2:3:4:5:6:7",
+    "1:2:3:4:5:6:7:8:9",
+    "1:2:3:4::5:6:7:8",
+    ":1:2:3:4:5:6:7",
+    "1:2:3:4:5:6:7:",
+    "1::2::3",
+    "10.0.0.1/+8",
+    "10.0.0.1/-0",
+    "10.0.0.1/８",
+    "10.0.0.1/9999999999999999999999999",
+    "::1/+128",
+    // Mixed notation must still be a complete numeric address
+    "::ffff:256.1.2.3",
+    "::ffff:1.2.3",
+    "1:2:3:4:5:6:7:1.2.3.4",
+    "1.2.3.4::",
+    "1.2.3.+4",
+    "1.2.3.٤",
+    ".1:2",
+    "1.2.3.4.",
+    // Misplaced or IPv4 zones are rejected; the base address must be valid
+    "fe80::1/64%eth0",
+    "1.2.3.4%eth0",
+    "gggg::1%eth0",
+    "[fe80::1%eth0]"
   })
   void shouldClassifyMalformedAsUnparseable(String literal) {
-    assertThat(IpAddressClassifier.classify(literal)).isEqualTo(Classification.UNPARSEABLE);
+    assertThat(IpAddressClassifier.parse(literal)).isEmpty();
     assertThat(IpAddressClassifier.isReserved(literal)).isFalse();
-    assertThat(IpAddressClassifier.isInternetRoutable(literal)).isFalse();
   }
 
   @Test
@@ -212,9 +273,8 @@ class IpAddressClassifierTest {
     // Bad IPv4 octet value
     "256.0.0.0",
     "10.0.0.-1",
-    // Leading-zero octets — rejected to avoid octal-vs-decimal ambiguity
+    // Ambiguous leading-zero decimal octet
     "0177.0.0.1",
-    "010.0.0.1",
     // Non-decimal octet
     "0x7f.0.0.1",
     "10.0.0.a",
@@ -272,6 +332,23 @@ class IpAddressClassifierTest {
     // IPv6 loopback (::1/128) — the block is a singleton
     "::1,              true",
     "::1/128,          true",
+    "::1/127,          false",
+    "::0.0.0.1,        true",
+    "0:0:0:0:0:0:0.0.0.1, true",
+    // IPv4-mapped and IPv4-translated addresses, including native IPv6 prefix lengths
+    "::ffff:127.0.0.1, true",
+    "::FFFF:7f00:1, true",
+    "0:0:0:0:ffff:0:7f00:1, true",
+    "::ffff:127.12.34.56/104, true",
+    "::ffff:0:127.0.0.1/104, true",
+    "::ffff:127.0.0.1/103, false",
+    "::ffff:127.0.0.1/95, false",
+    "::ffff:0:127.0.0.1/95, false",
+    "::127.0.0.1, false",
+    // JDK accepts extra leading zeros in hexadecimal groups
+    "::00000:1, true",
+    // Zones are opaque and preserve the CIDR suffix
+    "::ffff:127.0.0.1%eth0/104, true",
     // Abbreviated inet_aton forms — not supported (classifier requires 4 octets)
     "127.1,            false", // FN: expands to 127.0.0.1
     "127.0.1,          false", // FN: expands to 127.0.0.1
@@ -303,6 +380,13 @@ class IpAddressClassifierTest {
     "fe80::1,          true",
     "febf::1,          true",
     "fe80::/10,        true",
+    // IPv6 link-local with zone suffix
+    "fe80::1%1, true",
+    "fe80::1%, true",
+    "fe80::1%/64, true",
+    "fe80::1%interface-that-does-not-exist/64, true",
+    "fe80::1%接口, true",
+    "::ffff:169.254.1.2, true",
     // Not link-local
     "10.0.0.1,         false",
     "127.0.0.1,        false",
@@ -334,6 +418,10 @@ class IpAddressClassifierTest {
     "fc99:1234::42,    true",
     "fc00::1,          true",
     "fc00::/7,         true",
+    // IPv4-mapped RFC 1918 private addresses
+    "::ffff:10.0.0.1, true",
+    "::ffff:172.16.0.1, true",
+    "::ffff:192.168.0.1, true",
     // Not private — adjacent or other reserved
     "127.0.0.1,        false",
     "169.254.169.254,  false",
@@ -359,12 +447,18 @@ class IpAddressClassifierTest {
     "2001:db8:1234:5678::42,  true",
     "2001:db8::1,             true",
     "2001:db8::/32,           true",
+    "2001:db8::127.0.0.1,     true",
     // IPv6 3fff::/20 — middle, upper-boundary, CIDR
     "3fff:0800::42,           true",
     "3fff::1,                 true",
     "3fff:0fff::1,            true",
     "3fff::/20,               true",
+    // IPv4-mapped documentation address
+    "::ffff:203.0.113.42/120, true",
     // Not documentation
+    "64:ff9b::192.0.2.1,       false",
+    "3fff:1000::1,            false",
+    "3fff::1/19,              false",
     "10.0.0.1,                false",
     "127.0.0.1,                false",
     "192.0.0.0,                false",
@@ -383,9 +477,14 @@ class IpAddressClassifierTest {
     "0.0.0.0/32,       true",
     "::,               true",
     "::/128,           true",
+    "0:0:0:0:0:0:0:0, true",
+    "0:0:0:0:0:0:0:0/128, true",
+    "::0.0.0.0,       true",
+    "::ffff:0:0.0.0.0, true",
     // Not any-address — these belong to other categories
     "0.0.0.0/0,        false",
     "::/0,             false",
+    "0:0:0:0:0:0:0:0/0, false",
     "0.0.0.1,          false",
     "0.0.0.0/8,        false",
     "0.0.0.0/31,       false",
@@ -404,13 +503,15 @@ class IpAddressClassifierTest {
   @CsvSource({
     "255.255.255.255,     true",
     "255.255.255.255/32,  true",
+    "::ffff:0:255.255.255.255, true",
+    "::ffff:255.255.255.255, true",
     // Not broadcast
     "255.255.255.254,     false",
     "255.255.255.255/31,  false",
     "240.0.0.0/4,         false",
     "0.0.0.0,             false",
     "::,                  false",
-    "::ffff:ffff:ffff,    false",
+    "::ffff:ffff:ffff,    true",
     "bogus,               false",
     // Malformed IPv4 — exercise the parsed-null short-circuit
     "256.0.0.0,           false"
@@ -424,13 +525,21 @@ class IpAddressClassifierTest {
     // /0-mask CIDR (any starting address normalizes to the same range)
     "0.0.0.0/0,        true",
     "::/0,             true",
+    "0:0:0:0:0:0:0:0/0, true",
     "0::0/0,           true",
     "10.0.0.0/0,       true",
+    "::ffff:127.0.0.1/0, true",
+    "::ffff:0:127.0.0.1/0, true",
+    "::%eth0/0, true",
+    "::ffff:8.8.8.8/96, false",
+    "::ffff:0:8.8.8.8/96, false",
     // Not unrestricted
     "0.0.0.0,          false",
     "::,               false",
     "0.0.0.0/32,       false",
     "::/128,           false",
+    "0:0:0:0:0:0:0:0, false",
+    "0:0:0:0:0:0:0:0/128, false",
     "0.0.0.0/8,        false",
     "10.0.0.0/8,       false",
     "bogus,            false",
