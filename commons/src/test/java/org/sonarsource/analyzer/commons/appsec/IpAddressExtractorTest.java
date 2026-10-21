@@ -40,6 +40,7 @@ class IpAddressExtractorTest {
     "[2003::1]:65535, 2003::1",
     // URL hosts, including scheme-relative URLs and mixed notation
     "http://1.2.3.4:8080/path, 1.2.3.4",
+    "http://1.2.3.4/path with space, 1.2.3.4",
     "git+ssh://1.2.3.4/path, 1.2.3.4",
     "custom-scheme.v1://1.2.3.4/path, 1.2.3.4",
     "//[2003::1]:8080/path, 2003::1",
