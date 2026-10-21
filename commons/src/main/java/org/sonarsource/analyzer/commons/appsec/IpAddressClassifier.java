@@ -125,7 +125,7 @@ public final class IpAddressClassifier {
       return Optional.empty();
     }
     AddressRange range = ipv6 ? parseIpv6Range(address, prefix) : parseIpv4Range(address, prefix);
-    return Optional.ofNullable(range).map(parsed -> new ParsedIp(literal, parsed, prefix));
+    return Optional.ofNullable(range).map(parsed -> new ParsedIp(parsed, prefix));
   }
 
   /**
@@ -238,12 +238,10 @@ public final class IpAddressClassifier {
    * A native {@code /0}, such as {@code ::/0} or {@code 0.0.0.0/0}, is unrestricted.
    */
   public static final class ParsedIp {
-    private final String literal;
     private final int prefixLength;
     private final AddressRange classificationRange;
 
-    private ParsedIp(String literal, AddressRange range, int prefixLength) {
-      this.literal = literal;
+    private ParsedIp(AddressRange range, int prefixLength) {
       this.prefixLength = prefixLength;
       if (range instanceof Range6 ipv6) {
         Range4 embeddedRange = embeddedIpv4Range(ipv6);
@@ -251,11 +249,6 @@ public final class IpAddressClassifier {
       } else {
         classificationRange = range;
       }
-    }
-
-    /** The original address spelling, including any zone and CIDR suffix. */
-    public String literal() {
-      return literal;
     }
 
     /** True if the entire range fits inside one reserved block. */
