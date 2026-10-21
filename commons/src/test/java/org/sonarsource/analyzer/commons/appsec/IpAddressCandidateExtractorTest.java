@@ -30,7 +30,7 @@ class IpAddressCandidateExtractorTest {
     "1.2.3.4, 1.2.3.4",
     "1.2.3.4:0, 1.2.3.4",
     "1.2.3.4:65535, 1.2.3.4",
-    "1.2.3.4:000080, 1.2.3.4",
+    "1.2.3.4:00080, 1.2.3.4",
     "2003::1, 2003::1",
     "::00000:2, ::00000:2",
     "::ffff:1.2.3.4, ::ffff:1.2.3.4",
@@ -69,18 +69,31 @@ class IpAddressCandidateExtractorTest {
     "1.2.3.4#fragment, 1.2.3.4",
     // Bare CIDRs retain their prefix; URL paths do not become CIDRs
     "1.2.3.4/0, 1.2.3.4/0",
+    "1.2.3.4/32, 1.2.3.4/32",
+    "1.2.3.4/032, 1.2.3.4/032",
     "2003::1/0, 2003::1/0",
-    "127.0.0.1/7, 127.0.0.1/7",
     "2003::1/64, 2003::1/64",
-    "[2003::1]/64, 2003::1/64",
+    "2003::1/064, 2003::1/064",
+    "2003::1/128, 2003::1/128",
+    "127.0.0.1/7, 127.0.0.1/7",
     "http://127.0.0.1/7, 127.0.0.1",
+    "[2003::1]/64, 2003::1/64",
     "//[2003::1]/64, 2003::1",
+    "http://1.2.3.4/123456, 1.2.3.4",
+    "//[2003::1]/123456, 2003::1",
+    // Overlong CIDR suffixes are treated as paths
+    "1.2.3.4/1000, 1.2.3.4",
+    "1.2.3.4/0032, 1.2.3.4",
+    "2003::1/1000, 2003::1",
+    "2003::1/0128, 2003::1",
     // A slash after a port starts a path, even when it contains only digits
     "1.2.3.4:8080/0, 1.2.3.4",
     "[2003::1]:8080/0, 2003::1",
     "[2003::1]:8080/64, 2003::1",
     "1.2.3.4:8080/33, 1.2.3.4",
     "[2003::1]:8080/129, 2003::1",
+    "1.2.3.4:8080/123456, 1.2.3.4",
+    "[2003::1]:8080/123456, 2003::1",
     "1.2.3.4/path, 1.2.3.4",
     "1.2.3.4/３３, 1.2.3.4", // Non-ASCII digits form a path, not an ASCII CIDR suffix
     "1.2.3.4/, 1.2.3.4",
@@ -107,6 +120,7 @@ class IpAddressCandidateExtractorTest {
     "1.2.3.4.5, 1.2.3.4.5", // Too many octets
     "prefix1.2.3.4, prefix1.2.3.4", // Text prepended to an address
     "1.2.3.4/33, 1.2.3.4/33", // Invalid IPv4 CIDR prefix
+    "1.2.3.4/100, 1.2.3.4/100", // Invalid IPv4 CIDR prefix (at most 2 digits possible)
     "2003::1/129, 2003::1/129", // Invalid IPv6 CIDR prefix
     "prefix/1.2.3.4, prefix", // Address does not start the content
     "http://host1.2.3.4/path, host1.2.3.4", // Host name instead of an IP address
@@ -138,10 +152,12 @@ class IpAddressCandidateExtractorTest {
     "1.2.3.4:+80", // Signed port
     "1.2.3.4:８０", // Non-ASCII port digits
     "1.2.3.4:65536", // Port exceeds 65535
-    "1.2.3.4:99999999999999999999", // Port overflows an integer
+    "1.2.3.4:000080", // Port exceeds five digits despite its value fitting the range
+    "1.2.3.4:99999999999999999999", // Port exceeds five digits
     "[2003::1]:", // Empty port
     "[2003::1]:-1", // Negative port
     "[2003::1]:65536", // Port exceeds 65535
+    "[2003::1]:000000", // Port exceeds five digits
     "http://[2003::1]:path/instead/of/port", // Nonnumeric port
     "http://1.2.3.4:8080;https://5.6.7.8/other" // Limitation: semicolon is not a recognized delimiter
   })
