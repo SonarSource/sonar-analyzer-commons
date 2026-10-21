@@ -67,6 +67,12 @@ class IpAddressCandidateExtractorTest {
     "'192.0.2.1\u00a0rest', 192.0.2.1", // Nonbreaking space is a whitespace delimiter
     "http://192.0.2.1?query, 192.0.2.1",
     "192.0.2.1#fragment, 192.0.2.1",
+    // Query strings do not affect host extraction
+    "http://192.0.2.1?foo=bar&baz=qux, 192.0.2.1",
+    "https://[2001:db8::1]:8443?foo=bar;baz=qux, 2001:db8::1",
+    "http://192.0.2.1:8080?q=hello+world%20%26%3B&next=%2Fdocs, 192.0.2.1",
+    "'https://user:pass@[2001:db8::1]/search?tags=a,b&filter=one;two#results', 2001:db8::1",
+    "http://192.0.2.1?redirect=https://user@example.org/path?a=1&b=2, 192.0.2.1",
     // Bare CIDRs retain their prefix; URL paths do not become CIDRs
     "192.0.2.1/0, 192.0.2.1/0",
     "192.0.2.1/32, 192.0.2.1/32",
