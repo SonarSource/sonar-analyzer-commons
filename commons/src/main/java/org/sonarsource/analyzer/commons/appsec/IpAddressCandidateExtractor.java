@@ -47,9 +47,9 @@ public final class IpAddressCandidateExtractor {
    *   <li>Removes a single enclosing pair of brackets from IPv6 addresses, and ASCII decimal ports from 0 through 65535.
    *     Brackets delimit IPv6 hosts in URLs and endpoints so address colons are distinct from the port separator,
    *     for example {@code [2003::1]:8080}.</li>
-   *   <li>Preserves IPv6 zones and numeric CIDR suffixes on bare addresses.
+   *   <li>Preserves IPv6 zones and recognized CIDR suffixes on bare addresses.
    *     Slash suffixes in URLs or after ports are always paths.
-   *     Nonnumeric slash suffixes on bare addresses are also treated as paths.</li>
+   *     Other slash suffixes on bare addresses are also treated as paths.</li>
    *   <li>Stops at a query, fragment, comma, or whitespace; leading whitespace is not accepted.</li>
    * </ul>
    *
@@ -80,7 +80,9 @@ public final class IpAddressCandidateExtractor {
       suffix = candidate.substring(slash + 1);
       candidate = candidate.substring(0, slash);
     }
-    String cidr = ASCII_DIGITS.matcher(suffix).matches() ? ("/" + suffix) : "";
+    // Three digits cover both IPv4 and IPv6 prefixes.
+    int maxPrefixDigits = 3;
+    String cidr = (suffix.length() <= maxPrefixDigits && ASCII_DIGITS.matcher(suffix).matches()) ? ("/" + suffix) : "";
 
     return stripBracketsAndPort(candidate)
       .filter(stripped -> !stripped.candidate().isEmpty())
@@ -127,14 +129,10 @@ public final class IpAddressCandidateExtractor {
   }
 
   private static boolean isPort(String port) {
-    if (!ASCII_DIGITS.matcher(port).matches()) {
+    if (port.length() > 5 || !ASCII_DIGITS.matcher(port).matches()) {
       return false;
     }
-    try {
-      return Integer.parseInt(port) <= 65535;
-    } catch (NumberFormatException e) {
-      return false;
-    }
+    return Integer.parseInt(port) <= 65535;
   }
 
   private record StrippedCandidate(String candidate, boolean portRemoved) {
