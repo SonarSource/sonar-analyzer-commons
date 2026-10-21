@@ -27,80 +27,80 @@ class IpAddressCandidateExtractorTest {
   @ParameterizedTest
   @CsvSource({
     // Bare addresses and endpoints
-    "1.2.3.4, 1.2.3.4",
-    "1.2.3.4:0, 1.2.3.4",
-    "1.2.3.4:65535, 1.2.3.4",
-    "1.2.3.4:00080, 1.2.3.4",
-    "2003::1, 2003::1",
+    "192.0.2.1, 192.0.2.1",
+    "192.0.2.1:0, 192.0.2.1",
+    "192.0.2.1:65535, 192.0.2.1",
+    "192.0.2.1:00080, 192.0.2.1",
+    "2001:db8::1, 2001:db8::1",
     "::00000:2, ::00000:2",
-    "::ffff:1.2.3.4, ::ffff:1.2.3.4",
-    "[::ffff:1.2.3.4], ::ffff:1.2.3.4",
-    "[2003::1]:65535, 2003::1",
+    "::ffff:192.0.2.1, ::ffff:192.0.2.1",
+    "[::ffff:192.0.2.1], ::ffff:192.0.2.1",
+    "[2001:db8::1]:65535, 2001:db8::1",
     // URL hosts, including scheme-relative URLs and mixed notation
-    "http://1.2.3.4:8080/path, 1.2.3.4",
-    "http://1.2.3.4/path with space, 1.2.3.4",
-    "git+ssh://1.2.3.4/path, 1.2.3.4",
-    "custom-scheme.v1://1.2.3.4/path, 1.2.3.4",
-    "//[2003::1]:8080/path, 2003::1",
-    "https://[2003::1.2.3.4]:8080/path, 2003::1.2.3.4",
+    "http://192.0.2.1:8080/path, 192.0.2.1",
+    "http://192.0.2.1/path with space, 192.0.2.1",
+    "git+ssh://192.0.2.1/path, 192.0.2.1",
+    "custom-scheme.v1://192.0.2.1/path, 192.0.2.1",
+    "//[2001:db8::1]:8080/path, 2001:db8::1",
+    "https://[2001:db8::192.0.2.1]:8080/path, 2001:db8::192.0.2.1",
     "http://[::FFFF:7f00:1]:8080/7, ::FFFF:7f00:1",
     // URL user information is separate from the host
-    "http://user@1.2.3.4/path, 1.2.3.4",
-    "http://user:pass@[2003::1]:8080/path, 2003::1",
-    "//user@1.2.3.4/path, 1.2.3.4",
+    "http://user@192.0.2.1/path, 192.0.2.1",
+    "http://user:pass@[2001:db8::1]:8080/path, 2001:db8::1",
+    "//user@192.0.2.1/path, 192.0.2.1",
     // An @ outside the URL authority does not introduce user information
-    "http://1.2.3.4/path@5.6.7.8, 1.2.3.4",
-    "http://1.2.3.4?email=user@example.org, 1.2.3.4",
-    "http://1.2.3.4#user@example.org, 1.2.3.4",
-    "'http://1.2.3.4,user@example.org', 1.2.3.4",
-    "'http://1.2.3.4 user@example.org', 1.2.3.4",
+    "http://192.0.2.1/path@192.0.2.2, 192.0.2.1",
+    "http://192.0.2.1?email=user@example.org, 192.0.2.1",
+    "http://192.0.2.1#user@example.org, 192.0.2.1",
+    "'http://192.0.2.1,user@example.org', 192.0.2.1",
+    "'http://192.0.2.1 user@example.org', 192.0.2.1",
     // URL lists yield only the first host's address
-    "'http://1.2.3.4,https://5.6.7.8', 1.2.3.4",
-    "http://1.2.3.4 https://5.6.7.8, 1.2.3.4",
-    "'http://1.2.3.4:8080/path,https://5.6.7.8/other', 1.2.3.4",
-    "https://[2003::1]:8080/path http://5.6.7.8/other, 2003::1",
+    "'http://192.0.2.1,https://192.0.2.2', 192.0.2.1",
+    "http://192.0.2.1 https://192.0.2.2, 192.0.2.1",
+    "'http://192.0.2.1:8080/path,https://192.0.2.2/other', 192.0.2.1",
+    "https://[2001:db8::1]:8080/path http://192.0.2.2/other, 2001:db8::1",
     // The comma delimiter heuristic can extract an IP from user information rather than the host
-    "'http://1.2.3.4,user:pass@5.6.7.8/path', 1.2.3.4",
+    "'http://192.0.2.1,user:pass@192.0.2.2/path', 192.0.2.1",
     // Delimiters after the host
-    "'1.2.3.4,5.6.7.8', 1.2.3.4",
-    "'1.2.3.4 ', 1.2.3.4",
-    "'1.2.3.4\u00a0rest', 1.2.3.4", // Nonbreaking space is a whitespace delimiter
-    "http://1.2.3.4?query, 1.2.3.4",
-    "1.2.3.4#fragment, 1.2.3.4",
+    "'192.0.2.1,192.0.2.2', 192.0.2.1",
+    "'192.0.2.1 ', 192.0.2.1",
+    "'192.0.2.1\u00a0rest', 192.0.2.1", // Nonbreaking space is a whitespace delimiter
+    "http://192.0.2.1?query, 192.0.2.1",
+    "192.0.2.1#fragment, 192.0.2.1",
     // Bare CIDRs retain their prefix; URL paths do not become CIDRs
-    "1.2.3.4/0, 1.2.3.4/0",
-    "1.2.3.4/32, 1.2.3.4/32",
-    "1.2.3.4/032, 1.2.3.4/032",
-    "2003::1/0, 2003::1/0",
-    "2003::1/64, 2003::1/64",
-    "2003::1/064, 2003::1/064",
-    "2003::1/128, 2003::1/128",
+    "192.0.2.1/0, 192.0.2.1/0",
+    "192.0.2.1/32, 192.0.2.1/32",
+    "192.0.2.1/032, 192.0.2.1/032",
+    "2001:db8::1/0, 2001:db8::1/0",
+    "2001:db8::1/64, 2001:db8::1/64",
+    "2001:db8::1/064, 2001:db8::1/064",
+    "2001:db8::1/128, 2001:db8::1/128",
     "127.0.0.1/7, 127.0.0.1/7",
     "http://127.0.0.1/7, 127.0.0.1",
-    "[2003::1]/64, 2003::1/64",
-    "//[2003::1]/64, 2003::1",
-    "http://1.2.3.4/123456, 1.2.3.4",
-    "//[2003::1]/123456, 2003::1",
+    "[2001:db8::1]/64, 2001:db8::1/64",
+    "//[2001:db8::1]/64, 2001:db8::1",
+    "http://192.0.2.1/123456, 192.0.2.1",
+    "//[2001:db8::1]/123456, 2001:db8::1",
     // Overlong CIDR suffixes are treated as paths
-    "1.2.3.4/1000, 1.2.3.4",
-    "1.2.3.4/0032, 1.2.3.4",
-    "2003::1/1000, 2003::1",
-    "2003::1/0128, 2003::1",
+    "192.0.2.1/1000, 192.0.2.1",
+    "192.0.2.1/0032, 192.0.2.1",
+    "2001:db8::1/1000, 2001:db8::1",
+    "2001:db8::1/0128, 2001:db8::1",
     // A slash after a port starts a path, even when it contains only digits
-    "1.2.3.4:8080/0, 1.2.3.4",
-    "[2003::1]:8080/0, 2003::1",
-    "[2003::1]:8080/64, 2003::1",
-    "1.2.3.4:8080/33, 1.2.3.4",
-    "[2003::1]:8080/129, 2003::1",
-    "1.2.3.4:8080/123456, 1.2.3.4",
-    "[2003::1]:8080/123456, 2003::1",
-    "1.2.3.4/path, 1.2.3.4",
-    "1.2.3.4/３３, 1.2.3.4", // Non-ASCII digits form a path, not an ASCII CIDR suffix
-    "1.2.3.4/, 1.2.3.4",
+    "192.0.2.1:8080/0, 192.0.2.1",
+    "[2001:db8::1]:8080/0, 2001:db8::1",
+    "[2001:db8::1]:8080/64, 2001:db8::1",
+    "192.0.2.1:8080/33, 192.0.2.1",
+    "[2001:db8::1]:8080/129, 2001:db8::1",
+    "192.0.2.1:8080/123456, 192.0.2.1",
+    "[2001:db8::1]:8080/123456, 2001:db8::1",
+    "192.0.2.1/path, 192.0.2.1",
+    "192.0.2.1/３３, 192.0.2.1", // Non-ASCII digits form a path, not an ASCII CIDR suffix
+    "192.0.2.1/, 192.0.2.1",
     // Zone suffixes remain opaque and preserve bare CIDRs
-    "2003::1%, 2003::1%",
-    "[2003::1%接口]/64, 2003::1%接口/64",
-    "http://[2003::1%eth0]:8080/path, 2003::1%eth0"
+    "2001:db8::1%, 2001:db8::1%",
+    "[2001:db8::1%接口]/64, 2001:db8::1%接口/64",
+    "http://[2001:db8::1%eth0]:8080/path, 2001:db8::1%eth0"
   })
   void shouldExtractCandidate(String content, String expected) {
     assertThat(IpAddressCandidateExtractor.extract(content)).hasValue(expected);
@@ -110,21 +110,21 @@ class IpAddressCandidateExtractorTest {
   @CsvSource({
     "https://example.com/path, example.com",
     "999.2.3.4/33, 999.2.3.4/33",
-    "[1.2.3.4:8080], 1.2.3.4:8080", // Port inside the brackets
+    "[192.0.2.1:8080], 192.0.2.1:8080", // Port inside the brackets
     // Text appended with punctuation remains part of the candidate
-    "1.2.3.4-foo, 1.2.3.4-foo",
-    "1.2.3.4~foo, 1.2.3.4~foo",
-    "1.2.3.4!x, 1.2.3.4!x",
-    "http://1.2.3.4;x/path, 1.2.3.4;x", // Punctuation in the URL host
-    "1.2.3.4., 1.2.3.4.", // Trailing dot
-    "1.2.3.4.5, 1.2.3.4.5", // Too many octets
-    "prefix1.2.3.4, prefix1.2.3.4", // Text prepended to an address
-    "1.2.3.4/33, 1.2.3.4/33", // Invalid IPv4 CIDR prefix
-    "1.2.3.4/100, 1.2.3.4/100", // Invalid IPv4 CIDR prefix (at most 2 digits possible)
-    "2003::1/129, 2003::1/129", // Invalid IPv6 CIDR prefix
-    "prefix/1.2.3.4, prefix", // Address does not start the content
-    "http://host1.2.3.4/path, host1.2.3.4", // Host name instead of an IP address
-    "http://1.2.3.4@example.org/path, example.org" // IP address is user information, not the host
+    "192.0.2.1-foo, 192.0.2.1-foo",
+    "192.0.2.1~foo, 192.0.2.1~foo",
+    "192.0.2.1!x, 192.0.2.1!x",
+    "http://192.0.2.1;x/path, 192.0.2.1;x", // Punctuation in the URL host
+    "192.0.2.1., 192.0.2.1.", // Trailing dot
+    "192.0.2.1.5, 192.0.2.1.5", // Too many octets
+    "prefix192.0.2.1, prefix192.0.2.1", // Text prepended to an address
+    "192.0.2.1/33, 192.0.2.1/33", // Invalid IPv4 CIDR prefix
+    "192.0.2.1/100, 192.0.2.1/100", // Invalid IPv4 CIDR prefix (at most 2 digits possible)
+    "2001:db8::1/129, 2001:db8::1/129", // Invalid IPv6 CIDR prefix
+    "prefix/192.0.2.1, prefix", // Address does not start the content
+    "http://host192.0.2.1/path, host192.0.2.1", // Host name instead of an IP address
+    "http://192.0.2.1@example.org/path, example.org" // IP address is user information, not the host
   })
   void couldProduceNonIpAddressResult(String content, String expected) {
     assertThat(IpAddressCandidateExtractor.extract(content)).hasValue(expected);
@@ -133,33 +133,33 @@ class IpAddressCandidateExtractorTest {
   @ParameterizedTest
   @ValueSource(strings = {
     "", // No address candidate
-    " 1.2.3.4", // Leading whitespace
+    " 192.0.2.1", // Leading whitespace
     "http:///path", // No URL host
     "/64", // CIDR suffix without an address
-    "[2003::1", // Missing closing bracket
-    "2003::1]", // Missing opening bracket
-    "[[2003::1]]", // Nested bracket pairs
-    "[2003::1]extra", // Unexpected text after the closing bracket
-    "[2003::1]8080", // Missing port separator
-    "[1.2.3.4]", // Bracketed IPv4
-    "[1.2.3.4]:8080", // Bracketed IPv4 endpoint
-    "http://[1.2.3.4]/path", // Bracketed IPv4 URL host
-    "2003::1%eth[0", // Stray opening bracket in an opaque zone
-    "2003::1%eth0]", // Stray closing bracket in an opaque zone
-    "1.2.3.4:", // Empty port
-    "1.2.3.4:bad", // Nonnumeric port
-    "1.2.3.4:-1", // Negative port
-    "1.2.3.4:+80", // Signed port
-    "1.2.3.4:８０", // Non-ASCII port digits
-    "1.2.3.4:65536", // Port exceeds 65535
-    "1.2.3.4:000080", // Port exceeds five digits despite its value fitting the range
-    "1.2.3.4:99999999999999999999", // Port exceeds five digits
-    "[2003::1]:", // Empty port
-    "[2003::1]:-1", // Negative port
-    "[2003::1]:65536", // Port exceeds 65535
-    "[2003::1]:000000", // Port exceeds five digits
-    "http://[2003::1]:path/instead/of/port", // Nonnumeric port
-    "http://1.2.3.4:8080;https://5.6.7.8/other" // Limitation: semicolon is not a recognized delimiter
+    "[2001:db8::1", // Missing closing bracket
+    "2001:db8::1]", // Missing opening bracket
+    "[[2001:db8::1]]", // Nested bracket pairs
+    "[2001:db8::1]extra", // Unexpected text after the closing bracket
+    "[2001:db8::1]8080", // Missing port separator
+    "[192.0.2.1]", // Bracketed IPv4
+    "[192.0.2.1]:8080", // Bracketed IPv4 endpoint
+    "http://[192.0.2.1]/path", // Bracketed IPv4 URL host
+    "2001:db8::1%eth[0", // Stray opening bracket in an opaque zone
+    "2001:db8::1%eth0]", // Stray closing bracket in an opaque zone
+    "192.0.2.1:", // Empty port
+    "192.0.2.1:bad", // Nonnumeric port
+    "192.0.2.1:-1", // Negative port
+    "192.0.2.1:+80", // Signed port
+    "192.0.2.1:８０", // Non-ASCII port digits
+    "192.0.2.1:65536", // Port exceeds 65535
+    "192.0.2.1:000080", // Port exceeds five digits despite its value fitting the range
+    "192.0.2.1:99999999999999999999", // Port exceeds five digits
+    "[2001:db8::1]:", // Empty port
+    "[2001:db8::1]:-1", // Negative port
+    "[2001:db8::1]:65536", // Port exceeds 65535
+    "[2001:db8::1]:000000", // Port exceeds five digits
+    "http://[2001:db8::1]:path/instead/of/port", // Nonnumeric port
+    "http://192.0.2.1:8080;https://192.0.2.2/other" // Limitation: semicolon is not a recognized delimiter
   })
   void shouldRejectMissingCandidateOrMalformedEndpoint(String content) {
     assertThat(IpAddressCandidateExtractor.extract(content)).isEmpty();
