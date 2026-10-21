@@ -19,21 +19,24 @@ package org.sonarsource.analyzer.commons.appsec;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.sonarsource.analyzer.commons.appsec.IpAddressClassifier.ParsedIp;
 
-/** Extracts a parsed IP address from the beginning of a string literal's content. */
-public final class IpAddressExtractor {
+/** Heuristically extracts an IP address candidate string from a string literal's content. */
+public final class IpAddressCandidateExtractor {
 
   private static final Pattern URL_PREFIX = Pattern.compile(
     "^(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//(?:[^/?#,@\\s]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
 
-  private IpAddressExtractor() {
+  private IpAddressCandidateExtractor() {
   }
 
   /**
-   * Extracts a parsed IP address from a bare address, endpoint, or URL with a {@code scheme://} or {@code //} prefix.
+   * Heuristically extracts an IP address candidate from the given string.
+   * Supports bare IP addresses, socket endpoints, URLs, and delimited lists of these.
+   * The result is not guaranteed to be a valid IP address.
+   *
+   * More specifically:
    *
    * <ul>
    *   <li>Skips URL user information before the host, such as {@code user@} or {@code user:pass@}.</li>
@@ -46,10 +49,11 @@ public final class IpAddressExtractor {
    *   <li>Stops at a query, fragment, comma, or whitespace; leading whitespace is not accepted.</li>
    * </ul>
    *
-   * <p>Returns empty for malformed endpoints, invalid IP addresses or CIDR prefixes, and host names.
-   * The returned {@link ParsedIp} retains the extracted address spelling and supports classification without parsing again.
+   * <p>Returns empty for missing candidates or malformed endpoints.
+   * The returned text is not validated as an IP address or CIDR and may be a host name or malformed IP address.
+   * Use {@link IpAddressClassifier#parse(String)} to validate and parse the candidate.
    */
-  public static Optional<ParsedIp> extract(String content) {
+  public static Optional<String> extract(String content) {
     // Isolate the URL host: http://127.0.0.1/7 has a path, not a CIDR prefix.
     Matcher protocol = URL_PREFIX.matcher(content);
     String host = content;
@@ -75,10 +79,11 @@ public final class IpAddressExtractor {
     String cidr = ASCII_DIGITS.matcher(suffix).matches() ? ("/" + suffix) : "";
 
     return parseAddressWithOptionalPort(candidate)
-      .flatMap(parsed -> IpAddressClassifier.parse(parsed.address() +
+      .filter(parsed -> !parsed.address().isEmpty())
+      .map(parsed -> parsed.address() +
         // An IP address with a port identifies an endpoint, where a CIDR prefix doesn't make sense.
         // Treat the suffix as a URL path.
-        (parsed.hasPort() ? "" : cidr)));
+        (parsed.hasPort() ? "" : cidr));
   }
 
   private static Optional<IpAddressCandidate> parseAddressWithOptionalPort(String candidate) {
