@@ -36,6 +36,10 @@ public final class IpAddressCandidateExtractor {
    * Supports bare IP addresses, socket endpoints, URLs, and delimited lists of these.
    * The result is not guaranteed to be a valid IP address.
    *
+   * <p><strong>Note:</strong> Extraction starts at the beginning of the string.
+   * For delimited lists, the candidate is extracted from the first entry only.
+   * If extraction fails, no attempt is made to find another candidate later in the string.
+   *
    * More specifically:
    *
    * <ul>
