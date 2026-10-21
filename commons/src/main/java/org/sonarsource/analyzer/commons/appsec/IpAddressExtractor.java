@@ -37,7 +37,7 @@ public final class IpAddressExtractor {
    *
    * <ul>
    *   <li>Skips URL user information before the host, such as {@code user@} or {@code user:pass@}.</li>
-   *   <li>Removes a single enclosing pair of brackets and ASCII decimal ports from 0 through 65535.
+   *   <li>Removes a single enclosing pair of brackets from IPv6 addresses, and ASCII decimal ports from 0 through 65535.
    *     Brackets delimit IPv6 hosts in URLs and endpoints so address colons are distinct from the port separator,
    *     for example {@code [2003::1]:8080}.</li>
    *   <li>Preserves IPv6 zones and numeric CIDR suffixes on bare addresses.
@@ -91,6 +91,11 @@ public final class IpAddressExtractor {
         return Optional.empty();
       }
       address = candidate.substring(1, closing);
+      if (address.indexOf(':') < 0) {
+        // No `:` found => it is not an IPv6 address.
+        // IPv4 addresses must not be enclosed in brackets.
+        return Optional.empty();
+      }
       portSeparator = closing + 1;
     } else {
       int colon = candidate.indexOf(':');

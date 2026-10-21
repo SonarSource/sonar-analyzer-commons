@@ -32,11 +32,10 @@ class IpAddressExtractorTest {
     "1.2.3.4:0, 1.2.3.4",
     "1.2.3.4:65535, 1.2.3.4",
     "1.2.3.4:000080, 1.2.3.4",
-    "[1.2.3.4], 1.2.3.4",
-    "[1.2.3.4]:8080, 1.2.3.4",
     "2003::1, 2003::1",
     "::00000:2, ::00000:2",
     "::ffff:1.2.3.4, ::ffff:1.2.3.4",
+    "[::ffff:1.2.3.4], ::ffff:1.2.3.4",
     "[2003::1]:65535, 2003::1",
     // URL hosts, including scheme-relative URLs and mixed notation
     "http://1.2.3.4:8080/path, 1.2.3.4",
@@ -97,6 +96,9 @@ class IpAddressExtractorTest {
     "[[2003::1]]", // Nested bracket pairs
     "[2003::1]extra", // Unexpected text after the closing bracket
     "[2003::1]8080", // Missing port separator
+    "[1.2.3.4]", // Bracketed IPv4
+    "[1.2.3.4]:8080", // Bracketed IPv4 endpoint
+    "http://[1.2.3.4]/path", // Bracketed IPv4 URL host
     "[1.2.3.4:8080]", // Port inside the brackets
     "2003::1%eth[0", // Stray opening bracket in an opaque zone
     "2003::1%eth0]", // Stray closing bracket in an opaque zone
