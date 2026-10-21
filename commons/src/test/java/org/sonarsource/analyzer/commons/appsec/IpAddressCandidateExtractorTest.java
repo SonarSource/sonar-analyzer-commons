@@ -19,11 +19,10 @@ package org.sonarsource.analyzer.commons.appsec;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.sonarsource.analyzer.commons.appsec.IpAddressClassifier.ParsedIp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class IpAddressExtractorTest {
+class IpAddressCandidateExtractorTest {
 
   @ParameterizedTest
   @CsvSource({
@@ -90,14 +89,39 @@ class IpAddressExtractorTest {
     "[2003::1%接口]/64, 2003::1%接口/64",
     "http://[2003::1%eth0]:8080/path, 2003::1%eth0"
   })
-  void shouldExtractParsedAddress(String content, String expected) {
-    assertThat(IpAddressExtractor.extract(content)).map(ParsedIp::literal).hasValue(expected);
+  void shouldExtractCandidate(String content, String expected) {
+    assertThat(IpAddressCandidateExtractor.extract(content)).hasValue(expected);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "https://example.com/path, example.com",
+    "999.2.3.4/33, 999.2.3.4/33",
+    "[1.2.3.4:8080], 1.2.3.4:8080", // Port inside the brackets
+    // Text appended with punctuation remains part of the candidate
+    "1.2.3.4-foo, 1.2.3.4-foo",
+    "1.2.3.4~foo, 1.2.3.4~foo",
+    "1.2.3.4!x, 1.2.3.4!x",
+    "http://1.2.3.4;x/path, 1.2.3.4;x", // Punctuation in the URL host
+    "1.2.3.4., 1.2.3.4.", // Trailing dot
+    "1.2.3.4.5, 1.2.3.4.5", // Too many octets
+    "prefix1.2.3.4, prefix1.2.3.4", // Text prepended to an address
+    "1.2.3.4/33, 1.2.3.4/33", // Invalid IPv4 CIDR prefix
+    "2003::1/129, 2003::1/129", // Invalid IPv6 CIDR prefix
+    "prefix/1.2.3.4, prefix", // Address does not start the content
+    "http://host1.2.3.4/path, host1.2.3.4", // Host name instead of an IP address
+    "http://1.2.3.4@example.org/path, example.org" // IP address is user information, not the host
+  })
+  void couldProduceNonIpAddressResult(String content, String expected) {
+    assertThat(IpAddressCandidateExtractor.extract(content)).hasValue(expected);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {
     "", // No address candidate
     " 1.2.3.4", // Leading whitespace
+    "http:///path", // No URL host
+    "/64", // CIDR suffix without an address
     "[2003::1", // Missing closing bracket
     "2003::1]", // Missing opening bracket
     "[[2003::1]]", // Nested bracket pairs
@@ -106,7 +130,6 @@ class IpAddressExtractorTest {
     "[1.2.3.4]", // Bracketed IPv4
     "[1.2.3.4]:8080", // Bracketed IPv4 endpoint
     "http://[1.2.3.4]/path", // Bracketed IPv4 URL host
-    "[1.2.3.4:8080]", // Port inside the brackets
     "2003::1%eth[0", // Stray opening bracket in an opaque zone
     "2003::1%eth0]", // Stray closing bracket in an opaque zone
     "1.2.3.4:", // Empty port
@@ -120,21 +143,9 @@ class IpAddressExtractorTest {
     "[2003::1]:-1", // Negative port
     "[2003::1]:65536", // Port exceeds 65535
     "http://[2003::1]:path/instead/of/port", // Nonnumeric port
-    "1.2.3.4-foo", // Text appended to an address
-    "1.2.3.4~foo", // Text appended with punctuation
-    "1.2.3.4!x", // Unexpected punctuation
-    "http://1.2.3.4;x/path", // Punctuation in the URL host
-    "http://1.2.3.4:8080;https://5.6.7.8/other", // Limitation: semicolon is not a recognized delimiter
-    "1.2.3.4.", // Trailing dot
-    "1.2.3.4.5", // Too many octets
-    "prefix1.2.3.4", // Text prepended to an address
-    "1.2.3.4/33", // Invalid IPv4 CIDR prefix
-    "2003::1/129", // Invalid IPv6 CIDR prefix
-    "prefix/1.2.3.4", // Address does not start the content
-    "http://host1.2.3.4/path", // Host name instead of an IP address
-    "http://1.2.3.4@example.org/path" // IP address is user information, not the host
+    "http://1.2.3.4:8080;https://5.6.7.8/other" // Limitation: semicolon is not a recognized delimiter
   })
-  void shouldRejectContentWithoutValidAddress(String content) {
-    assertThat(IpAddressExtractor.extract(content)).isEmpty();
+  void shouldRejectMissingCandidateOrMalformedEndpoint(String content) {
+    assertThat(IpAddressCandidateExtractor.extract(content)).isEmpty();
   }
 }
