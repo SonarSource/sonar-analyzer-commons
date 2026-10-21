@@ -55,6 +55,13 @@ class IpAddressExtractorTest {
     "http://1.2.3.4#user@example.org, 1.2.3.4",
     "'http://1.2.3.4,user@example.org', 1.2.3.4",
     "'http://1.2.3.4 user@example.org', 1.2.3.4",
+    // URL lists yield only the first host's address
+    "'http://1.2.3.4,https://5.6.7.8', 1.2.3.4",
+    "http://1.2.3.4 https://5.6.7.8, 1.2.3.4",
+    "'http://1.2.3.4:8080/path,https://5.6.7.8/other', 1.2.3.4",
+    "https://[2003::1]:8080/path http://5.6.7.8/other, 2003::1",
+    // The comma delimiter heuristic can extract an IP from user information rather than the host
+    "'http://1.2.3.4,user:pass@5.6.7.8/path', 1.2.3.4",
     // Delimiters after the host
     "'1.2.3.4,5.6.7.8', 1.2.3.4",
     "'1.2.3.4 ', 1.2.3.4",
@@ -117,6 +124,7 @@ class IpAddressExtractorTest {
     "1.2.3.4~foo", // Text appended with punctuation
     "1.2.3.4!x", // Unexpected punctuation
     "http://1.2.3.4;x/path", // Punctuation in the URL host
+    "http://1.2.3.4:8080;https://5.6.7.8/other", // Limitation: semicolon is not a recognized delimiter
     "1.2.3.4.", // Trailing dot
     "1.2.3.4.5", // Too many octets
     "prefix1.2.3.4", // Text prepended to an address
