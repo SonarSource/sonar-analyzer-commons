@@ -82,15 +82,15 @@ public final class IpAddressCandidateExtractor {
     }
     String cidr = ASCII_DIGITS.matcher(suffix).matches() ? ("/" + suffix) : "";
 
-    return parseAddressWithOptionalPort(candidate)
-      .filter(parsed -> !parsed.address().isEmpty())
-      .map(parsed -> parsed.address() +
+    return stripBracketsAndPort(candidate)
+      .filter(stripped -> !stripped.candidate().isEmpty())
+      .map(stripped -> stripped.candidate() +
         // An IP address with a port identifies an endpoint, where a CIDR prefix doesn't make sense.
         // Treat the suffix as a URL path.
-        (parsed.hasPort() ? "" : cidr));
+        (stripped.portRemoved() ? "" : cidr));
   }
 
-  private static Optional<IpAddressCandidate> parseAddressWithOptionalPort(String candidate) {
+  private static Optional<StrippedCandidate> stripBracketsAndPort(String candidate) {
     // Brackets distinguish IPv6 address colons from the port separator.
     String address = candidate;
     int portSeparator = candidate.length();
@@ -123,7 +123,7 @@ public final class IpAddressCandidateExtractor {
       return Optional.empty();
     }
 
-    return Optional.of(new IpAddressCandidate(address, hasPort));
+    return Optional.of(new StrippedCandidate(address, hasPort));
   }
 
   private static boolean isPort(String port) {
@@ -137,7 +137,7 @@ public final class IpAddressCandidateExtractor {
     }
   }
 
-  private record IpAddressCandidate(String address, boolean hasPort) {
+  private record StrippedCandidate(String candidate, boolean portRemoved) {
   }
 
 }
