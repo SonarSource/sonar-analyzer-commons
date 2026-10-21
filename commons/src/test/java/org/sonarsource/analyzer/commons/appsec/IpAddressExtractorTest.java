@@ -110,7 +110,7 @@ class IpAddressExtractorTest {
     "[2003::1]:", // Empty port
     "[2003::1]:-1", // Negative port
     "[2003::1]:65536", // Port exceeds 65535
-    "http://[2003::1]:invalid/path", // Nonnumeric port
+    "http://[2003::1]:path/instead/of/port", // Nonnumeric port
     "1.2.3.4-foo", // Text appended to an address
     "1.2.3.4~foo", // Text appended with punctuation
     "1.2.3.4!x", // Unexpected punctuation
