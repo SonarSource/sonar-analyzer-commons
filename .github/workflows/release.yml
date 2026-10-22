@@ -1,21 +1,13 @@
 ---
 name: sonar-release
-# This workflow is triggered when publishing a new github release
 # yamllint disable-line rule:truthy
 on:
-  release:
-    types:
-      - published
   workflow_dispatch:
     inputs:
       version:
         type: string
         description: Version
         required: true
-      releaseId:
-        type: string
-        description: GitHub release ID (required for a full release; unused when publishPackagesOnly=true)
-        required: false
       dryRun:
         type: boolean
         description: Flag to enable the dry-run execution
@@ -27,17 +19,16 @@ on:
 
 jobs:
   release:
-    if: ${{ github.event_name == 'release' || inputs.publishPackagesOnly != true }}
+    if: ${{ inputs.publishPackagesOnly != true }}
     permissions:
       id-token: write
       contents: write
-    uses: SonarSource/gh-action_release/.github/workflows/main.yaml@v6
+    uses: SonarSource/gh-action_release/.github/workflows/main.yaml@v7
     with:
       publishToBinaries: true
       mavenCentralSync: true
       slackChannel: squad-corelang-release
-      version: ${{ inputs.version || github.event.release.tag_name }}
-      releaseId: ${{ inputs.releaseId || github.event.release.id }}
+      version: ${{ inputs.version }}
       dryRun: ${{ inputs.dryRun == true }}
 
   # Promote the signed NuGet package from the public build feed to the release feed. The Maven
@@ -69,7 +60,7 @@ jobs:
         env:
           PROMOTER_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).PROMOTER_ACCESS_TOKEN }}
           # The release tag is the full 4-part version, e.g. 2.27.0.5000; the build number is its last segment.
-          RELEASE_VERSION: ${{ inputs.version || github.event.release.tag_name }}
+          RELEASE_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
           BUILD_NAME="${GITHUB_REPOSITORY#*/}_nuget"
@@ -113,7 +104,7 @@ jobs:
         env:
           PROMOTER_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).PROMOTER_ACCESS_TOKEN }}
           # The release tag is the full 4-part version, e.g. 2.27.0.5000; the build number is its last segment.
-          RELEASE_VERSION: ${{ inputs.version || github.event.release.tag_name }}
+          RELEASE_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
           BUILD_NAME="${GITHUB_REPOSITORY#*/}_npm"
@@ -159,7 +150,7 @@ jobs:
         shell: bash
         env:
           PROMOTER_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).PROMOTER_ACCESS_TOKEN }}
-          RELEASE_VERSION: ${{ inputs.version || github.event.release.tag_name }}
+          RELEASE_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
           BUILD_NAME="${GITHUB_REPOSITORY#*/}_nuget"
@@ -214,7 +205,7 @@ jobs:
         env:
           PROMOTER_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).PROMOTER_ACCESS_TOKEN }}
           # The release tag is the full 4-part version, e.g. 2.27.0.5000; the build number is its last segment.
-          RELEASE_VERSION: ${{ inputs.version || github.event.release.tag_name }}
+          RELEASE_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
           BUILD_NAME="${GITHUB_REPOSITORY#*/}_npm"
