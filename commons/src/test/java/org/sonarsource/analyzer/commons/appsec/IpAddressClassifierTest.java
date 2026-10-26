@@ -147,7 +147,16 @@ class IpAddressClassifierTest {
   @ParameterizedTest
   @CsvSource({
     "127.0.0.1, true", // Loopback
+    "127.0.0.1/8, true",
+    "127.0.0.1/7, false",
     "0.0.0.0, true", // Any-address
+    "0.0.0.0/0, true", // Entire IPv4 address space
+    "10.0.0.1/0, true",
+    "0.0.0.0/1, false",
+    "::/0, true", // Entire IPv6 address space
+    "2001:db8::1/0, true",
+    "::ffff:127.0.0.1/0, true",
+    "::/1, false",
     "255.255.255.255, true", // Broadcast
     "192.0.2.1, true", // Documentation
     "224.0.0.1, false", // Multicast
