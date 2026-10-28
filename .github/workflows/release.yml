@@ -221,7 +221,7 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           # Trusted Publishing needs npm >= 11.5.1 / Node >= 22.14; Node 24 ships a compatible npm.
-          node-version: "24"
+          node-version: "26"
           # Do not set registry-url: setup-node would write an empty _authToken and disable OIDC.
       - name: Publish npm package to npmjs.org
         if: ${{ inputs.dryRun != true }}
