@@ -81,7 +81,7 @@
     <version.mockito>5.24.0</version.mockito>
     <version.junit>4.13.2</version.junit>
     <version.junit-jupiter>6.1.3</version.junit-jupiter>
-    <version.gson>2.14.0</version.gson>
+    <version.gson>2.15.0</version.gson>
     <!-- used for deployment to SonarSource Artifactory -->
     <gitRepositoryName>sonar-analyzer-commons</gitRepositoryName>
     <configurations.corpus.classifier>secret-exclusion-corpus</configurations.corpus.classifier>
