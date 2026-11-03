@@ -223,6 +223,44 @@ public final class CleartextProtocolFilter {
   private static final Pattern CLEARTEXT_AUTHORITY = Pattern.compile(
     "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]++@)?(?<rest>[^\\s/?#]++)", Pattern.CASE_INSENSITIVE);
 
+  // JS-2698: exact authorities and case-sensitive path + query + fragment patterns.
+  // Matching an identifier is separate from deciding whether an actual connection is safe.
+  private static final Map<String, Pattern> IDENTIFIER_URLS = Map.of();
+
+  private static final Pattern IDENTIFIER_URL = Pattern.compile(
+    "^http://([^\\s/?#\\\\]+)([/?#][^\\s\\\\]*)?$", Pattern.CASE_INSENSITIVE);
+
+  /**
+   * Recognizes the namespace, schema, vocabulary and protocol identifier inventory shared with SonarJS.
+   * The analyzer must verify the identifier role in its AST before suppressing an issue. A matching
+   * URL used as a network destination still requires transport analysis.
+   *
+   * <p>Authorities match exactly, including any explicit port; path, query and fragment retain their
+   * case and spelling. An empty path is represented by {@code /}.
+   */
+  public static boolean isKnownIdentifier(String url) {
+    var matcher = IDENTIFIER_URL.matcher(url.strip());
+    if (!matcher.matches()) {
+      return false;
+    }
+    var pattern = IDENTIFIER_URLS.get(matcher.group(1).toLowerCase(Locale.ROOT));
+    var remainder = matcher.group(2);
+    var suffix = remainder == null ? "/" : remainder;
+    if (!suffix.startsWith("/")) {
+      suffix = "/" + suffix;
+    }
+    return pattern != null && pattern.matcher(suffix).find();
+  }
+
+  /**
+   * Returns the identifier inventory as an immutable authority-to-regex map for non-JVM analyzers.
+   * Regex strings retain the case-sensitive matching semantics of {@link #isKnownIdentifier(String)}.
+   */
+  public static Map<String, String> exportIdentifierUrls() {
+    return IDENTIFIER_URLS.entrySet().stream()
+      .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, entry -> entry.getValue().pattern()));
+  }
+
   private CleartextProtocolFilter() {
   }
 

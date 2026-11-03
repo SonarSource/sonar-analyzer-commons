@@ -30,5 +30,10 @@
       <outputDirectory>package</outputDirectory>
       <destName>secret-exclusion-corpus.json</destName>
     </file>
+    <file>
+      <source>${project.build.directory}/generated-resources/identifier-urls.json</source>
+      <outputDirectory>package</outputDirectory>
+      <destName>identifier-urls.json</destName>
+    </file>
   </files>
 </assembly>

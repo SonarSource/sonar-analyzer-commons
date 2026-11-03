@@ -28,6 +28,19 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 class CleartextProtocolFilterTest {
 
   @Test
+  void emptyIdentifierInventoryDoesNotMatchUrls() {
+    assertThat(CleartextProtocolFilter.exportIdentifierUrls()).isEmpty();
+    assertThat(CleartextProtocolFilter.isKnownIdentifier("http://identifier.invalid/schema")).isFalse();
+  }
+
+  @Test
+  void exportedIdentifierUrlsAreUnmodifiable() {
+    var urls = CleartextProtocolFilter.exportIdentifierUrls();
+    assertThatExceptionOfType(UnsupportedOperationException.class)
+      .isThrownBy(() -> urls.put("identifier.invalid", "^/"));
+  }
+
+  @Test
   void getCleartextProtocolsIsUnmodifiable() {
     var protocols = CleartextProtocolFilter.getCleartextProtocols();
     assertThatExceptionOfType(UnsupportedOperationException.class)
