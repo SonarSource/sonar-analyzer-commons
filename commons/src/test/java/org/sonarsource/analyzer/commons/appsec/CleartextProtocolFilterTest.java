@@ -20,12 +20,42 @@ import java.net.URI;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class CleartextProtocolFilterTest {
+
+  // Keep direct matcher coverage here; the configurations module validates the full shared corpus.
+  @ParameterizedTest
+  @CsvSource({
+    "HTTP://WWW.TOPOGRAFIX.COM/GPX/1/1, true",
+    "http://www.topografix.com/gpx, false",
+    "http://neverssl.com, true",
+    "http://osmand.net?mode=extensions#schema, true",
+    "http://identifier.invalid, false",
+    "https://auth0.com/oauth/grant-type, false"
+  })
+  void knownIdentifierUrl(String url, boolean expected) {
+    assertThat(CleartextProtocolFilter.isKnownIdentifier(url)).isEqualTo(expected);
+  }
+
+  @Test
+  void exportedBaselineExclusionsAreUnmodifiable() {
+    assertThatExceptionOfType(UnsupportedOperationException.class)
+      .isThrownBy(() -> CleartextProtocolFilter.exportHostPatterns().clear());
+    assertThatExceptionOfType(UnsupportedOperationException.class)
+      .isThrownBy(() -> CleartextProtocolFilter.exportSafeUrlPrefixes().clear());
+  }
+
+  @Test
+  void exportedIdentifierUrlsAreUnmodifiable() {
+    var urls = CleartextProtocolFilter.exportIdentifierUrls();
+    assertThatExceptionOfType(UnsupportedOperationException.class)
+      .isThrownBy(() -> urls.put("identifier.invalid", "^/"));
+  }
 
   @Test
   void getCleartextProtocolsIsUnmodifiable() {
@@ -79,12 +109,9 @@ class CleartextProtocolFilterTest {
       "sftp://example.com",
       "wss://acme.com",
       "ircs://acme.com",
-      "not-a-url",
-      "",
 
       // Loopback
       "http://localhost",
-      "http://localhost:8080/api",
       "http://LOCALHOST:3000",
       "http://127.0.0.1:8080",
       "http://127.255.255.254/path",
@@ -217,12 +244,10 @@ class CleartextProtocolFilterTest {
       "http://www.mulesoft.org/schema/mule/http",
 
       // Well-known identifier URLs — XMPP protocol namespaces and Xerces/JAXP XML parser features
-      "http://jabber.org/protocol/muc",
       "http://jabber.org/protocol/disco#items",
       "http://jabber.org/protocol/pubsub#owner",
       "http://apache.org/xml/features/nonvalidating/load-dtd-grammar",
       "http://apache.org/xml/features/nonvalidating/load-external-dtd",
-      "http://apache.org/xml/features/disallow-doctype-decl",
       "http://apache.org/xml/features/dom/create-entity-ref-nodes",
 
       // Well-known identifier URLs with a template placeholder — URI parsing fails,
@@ -359,13 +384,9 @@ class CleartextProtocolFilterTest {
       "http://10.0.2.2.evil.com",
 
       // Well-known identifier URLs — host without the safe path, or lookalike host — must not match
-      "http://jabber.org/",
-      "http://jabber.org/other",
       "http://apache.org/",
-      "http://apache.org/xml/featuresx/disallow-doctype-decl",
       "http://apache.org.evil.com/xml/features/nonvalidating/load-dtd-grammar",
       // Credentials before a known-identifier host must not match
-      "http://user:pass@jabber.org/protocol/muc",
       "http://user:pass@apache.org/xml/features/disallow-doctype-decl",
       // Template placeholder with a path outside the safe prefix — lenient fallback must not grant safety
       "http://jabber.org/other/${x}",
