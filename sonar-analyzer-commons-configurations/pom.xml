@@ -12,15 +12,19 @@
   <artifactId>sonar-analyzer-commons-configurations</artifactId>
   <name>SonarSource Analyzers Commons Configurations</name>
   <description>Machine-readable export (JSON, .nupkg, npm .tgz) of shared analyzer configuration generated from
-    sonar-analyzer-commons, so non-JVM analyzers can consume the same secret-exclusion patterns - and the corpus that
-    validates them against their own regex engine - without drift</description>
+    sonar-analyzer-commons, so non-JVM analyzers can consume the same secret-exclusion patterns, validation corpus,
+    and cleartext-protocol exclusions without drift</description>
 
   <properties>
     <exporter.mainClass>org.sonarsource.analyzer.commons.appsec.export.SecretPatternsExporter</exporter.mainClass>
     <corpus.exporter.mainClass>org.sonarsource.analyzer.commons.appsec.export.SecretExclusionCorpusExporter</corpus.exporter.mainClass>
-    <!-- Written by the exporters, then packaged as the raw JSON artifacts and bundled into the nupkg/npm archives. -->
+    <cleartext.exporter.mainClass>org.sonarsource.analyzer.commons.appsec.export.CleartextProtocolFilterExporter</cleartext.exporter.mainClass>
+    <cleartext.corpus.exporter.mainClass>org.sonarsource.analyzer.commons.appsec.export.CleartextProtocolCorpusExporter</cleartext.corpus.exporter.mainClass>
+    <!-- Written by the exporters, then included in the corresponding distribution packages. -->
     <generated.json>${project.build.directory}/generated-resources/secret-patterns.json</generated.json>
     <generated.corpus.json>${project.build.directory}/generated-resources/secret-exclusion-corpus.json</generated.corpus.json>
+    <generated.cleartext.json>${project.build.directory}/generated-resources/cleartext-protocol-exclusions.json</generated.cleartext.json>
+    <generated.cleartext.corpus.json>${project.build.directory}/generated-resources/cleartext-protocol-corpus.json</generated.cleartext.corpus.json>
     <version.exec.plugin>3.6.4</version.exec.plugin>
     <version.build-helper.plugin>3.7.0</version.build-helper.plugin>
   </properties>
@@ -83,6 +87,19 @@
             </configuration>
           </execution>
           <execution>
+            <id>generate-cleartext-protocol-exclusions-json</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>${cleartext.exporter.mainClass}</mainClass>
+              <arguments>
+                <argument>${generated.cleartext.json}</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
             <id>generate-secret-exclusion-corpus-json</id>
             <phase>prepare-package</phase>
             <goals>
@@ -92,6 +109,36 @@
               <mainClass>${corpus.exporter.mainClass}</mainClass>
               <arguments>
                 <argument>${generated.corpus.json}</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-cleartext-protocol-corpus-json</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>${cleartext.corpus.exporter.mainClass}</mainClass>
+              <arguments>
+                <argument>${generated.cleartext.corpus.json}</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>verify-npm-package-import</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <skip>${skipTests}</skip>
+              <executable>node</executable>
+              <arguments>
+                <argument>${project.basedir}/src/test/js/npm-package.test.mjs</argument>
+                <argument>${project.build.directory}/${project.build.finalName}-npm.tar.gz</argument>
+                <argument>${generated.cleartext.json}</argument>
+                <argument>${generated.cleartext.corpus.json}</argument>
               </arguments>
             </configuration>
           </execution>
