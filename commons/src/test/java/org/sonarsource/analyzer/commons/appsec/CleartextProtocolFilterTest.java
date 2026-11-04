@@ -44,10 +44,13 @@ class CleartextProtocolFilterTest {
 
   @Test
   void exportedBaselineExclusionsAreUnmodifiable() {
+    var hostPatterns = CleartextProtocolFilter.exportHostPatterns();
+    var safeUrlPrefixes = CleartextProtocolFilter.exportSafeUrlPrefixes();
+
     assertThatExceptionOfType(UnsupportedOperationException.class)
-      .isThrownBy(() -> CleartextProtocolFilter.exportHostPatterns().clear());
+      .isThrownBy(hostPatterns::clear);
     assertThatExceptionOfType(UnsupportedOperationException.class)
-      .isThrownBy(() -> CleartextProtocolFilter.exportSafeUrlPrefixes().clear());
+      .isThrownBy(safeUrlPrefixes::clear);
   }
 
   @Test
