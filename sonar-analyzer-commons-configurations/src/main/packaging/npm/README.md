@@ -78,7 +78,7 @@ regression examples; Maven copies it into the configurations module without addi
 
 Run these cases against your consumer to check parity with the Java safety filter.
 
-The Maven `verify` phase unpacks the assembled npm tarball and checks the documented Node.js imports against
-the Java-generated JSON. This requires Node.js (provided by the repository's `mise.toml`) and `tar`.
+Maven verification checks the exported configuration and corpus in Java. Consuming analyzers such as SonarJS
+must verify npm imports and run the complete shared corpus in their own runtime, where URL parsing may differ.
 
 See [SonarSource/sonar-analyzer-commons](https://github.com/SonarSource/sonar-analyzer-commons) for details.

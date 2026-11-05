@@ -137,23 +137,6 @@
               </arguments>
             </configuration>
           </execution>
-          <execution>
-            <id>verify-npm-package-import</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <skip>${skipTests}</skip>
-              <executable>node</executable>
-              <arguments>
-                <argument>${project.basedir}/src/test/js/npm-package.test.mjs</argument>
-                <argument>${project.build.directory}/${project.build.finalName}-npm.tar.gz</argument>
-                <argument>${generated.cleartext.json}</argument>
-                <argument>${generated.cleartext.corpus.json}</argument>
-              </arguments>
-            </configuration>
-          </execution>
         </executions>
       </plugin>
 
