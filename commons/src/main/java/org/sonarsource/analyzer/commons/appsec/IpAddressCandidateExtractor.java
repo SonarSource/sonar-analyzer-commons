@@ -17,6 +17,7 @@
 package org.sonarsource.analyzer.commons.appsec;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -46,6 +47,8 @@ public final class IpAddressCandidateExtractor {
     "(?<![\\w.:-])(?<ipv6>[0-9A-Fa-f]*+:[0-9A-Fa-f:]*+(?:\\.[0-9]++)*+)(?:%[\\w-]*+)?(?![\\w:%-]|\\.\\w)" +
       "|(?<![\\w.-])(?<ipv4>[0-9]{1,3}(?:\\.[0-9]{1,3}){3})(?![\\w-]|\\.\\w)",
     Pattern.UNICODE_CHARACTER_CLASS);
+  // URL authority user information, such as "user:pass" in "http://user:pass@host", using the same delimiters as URL_PREFIX.
+  private static final Pattern URL_USER_INFO = Pattern.compile("//([^/?#,@\\s]*)@", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern IPV4_SHAPE = Pattern.compile("[0-9]{1,3}(?:\\.[0-9]{1,3}){3}");
   private static final Pattern HEX_GROUP = Pattern.compile("[0-9A-Fa-f]+");
   private static final int IPV6_GROUPS = 8;
@@ -136,7 +139,9 @@ public final class IpAddressCandidateExtractor {
    *   <li>A slash suffix of one to three ASCII digits is preserved as a CIDR prefix, unless it follows a port
    *     or the address is a URL host or user information host (preceded by {@code //} or {@code @}),
    *     where it is a path. As with {@link #extract(String)}, out-of-range prefixes such as {@code /33} are preserved.</li>
-   *   <li>An address directly followed by {@code @} is skipped as user information, as in {@code http://192.0.2.1@example.org}.</li>
+   *   <li>Addresses in URL user information are skipped, as in {@code http://192.0.2.1:pass@example.org} or
+   *     {@code http://user:192.0.2.1@example.org}, while the URL host, path, query, and fragment are still searched.
+   *     An address directly followed by {@code @} is also skipped as user information, as in {@code 192.0.2.1@example.org}.</li>
    *   <li>An IPv4 address that is the version of a product token, such as {@code Chrome/120.0.0.0} in a User-Agent string,
    *     is skipped. A product token is a single name starting with an ASCII letter at the beginning of the content
    *     or after whitespace, an opening parenthesis, a comma, or a semicolon, directly followed by {@code /} and the address.
@@ -151,6 +156,7 @@ public final class IpAddressCandidateExtractor {
    */
   public static List<String> extractAll(String content) {
     List<String> candidates = new ArrayList<>();
+    boolean[] userInfo = userInfoCharacters(content);
     Matcher matcher = EMBEDDED_ADDRESS.matcher(content);
     int from = 0;
     while (from < content.length() && matcher.find(from)) {
@@ -161,9 +167,20 @@ public final class IpAddressCandidateExtractor {
         from = matcher.start() + 1;
         continue;
       }
-      embeddedCandidate(content, matcher).ifPresent(candidates::add);
+      if (!userInfo[matcher.start()]) {
+        embeddedCandidate(content, matcher).ifPresent(candidates::add);
+      }
     }
     return Collections.unmodifiableList(candidates);
+  }
+
+  private static boolean[] userInfoCharacters(String content) {
+    boolean[] userInfo = new boolean[content.length()];
+    Matcher matcher = URL_USER_INFO.matcher(content);
+    while (matcher.find()) {
+      Arrays.fill(userInfo, matcher.start(1), matcher.end(1), true);
+    }
+    return userInfo;
   }
 
   private static Optional<String> embeddedCandidate(String content, Matcher matcher) {

@@ -215,6 +215,16 @@ class IpAddressCandidateExtractorTest {
       // URLs: user information, paths, queries
       candidates("http://user:pass@192.0.2.1:8080/path", "192.0.2.1"),
       candidates("http://192.0.2.1/path@192.0.2.2", "192.0.2.1", "192.0.2.2"),
+      // URL user information is skipped; the host, path, query, and fragment are still searched
+      candidates("http://192.0.2.8:password@example.org/path/10.0.0.1", "10.0.0.1"),
+      candidates("http://user:192.0.2.8@example.org/path"),
+      candidates("http://192.0.2.8:pass@192.0.2.9:8080/10.0.0.1?ip=10.0.0.2#10.0.0.3", "192.0.2.9", "10.0.0.1", "10.0.0.2", "10.0.0.3"),
+      candidates("//192.0.2.8:pass@[2001:db8::1]/path", "2001:db8::1"),
+      candidates("ftp://2001:db8::8:pass@example.org/192.0.2.1", "192.0.2.1"),
+      candidates("http://a@b@192.0.2.1", "192.0.2.1"), // The last @ ends the user information
+      candidates("http://example.org/path?u=//192.0.2.8:p@host"),
+      candidates("http://192.0.2.1,user:pass@192.0.2.2/path", "192.0.2.1", "192.0.2.2"), // Comma ends a URL list entry
+      candidates("http://192.0.2.1:8080 user:pass@192.0.2.2", "192.0.2.1", "192.0.2.2"),
       candidates("http://example.org/?next=http://192.0.2.1/7", "192.0.2.1"),
       candidates("https://example.org/proxy/192.0.2.1/status?ip=198.51.100.1#203.0.113.1", "192.0.2.1", "198.51.100.1", "203.0.113.1"),
       candidates("mailto:admin@192.0.2.1", "192.0.2.1"),
