@@ -40,16 +40,11 @@ public final class IpAddressCandidateExtractor {
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
 
-  // Address-shaped tokens not embedded in a word, a dotted number such as an OID, or a hyphenated name.
-  // IPv6 tokens are tried first so that the IPv4 tail of a mixed IPv6 address is not reported separately.
-  // A trailing dot followed by a non-word character, such as a full stop, is not part of the token.
-  private static final Pattern EMBEDDED_ADDRESS = Pattern.compile(
-    "(?<![\\w.:-])(?<ipv6>[0-9A-Fa-f]*+:[0-9A-Fa-f:]*+(?:\\.[0-9]++)*+)(?:%[\\w-]*+)?(?![\\w:%-]|\\.\\w)" +
-      "|(?<![\\w.-])(?<ipv4>[0-9]{1,3}(?:\\.[0-9]{1,3}){3})(?![\\w-]|\\.\\w)",
-    Pattern.UNICODE_CHARACTER_CLASS);
+  // Runs of characters that can form an IPv4 or IPv6 address. Boundaries and shapes are checked separately.
+  private static final Pattern ADDRESS_RUN = Pattern.compile("[0-9A-Fa-f:.]+");
   // URL authority user information, such as "user:pass" in "http://user:pass@host", using the same delimiters as URL_PREFIX.
   private static final Pattern URL_USER_INFO = Pattern.compile("//([^/?#,@\\s]*)@", Pattern.UNICODE_CHARACTER_CLASS);
-  private static final Pattern IPV4_SHAPE = Pattern.compile("[0-9]{1,3}(?:\\.[0-9]{1,3}){3}");
+  private static final Pattern IPV4_SHAPE = Pattern.compile("\\d{1,3}(?:\\.\\d{1,3}){3}");
   private static final Pattern HEX_GROUP = Pattern.compile("[0-9A-Fa-f]+");
   private static final int IPV6_GROUPS = 8;
 
@@ -134,7 +129,8 @@ public final class IpAddressCandidateExtractor {
    *     and an optional dotted IPv4 tail counting as two groups. An optional IPv6 zone such as {@code %eth0} is preserved.</li>
    *   <li>A token adjacent to a letter, digit, underscore, or hyphen, or that is part of a longer dotted or colon-separated sequence,
    *     is not a candidate. For example, {@code v1.2.3.4}, {@code 1.3.6.1.4.1}, {@code host-192.0.2.1}, and {@code 12:30:45}
-   *     yield no candidate. A dot followed by a non-word character, such as a full stop, ends the candidate.</li>
+   *     yield no candidate, nor does a dotted name such as {@code 1.2.0.192.in-addr.arpa}.
+   *     A dot followed by a non-word character, such as a full stop, ends the candidate.</li>
    *   <li>Enclosing brackets and ports are not part of the candidate, for example in {@code [2001:db8::1]:8080} or {@code 192.0.2.1:8080}.</li>
    *   <li>A slash suffix of one to three ASCII digits is preserved as a CIDR prefix, unless it follows a port
    *     or the address is a URL host or user information host (preceded by {@code //} or {@code @}),
@@ -157,21 +153,73 @@ public final class IpAddressCandidateExtractor {
   public static List<String> extractAll(String content) {
     List<String> candidates = new ArrayList<>();
     boolean[] userInfo = userInfoCharacters(content);
-    Matcher matcher = EMBEDDED_ADDRESS.matcher(content);
+    Matcher run = ADDRESS_RUN.matcher(content);
     int from = 0;
-    while (from < content.length() && matcher.find(from)) {
-      from = matcher.end();
-      String ipv6 = matcher.group("ipv6");
-      if (ipv6 != null && !isIpv6Shaped(ipv6)) {
-        // Retry inside the rejected token, for example for the IPv4 address in "dc:192.0.2.1".
-        from = matcher.start() + 1;
-        continue;
+    while (from < content.length() && run.find(from)) {
+      from = run.end();
+      int start = run.start();
+      int end = run.end();
+      // Trailing dots, such as a full stop, are not part of an address.
+      while (end - 1 > start && content.charAt(end - 1) == '.') {
+        end--;
       }
-      if (!userInfo[matcher.start()]) {
-        embeddedCandidate(content, matcher).ifPresent(candidates::add);
+      // An opaque IPv6 zone identifier extends the address. Otherwise, the character after any trailing dots bounds the run.
+      boolean zoned = charAt(content, end) == '%';
+      int addressEnd = zoned ? zoneEnd(content, end + 1) : end;
+      int runEnd = zoned ? addressEnd : run.end();
+      boolean leftBounded = isBoundary(content, start - 1);
+      boolean rightBounded = isBoundary(content, runEnd);
+      if (leftBounded && rightBounded && isIpv6Shaped(content.substring(start, end))) {
+        from = runEnd;
+        addCandidate(content, start, addressEnd, userInfo, candidates);
+      } else {
+        addIpv4Candidates(content, start, end, leftBounded, rightBounded, userInfo, candidates);
       }
     }
     return Collections.unmodifiableList(candidates);
+  }
+
+  /**
+   * Adds the IPv4 addresses among the colon-separated segments of a run, such as "192.0.2.1" in "192.0.2.1:8080" or "host:192.0.2.1".
+   * The first and last segments are only candidates if the run is bounded on that side.
+   */
+  private static void addIpv4Candidates(String content, int runStart, int runEnd, boolean leftBounded, boolean rightBounded,
+    boolean[] userInfo, List<String> candidates) {
+    int segmentStart = runStart;
+    while (segmentStart <= runEnd) {
+      int colon = content.indexOf(':', segmentStart);
+      int segmentEnd = (colon < 0 || colon > runEnd) ? runEnd : colon;
+      boolean bounded = (leftBounded || segmentStart > runStart) && (rightBounded || segmentEnd < runEnd);
+      if (bounded && IPV4_SHAPE.matcher(content.substring(segmentStart, segmentEnd)).matches() && !isProductVersion(content, segmentStart)) {
+        addCandidate(content, segmentStart, segmentEnd, userInfo, candidates);
+      }
+      segmentStart = segmentEnd + 1;
+    }
+  }
+
+  private static void addCandidate(String content, int start, int end, boolean[] userInfo, List<String> candidates) {
+    boolean bracketed = charAt(content, start - 1) == '[' && charAt(content, end) == ']';
+    int before = bracketed ? (start - 1) : start;
+    int after = bracketed ? (end + 1) : end;
+    if (userInfo[start] || charAt(content, after) == '@') {
+      return;
+    }
+    // A port (":") right after the address excludes a CIDR suffix, and URL hosts are followed by paths.
+    boolean urlHost = charAt(content, before - 1) == '@' || (charAt(content, before - 1) == '/' && charAt(content, before - 2) == '/');
+    String cidr = (urlHost || charAt(content, after) != '/') ? "" : cidrSuffix(content, after + 1);
+    candidates.add(content.substring(start, end) + cidr);
+  }
+
+  /** Returns a slash and the CIDR prefix starting at the given index, or an empty string if there is no prefix. */
+  private static String cidrSuffix(String content, int prefixStart) {
+    int prefixEnd = prefixStart;
+    while (prefixEnd < content.length() && isAsciiDigit(content.charAt(prefixEnd))) {
+      prefixEnd++;
+    }
+    // Three digits cover both IPv4 and IPv6 prefixes.
+    int digits = prefixEnd - prefixStart;
+    boolean isPrefix = digits >= 1 && digits <= 3 && !isWordCharacter(content, prefixEnd);
+    return isPrefix ? content.substring(prefixStart - 1, prefixEnd) : "";
   }
 
   private static boolean[] userInfoCharacters(String content) {
@@ -183,37 +231,18 @@ public final class IpAddressCandidateExtractor {
     return userInfo;
   }
 
-  private static Optional<String> embeddedCandidate(String content, Matcher matcher) {
-    int start = matcher.start();
-    int end = matcher.end();
-    boolean bracketed = start > 0 && content.charAt(start - 1) == '[' && end < content.length() && content.charAt(end) == ']';
-    int before = bracketed ? (start - 1) : start;
-    int after = bracketed ? (end + 1) : end;
-
-    if (charAt(content, after) == '@' || (matcher.group("ipv4") != null && isProductVersion(content, start))) {
-      return Optional.empty();
+  /** Returns the end of an opaque IPv6 zone identifier starting at the given index. */
+  private static int zoneEnd(String content, int zoneStart) {
+    int end = zoneStart;
+    while (isWordCharacter(content, end) || charAt(content, end) == '-') {
+      end += Character.charCount(content.codePointAt(end));
     }
-
-    String candidate = matcher.group();
-    // A port (":") right after the address excludes a CIDR suffix, and URL hosts are followed by paths.
-    boolean urlHost = charAt(content, before - 1) == '@' || (charAt(content, before - 1) == '/' && charAt(content, before - 2) == '/');
-    if (!urlHost && charAt(content, after) == '/') {
-      int digitsEnd = after + 1;
-      while (digitsEnd < content.length() && content.charAt(digitsEnd) >= '0' && content.charAt(digitsEnd) <= '9') {
-        digitsEnd++;
-      }
-      // Three digits cover both IPv4 and IPv6 prefixes.
-      int digits = digitsEnd - after - 1;
-      if (digits >= 1 && digits <= 3 && !isWordCharacter(content, digitsEnd)) {
-        candidate += content.substring(after, digitsEnd);
-      }
-    }
-    return Optional.of(candidate);
+    return end;
   }
 
   private static boolean isIpv6Shaped(String token) {
     String hexPart = token;
-    int groups = 0;
+    int tailGroups = 0;
     if (token.indexOf('.') >= 0) {
       int lastColon = token.lastIndexOf(':');
       if (!IPV4_SHAPE.matcher(token.substring(lastColon + 1)).matches()) {
@@ -221,25 +250,33 @@ public final class IpAddressCandidateExtractor {
       }
       // The IPv4 tail takes the place of the last two groups. Keep its colon so a preceding "::" stays intact.
       hexPart = token.substring(0, lastColon + 1) + "0";
-      groups = 1;
+      tailGroups = 1;
     }
     int compression = hexPart.indexOf("::");
-    if (compression >= 0 && hexPart.indexOf("::", compression + 1) >= 0) {
+    if (compression < 0) {
+      int groups = countHexGroups(hexPart);
+      return groups >= 0 && groups + tailGroups == IPV6_GROUPS;
+    }
+    if (hexPart.indexOf("::", compression + 1) >= 0) {
       return false;
     }
-    String head = compression >= 0 ? hexPart.substring(0, compression) : hexPart;
-    String tail = compression >= 0 ? hexPart.substring(compression + 2) : "";
-    for (String part : new String[] {head, tail}) {
-      if (!part.isEmpty()) {
-        for (String group : part.split(":", -1)) {
-          if (!HEX_GROUP.matcher(group).matches()) {
-            return false;
-          }
-          groups++;
-        }
+    int head = countHexGroups(hexPart.substring(0, compression));
+    int tail = countHexGroups(hexPart.substring(compression + 2));
+    return head >= 0 && tail >= 0 && head + tail + tailGroups < IPV6_GROUPS;
+  }
+
+  /** Returns the number of colon-separated hexadecimal groups, or -1 if a group is empty or not hexadecimal. */
+  private static int countHexGroups(String groups) {
+    if (groups.isEmpty()) {
+      return 0;
+    }
+    String[] split = groups.split(":", -1);
+    for (String group : split) {
+      if (!HEX_GROUP.matcher(group).matches()) {
+        return -1;
       }
     }
-    return compression >= 0 ? (groups < IPV6_GROUPS) : (groups == IPV6_GROUPS);
+    return split.length;
   }
 
   private static boolean isProductVersion(String content, int addressStart) {
@@ -251,22 +288,30 @@ public final class IpAddressCandidateExtractor {
     while (nameStart > 0 && isProductNameCharacter(content.charAt(nameStart - 1))) {
       nameStart--;
     }
-    char first = charAt(content, nameStart);
     char preceding = charAt(content, nameStart - 1);
-    return nameStart < slash && isAsciiLetter(first)
+    return nameStart < slash && isAsciiLetter(content.charAt(nameStart))
       && (nameStart == 0 || Character.isWhitespace(preceding) || "(,;".indexOf(preceding) >= 0);
   }
 
   private static boolean isProductNameCharacter(char c) {
-    return isAsciiLetter(c) || (c >= '0' && c <= '9') || c == '_' || c == '.' || c == '-';
+    return isAsciiLetter(c) || isAsciiDigit(c) || c == '_' || c == '.' || c == '-';
   }
 
   private static boolean isAsciiLetter(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
   }
 
+  private static boolean isAsciiDigit(char c) {
+    return c >= '0' && c <= '9';
+  }
+
+  /** True if the index is out of bounds or the character there cannot be part of an address token's word. */
+  private static boolean isBoundary(String content, int index) {
+    return !isWordCharacter(content, index) && charAt(content, index) != '-';
+  }
+
   private static boolean isWordCharacter(String content, int index) {
-    if (index >= content.length()) {
+    if (index < 0 || index >= content.length()) {
       return false;
     }
     int codePoint = content.codePointAt(index);

@@ -191,6 +191,8 @@ class IpAddressCandidateExtractorTest {
       candidates("connect to 192.0.2.1 now", "192.0.2.1"),
       candidates("Connect to 192.0.2.1.", "192.0.2.1"), // Full stop after the address
       candidates("Connect to ::1.", "::1"),
+      candidates("Use fe80::1%eth0.", "fe80::1%eth0"),
+      candidates("Use 192.0.2.1...", "192.0.2.1"),
       candidates("host=192.0.2.1&port=80", "192.0.2.1"),
       candidates("host:192.0.2.1", "192.0.2.1"),
       candidates("dc:192.0.2.1", "192.0.2.1"), // Not an IPv6 address; the IPv4 address is still found
@@ -284,6 +286,10 @@ class IpAddressCandidateExtractorTest {
     "192.0.2.1接口",
     "http://192.0.2.1@example.org/path", // User information
     "user.192.0.2.1",
+    "1.2.0.192.in-addr.arpa", // Reverse DNS name
+    "192.0.2.1.example.org",
+    "cafe.192.0.2.1",
+    "Connect to 192.0.2.1.x",
     // Product tokens
     "Chrome/120.0.0.0",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
