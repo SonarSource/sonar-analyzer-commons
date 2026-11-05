@@ -214,6 +214,7 @@ class IpAddressCandidateExtractorTest {
       candidates("http://192.0.2.1:8080;https://192.0.2.2/other", "192.0.2.1", "192.0.2.2"),
       candidates("http://192.0.2.1,https://[2001:db8::1]:8443/path", "192.0.2.1", "2001:db8::1"),
       candidates("from 10.0.0.1 to 10.0.0.255", "10.0.0.1", "10.0.0.255"),
+      candidates("192.0.2.1 then 192.0.2.2:8080 then host:192.0.2.3", "192.0.2.1", "192.0.2.2", "192.0.2.3"), // Colons only split their own run
       // URLs: user information, paths, queries
       candidates("http://user:pass@192.0.2.1:8080/path", "192.0.2.1"),
       candidates("http://192.0.2.1/path@192.0.2.2", "192.0.2.1", "192.0.2.2"),
@@ -315,6 +316,15 @@ class IpAddressCandidateExtractorTest {
   })
   void shouldExtractNoCandidates(String content) {
     assertThat(IpAddressCandidateExtractor.extractAll(content)).isEmpty();
+  }
+
+  @Test
+  void shouldScanManyAddressesFollowedByDistantColon() {
+    // Every run is segmented at its own colons only. Searching the rest of the content for each run would make this quadratic.
+    int count = 100_000;
+    String content = "10.0.0.1 ".repeat(count) + "end:";
+    List<String> candidates = IpAddressCandidateExtractor.extractAll(content);
+    assertThat(candidates).hasSize(count).containsOnly("10.0.0.1");
   }
 
   @Test

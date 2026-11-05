@@ -185,10 +185,12 @@ public final class IpAddressCandidateExtractor {
    */
   private static void addIpv4Candidates(String content, int runStart, int runEnd, boolean leftBounded, boolean rightBounded,
     boolean[] userInfo, List<String> candidates) {
+    // Scan only the run itself, keeping the overall extraction linear in the content length.
     int segmentStart = runStart;
-    while (segmentStart <= runEnd) {
-      int colon = content.indexOf(':', segmentStart);
-      int segmentEnd = (colon < 0 || colon > runEnd) ? runEnd : colon;
+    for (int segmentEnd = runStart; segmentEnd <= runEnd; segmentEnd++) {
+      if (segmentEnd < runEnd && content.charAt(segmentEnd) != ':') {
+        continue;
+      }
       boolean bounded = (leftBounded || segmentStart > runStart) && (rightBounded || segmentEnd < runEnd);
       if (bounded && IPV4_SHAPE.matcher(content.substring(segmentStart, segmentEnd)).matches() && !isProductVersion(content, segmentStart)) {
         addCandidate(content, segmentStart, segmentEnd, userInfo, candidates);
