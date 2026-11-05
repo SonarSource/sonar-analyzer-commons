@@ -57,23 +57,43 @@ class SimplifiedRegexCharacterClassTest {
         RegexTree tree = parseRegex(regex.replace("\\", "\\\\"), new FlagSet(flags)).getResult();
         SimplifiedRegexCharacterClass simplified = SimplifiedRegexCharacterClass.of(tree);
         Pattern pattern = Pattern.compile(regex, flags);
+        Pattern beforeCaseFoldingChange = Pattern.compile(regex);
         for (int codePoint = 0; codePoint <= 0xFF; codePoint++) {
-          assertMatchesPattern(simplified, pattern, tree, codePoint);
+          assertMatchesPattern(simplified, pattern, beforeCaseFoldingChange, tree, codePoint);
         }
         for (int codePoint : new int[] {0x100, 0x130, 0x17F, 0x212A, 0xD800, 0xFFFF, 0x10000, Character.MAX_CODE_POINT}) {
-          assertMatchesPattern(simplified, pattern, tree, codePoint);
+          assertMatchesPattern(simplified, pattern, beforeCaseFoldingChange, tree, codePoint);
         }
       }
     }
   }
 
-  private static void assertMatchesPattern(SimplifiedRegexCharacterClass simplified, Pattern pattern, RegexTree tree, int codePoint) {
+  private static void assertMatchesPattern(SimplifiedRegexCharacterClass simplified, Pattern pattern, Pattern beforeCaseFoldingChange,
+    RegexTree tree, int codePoint) {
     SimplifiedRegexCharacterClass singleton = new SimplifiedRegexCharacterClass();
     singleton.addRange(codePoint, codePoint, tree);
-    boolean matches = pattern.matcher(new String(Character.toChars(codePoint))).matches();
+    String character = new String(Character.toChars(codePoint));
+    // Before JDK 15, Lower/Upper ignored CASE_INSENSITIVE. Only report characters matched by both behaviors.
+    boolean matches = pattern.matcher(character).matches() && beforeCaseFoldingChange.matcher(character).matches();
     assertThat(simplified.supersetOf(singleton, false))
       .as("%s flags=%s codePoint=%s", pattern, pattern.flags(), codePoint).isEqualTo(matches);
     assertThat(simplified.intersects(singleton, false)).isEqualTo(matches);
+  }
+
+  @Test
+  void case_insensitive_lower_and_upper_are_version_dependent() {
+    for (int flags : new int[] {Pattern.CASE_INSENSITIVE, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE}) {
+      assertSupersetOf("\\\\p{Lower}", "a", false, flags, NO_FLAGS).isTrue();
+      assertSupersetOf("\\\\p{Upper}", "A", false, flags, NO_FLAGS).isTrue();
+      assertSupersetOf("\\\\p{Lower}", "A", false, flags, NO_FLAGS).isFalse();
+      assertSupersetOf("\\\\p{Upper}", "a", false, flags, NO_FLAGS).isFalse();
+      assertSupersetOf("\\\\P{Lower}", "!", false, flags).isTrue();
+      assertSupersetOf("\\\\P{Upper}", "!", false, flags).isTrue();
+      assertSupersetOf("\\\\P{Lower}", "A", false, flags, NO_FLAGS).isFalse();
+      assertSupersetOf("\\\\P{Upper}", "a", false, flags, NO_FLAGS).isFalse();
+      assertSupersetOf("[A-Za-z]", "\\\\p{Lower}", false, flags).isFalse();
+      assertSupersetOf("[^\\\\p{Lower}]", "!", false, flags).isFalse();
+    }
   }
 
   @Test
@@ -554,9 +574,12 @@ class SimplifiedRegexCharacterClassTest {
   }
 
   private static AbstractBooleanAssert<?> assertSupersetOf(String superset, String subset, boolean defaultAnswer, int flags) {
-    FlagSet flagSet = new FlagSet(flags);
-    RegexTree supersetResult = parseRegex(superset, flagSet).getResult();
-    RegexTree subsetResult = parseRegex(subset, flagSet).getResult();
+    return assertSupersetOf(superset, subset, defaultAnswer, flags, flags);
+  }
+
+  private static AbstractBooleanAssert<?> assertSupersetOf(String superset, String subset, boolean defaultAnswer, int supersetFlags, int subsetFlags) {
+    RegexTree supersetResult = parseRegex(superset, new FlagSet(supersetFlags)).getResult();
+    RegexTree subsetResult = parseRegex(subset, new FlagSet(subsetFlags)).getResult();
     SimplifiedRegexCharacterClass supersetCharacterClass = SimplifiedRegexCharacterClass.of(supersetResult);
     SimplifiedRegexCharacterClass subsetCharacterClass = SimplifiedRegexCharacterClass.of(subsetResult);
     return assertThat(supersetCharacterClass.supersetOf(subsetCharacterClass, defaultAnswer));

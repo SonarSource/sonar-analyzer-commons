@@ -56,7 +56,8 @@ class RedundantRegexAlternativesFinderTest {
     "\\p{Space}|\\n; \\n; \\p{Space}",
     "\\P{Digit}|a; a; \\P{Digit}",
     "[^\\p{Digit}]|a; a; [^\\p{Digit}]",
-    "(?i:\\p{Lower})|A; A; (?i:\\p{Lower})",
+    "(?i:\\p{Lower})|a; a; (?i:\\p{Lower})",
+    "(?i:\\p{Upper})|A; A; (?i:\\p{Upper})",
     "(?i:\\P{Lower})|!; !; (?i:\\P{Lower})",
     "(?U:\\p{ASCII})|A; A; (?U:\\p{ASCII})",
     "\\p{Alpha}+|abc; abc; \\p{Alpha}+",
@@ -82,7 +83,8 @@ class RedundantRegexAlternativesFinderTest {
   @ParameterizedTest
   @ValueSource(strings = {
     "\\p{Lower}|A", "\\p{Digit}|a", "\\p{ASCII}|é", "\\P{Digit}|0",
-    "(?i:\\P{Lower})|A", "(?U:\\p{Punct})|$", "(?U:\\p{Lower})|A",
+    "(?i:\\P{Lower})|A", "(?i:\\p{Lower})|A", "(?i:\\p{Upper})|a",
+    "(?U:\\p{Punct})|$", "(?U:\\p{Lower})|A",
     "[a-z]|(?U:\\p{Lower})", "[^\\p{Digit}]|1",
     "(a)|\\p{Lower}"
   })

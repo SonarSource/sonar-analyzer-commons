@@ -380,7 +380,12 @@ public class SimplifiedRegexCharacterClass {
         return;
       }
       if (tree.activeFlags().contains(Pattern.CASE_INSENSITIVE) && ("Lower".equals(property) || "Upper".equals(property))) {
-        ranges = POSIX_RANGES.get("Alpha");
+        // Case-insensitive Lower/Upper only match both ASCII cases since JDK 15.
+        // Retain characters guaranteed to match on either side of that change.
+        characters.containsUnknownCharacters = true;
+        if (tree.isNegation()) {
+          ranges = POSIX_RANGES.get("Alpha");
+        }
       }
       int from = 0;
       for (int i = 0; i < ranges.length; i += 2) {
