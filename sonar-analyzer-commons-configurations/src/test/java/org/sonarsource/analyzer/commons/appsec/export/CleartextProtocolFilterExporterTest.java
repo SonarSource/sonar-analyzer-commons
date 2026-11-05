@@ -36,7 +36,7 @@ class CleartextProtocolFilterExporterTest {
   void jsonShouldMatchAllJavaExclusions() {
     JsonObject root = JsonParser.parseString(CleartextProtocolFilterExporter.toJson()).getAsJsonObject();
 
-    assertThat(root.keySet()).containsExactly("match", "cleartextProtocols", "hostPatterns", "safeUrlPrefixes");
+    assertThat(root.keySet()).containsExactly("match", "cleartextProtocols", "hostPatterns", "safeUrlPrefixes", "identifierUrls");
     assertThat(root.getAsJsonObject("match")).isEqualTo(JsonParser.parseString("""
       {
         "hostPatterns": {
@@ -47,6 +47,17 @@ class CleartextProtocolFilterExporterTest {
           "semantics": "prefix",
           "caseInsensitive": true,
           "target": "fullUrl"
+        },
+        "identifierUrls": {
+          "authority": {
+            "semantics": "exact",
+            "caseInsensitive": true
+          },
+          "pattern": {
+            "semantics": "find",
+            "caseInsensitive": false,
+            "target": "pathQueryFragment"
+          }
         }
       }
       """).getAsJsonObject());
@@ -62,6 +73,12 @@ class CleartextProtocolFilterExporterTest {
       assertThat(pattern.flags()).isEqualTo(Pattern.CASE_INSENSITIVE);
     });
 
+    JsonObject identifiers = root.getAsJsonObject("identifierUrls");
+    assertThat(identifiers.keySet())
+      .hasSize(29)
+      .containsExactlyElementsOf(CleartextProtocolFilter.exportIdentifierUrls().keySet().stream().sorted().toList());
+    CleartextProtocolFilter.exportIdentifierUrls()
+      .forEach((authority, pattern) -> assertThat(identifiers.get(authority).getAsString()).isEqualTo(RegexTranslator.toPortableRegex(pattern)));
   }
 
   @Test

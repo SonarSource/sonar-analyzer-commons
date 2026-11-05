@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -47,6 +48,38 @@ class CleartextProtocolCorpusExporterTest {
   @MethodSource("unsafeUrls")
   void unsafeUrl(String url) {
     assertThat(CleartextProtocolFilter.isSafeWithoutTls(url)).isFalse();
+  }
+
+  @ParameterizedTest(name = "[{index}] {0}")
+  @MethodSource("knownIdentifierUrls")
+  void knownIdentifierDoesNotMakeAConnectionSafe(String url) {
+    assertThat(CleartextProtocolFilter.isKnownIdentifier(url)).isTrue();
+    assertThat(CleartextProtocolFilter.isSafeWithoutTls(url)).isFalse();
+  }
+
+  @ParameterizedTest(name = "[{index}] {0}")
+  @MethodSource("notIdentifierUrls")
+  void notIdentifierUrl(String url) {
+    assertThat(CleartextProtocolFilter.isKnownIdentifier(url)).isFalse();
+  }
+
+  @Test
+  void everyIdentifierAuthorityHasARepresentativeUrl() {
+    var authorities = knownIdentifierUrls()
+      .map(String::strip)
+      .map(url -> url.substring("http://".length()).split("[/?#]", 2)[0].toLowerCase(Locale.ROOT))
+      .collect(Collectors.toSet());
+    assertThat(CleartextProtocolFilter.exportIdentifierUrls())
+      .hasSize(29)
+      .containsOnlyKeys(authorities);
+  }
+
+  static Stream<String> knownIdentifierUrls() {
+    return exportedSamples("identifierUrls");
+  }
+
+  static Stream<String> notIdentifierUrls() {
+    return exportedSamples("nonIdentifierUrls");
   }
 
   static Stream<String> safeUrls() {
@@ -141,7 +174,7 @@ class CleartextProtocolCorpusExporterTest {
   @Test
   void jsonShouldExposeNonEmptySampleGroups() {
     JsonObject corpus = JsonParser.parseString(CleartextProtocolCorpusExporter.toJson()).getAsJsonObject();
-    assertThat(corpus.keySet()).containsExactly("safeUrls", "unsafeUrls");
+    assertThat(corpus.keySet()).containsExactly("identifierUrls", "nonIdentifierUrls", "safeUrls", "unsafeUrls");
     for (String group : corpus.keySet()) {
       assertThat(corpus.getAsJsonArray(group).asList()).isNotEmpty();
     }
