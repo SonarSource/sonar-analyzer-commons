@@ -36,7 +36,20 @@ class CleartextProtocolFilterExporterTest {
   void jsonShouldMatchAllJavaExclusions() {
     JsonObject root = JsonParser.parseString(CleartextProtocolFilterExporter.toJson()).getAsJsonObject();
 
-    assertThat(root.keySet()).containsExactly("cleartextProtocols", "hostPatterns", "safeUrlPrefixes");
+    assertThat(root.keySet()).containsExactly("match", "cleartextProtocols", "hostPatterns", "safeUrlPrefixes");
+    assertThat(root.getAsJsonObject("match")).isEqualTo(JsonParser.parseString("""
+      {
+        "hostPatterns": {
+          "semantics": "find",
+          "caseInsensitive": true
+        },
+        "safeUrlPrefixes": {
+          "semantics": "prefix",
+          "caseInsensitive": true,
+          "target": "fullUrl"
+        }
+      }
+      """).getAsJsonObject());
     assertThat(root.getAsJsonArray("cleartextProtocols").asList().stream().map(JsonElement::getAsString))
       .containsExactlyElementsOf(CleartextProtocolFilter.getCleartextProtocols().stream().sorted().toList());
     assertThat(root.getAsJsonArray("safeUrlPrefixes").asList().stream().map(JsonElement::getAsString))
