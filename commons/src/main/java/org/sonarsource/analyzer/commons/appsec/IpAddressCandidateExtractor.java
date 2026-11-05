@@ -16,17 +16,39 @@
  */
 package org.sonarsource.analyzer.commons.appsec;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Heuristically extracts an IP address candidate string from a string literal's content. */
+/**
+ * Heuristically extracts IP address candidate strings from a string literal's content.
+ * <ul>
+ *   <li>{@link #extract(String)} interprets the whole content as a single address, endpoint, URL, or delimited list,
+ *     and returns one candidate from its beginning.</li>
+ *   <li>{@link #extractAll(String)} scans the whole content and returns every embedded address-shaped candidate,
+ *     for example in path segments, surrounding text, or lists.</li>
+ * </ul>
+ */
 public final class IpAddressCandidateExtractor {
 
   private static final Pattern URL_PREFIX = Pattern.compile(
     "^(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//(?:[^/?#,@\\s]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
+
+  // Address-shaped tokens not embedded in a word, a dotted number such as an OID, or a hyphenated name.
+  // IPv6 tokens are tried first so that the IPv4 tail of a mixed IPv6 address is not reported separately.
+  // A trailing dot followed by a non-word character, such as a full stop, is not part of the token.
+  private static final Pattern EMBEDDED_ADDRESS = Pattern.compile(
+    "(?<![\\w.:-])(?<ipv6>[0-9A-Fa-f]*+:[0-9A-Fa-f:]*+(?:\\.[0-9]++)*+)(?:%[\\w-]*+)?(?![\\w:%-]|\\.\\w)" +
+      "|(?<![\\w.-])(?<ipv4>[0-9]{1,3}(?:\\.[0-9]{1,3}){3})(?![\\w-]|\\.\\w)",
+    Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern IPV4_SHAPE = Pattern.compile("[0-9]{1,3}(?:\\.[0-9]{1,3}){3}");
+  private static final Pattern HEX_GROUP = Pattern.compile("[0-9A-Fa-f]+");
+  private static final int IPV6_GROUPS = 8;
 
   private IpAddressCandidateExtractor() {
   }
@@ -90,6 +112,153 @@ public final class IpAddressCandidateExtractor {
         // An IP address with a port identifies an endpoint, where a CIDR prefix doesn't make sense.
         // Treat the suffix as a URL path.
         (stripped.portRemoved() ? "" : cidr));
+  }
+
+  /**
+   * Heuristically extracts all IP address candidates embedded anywhere in the given string, in order of appearance.
+   * Duplicates are retained. Returns an empty list if no candidate is found.
+   *
+   * <p>Unlike {@link #extract(String)}, the content is not interpreted as a single address, endpoint, or URL.
+   * Instead, it is scanned for address-shaped tokens, so candidates are also found in path segments
+   * ({@code /registry/ipaddresses/192.168.2.3}), surrounding text ({@code connect to 192.0.2.1 now}),
+   * and lists separated by any delimiter ({@code 192.0.2.1;192.0.2.2}).
+   *
+   * More specifically:
+   *
+   * <ul>
+   *   <li>A candidate is either four dot-separated groups of one to three ASCII digits, or an IPv6 address shape:
+   *     hexadecimal groups separated by colons, with at most one {@code ::}, eight groups (or seven when {@code ::} compresses some),
+   *     and an optional dotted IPv4 tail counting as two groups. An optional IPv6 zone such as {@code %eth0} is preserved.</li>
+   *   <li>A token adjacent to a letter, digit, underscore, or hyphen, or that is part of a longer dotted or colon-separated sequence,
+   *     is not a candidate. For example, {@code v1.2.3.4}, {@code 1.3.6.1.4.1}, {@code host-192.0.2.1}, and {@code 12:30:45}
+   *     yield no candidate. A dot followed by a non-word character, such as a full stop, ends the candidate.</li>
+   *   <li>Enclosing brackets and ports are not part of the candidate, for example in {@code [2001:db8::1]:8080} or {@code 192.0.2.1:8080}.</li>
+   *   <li>A slash suffix of one to three ASCII digits is preserved as a CIDR prefix, unless it follows a port
+   *     or the address is a URL host or user information host (preceded by {@code //} or {@code @}),
+   *     where it is a path. As with {@link #extract(String)}, out-of-range prefixes such as {@code /33} are preserved.</li>
+   *   <li>An address directly followed by {@code @} is skipped as user information, as in {@code http://192.0.2.1@example.org}.</li>
+   *   <li>An IPv4 address that is the version of a product token, such as {@code Chrome/120.0.0.0} in a User-Agent string,
+   *     is skipped. A product token is a single name starting with an ASCII letter at the beginning of the content
+   *     or after whitespace, an opening parenthesis, a comma, or a semicolon, directly followed by {@code /} and the address.
+   *     A slash-separated path such as {@code /registry/192.168.2.3} is not a product token.</li>
+   * </ul>
+   *
+   * <p>Candidates are syntactically shaped like IP addresses but not validated:
+   * octets such as {@code 999}, leading zeros, or CIDR prefixes may be out of range, and other dotted quads, such as
+   * four-part version numbers, may be returned. Use {@link IpAddressClassifier#parse(String)} to validate and parse each candidate.
+   * Use {@link #extract(String)} when the whole content is expected to be a single address and malformed content should
+   * remain observable as an unparseable candidate.
+   */
+  public static List<String> extractAll(String content) {
+    List<String> candidates = new ArrayList<>();
+    Matcher matcher = EMBEDDED_ADDRESS.matcher(content);
+    int from = 0;
+    while (from < content.length() && matcher.find(from)) {
+      from = matcher.end();
+      String ipv6 = matcher.group("ipv6");
+      if (ipv6 != null && !isIpv6Shaped(ipv6)) {
+        // Retry inside the rejected token, for example for the IPv4 address in "dc:192.0.2.1".
+        from = matcher.start() + 1;
+        continue;
+      }
+      embeddedCandidate(content, matcher).ifPresent(candidates::add);
+    }
+    return Collections.unmodifiableList(candidates);
+  }
+
+  private static Optional<String> embeddedCandidate(String content, Matcher matcher) {
+    int start = matcher.start();
+    int end = matcher.end();
+    boolean bracketed = start > 0 && content.charAt(start - 1) == '[' && end < content.length() && content.charAt(end) == ']';
+    int before = bracketed ? (start - 1) : start;
+    int after = bracketed ? (end + 1) : end;
+
+    if (charAt(content, after) == '@' || (matcher.group("ipv4") != null && isProductVersion(content, start))) {
+      return Optional.empty();
+    }
+
+    String candidate = matcher.group();
+    // A port (":") right after the address excludes a CIDR suffix, and URL hosts are followed by paths.
+    boolean urlHost = charAt(content, before - 1) == '@' || (charAt(content, before - 1) == '/' && charAt(content, before - 2) == '/');
+    if (!urlHost && charAt(content, after) == '/') {
+      int digitsEnd = after + 1;
+      while (digitsEnd < content.length() && content.charAt(digitsEnd) >= '0' && content.charAt(digitsEnd) <= '9') {
+        digitsEnd++;
+      }
+      // Three digits cover both IPv4 and IPv6 prefixes.
+      int digits = digitsEnd - after - 1;
+      if (digits >= 1 && digits <= 3 && !isWordCharacter(content, digitsEnd)) {
+        candidate += content.substring(after, digitsEnd);
+      }
+    }
+    return Optional.of(candidate);
+  }
+
+  private static boolean isIpv6Shaped(String token) {
+    String hexPart = token;
+    int groups = 0;
+    if (token.indexOf('.') >= 0) {
+      int lastColon = token.lastIndexOf(':');
+      if (!IPV4_SHAPE.matcher(token.substring(lastColon + 1)).matches()) {
+        return false;
+      }
+      // The IPv4 tail takes the place of the last two groups. Keep its colon so a preceding "::" stays intact.
+      hexPart = token.substring(0, lastColon + 1) + "0";
+      groups = 1;
+    }
+    int compression = hexPart.indexOf("::");
+    if (compression >= 0 && hexPart.indexOf("::", compression + 1) >= 0) {
+      return false;
+    }
+    String head = compression >= 0 ? hexPart.substring(0, compression) : hexPart;
+    String tail = compression >= 0 ? hexPart.substring(compression + 2) : "";
+    for (String part : new String[] {head, tail}) {
+      if (!part.isEmpty()) {
+        for (String group : part.split(":", -1)) {
+          if (!HEX_GROUP.matcher(group).matches()) {
+            return false;
+          }
+          groups++;
+        }
+      }
+    }
+    return compression >= 0 ? (groups < IPV6_GROUPS) : (groups == IPV6_GROUPS);
+  }
+
+  private static boolean isProductVersion(String content, int addressStart) {
+    int slash = addressStart - 1;
+    if (charAt(content, slash) != '/') {
+      return false;
+    }
+    int nameStart = slash;
+    while (nameStart > 0 && isProductNameCharacter(content.charAt(nameStart - 1))) {
+      nameStart--;
+    }
+    char first = charAt(content, nameStart);
+    char preceding = charAt(content, nameStart - 1);
+    return nameStart < slash && isAsciiLetter(first)
+      && (nameStart == 0 || Character.isWhitespace(preceding) || "(,;".indexOf(preceding) >= 0);
+  }
+
+  private static boolean isProductNameCharacter(char c) {
+    return isAsciiLetter(c) || (c >= '0' && c <= '9') || c == '_' || c == '.' || c == '-';
+  }
+
+  private static boolean isAsciiLetter(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+  }
+
+  private static boolean isWordCharacter(String content, int index) {
+    if (index >= content.length()) {
+      return false;
+    }
+    int codePoint = content.codePointAt(index);
+    return Character.isLetterOrDigit(codePoint) || codePoint == '_';
+  }
+
+  /** Returns the character at the given index, or {@code '\0'} if the index is out of bounds. */
+  private static char charAt(String content, int index) {
+    return (index >= 0 && index < content.length()) ? content.charAt(index) : '\0';
   }
 
   private static Optional<StrippedCandidate> stripBracketsAndPort(String candidate) {

@@ -16,8 +16,14 @@
  */
 package org.sonarsource.analyzer.commons.appsec;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -169,5 +175,159 @@ class IpAddressCandidateExtractorTest {
   })
   void shouldRejectMissingCandidateOrMalformedEndpoint(String content) {
     assertThat(IpAddressCandidateExtractor.extract(content)).isEmpty();
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void shouldExtractAllCandidates(String content, List<String> expected) {
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).containsExactlyElementsOf(expected);
+  }
+
+  static Stream<Arguments> shouldExtractAllCandidates() {
+    return Stream.of(
+      // Path segments and surrounding text
+      candidates("/registry/ipaddresses/192.168.2.3", "192.168.2.3"),
+      candidates("registry/ipaddresses/192.168.2.3/status", "192.168.2.3"),
+      candidates("connect to 192.0.2.1 now", "192.0.2.1"),
+      candidates("Connect to 192.0.2.1.", "192.0.2.1"), // Full stop after the address
+      candidates("Connect to ::1.", "::1"),
+      candidates("host=192.0.2.1&port=80", "192.0.2.1"),
+      candidates("host:192.0.2.1", "192.0.2.1"),
+      candidates("dc:192.0.2.1", "192.0.2.1"), // Not an IPv6 address; the IPv4 address is still found
+      candidates("12:30:192.0.2.1", "192.0.2.1"),
+      candidates("1:2:3:4:5:6:7:192.0.2.1", "192.0.2.1"), // Too many groups for IPv6
+      candidates("1:2.3.4.5", "2.3.4.5"),
+      candidates("'192.0.2.1'", "192.0.2.1"),
+      candidates("(192.0.2.1)", "192.0.2.1"),
+      candidates("\"2001:db8::1\"", "2001:db8::1"),
+      candidates(" 192.0.2.1", "192.0.2.1"), // Leading whitespace
+      candidates("[192.0.2.1]", "192.0.2.1"),
+      candidates("Server 10.0.0.1: connection refused", "10.0.0.1"),
+      candidates("ip 192.0.2.1", "192.0.2.1"),
+      // Lists with any delimiter
+      candidates("192.0.2.1,192.0.2.2", "192.0.2.1", "192.0.2.2"),
+      candidates("192.0.2.1;192.0.2.2", "192.0.2.1", "192.0.2.2"),
+      candidates("192.0.2.1 | 2001:db8::1 | ::ffff:192.0.2.3", "192.0.2.1", "2001:db8::1", "::ffff:192.0.2.3"),
+      candidates("[\"10.0.0.1\", \"10.0.0.2\", \"10.0.0.1\"]", "10.0.0.1", "10.0.0.2", "10.0.0.1"), // Duplicates are retained
+      candidates("http://192.0.2.1:8080;https://192.0.2.2/other", "192.0.2.1", "192.0.2.2"),
+      candidates("http://192.0.2.1,https://[2001:db8::1]:8443/path", "192.0.2.1", "2001:db8::1"),
+      candidates("from 10.0.0.1 to 10.0.0.255", "10.0.0.1", "10.0.0.255"),
+      // URLs: user information, paths, queries
+      candidates("http://user:pass@192.0.2.1:8080/path", "192.0.2.1"),
+      candidates("http://192.0.2.1/path@192.0.2.2", "192.0.2.1", "192.0.2.2"),
+      candidates("http://example.org/?next=http://192.0.2.1/7", "192.0.2.1"),
+      candidates("https://example.org/proxy/192.0.2.1/status?ip=198.51.100.1#203.0.113.1", "192.0.2.1", "198.51.100.1", "203.0.113.1"),
+      candidates("mailto:admin@192.0.2.1", "192.0.2.1"),
+      // Ports and brackets are removed
+      candidates("192.0.2.1:8080", "192.0.2.1"),
+      candidates("[2001:db8::1]:8080", "2001:db8::1"),
+      candidates("http://[2001:db8::1%eth0]:8080/path", "2001:db8::1%eth0"),
+      candidates("http://[fe80::1%25en0]/", "fe80::1%25en0"),
+      candidates("2001:db8::1%", "2001:db8::1%"),
+      // CIDR suffixes
+      candidates("allow 10.0.0.0/8 and 2001:db8::/32", "10.0.0.0/8", "2001:db8::/32"),
+      candidates("/registry/10.0.0.0/8", "10.0.0.0/8"),
+      candidates("[2001:db8::1]/64", "2001:db8::1/64"),
+      candidates("[2001:db8::1%接口]/64", "2001:db8::1%接口/64"),
+      candidates("10.0.0.0/8.", "10.0.0.0/8"),
+      candidates("192.0.2.1/33", "192.0.2.1/33"), // Out-of-range prefixes are preserved, like extract
+      candidates("192.0.2.1/1000", "192.0.2.1"), // Overlong suffixes are paths
+      candidates("192.0.2.1/24abc", "192.0.2.1"),
+      candidates("192.0.2.1/３３", "192.0.2.1"), // Non-ASCII digits
+      candidates("192.0.2.1/", "192.0.2.1"),
+      candidates("192.0.2.1:8080/24", "192.0.2.1"), // Slash after a port starts a path
+      candidates("[2001:db8::1]:8080/64", "2001:db8::1"),
+      candidates("http://127.0.0.1/7", "127.0.0.1"), // URL hosts are followed by paths
+      candidates("//[2001:db8::1]/64", "2001:db8::1"),
+      candidates("http://user@192.0.2.1/24", "192.0.2.1"),
+      // IPv6 shapes
+      candidates("::", "::"),
+      candidates("::00000:2", "::00000:2"),
+      candidates("1:2:3:4:5:6:7:8", "1:2:3:4:5:6:7:8"),
+      candidates("1:2:3:4:5:6:192.0.2.1", "1:2:3:4:5:6:192.0.2.1"),
+      candidates("1:2:3:4:5:6:7::", "1:2:3:4:5:6:7::"),
+      candidates("::FFFF:7f00:1", "::FFFF:7f00:1"),
+      // Candidates are not validated
+      candidates("999.2.3.4", "999.2.3.4"),
+      candidates("01.02.03.04", "01.02.03.04"),
+      candidates("1.0.0.0", "1.0.0.0") // Possibly a version number
+    );
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "",
+    "no address here",
+    "https://example.com/path",
+    "v1.2.3.4", // Version prefix
+    "1.2.3.4.5", // Too many groups
+    "1.3.6.1.4.1.311", // OID
+    "1.2.3", // Too few groups
+    "1234.2.3.4", // Too many digits
+    "192.0.2.1234",
+    "prefix192.0.2.1",
+    "192.0.2.1suffix",
+    "host-192.0.2.1",
+    "192.0.2.1-SNAPSHOT",
+    "my_192.0.2.1",
+    "接口192.0.2.1",
+    "192.0.2.1接口",
+    "http://192.0.2.1@example.org/path", // User information
+    "user.192.0.2.1",
+    // Product tokens
+    "Chrome/120.0.0.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "(Agent/1.2.3.4)",
+    "a,Agent_1.0/1.2.3.4",
+    // Colon-separated tokens that are not IPv6 addresses
+    "12:30:45",
+    "00:1a:2b:3c:4d:5e", // MAC address
+    "1:2:3:4:5:6:7:8:9",
+    "1::2::3",
+    ":::1",
+    "1:2:3:4:5:6:7::8",
+    "::ffff:1.2.3",
+    "::ffff:192.0.2.1.5",
+    ":1:2:3:4:5:6:7",
+    "1:2:3:4:5:6:7:",
+    "std::vector",
+    "Foo::bar",
+    "::std",
+    "x2001:db8::1",
+    "2001:db8::1x",
+    "2001:db8::g"
+  })
+  void shouldExtractNoCandidates(String content) {
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).isEmpty();
+  }
+
+  @Test
+  void shouldReturnUnmodifiableList() {
+    List<String> candidates = IpAddressCandidateExtractor.extractAll("192.0.2.1");
+    assertThat(candidates).isUnmodifiable();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "192.0.2.1:65535",
+    "[2001:db8::1]:65535",
+    "http://user:pass@[2001:db8::1]:8080/path",
+    "http://192.0.2.1,user:pass@192.0.2.2/path",
+    "https://[2001:db8::192.0.2.1]:8080/path",
+    "192.0.2.1/032",
+    "2001:db8::1/128",
+    "[::ffff:192.0.2.1]",
+    "http://192.0.2.1?redirect=https://user@example.org/path?a=1&b=2",
+    "192.0.2.1\u00a0rest",
+    "[2001:db8::1%接口]/64"
+  })
+  void extractAllShouldIncludeParseableExtractResult(String content) {
+    String extracted = IpAddressCandidateExtractor.extract(content).orElseThrow();
+    assertThat(IpAddressClassifier.parse(extracted)).isPresent();
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).contains(extracted);
+  }
+
+  private static Arguments candidates(String content, String... expected) {
+    return Arguments.of(content, Arrays.asList(expected));
   }
 }
