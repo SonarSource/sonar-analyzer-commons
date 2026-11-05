@@ -22,6 +22,9 @@ import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Locale;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -52,6 +55,85 @@ class CleartextProtocolCorpusExporterTest {
 
   static Stream<String> unsafeUrls() {
     return CleartextProtocolCorpusExporter.URL_SAMPLES.get("unsafeUrls").stream();
+  }
+
+  @Test
+  void exportedExclusionsShouldCoverSafeUrlsExceptParserOnlyCases() {
+    var patterns = exportedHostPatterns();
+    var prefixes = exportedSafeUrlPrefixes();
+
+    // These four cases are safe because of URL parsing/scheme handling, not an exported exclusion.
+    // The complete safety classification is also checked in the consuming analyzer's runtime.
+    assertThat(exportedSamples("safeUrls").filter(url -> !matchesExclusion(url, patterns, prefixes)))
+      .containsExactly("http://my-service/api", "https://insecure.com", "not-a-url", "");
+  }
+
+  @Test
+  void exportedExclusionsShouldNotSuppressUnsafeUrls() {
+    var patterns = exportedHostPatterns();
+    var prefixes = exportedSafeUrlPrefixes();
+
+    exportedSamples("unsafeUrls").forEach(url ->
+      assertThat(matchesExclusion(url, patterns, prefixes))
+        .as("unsafe URL suppressed by exported exclusions: <%s>", url)
+        .isFalse());
+  }
+
+  @Test
+  void everyExportedExclusionShouldBeExercisedByTheCorpus() {
+    var urls = exportedSamples("safeUrls").map(String::strip).toList();
+    for (Pattern pattern : exportedHostPatterns()) {
+      assertThat(urls)
+        .as("no corpus sample exercises exported host pattern: %s", pattern.pattern())
+        .anyMatch(url -> pattern.matcher(authority(url)).find());
+    }
+    for (String prefix : exportedSafeUrlPrefixes()) {
+      assertThat(urls)
+        .as("no corpus sample exercises exported URL prefix: %s", prefix)
+        .anyMatch(url -> url.toLowerCase(Locale.ROOT).startsWith(prefix));
+    }
+  }
+
+  private static Stream<String> exportedSamples(String group) {
+    return JsonParser.parseString(CleartextProtocolCorpusExporter.toJson()).getAsJsonObject()
+      .getAsJsonArray(group).asList().stream().map(JsonElement::getAsString);
+  }
+
+  private static List<Pattern> exportedHostPatterns() {
+    var exclusions = JsonParser.parseString(CleartextProtocolFilterExporter.toJson()).getAsJsonObject();
+    var match = exclusions.getAsJsonObject("match").getAsJsonObject("hostPatterns");
+    assertThat(match.get("semantics").getAsString()).isEqualTo("find");
+    int flags = match.get("caseInsensitive").getAsBoolean() ? Pattern.CASE_INSENSITIVE : 0;
+    return exclusions.getAsJsonObject("hostPatterns").entrySet().stream()
+      .map(entry -> Pattern.compile(entry.getValue().getAsString(), flags)).toList();
+  }
+
+  private static List<String> exportedSafeUrlPrefixes() {
+    var exclusions = JsonParser.parseString(CleartextProtocolFilterExporter.toJson()).getAsJsonObject();
+    var match = exclusions.getAsJsonObject("match").getAsJsonObject("safeUrlPrefixes");
+    assertThat(match.get("semantics").getAsString()).isEqualTo("prefix");
+    assertThat(match.get("target").getAsString()).isEqualTo("fullUrl");
+    assertThat(match.get("caseInsensitive").getAsBoolean()).isTrue();
+    return exclusions.getAsJsonArray("safeUrlPrefixes").asList().stream()
+      .map(value -> value.getAsString().toLowerCase(Locale.ROOT)).toList();
+  }
+
+  private static boolean matchesExclusion(String url, List<Pattern> patterns, List<String> prefixes) {
+    var stripped = url.strip();
+    var lower = stripped.toLowerCase(Locale.ROOT);
+    return prefixes.stream().anyMatch(lower::startsWith)
+      || patterns.stream().anyMatch(pattern -> pattern.matcher(authority(stripped)).find());
+  }
+
+  private static String authority(String url) {
+    // Extract the corpus's raw authority, including template ports and noncanonical IP spellings.
+    // This tests the exported exclusions without duplicating the filter's full URI parsing logic.
+    int schemeEnd = url.indexOf("://");
+    if (schemeEnd < 0) {
+      return "";
+    }
+    var authority = url.substring(schemeEnd + 3).split("[/?#]", 2)[0];
+    return authority.substring(authority.lastIndexOf('@') + 1);
   }
 
   @Test
