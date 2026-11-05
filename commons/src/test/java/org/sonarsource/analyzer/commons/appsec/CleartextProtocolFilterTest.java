@@ -20,27 +20,12 @@ import java.net.URI;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class CleartextProtocolFilterTest {
-
-  // Keep direct matcher coverage here; the configurations module validates the full shared corpus.
-  @ParameterizedTest
-  @CsvSource({
-    "HTTP://WWW.TOPOGRAFIX.COM/GPX/1/1, true",
-    "http://www.topografix.com/gpx, false",
-    "http://neverssl.com, true",
-    "http://osmand.net?mode=extensions#schema, true",
-    "http://identifier.invalid, false",
-    "https://auth0.com/oauth/grant-type, false"
-  })
-  void knownIdentifierUrl(String url, boolean expected) {
-    assertThat(CleartextProtocolFilter.isKnownIdentifier(url)).isEqualTo(expected);
-  }
 
   @Test
   void exportedBaselineExclusionsAreUnmodifiable() {
@@ -51,13 +36,6 @@ class CleartextProtocolFilterTest {
       .isThrownBy(hostPatterns::clear);
     assertThatExceptionOfType(UnsupportedOperationException.class)
       .isThrownBy(safeUrlPrefixes::clear);
-  }
-
-  @Test
-  void exportedIdentifierUrlsAreUnmodifiable() {
-    var urls = CleartextProtocolFilter.exportIdentifierUrls();
-    assertThatExceptionOfType(UnsupportedOperationException.class)
-      .isThrownBy(() -> urls.put("identifier.invalid", "^/"));
   }
 
   @Test

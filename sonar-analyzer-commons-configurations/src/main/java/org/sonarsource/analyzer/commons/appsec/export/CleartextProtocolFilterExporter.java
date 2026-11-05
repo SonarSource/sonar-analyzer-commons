@@ -21,7 +21,7 @@ import java.util.TreeMap;
 import org.sonarsource.analyzer.commons.appsec.CleartextProtocolFilter;
 
 /**
- * Generates the cleartext URL exclusions and identifier inventory shared with non-JVM analyzers.
+ * Generates the existing cleartext URL exclusions shared with non-JVM analyzers.
  */
 public final class CleartextProtocolFilterExporter {
 
@@ -37,13 +37,6 @@ public final class CleartextProtocolFilterExporter {
 
   /**
    * Converts the Java exclusions to JSON, sorting maps and sets for stable output.
-   * For example, an inventory entry for {@code identifier.invalid} with pattern {@code ^/schema}
-   * becomes this entry in the {@code identifierUrls} object:
-   * <pre>{@code
-   * {
-   *   "identifier.invalid": "^/schema"
-   * }
-   * }</pre>
    * The caller writes the complete document to {@code cleartext-protocol-exclusions.json}.
    */
   public static String toJson() {
@@ -56,10 +49,6 @@ public final class CleartextProtocolFilterExporter {
     root.add("hostPatterns", hostPatterns);
 
     root.add("safeUrlPrefixes", JsonExports.toArray(CleartextProtocolFilter.exportSafeUrlPrefixes().stream().sorted().toList()));
-
-    JsonObject identifierUrls = new JsonObject();
-    new TreeMap<>(CleartextProtocolFilter.exportIdentifierUrls()).forEach(identifierUrls::addProperty);
-    root.add("identifierUrls", identifierUrls);
 
     return JsonExports.render(root);
   }
