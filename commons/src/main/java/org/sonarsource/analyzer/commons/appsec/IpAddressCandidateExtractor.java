@@ -156,34 +156,37 @@ public final class IpAddressCandidateExtractor {
     Matcher run = ADDRESS_RUN.matcher(content);
     int from = 0;
     while (from < content.length() && run.find(from)) {
-      from = run.end();
-      int start = run.start();
-      int end = run.end();
-      // Trailing dots, such as a full stop, are not part of an address.
-      while (end - 1 > start && content.charAt(end - 1) == '.') {
-        end--;
-      }
-      // An opaque IPv6 zone identifier extends the address. Otherwise, the character after any trailing dots bounds the run.
-      boolean zoned = charAt(content, end) == '%';
-      int addressEnd = zoned ? zoneEnd(content, end + 1) : end;
-      int runEnd = zoned ? addressEnd : run.end();
-      boolean leftBounded = isBoundaryBefore(content, start);
-      boolean rightBounded = isBoundary(content, runEnd);
-      String token = content.substring(start, end);
-      // A single trailing colon is punctuation, as in "Server ::1: connection refused".
-      boolean punctuated = !zoned && token.endsWith(":") && !token.endsWith("::");
-      if (punctuated && !isIpv6Shaped(token)) {
-        token = token.substring(0, token.length() - 1);
-        addressEnd--;
-      }
-      if (leftBounded && rightBounded && isIpv6Shaped(token)) {
-        from = runEnd;
-        addCandidate(content, start, addressEnd, userInfo, candidates);
-      } else {
-        addIpv4Candidates(content, start, end, leftBounded, rightBounded, userInfo, candidates);
-      }
+      from = addRunCandidates(content, run.start(), run.end(), userInfo, candidates);
     }
     return Collections.unmodifiableList(candidates);
+  }
+
+  /** Adds the candidates of an address-shaped run and returns the index where scanning continues. */
+  private static int addRunCandidates(String content, int start, int runEnd, boolean[] userInfo, List<String> candidates) {
+    int end = runEnd;
+    // Trailing dots, such as a full stop, are not part of an address.
+    while (end - 1 > start && content.charAt(end - 1) == '.') {
+      end--;
+    }
+    // An opaque IPv6 zone identifier extends the address. Otherwise, the character after any trailing dots bounds the run.
+    boolean zoned = charAt(content, end) == '%';
+    int addressEnd = zoned ? zoneEnd(content, end + 1) : end;
+    int boundedEnd = zoned ? addressEnd : runEnd;
+    boolean leftBounded = isBoundaryBefore(content, start);
+    boolean rightBounded = isBoundary(content, boundedEnd);
+    String token = content.substring(start, end);
+    // A single trailing colon is punctuation, as in "Server ::1: connection refused".
+    boolean punctuated = !zoned && token.endsWith(":") && !token.endsWith("::");
+    if (punctuated && !isIpv6Shaped(token)) {
+      token = token.substring(0, token.length() - 1);
+      addressEnd--;
+    }
+    if (leftBounded && rightBounded && isIpv6Shaped(token)) {
+      addCandidate(content, start, addressEnd, userInfo, candidates);
+      return boundedEnd;
+    }
+    addIpv4Candidates(content, start, end, leftBounded, rightBounded, userInfo, candidates);
+    return runEnd;
   }
 
   /**
