@@ -41,6 +41,19 @@ public final class CleartextProtocolFilterExporter {
    */
   public static String toJson() {
     JsonObject root = new JsonObject();
+
+    JsonObject hostMatch = new JsonObject();
+    hostMatch.addProperty("semantics", "find");
+    hostMatch.addProperty("caseInsensitive", true);
+    JsonObject prefixMatch = new JsonObject();
+    prefixMatch.addProperty("semantics", "prefix");
+    prefixMatch.addProperty("caseInsensitive", true);
+    prefixMatch.addProperty("target", "fullUrl");
+    JsonObject match = new JsonObject();
+    match.add("hostPatterns", hostMatch);
+    match.add("safeUrlPrefixes", prefixMatch);
+    root.add("match", match);
+
     root.add("cleartextProtocols", JsonExports.toArray(CleartextProtocolFilter.getCleartextProtocols().stream().sorted().toList()));
 
     JsonObject hostPatterns = new JsonObject();

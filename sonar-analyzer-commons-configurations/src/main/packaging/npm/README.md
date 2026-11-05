@@ -18,11 +18,32 @@ not be asserted on.
 `cleartext-protocol-exclusions.json` is generated directly from `CleartextProtocolFilter`.
 It includes the existing exclusions in one document:
 
+- `match`: matching semantics for `hostPatterns` and `safeUrlPrefixes`.
 - `cleartextProtocols`: recognized cleartext schemes with the `://` suffix.
 - `hostPatterns`: the `internal`, `namespace` and `documentation` host regexes.
 - `safeUrlPrefixes`: existing identifier URL prefixes that the Java filter treats as safe.
 
 Do not maintain a copy of these lists in a consumer or edit the generated JSON by hand.
+
+The `match` metadata declares how consumers must apply the exclusions:
+
+```json
+{
+  "hostPatterns": {
+    "semantics": "find",
+    "caseInsensitive": true
+  },
+  "safeUrlPrefixes": {
+    "semantics": "prefix",
+    "caseInsensitive": true,
+    "target": "fullUrl"
+  }
+}
+```
+
+`find` means regex search rather than whole-value matching. `prefix` means starts-with matching;
+`fullUrl` means the complete URL after stripping surrounding whitespace, retaining any port and user information.
+Both matching operations are case-insensitive.
 
 ```js
 import exclusions from '@sonarsource/analyzer-commons-configurations/cleartext-protocol-exclusions.json' with { type: 'json' };

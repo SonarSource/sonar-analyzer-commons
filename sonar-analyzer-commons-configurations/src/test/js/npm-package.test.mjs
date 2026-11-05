@@ -42,7 +42,7 @@ import manifest from '@sonarsource/analyzer-commons-configurations/package.json'
 assert.equal(manifest.name, '@sonarsource/analyzer-commons-configurations');
 assert.ok(manifest.files.includes('cleartext-protocol-exclusions.json'));
 assert.ok(manifest.files.includes('cleartext-protocol-corpus.json'));
-assert.deepEqual(Object.keys(exclusions), ['cleartextProtocols', 'hostPatterns', 'safeUrlPrefixes']);
+assert.deepEqual(Object.keys(exclusions), ['match', 'cleartextProtocols', 'hostPatterns', 'safeUrlPrefixes']);
 assert.ok(exclusions.cleartextProtocols.includes('http://'));
 assert.deepEqual(Object.keys(exclusions.hostPatterns), ['documentation', 'internal', 'namespace']);
 assert.ok(exclusions.safeUrlPrefixes.includes('http://jabber.org/protocol/'));
