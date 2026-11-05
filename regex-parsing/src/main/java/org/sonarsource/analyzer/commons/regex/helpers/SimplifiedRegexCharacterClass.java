@@ -387,6 +387,10 @@ public class SimplifiedRegexCharacterClass {
           ranges = POSIX_RANGES.get("Alpha");
         }
       }
+      addPosixRanges(tree, ranges);
+    }
+
+    private void addPosixRanges(EscapedCharacterClassTree tree, int[] ranges) {
       int from = 0;
       for (int i = 0; i < ranges.length; i += 2) {
         if (tree.isNegation()) {
