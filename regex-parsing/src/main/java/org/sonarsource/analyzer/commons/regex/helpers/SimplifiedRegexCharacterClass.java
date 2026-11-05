@@ -35,8 +35,26 @@ import org.sonarsource.analyzer.commons.regex.ast.EscapedCharacterClassTree;
 import org.sonarsource.analyzer.commons.regex.ast.MiscEscapeSequenceTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
+import org.sonarsource.analyzer.commons.regex.java.JavaRegexSource;
 
 public class SimplifiedRegexCharacterClass {
+
+  // Java Pattern's POSIX properties without UNICODE_CHARACTER_CLASS (inclusive range pairs).
+  private static final Map<String, int[]> POSIX_RANGES = Map.ofEntries(
+    Map.entry("Lower", new int[] {'a', 'z'}),
+    Map.entry("Upper", new int[] {'A', 'Z'}),
+    Map.entry("ASCII", new int[] {0, 0x7F}),
+    Map.entry("Alpha", new int[] {'A', 'Z', 'a', 'z'}),
+    Map.entry("Digit", new int[] {'0', '9'}),
+    Map.entry("Alnum", new int[] {'0', '9', 'A', 'Z', 'a', 'z'}),
+    Map.entry("Punct", new int[] {'!', '/', ':', '@', '[', 0x60, '{', '~'}),
+    Map.entry("Graph", new int[] {'!', '~'}),
+    Map.entry("Print", new int[] {' ', '~'}),
+    Map.entry("Blank", new int[] {'\t', '\t', ' ', ' '}),
+    Map.entry("Cntrl", new int[] {0, 0x1F, 0x7F, 0x7F}),
+    Map.entry("XDigit", new int[] {'0', '9', 'A', 'F', 'a', 'f'}),
+    Map.entry("Space", new int[] {'\t', '\r', ' ', ' '})
+  );
 
   /**
    * This map defines the contents of the character class in the following way:<br>
@@ -274,6 +292,10 @@ public class SimplifiedRegexCharacterClass {
 
     @Override
     public void visitEscapedCharacterClass(EscapedCharacterClassTree tree) {
+      if (tree.isProperty()) {
+        addPosixProperty(tree);
+        return;
+      }
       switch (tree.getType()) {
         case 'd':
           characters.addRange('0', '9', tree);
@@ -345,6 +367,34 @@ public class SimplifiedRegexCharacterClass {
         default:
           characters.containsUnknownCharacters = true;
           break;
+      }
+    }
+
+    private void addPosixProperty(EscapedCharacterClassTree tree) {
+      String property = tree.property();
+      int[] ranges = POSIX_RANGES.get(property);
+      // Other dialects and Unicode properties can have different, or version-dependent, contents.
+      if (!(tree.getSource() instanceof JavaRegexSource) || ranges == null ||
+        (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS) && !"ASCII".equals(property))) {
+        characters.containsUnknownCharacters = true;
+        return;
+      }
+      if (tree.activeFlags().contains(Pattern.CASE_INSENSITIVE) && ("Lower".equals(property) || "Upper".equals(property))) {
+        ranges = POSIX_RANGES.get("Alpha");
+      }
+      int from = 0;
+      for (int i = 0; i < ranges.length; i += 2) {
+        if (tree.isNegation()) {
+          if (from < ranges[i]) {
+            characters.addRange(from, ranges[i] - 1, tree);
+          }
+        } else {
+          characters.addRange(ranges[i], ranges[i + 1], tree);
+        }
+        from = ranges[i + 1] + 1;
+      }
+      if (tree.isNegation()) {
+        characters.addRange(from, Character.MAX_CODE_POINT, tree);
       }
     }
 

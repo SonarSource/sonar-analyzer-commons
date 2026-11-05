@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 import org.assertj.core.api.AbstractBooleanAssert;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.sonarsource.analyzer.commons.regex.java.JavaRegexSource;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.RegexParser;
@@ -35,6 +37,7 @@ import org.sonarsource.analyzer.commons.regex.ast.MiscEscapeSequenceTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
+import org.sonarsource.analyzer.commons.regex.php.PhpRegexSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,6 +47,76 @@ import static org.mockito.Mockito.mock;
 class SimplifiedRegexCharacterClassTest {
 
   public static final int NO_FLAGS = 0;
+
+  @ParameterizedTest
+  @ValueSource(strings = {"Lower", "Upper", "ASCII", "Alpha", "Digit", "Alnum", "Punct", "Graph", "Print", "Blank", "Cntrl", "XDigit", "Space"})
+  void posix_properties_match_java_pattern(String property) {
+    for (int flags : new int[] {0, Pattern.CASE_INSENSITIVE, Pattern.UNICODE_CASE, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE}) {
+      for (String prefix : List.of("\\p{", "\\P{")) {
+        String regex = prefix + property + "}";
+        RegexTree tree = parseRegex(regex.replace("\\", "\\\\"), new FlagSet(flags)).getResult();
+        SimplifiedRegexCharacterClass simplified = SimplifiedRegexCharacterClass.of(tree);
+        Pattern pattern = Pattern.compile(regex, flags);
+        for (int codePoint = 0; codePoint <= 0xFF; codePoint++) {
+          assertMatchesPattern(simplified, pattern, tree, codePoint);
+        }
+        for (int codePoint : new int[] {0x100, 0x130, 0x17F, 0x212A, 0xD800, 0xFFFF, 0x10000, Character.MAX_CODE_POINT}) {
+          assertMatchesPattern(simplified, pattern, tree, codePoint);
+        }
+      }
+    }
+  }
+
+  private static void assertMatchesPattern(SimplifiedRegexCharacterClass simplified, Pattern pattern, RegexTree tree, int codePoint) {
+    SimplifiedRegexCharacterClass singleton = new SimplifiedRegexCharacterClass();
+    singleton.addRange(codePoint, codePoint, tree);
+    boolean matches = pattern.matcher(new String(Character.toChars(codePoint))).matches();
+    assertThat(simplified.supersetOf(singleton, false))
+      .as("%s flags=%s codePoint=%s", pattern, pattern.flags(), codePoint).isEqualTo(matches);
+    assertThat(simplified.intersects(singleton, false)).isEqualTo(matches);
+  }
+
+  @Test
+  void posix_properties_in_character_classes() {
+    assertSupersetOf("\\\\p{Digit}", "[0-9]", false, NO_FLAGS).isTrue();
+    assertSupersetOf("[0-9]", "\\\\p{Digit}", false, NO_FLAGS).isTrue();
+    assertSupersetOf("[^0-9]", "\\\\P{Digit}", false, NO_FLAGS).isTrue();
+    assertSupersetOf("[^\\\\p{Digit}]", "\\\\P{Digit}", false, NO_FLAGS).isTrue();
+    assertSupersetOf("[a\\\\p{Digit}z]", "[a-z]", false, NO_FLAGS).isFalse();
+    assertSupersetOf("[a\\\\p{Digit}z]", "[0-9az]", false, NO_FLAGS).isTrue();
+    assertSupersetOf("[a\\\\P{Digit}]", "a", false, NO_FLAGS).isTrue();
+    assertSupersetOf("[\\\\p{Digit}\\\\P{Digit}]", "0", false, NO_FLAGS).isTrue();
+    assertSupersetOf("[\\\\p{Digit}\\\\P{Digit}]", "é", false, NO_FLAGS).isTrue();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"Lower", "Upper", "Alpha", "Digit", "Alnum", "Punct", "Graph", "Print", "Blank", "Cntrl", "XDigit", "Space"})
+  void unicode_posix_properties_remain_unknown(String property) {
+    for (String prefix : List.of("\\\\p{", "\\\\P{")) {
+      String regex = prefix + property + "}";
+      assertSupersetOf("[\\\\x{0}-\\\\x{10FFFF}]", regex, false, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
+      assertSupersetOf("[^" + regex + "]", "a", false, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
+    }
+  }
+
+  @Test
+  void ascii_property_is_unchanged_in_unicode_mode() {
+    assertSupersetOf("\\\\p{ASCII}", "[\\\\x00-\\\\x7F]", false, Pattern.UNICODE_CHARACTER_CLASS).isTrue();
+    assertSupersetOf("[\\\\x00-\\\\x7F]", "\\\\p{ASCII}", false, Pattern.UNICODE_CHARACTER_CLASS).isTrue();
+    assertSupersetOf("\\\\P{ASCII}", "é", false, Pattern.UNICODE_CHARACTER_CLASS).isTrue();
+    assertSupersetOf("\\\\P{ASCII}", "A", false, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
+  }
+
+  @Test
+  void other_properties_and_dialects_remain_unknown() {
+    assertSupersetOf("\\\\p{javaLowerCase}", "a", false, NO_FLAGS).isFalse();
+    assertSupersetOf("[^\\\\p{javaLowerCase}]", "A", false, NO_FLAGS).isFalse();
+    RegexParseResult php = new RegexParser(new PhpRegexSource("\\p{Lower}", '\''), new FlagSet()).parse();
+    assertThat(php.getSyntaxErrors()).isEmpty();
+    SimplifiedRegexCharacterClass phpProperty = SimplifiedRegexCharacterClass.of(php.getResult());
+    assertThat(phpProperty.isEmpty()).isFalse();
+    assertThat(phpProperty.supersetOf(SimplifiedRegexCharacterClass.of(parseRegex("a", new FlagSet()).getResult()), false)).isFalse();
+  }
 
   @Test
   void testIntersectionWithTrueAsDefaultAnswer() {
