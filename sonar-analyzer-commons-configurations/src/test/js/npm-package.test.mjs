@@ -42,10 +42,15 @@ import manifest from '@sonarsource/analyzer-commons-configurations/package.json'
 assert.equal(manifest.name, '@sonarsource/analyzer-commons-configurations');
 assert.ok(manifest.files.includes('cleartext-protocol-exclusions.json'));
 assert.ok(manifest.files.includes('cleartext-protocol-corpus.json'));
-assert.equal(Object.keys(exclusions.identifierUrls).length, 29);
-assert.equal(exclusions.identifierUrls['www.topografix.com'], '^/GPX');
+assert.deepEqual(Object.keys(exclusions), ['cleartextProtocols', 'hostPatterns', 'safeUrlPrefixes']);
+assert.ok(exclusions.cleartextProtocols.includes('http://'));
+assert.deepEqual(Object.keys(exclusions.hostPatterns), ['documentation', 'internal', 'namespace']);
+assert.ok(exclusions.safeUrlPrefixes.includes('http://jabber.org/protocol/'));
+assert.deepEqual(Object.keys(corpus), ['safeUrls', 'unsafeUrls']);
+assert.ok(corpus.safeUrls.length > 0);
+assert.ok(corpus.unsafeUrls.length > 0);
 assert.deepEqual(exclusions, JSON.parse(readFileSync(process.argv[2], 'utf8')));
 assert.deepEqual(corpus, JSON.parse(readFileSync(process.argv[3], 'utf8')));
 `);
 execFileSync(process.execPath, [consumer, exclusions, corpus], { stdio: 'inherit' });
-console.log('Assembled npm package imports match the Java exports (29 identifier authorities).');
+console.log('Assembled npm package imports match the Java exports.');
