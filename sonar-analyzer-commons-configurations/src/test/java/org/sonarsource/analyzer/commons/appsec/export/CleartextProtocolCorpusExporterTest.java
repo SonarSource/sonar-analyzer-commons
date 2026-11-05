@@ -50,11 +50,11 @@ class CleartextProtocolCorpusExporterTest {
   }
 
   static Stream<String> safeUrls() {
-    return CleartextProtocolCorpusExporter.URL_SAMPLES.get("safeUrls").stream();
+    return exportedSamples("safeUrls");
   }
 
   static Stream<String> unsafeUrls() {
-    return CleartextProtocolCorpusExporter.URL_SAMPLES.get("unsafeUrls").stream();
+    return exportedSamples("unsafeUrls");
   }
 
   @Test
@@ -62,10 +62,12 @@ class CleartextProtocolCorpusExporterTest {
     var patterns = exportedHostPatterns();
     var prefixes = exportedSafeUrlPrefixes();
 
-    // These four cases are safe because of URL parsing/scheme handling, not an exported exclusion.
+    // These cases are safe because of URL parsing/scheme handling, not an exported exclusion.
     // The complete safety classification is also checked in the consuming analyzer's runtime.
     assertThat(exportedSamples("safeUrls").filter(url -> !matchesExclusion(url, patterns, prefixes)))
-      .containsExactly("http://my-service/api", "https://insecure.com", "not-a-url", "");
+      .containsExactly("wss://acme.com", "ircs://acme.com",
+        "http://local-kubernetes-hostname/something", "http://local-kubernetes-hostname:8080/something", "ws://my-service",
+        "http://my-service/api", "https://insecure.com", "not-a-url", "");
   }
 
   @Test
@@ -137,14 +139,12 @@ class CleartextProtocolCorpusExporterTest {
   }
 
   @Test
-  void jsonShouldMatchTheJavaSamples() {
+  void jsonShouldExposeNonEmptySampleGroups() {
     JsonObject corpus = JsonParser.parseString(CleartextProtocolCorpusExporter.toJson()).getAsJsonObject();
     assertThat(corpus.keySet()).containsExactly("safeUrls", "unsafeUrls");
-    CleartextProtocolCorpusExporter.URL_SAMPLES.forEach((group, samples) -> {
-      assertThat(samples).isNotEmpty();
-      assertThat(corpus.getAsJsonArray(group).asList().stream().map(JsonElement::getAsString))
-        .containsExactlyElementsOf(samples);
-    });
+    for (String group : corpus.keySet()) {
+      assertThat(corpus.getAsJsonArray(group).asList()).isNotEmpty();
+    }
   }
 
   @Test

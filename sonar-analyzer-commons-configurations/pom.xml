@@ -65,6 +65,18 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <!-- Share the filter's regression cases without packaging them in the Commons runtime JAR. -->
+        <directory>${project.basedir}/../commons/src/test/resources</directory>
+        <includes>
+          <include>org/sonarsource/analyzer/commons/appsec/cleartext-protocol-corpus.json</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <!-- 1. generate-resources is too early (before compile); generate the JSON at prepare-package,
            after the exporter and its dependencies are compiled. -->

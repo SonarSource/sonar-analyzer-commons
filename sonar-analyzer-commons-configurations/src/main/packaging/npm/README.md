@@ -69,8 +69,10 @@ Preserve `CleartextProtocolFilter.isSafeWithoutTls` semantics:
 
 ### Shared regression cases
 
-`cleartext-protocol-corpus.json` is generated from the sample lists in `CleartextProtocolCorpusExporter`.
-The configurations module's tests validate these same lists against the Java filter:
+`cleartext-protocol-corpus.json` is exported from the shared resource
+`commons/src/test/resources/org/sonarsource/analyzer/commons/appsec/cleartext-protocol-corpus.json`.
+Both the Commons filter tests and the configurations module consume these cases. Update this resource when adding
+regression examples; Maven copies it into the configurations module without adding it to the Commons runtime JAR.
 
 - `safeUrls` and `unsafeUrls` are expected to return `true` and `false` respectively from the baseline safety filter.
 

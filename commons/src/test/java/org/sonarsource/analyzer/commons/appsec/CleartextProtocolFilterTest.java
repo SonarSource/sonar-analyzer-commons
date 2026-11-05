@@ -16,8 +16,16 @@
  */
 package org.sonarsource.analyzer.commons.appsec;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -83,177 +91,8 @@ class CleartextProtocolFilterTest {
     assertThat(CleartextProtocolFilter.isSafeWithoutTls(url)).isFalse();
   }
 
-  static Stream<String> safeUrls() {
-    return Stream.of(
-      // Not a cleartext URL — always safe regardless of host
-      "https://example.com",
-      "sftp://example.com",
-      "wss://acme.com",
-      "ircs://acme.com",
-
-      // Loopback
-      "http://localhost",
-      "http://LOCALHOST:3000",
-      "http://127.0.0.1:8080",
-      "http://127.255.255.254/path",
-      "http://[::1]/path",
-      "http://[0:0:0:0:0:0:0:1]",
-
-      // Cloud IMDS — link-local range (169.254.0.0/16) and named endpoints
-      "http://169.254.169.254/latest/meta-data/",
-      "http://169.254.169.254/latest/api/token",
-      "http://169.254.0.1/",
-      "http://169.254.255.254/",
-      "http://[fd00:ec2::254]/latest/meta-data/",
-      "http://168.63.129.16/",
-      "http://168.63.129.16:32526/vmAgentLog",
-      "http://100.100.100.200/latest/meta-data/",
-      "http://metadata.google.internal/computeMetadata/v1",
-      "http://metadata.internal/",
-
-      // Android emulator special network
-      "http://10.0.2.2/",
-      "http://10.0.2.3/",
-      "http://10.0.2.15/",
-
-      // Docker
-      "http://host.docker.internal:8085/metrics",
-      "http://gateway.docker.internal",
-
-      // Kubernetes
-      "http://vault.vault.svc.cluster.local:8200",
-      "http://auth-service.prod.svc.cluster.local:3001/auth",
-      "http://otel-collector.observability.svc.cluster.local:4317",
-
-      // Namespace URI authorities
-      "http://www.w3.org/2001/XMLSchema",
-      "http://www.w3.org/2005/sparql-results#",
-      "http://www.w3.org/2005/Atom",
-      "http://www.w3.org/1999/xhtml",
-      "http://schemas.android.com/apk/res/android",
-      "http://schemas.xmlsoap.org/soap/envelope/",
-      "http://schemas.microsoft.com/winfx/2006/xaml",
-      "http://www.sap.com/adt/core",
-      "http://www.opengis.net/gml",
-      "http://hl7.org/fhir",
-      "http://unitsofmeasure.org",
-      "http://purl.org/dc/elements/1.1/",
-      "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd",
-      "http://xmlns.com/foaf/0.1/",
-      "http://json-ld.org/contexts/person.jsonld",
-      "http://schema.org/Person",
-      "http://www.springframework.org/schema/beans",
-      "http://maven.apache.org/POM/4.0.0",
-      "http://dublincore.org/documents/dces/",
-      "http://ogp.me/ns#",
-
-      // IANA-reserved documentation domains
-      "http://example.com",
-      "http://example.net",
-      "http://example.org",
-      "http://example.com/path/to/resource",
-      "ftp://example.com/file",
-      "http://api.example.com/v1/users",
-      "http://something.example.com",
-      "http://sub.example.org/path",
-      "http://myservice.example",
-      "http://api.myservice.example/v1",
-      "http://myapi.test",
-      "http://db.myapi.test:5432",
-      "http://myapp.localhost",
-      "http://service.myapp.localhost:8080",
-
-      // IPv4 loopback — short-form (2- and 3-octet) addresses
-      "http://127.1",
-      "http://127.0.1",
-      "http://127.1:8080/api",
-
-      // New cleartext schemes — safe because of internal/documentation host
-      "ws://localhost",
-      "ws://example.com",
-      "telnet://127.0.0.1",
-      "rtmp://example.com/live",
-      "tftp://example.com/file",
-      "gopher://example.com",
-      "irc://localhost/channel",
-      "smtp://localhost:25",
-      "smtp://mail.example.com",
-      "ldap://localhost/dc=example,dc=com",
-      "ldap://127.0.0.1:389",
-      "amqp://localhost/vhost",
-      "amqp://example.com/queue",
-      "mqtt://localhost:1883",
-      "mqtt://broker.example.com",
-      "imap://localhost:143",
-      "imap://mail.example.com",
-      "pop3://localhost:110",
-      "pop3://mail.example.com",
-      "nntp://news.example.com",
-      "sip://localhost",
-      "sip://example.com",
-      "stomp://localhost:61613",
-      "stomp://example.com",
-
-      // Credentials (userinfo) with safe host — real host after @ is what matters
-      "http://user:password@localhost",
-      "http://user:pass@example.com",
-      // Template placeholder in password — URI parsing fails, lenient fallback used
-      "http://user:${password}@localhost",
-
-      // Template placeholders in port — URI parsing fails, lenient fallback recovers safe host
-      "http://localhost:${port}/api",
-      "ftp://files.example.com:${port}/data",
-      "ws://localhost:${port}/socket",
-
-      // Underscores in hostnames — URI.getHost() returns null, lenient fallback used
-      "http://my_service.svc.cluster.local:8200",
-      "http://my_app.example.com/path",
-
-      // New namespace URI authorities
-      "http://xml.apache.org/xslt",
-      "http://schemas.openxmlformats.org/drawingml/2006/main",
-      "http://rdfs.org/ns/void#",
-      "http://schemas.google.com/g/2005",
-      "http://a9.com/-/spec/opensearch/1.1/",
-      "http://ns.adobe.com/xap/1.0/",
-      "http://ltsc.ieee.org/xsd/LOM",
-      "http://docbook.org/ns/docbook",
-      "http://graphml.graphdrawing.org/graphml",
-      "http://json-schema.org/draft-07/schema",
-      "http://www.eclipse.org/emf/2002/Ecore",
-      "http://www.mulesoft.org/schema/mule/core",
-      "http://www.mulesoft.org/schema/mule/http",
-
-      // Well-known identifier URLs — XMPP protocol namespaces and Xerces/JAXP XML parser features
-      "http://jabber.org/protocol/disco#items",
-      "http://jabber.org/protocol/pubsub#owner",
-      "http://apache.org/xml/features/nonvalidating/load-dtd-grammar",
-      "http://apache.org/xml/features/nonvalidating/load-external-dtd",
-      "http://apache.org/xml/features/dom/create-entity-ref-nodes",
-
-      // Well-known identifier URLs with a template placeholder — URI parsing fails,
-      // lenient fallback must still recognise the safe path prefix
-      "http://jabber.org/protocol/${node}",
-      "http://apache.org/xml/features/${feature}",
-
-      // Single-label hostnames — cannot resolve on the public internet
-      "http://local-kubernetes-hostname/something",
-      "http://local-kubernetes-hostname:8080/something",
-      "ws://my-service",
-      // "http://my-service:${port}/api", // FP: single-label host with an invalid port
-
-      // IPv4 loopback (127.0.0.0/8) written as a single hexadecimal literal
-      "http://0x7f000001/",
-      "http://0X7F000001/",
-      "http://0x7fffffff/",
-
-      // Case insensitivity and surrounding whitespace
-      "HTTP://LOCALHOST:8080",
-      "FTP://127.0.0.1",
-      "HTTP://metadata.google.internal",
-      "http://WWW.W3.ORG/2001/XMLSchema",
-      "  http://localhost  "
-    );
+  static Stream<String> safeUrls() throws IOException, ParseException {
+    return samples("safeUrls");
   }
 
   @ParameterizedTest(name = "[{index}] {0}")
@@ -325,84 +164,17 @@ class CleartextProtocolFilterTest {
     );
   }
 
-  static Stream<String> notSafeUrls() {
-    return Stream.of(
-      // Ordinary public HTTP/FTP
-      "http://acme.com",
-      "http://api.acme.com/v1/users",
-      "ftp://files.acme.com",
-      "HTTP://ACME.COM",
-
-      // Additional cleartext schemes
-      "ws://acme.com",
-      "telnet://acme.com",
-      "rtmp://acme.com/live",
-      "tftp://acme.com/file",
-      "gopher://acme.com",
-      "irc://acme.com/channel",
-      "smtp://mail.acme.com",
-      "ldap://acme.com/dc=acme,dc=com",
-      "amqp://acme.com/vhost",
-      "mqtt://broker.acme.com",
-      "imap://mail.acme.com",
-      "pop3://mail.acme.com",
-      "nntp://news.acme.com",
-      "sip://acme.com",
-      "stomp://acme.com",
-
-      // Documentation domain lookalikes
-      "http://notexample.com",
-      "http://example.com.evil.com",
-
-      // Safe host used as prefix — must not match
-      "http://localhost.evil.com",
-      "http://127.0.0.1.evil.com",
-      "http://169.254.169.254.evil.com",
-      "http://metadata.google.internal.evil.com",
-      "http://www.w3.org.evil.com/x",
-      "http://schema.org.evil.com/Person",
-      "http://www.mulesoft.org.evil.com/schema",
-      "http://10.0.2.2.evil.com",
-
-      // Well-known identifier URLs — host without the safe path, or lookalike host — must not match
-      "http://apache.org/",
-      "http://apache.org.evil.com/xml/features/nonvalidating/load-dtd-grammar",
-      // Credentials before a known-identifier host must not match
-      "http://user:pass@apache.org/xml/features/disallow-doctype-decl",
-      // Template placeholder with a path outside the safe prefix — lenient fallback must not grant safety
-      "http://jabber.org/other/${x}",
-
-      // Adjacent /24 ranges outside the Android emulator network — must not match
-      "http://10.0.1.2/",
-      "http://10.0.3.2/",
-
-      // Within 10.0.2.0/24 but outside the documented emulator addresses — must not match
-      "http://10.0.2.100/",
-      "http://10.0.2.2555/",
-
-      // Userinfo — safe-looking host before @ must not grant safety
-      "http://www.w3.org@evil.com",
-      "http://localhost@evil.com",
-      // Template placeholder in password — URI parsing fails, lenient fallback used; real host is acme.com
-      "http://localhost:${password}@acme.com",
-      // Underscore in real host — URI.getHost() returns null, lenient fallback used; real host is acme_corp.com
-      "http://localhost:password@acme_corp.com",
-
-      // Surrounding whitespace with a non-safe URL
-      "  http://acme.com  ",
-
-      // Bare cleartext scheme with no authority — must not be suppressed
-      "http://",
-      "ftp://",
-      "ws://",
-
-      // Malformed — cannot be parsed as a URI (URISyntaxException → false)
-      "http://foo bar.com",
-      "http://[unclosed",
-
-      // Single-label host exclusions — IP addresses, not DNS names
-      "http://2130706433/",
-      "http://[2001:db8::1]/path"
-    );
+  static Stream<String> notSafeUrls() throws IOException, ParseException {
+    return samples("unsafeUrls");
   }
+
+  private static Stream<String> samples(String group) throws IOException, ParseException {
+    try (var reader = new InputStreamReader(Objects.requireNonNull(CleartextProtocolFilterTest.class
+      .getResourceAsStream("/org/sonarsource/analyzer/commons/appsec/cleartext-protocol-corpus.json")), StandardCharsets.UTF_8)) {
+      var corpus = (JSONObject) new JSONParser().parse(reader);
+      var samples = (List<?>) corpus.get(group);
+      return samples.stream().map(String.class::cast);
+    }
+  }
+
 }
