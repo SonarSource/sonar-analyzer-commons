@@ -205,6 +205,13 @@ class IpAddressCandidateExtractorTest {
       candidates(" 192.0.2.1", "192.0.2.1"), // Leading whitespace
       candidates("[192.0.2.1]", "192.0.2.1"),
       candidates("Server 10.0.0.1: connection refused", "10.0.0.1"),
+      candidates("Server 2001:db8::1: connection refused", "2001:db8::1"), // Trailing colon as punctuation
+      candidates("Server ::1:", "::1"),
+      candidates("Server ::ffff:192.0.2.1:", "::ffff:192.0.2.1"),
+      candidates("Server fe80::1%eth0: down", "fe80::1%eth0"),
+      candidates("Server [2001:db8::1]: down", "2001:db8::1"),
+      candidates("1:2:3:4:5:6:7:8:", "1:2:3:4:5:6:7:8"),
+      candidates("𠀋 192.0.2.1", "192.0.2.1"),
       candidates("ip 192.0.2.1", "192.0.2.1"),
       // Lists with any delimiter
       candidates("192.0.2.1,192.0.2.2", "192.0.2.1", "192.0.2.2"),
@@ -284,6 +291,11 @@ class IpAddressCandidateExtractorTest {
     "192.0.2.1-SNAPSHOT",
     "my_192.0.2.1",
     "接口192.0.2.1",
+    "𠀋192.0.2.1", // Supplementary-plane letter before the address
+    "192.0.2.1𠀋",
+    "𠀋::1",
+    "fe80:::", // Trailing colon after "::" is not punctuation
+    "Server 2001:db8::1:x",
     "192.0.2.1接口",
     "http://192.0.2.1@example.org/path", // User information
     "user.192.0.2.1",

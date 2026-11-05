@@ -167,9 +167,16 @@ public final class IpAddressCandidateExtractor {
       boolean zoned = charAt(content, end) == '%';
       int addressEnd = zoned ? zoneEnd(content, end + 1) : end;
       int runEnd = zoned ? addressEnd : run.end();
-      boolean leftBounded = isBoundary(content, start - 1);
+      boolean leftBounded = isBoundaryBefore(content, start);
       boolean rightBounded = isBoundary(content, runEnd);
-      if (leftBounded && rightBounded && isIpv6Shaped(content.substring(start, end))) {
+      String token = content.substring(start, end);
+      // A single trailing colon is punctuation, as in "Server ::1: connection refused".
+      boolean punctuated = !zoned && token.endsWith(":") && !token.endsWith("::");
+      if (punctuated && !isIpv6Shaped(token)) {
+        token = token.substring(0, token.length() - 1);
+        addressEnd--;
+      }
+      if (leftBounded && rightBounded && isIpv6Shaped(token)) {
         from = runEnd;
         addCandidate(content, start, addressEnd, userInfo, candidates);
       } else {
@@ -310,6 +317,11 @@ public final class IpAddressCandidateExtractor {
   /** True if the index is out of bounds or the character there cannot be part of an address token's word. */
   private static boolean isBoundary(String content, int index) {
     return !isWordCharacter(content, index) && charAt(content, index) != '-';
+  }
+
+  /** Like {@link #isBoundary(String, int)} for the code point before the index, including supplementary characters. */
+  private static boolean isBoundaryBefore(String content, int index) {
+    return index <= 0 || isBoundary(content, index - Character.charCount(content.codePointBefore(index)));
   }
 
   private static boolean isWordCharacter(String content, int index) {
