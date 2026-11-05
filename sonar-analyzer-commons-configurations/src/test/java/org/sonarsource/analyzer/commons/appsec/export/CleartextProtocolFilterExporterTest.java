@@ -45,7 +45,7 @@ class CleartextProtocolFilterExporterTest {
     JsonObject hostPatterns = root.getAsJsonObject("hostPatterns");
     assertThat(hostPatterns.keySet()).containsExactly("documentation", "internal", "namespace");
     CleartextProtocolFilter.exportHostPatterns().forEach((name, pattern) -> {
-      assertThat(hostPatterns.get(name).getAsString()).isEqualTo(pattern.pattern());
+      assertThat(hostPatterns.get(name).getAsString()).isEqualTo(RegexTranslator.toPortableRegex(pattern.pattern()));
       assertThat(pattern.flags()).isEqualTo(Pattern.CASE_INSENSITIVE);
     });
 
