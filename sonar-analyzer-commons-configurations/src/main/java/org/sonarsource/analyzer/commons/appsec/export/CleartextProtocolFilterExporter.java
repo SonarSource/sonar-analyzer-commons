@@ -36,7 +36,7 @@ public final class CleartextProtocolFilterExporter {
   }
 
   /**
-   * Converts the Java exclusions to JSON, sorting maps and sets for stable output.
+   * Converts the Java exclusions to JSON, translating host regexes and sorting maps and sets for stable output.
    * The caller writes the complete document to {@code cleartext-protocol-exclusions.json}.
    */
   public static String toJson() {
@@ -45,7 +45,7 @@ public final class CleartextProtocolFilterExporter {
 
     JsonObject hostPatterns = new JsonObject();
     new TreeMap<>(CleartextProtocolFilter.exportHostPatterns())
-      .forEach((name, pattern) -> hostPatterns.addProperty(name, pattern.pattern()));
+      .forEach((name, pattern) -> hostPatterns.addProperty(name, RegexTranslator.toPortableRegex(pattern.pattern())));
     root.add("hostPatterns", hostPatterns);
 
     root.add("safeUrlPrefixes", JsonExports.toArray(CleartextProtocolFilter.exportSafeUrlPrefixes().stream().sorted().toList()));
