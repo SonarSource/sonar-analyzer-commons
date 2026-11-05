@@ -18,7 +18,7 @@ not be asserted on.
 `cleartext-protocol-exclusions.json` is generated directly from `CleartextProtocolFilter`.
 It includes the existing exclusions and the additional identifier inventory in one document:
 
-- `match`: matching semantics for `hostPatterns` and `safeUrlPrefixes`.
+- `match`: matching semantics for `hostPatterns`, `safeUrlPrefixes` and `identifierUrls`.
 - `cleartextProtocols`: recognized cleartext schemes with the `://` suffix.
 - `hostPatterns`: the `internal`, `namespace` and `documentation` host regexes.
 - `safeUrlPrefixes`: existing identifier URL prefixes that the Java filter treats as safe.
@@ -39,13 +39,28 @@ The `match` metadata declares how consumers must apply the exclusions:
     "semantics": "prefix",
     "caseInsensitive": true,
     "target": "fullUrl"
+  },
+  "identifierUrls": {
+    "authority": {
+      "semantics": "exact",
+      "caseInsensitive": true
+    },
+    "pattern": {
+      "semantics": "find",
+      "caseInsensitive": false,
+      "target": "pathQueryFragment"
+    }
   }
 }
 ```
 
 `find` means regex search rather than whole-value matching. `prefix` means starts-with matching;
 `fullUrl` means the complete URL after stripping surrounding whitespace, retaining any port and user information.
-Both matching operations are case-insensitive.
+Host patterns and safe URL prefixes are case-insensitive. For `identifierUrls`, `exact` means the complete
+authority must equal a map key, case-insensitively, retaining any port and user information. The associated
+regex uses case-sensitive `find` semantics. Its `pathQueryFragment` target is the original suffix after the
+authority, with `/` inserted when the path is empty, as described under **Additional identifier URLs** below.
+Host and identifier regexes pass through `RegexTranslator` when exported.
 
 ```js
 import exclusions from '@sonarsource/analyzer-commons-configurations/cleartext-protocol-exclusions.json' with { type: 'json' };

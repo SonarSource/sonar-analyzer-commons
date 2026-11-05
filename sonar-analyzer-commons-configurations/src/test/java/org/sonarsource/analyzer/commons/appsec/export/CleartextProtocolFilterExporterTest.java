@@ -47,6 +47,17 @@ class CleartextProtocolFilterExporterTest {
           "semantics": "prefix",
           "caseInsensitive": true,
           "target": "fullUrl"
+        },
+        "identifierUrls": {
+          "authority": {
+            "semantics": "exact",
+            "caseInsensitive": true
+          },
+          "pattern": {
+            "semantics": "find",
+            "caseInsensitive": false,
+            "target": "pathQueryFragment"
+          }
         }
       }
       """).getAsJsonObject());
@@ -67,7 +78,7 @@ class CleartextProtocolFilterExporterTest {
       .hasSize(29)
       .containsExactlyElementsOf(CleartextProtocolFilter.exportIdentifierUrls().keySet().stream().sorted().toList());
     CleartextProtocolFilter.exportIdentifierUrls()
-      .forEach((authority, pattern) -> assertThat(identifiers.get(authority).getAsString()).isEqualTo(pattern));
+      .forEach((authority, pattern) -> assertThat(identifiers.get(authority).getAsString()).isEqualTo(RegexTranslator.toPortableRegex(pattern)));
   }
 
   @Test
