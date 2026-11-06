@@ -16,19 +16,95 @@
  */
 package org.sonarsource.analyzer.commons.appsec;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Heuristically extracts an IP address candidate string from a string literal's content. */
+/** Extracts IP address candidates from a string literal's content. */
 public final class IpAddressCandidateExtractor {
 
   private static final Pattern URL_PREFIX = Pattern.compile(
     "^(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//(?:[^/?#,@\\s]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
+  private static final Pattern ENTRIES = Pattern.compile("[^\\s,;\"'()]+", Pattern.UNICODE_CHARACTER_CLASS);
+  // Keep identifiers, malformed numeric literals, brackets and endpoint ports together for validation.
+  private static final Pattern ADDRESS_PART = Pattern.compile(
+    "[\\p{L}\\p{N}\\p{M}_.:+\\-\\[\\]]+(?:%[^\\s,;\"'()/=?#&@]*)?", Pattern.UNICODE_CHARACTER_CLASS);
 
   private IpAddressCandidateExtractor() {
+  }
+
+  /**
+   * Finds all syntactically valid IP address literals throughout the given string, in source order,
+   * retaining repeated occurrences. Returns an empty list if no address is found.
+   * Unlike {@link #extract(String)}, this operation validates candidates with {@link IpAddressClassifier#parse(String)}.
+   * It does not apply address classification or hardcoding exceptions.
+   *
+   * <p>Supports addresses in text, paths, URLs and lists separated by whitespace, commas or semicolons.
+   * Quotes, parentheses and value separators can surround addresses. Letters, digits, dots, hyphens and
+   * underscores attached to an address prevent a match, including a sentence-ending dot.
+   * URL schemes and authority user information are skipped, but hosts, paths, query values and fragments are searched.
+   *
+   * <p>IPv6 endpoint brackets and valid ports on IPv4 or bracketed IPv6 endpoints are removed.
+   * Invalid endpoints are rejected as a whole. Unbracketed IPv6 is never split into an address and port.
+   * Zones and valid standalone CIDR suffixes retain their spelling. Slashes in URLs, paths and after ports
+   * are path separators. A single numeric (possibly signed) slash suffix on a standalone address is
+   * interpreted as a CIDR prefix and must be valid for its address family. Bracketed IPv4 and bracketed lists
+   * are not supported.
+   *
+   * @throws NullPointerException if {@code content} is null
+   */
+  public static List<String> extractAll(String content) {
+    List<String> addresses = new ArrayList<>();
+    Matcher entries = ENTRIES.matcher(content);
+    while (entries.find()) {
+      extractEntry(entries.group(), addresses);
+    }
+    return addresses;
+  }
+
+  private static void extractEntry(String entry, List<String> addresses) {
+    Matcher protocol = URL_PREFIX.matcher(entry);
+    Matcher part = ADDRESS_PART.matcher(entry);
+    boolean path = false;
+    int index = 0;
+    while (index < entry.length()) {
+      // A double slash inside an existing path does not start a new URL authority.
+      boolean urlStart = index == 0 || "=&#?".indexOf(entry.charAt(index - 1)) >= 0;
+      if (urlStart && protocol.region(index, entry.length()).lookingAt()) {
+        index = protocol.end();
+        path = true;
+      } else if (part.region(index, entry.length()).lookingAt()) {
+        int end = part.end();
+        String candidate = part.group();
+        String suffix = standalonePrefix(entry, end, path);
+        stripBracketsAndPort(candidate)
+          .map(stripped -> stripped.candidate() + (stripped.portRemoved() ? "" : suffix))
+          .filter(address -> IpAddressClassifier.parse(address).isPresent())
+          .ifPresent(addresses::add);
+        index = end;
+      } else {
+        path |= entry.charAt(index) == '/';
+        index++;
+      }
+    }
+  }
+
+  private static String standalonePrefix(String entry, int end, boolean path) {
+    if (path || end + 1 >= entry.length() || entry.charAt(end) != '/') {
+      return "";
+    }
+    String suffix = entry.substring(end + 1);
+    // Multiple segments, another address, or a named segment make this a path rather than a CIDR entry.
+    int first = suffix.codePointAt(0);
+    if ((!Character.isDigit(first) && first != '+' && first != '-')
+      || suffix.indexOf('/') >= 0 || suffix.indexOf('.') >= 0 || suffix.indexOf(':') >= 0) {
+      return "";
+    }
+    return "/" + suffix;
   }
 
   /**
