@@ -172,8 +172,11 @@ public final class IpAddressCandidateExtractor {
       char current = entry.charAt(i);
       if (current == '[') {
         depth++;
-      } else if (current == ']' && --depth == 0) {
-        return i;
+      } else if (current == ']') {
+        depth--;
+        if (depth == 0) {
+          return i;
+        }
       }
     }
     return -1;
