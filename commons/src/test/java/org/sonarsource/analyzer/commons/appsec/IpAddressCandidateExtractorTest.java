@@ -16,6 +16,7 @@
  */
 package org.sonarsource.analyzer.commons.appsec;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -23,6 +24,95 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class IpAddressCandidateExtractorTest {
+
+  @ParameterizedTest
+  @CsvSource(delimiter = '|', value = {
+    // Complete-string search, ordering, and repeated occurrences
+    "/registry/ipaddresses/192.168.2.3 | 192.168.2.3",
+    "connect to 10.0.0.1, 10.0.0.2 | 10.0.0.1 10.0.0.2",
+    "10.0.0.1;2001:db8::1,10.0.0.1 | 10.0.0.1 2001:db8::1 10.0.0.1",
+    "10.0.0.1\u00a010.0.0.2 | 10.0.0.1 10.0.0.2",
+    "address=10.0.0.1 | 10.0.0.1",
+    "{10.0.0.1}!~10.0.0.2 | 10.0.0.1 10.0.0.2",
+    "http://example.org/path@10.0.0.1 | 10.0.0.1",
+    "\"10.0.0.1\" (2001:db8::1) | 10.0.0.1 2001:db8::1",
+    "'10.0.0.1' | 10.0.0.1",
+    // Validate syntax, not security policy
+    "0.0.0.0,127.0.0.1,192.0.2.1,8.8.8.8 | 0.0.0.0 127.0.0.1 192.0.2.1 8.8.8.8",
+    "bad 999.0.0.1 10.0.0.1 host.example ::1 | 10.0.0.1 ::1",
+    // Complete IPv6 addresses, spelling, and opaque zones
+    ":: 2001:DB8:0:0:0:0:0:1 ::00000:2 | :: 2001:DB8:0:0:0:0:0:1 ::00000:2",
+    "::ffff:192.0.2.1;2001:db8::192.0.2.2 | ::ffff:192.0.2.1 2001:db8::192.0.2.2",
+    "fe80::1%eth0 fe80::2%接口 fe80::3% fe80::4%zone!name | fe80::1%eth0 fe80::2%接口 fe80::3% fe80::4%zone!name",
+    "[fe80::1%25eth0]:80 | fe80::1%25eth0",
+    // Endpoint ports are never stripped from unbracketed IPv6
+    "10.0.0.1:0 10.0.0.2:65535 10.0.0.3:00080 | 10.0.0.1 10.0.0.2 10.0.0.3",
+    "[2001:db8::1]:0 [::ffff:10.0.0.1]:65535 | 2001:db8::1 ::ffff:10.0.0.1",
+    "2001:db8::1:80 | 2001:db8::1:80",
+    // Search URL paths, queries, and fragments even with a named host
+    "https://example.org/registry/192.168.2.3?q=10.0.0.1#2001:db8::1 | 192.168.2.3 10.0.0.1 2001:db8::1",
+    "http://10.0.0.1:80/10.0.0.2?ip=10.0.0.3&other=10.0.0.4#10.0.0.5 | 10.0.0.1 10.0.0.2 10.0.0.3 10.0.0.4 10.0.0.5",
+    "git+ssh://[2001:DB8::1]:80/path //10.0.0.1/path | 2001:DB8::1 10.0.0.1",
+    "http://10.0.0.9:secret@example.org/10.0.0.1 | 10.0.0.1",
+    "http://user:10.0.0.9@[2001:db8::1]/path | 2001:db8::1",
+    "//10.0.0.9@example.org/path http://example.org/10.0.0.1 | 10.0.0.1",
+    "http://10.0.0.1;https://10.0.0.2 http://10.0.0.1 | 10.0.0.1 10.0.0.2 10.0.0.1",
+    // CIDR only on standalone entries, validated against the native address family
+    "10.0.0.1/0 10.0.0.2/32 10.0.0.3/032 | 10.0.0.1/0 10.0.0.2/32 10.0.0.3/032",
+    "2001:db8::1/128 [fe80::1%接口]/064 ::ffff:10.0.0.1/120 | 2001:db8::1/128 fe80::1%接口/064 ::ffff:10.0.0.1/120",
+    "ip=10.0.0.1/24 | 10.0.0.1/24",
+    "http://10.0.0.1/33 //example.org/2001:db8::1/129 | 10.0.0.1 2001:db8::1",
+    "http://example.org?q=10.0.0.1/24#2001:db8::1/64 | 10.0.0.1 2001:db8::1",
+    "/10.0.0.1/33 registry/2001:db8::1/129 | 10.0.0.1 2001:db8::1",
+    "10.0.0.1/path 10.0.0.2:80/33 [2001:db8::1]:80/129 | 10.0.0.1 10.0.0.2 2001:db8::1",
+    "/10.0.0.1/10.0.0.2/2001:db8::1 | 10.0.0.1 10.0.0.2 2001:db8::1"
+  })
+  void shouldExtractAllAddresses(String content, String expected) {
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).containsExactly(expected.split(" "));
+  }
+
+  @Test
+  void shouldExtractAddressesAcrossLines() {
+    assertThat(IpAddressCandidateExtractor.extractAll("  10.0.0.1\t10.0.0.2\n10.0.0.1"))
+      .containsExactly("10.0.0.1", "10.0.0.2", "10.0.0.1");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "", "ordinary text", "example.org", "http://example.org/path",
+    "http://10.0.0.1@example.org/path", "http://user:10.0.0.1@example.org",
+    "scheme1.2.3.4://example.org", "custom-scheme.v1://example.org",
+    // Never salvage a shorter valid address from an invalid address or identifier
+    "version1.2.3.4", "1.2.3.4.5", ".1.2.3.4", "1.2.3.4.",
+    "999.1.2.3.4", "010.0.0.1", "10.0.0.01", "10.0.0.1-host", "host-10.0.0.1",
+    "10.0.0.1_name", "name_10.0.0.1", "接口10.0.0.1", "10.0.0.1接口",
+    "gggg::10.0.0.1", "1:2:3:4:5:6:7:8:9", "2001:db8:::1", "::ffff:010.0.0.1",
+    "10.0.0.1%eth0",
+    // Invalid standalone CIDR entries, including overflow, signs, and non-ASCII digits
+    "10.0.0.1/33", "10.0.0.1/1000", "10.0.0.1/99999999999999999999",
+    "10.0.0.1/-1", "10.0.0.1/+24", "10.0.0.1/２４", "10.0.0.1/24x", "10.0.0.1/24.", "10.0.0.1/24.5",
+    "2001:db8::1/129", "[2001:db8::1]/129", "::ffff:10.0.0.1/129",
+    // Invalid endpoints suppress the entire endpoint, including any embedded IPv4 tail
+    "[10.0.0.1]", "[10.0.0.1]:80", "[2001:db8::1", "2001:db8::1]",
+    "[[2001:db8::1]]", "[2001:db8::1]extra", "[2001:db8::1]8080",
+    "[::ffff:10.0.0.1]:bad", "[2001:db8::1]:", "[2001:db8::1]:65536",
+    "10.0.0.1:", "10.0.0.1:bad", "10.0.0.1:-1", "10.0.0.1:+80", "10.0.0.1:８０",
+    "10.0.0.1:65536", "10.0.0.1:000080", "10.0.0.1:99999999999999999999"
+  })
+  void shouldNotExtractInvalidAddressesOrPartialMatches(String content) {
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).isEmpty();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "[2001:db8::1", "2001:db8::1]", "[[2001:db8::1]]", "[2001:db8::1]extra",
+    "[10.0.0.1]:80", "[::ffff:10.0.0.1]:bad", "10.0.0.1:65536", "10.0.0.1/33",
+    "http://[2001:db8::1]:bad", "http://10.0.0.1:bad/path"
+  })
+  void malformedEntriesShouldNotHideLaterAddresses(String malformed) {
+    assertThat(IpAddressCandidateExtractor.extractAll(malformed + " 10.0.0.2;[2001:db8::2]"))
+      .containsExactly("10.0.0.2", "2001:db8::2");
+  }
 
   @ParameterizedTest
   @CsvSource({
