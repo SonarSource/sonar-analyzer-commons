@@ -28,6 +28,7 @@ import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.CapturingGroupTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
+import org.sonarsource.analyzer.commons.regex.ast.PosixCharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.helpers.RegexTreeHelper;
@@ -49,8 +50,8 @@ public class RedundantRegexAlternativesFinder extends RegexBaseVisitor {
   public void visitDisjunction(DisjunctionTree tree) {
     RedundantAlternativeCollector collector = new RedundantAlternativeCollector();
     List<RegexTree> alternatives = tree.getAlternatives().stream()
-      // We don't handle POSIX character classes correctly (SONARPHP-1239)
-      .filter(t -> !hasPosixCharacterClass(t))
+      // POSIX word-boundary markers are assertions, not character sets.
+      .filter(t -> !hasPosixWordBoundary(t))
       .toList();
     for (int i = 0; i + 1 < alternatives.size(); i++) {
       for (int j = i + 1; j < alternatives.size(); j++) {
@@ -131,19 +132,19 @@ public class RedundantRegexAlternativesFinder extends RegexBaseVisitor {
     }
   }
 
-  private static boolean hasPosixCharacterClass(RegexTree tree) {
-    PosixCharacterClassVisitor posixCharacterClassVisitor = new PosixCharacterClassVisitor();
-    posixCharacterClassVisitor.visit(tree);
-    return posixCharacterClassVisitor.hasPosixCharacterClass;
+  private static boolean hasPosixWordBoundary(RegexTree tree) {
+    PosixWordBoundaryVisitor visitor = new PosixWordBoundaryVisitor();
+    visitor.visit(tree);
+    return visitor.hasWordBoundary;
   }
 
-  private static class PosixCharacterClassVisitor extends RegexBaseVisitor {
-    boolean hasPosixCharacterClass = false;
+  private static class PosixWordBoundaryVisitor extends RegexBaseVisitor {
+    boolean hasWordBoundary = false;
 
     @Override
     public void visitInCharClass(CharacterClassElementTree tree) {
-      if (tree.is(CharacterClassElementTree.Kind.POSIX_CLASS)) {
-        hasPosixCharacterClass = true;
+      if (tree instanceof PosixCharacterClassElementTree posix && ("<".equals(posix.property()) || ">".equals(posix.property()))) {
+        hasWordBoundary = true;
       }
       super.visitInCharClass(tree);
     }

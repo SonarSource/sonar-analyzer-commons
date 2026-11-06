@@ -18,4 +18,53 @@
 - '.*' # Compliant
 - '[[:space:]]|x' # Compliant
 - 'x|[[:space:]]' # Compliant
-- '[[:space:]]|\n' # Compliant, false negative
+- '[[:space:]]|\n' # Noncompliant {{Remove or rework this redundant alternative.}}
+#              ^^^
+- '\n|[[:space:]]' # Noncompliant
+- '[[:alpha:]]|A' # Noncompliant
+- '[[:alnum:]]|7' # Noncompliant
+- '[[:^digit:]]|x' # Noncompliant
+- '[^[:digit:]]|x' # Noncompliant
+- '[^[:^digit:]]|7' # Noncompliant
+- '[[:digit:]a-f]|b' # Noncompliant
+- '[[:digit:][:alpha:]]|[A-Z0-9]' # Noncompliant
+- '[[:space:]x]|[\nx]' # Noncompliant
+- '[[:^digit:]0-9]|x' # Noncompliant
+- '[[:lower:]]|A': 'i' # Noncompliant
+- '(?i:[[:lower:]])|A' # Noncompliant
+- '[[:upper:]]|a': 'i' # Noncompliant
+- '[[:^lower:]]|0': 'i' # Noncompliant
+- '[[:space:]]|(\n)' # Noncompliant
+- '[[:space:]]|\n|\t' # Noncompliant
+- '[[:space:]]|[\nx]' # Compliant: overlap is not coverage
+- '[[:digit:]]|a' # Compliant
+- '[[:^digit:]]|7' # Compliant
+- '[^[:digit:]]|7' # Compliant
+- '[[:lower:]]|A' # Compliant
+- '(?i:[[:lower:]])|(?-i:[[:upper:]])' # Noncompliant
+- '(?i:[[:^lower:]])|A' # Compliant
+- '[[:space:]]|(a)' # Compliant
+- '(\n)|[[:space:]]' # Compliant: keep capturing-group and ordering restrictions
+- '\n|([[:space:]])' # Compliant
+- '([[:space:]])|[[:print:]]' # Compliant
+- '[[:<:]]|x' # Compliant
+- 'x|[[:>:]]' # Compliant
+- '[[:<:]x]|x' # Compliant: boundary markers must not prove redundancy
+- '[[:>:]x]|x' # Compliant
+- '[^[:<:]]|x' # Compliant
+- '[[:unknown:]]|x' # Compliant
+- '[[:space:]]|\n': 'u' # Noncompliant
+- '[[:^digit:]]|A': 'u' # Noncompliant
+- '[^[:digit:]]|A': 'u' # Noncompliant
+- '[^[:^digit:]]|7': 'u' # Noncompliant
+- '[[:lower:]]|A': 'iu' # Noncompliant
+- '[[:ascii:]]|[A-Z]': 'u' # Noncompliant
+- '[[:digit:]]|é': 'u' # Compliant: non-ASCII membership is unknown
+- '[[:^digit:]]|é': 'u' # Compliant
+- '[^[:digit:]]|é': 'u' # Compliant
+- '[^[:^digit:]]|é': 'u' # Compliant
+- '[[:space:]]|[\n\p{L}]': 'u' # Compliant
+- '[[:digit:]]|[[:digit:]]': 'u' # Compliant: do not rely on unknown membership
+- '[[:digit:][:^digit:]]|é': 'u' # Compliant
+- '[[:digit:]]|[[:^digit:]]': 'u' # Compliant
+- '[[:ascii:]]|é': 'u' # Compliant

@@ -86,7 +86,7 @@
 - '[\\\\abc]'
 - '[\s"\:\{\}\[\],&\*\#\?]'
 - '[0-9\\\d]' # Compliant
-- '[[:alnum:]alnum]'
+- '[[:alnum:]alnum]' # Noncompliant
 
 - '[😂😊]'
 - '[^\ud800\udc00-\udbff\udfff]'
