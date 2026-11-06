@@ -48,6 +48,14 @@
 - '\S+?[^abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[abc\S]++".}}
 - '\s+?[^abc]' # Noncompliant {{Replace this use of a reluctant quantifier with "[abc\s]++".}}
 
+# POSIX membership is shared with redundancy and duplicate-character analysis.
+- '\w+?[[:alpha:]]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^[:alpha:]\W]++".}}
+- '\s+?[[:blank:]]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^[:blank:]\S]++".}}
+- '\d+?[^[:alpha:]]' # Noncompliant {{Replace this use of a reluctant quantifier with "[[:alpha:]\d]++".}}
+- '\d+?[[:alpha:]]' # Compliant: disjoint sets
+- '\w+?[[:space:]]' # Compliant: disjoint sets
+- '\d+?[[:^digit:]]' # Compliant: class negation remains disjoint
+
 - '<[^>]++>'
 - '<[^>]+>'
 - '<[^>]+?>'

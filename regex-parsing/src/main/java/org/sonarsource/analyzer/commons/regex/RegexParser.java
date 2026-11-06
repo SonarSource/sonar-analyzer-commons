@@ -1038,8 +1038,10 @@ public class RegexParser {
     Optional<Map.Entry<String, String>> posixClass = posixLookup.entrySet().stream()
       .filter(posix -> characters.currentIs(posix.getKey())).findFirst();
     if (posixClass.isPresent()) {
-      characters.moveNext(posixClass.get().getKey().length());
-      return new PosixCharacterClassElementTree(source, openingBracket, characters.getCurrent(), isNegation, posixClass.get().getValue(), activeFlags);
+      characters.moveNext(posixClass.get().getKey().length() - 1);
+      SourceCharacter closingBracket = characters.getCurrent();
+      characters.moveNext();
+      return new PosixCharacterClassElementTree(source, openingBracket, closingBracket, isNegation, posixClass.get().getValue(), activeFlags);
     }
     return null;
   }

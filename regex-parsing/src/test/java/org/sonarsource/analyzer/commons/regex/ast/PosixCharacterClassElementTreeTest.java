@@ -75,7 +75,9 @@ class PosixCharacterClassElementTreeTest {
 
     List<CharacterClassElementTree> classElementTrees = characterClassUnion.getCharacterClasses();
     assertThat(classElementTrees).hasSize(2);
-    assertType(PosixCharacterClassElementTree.class, classElementTrees.get(0));
+    PosixCharacterClassElementTree posix = assertType(PosixCharacterClassElementTree.class, classElementTrees.get(0));
+    assertThat(posix.getText()).isEqualTo("[:alnum:]");
+    assertThat(posix.getRange()).isEqualTo(new IndexRange(1, 10));
     assertType(CharacterRangeTree.class, classElementTrees.get(1));
   }
 
@@ -113,6 +115,9 @@ class PosixCharacterClassElementTreeTest {
     assertThat(posixCharacterClassElement.property()).isNotNull().isEqualTo(expectedProperty);
     assertThat(posixCharacterClassElement.activeFlags().isEmpty()).isTrue();
     assertThat(posixCharacterClassElement.isNegation()).isEqualTo(isNegation);
+    String expectedText = "[:" + (isNegation ? "^" : "") + expectedProperty + ":]";
+    assertThat(posixCharacterClassElement.getText()).isEqualTo(expectedText);
+    assertThat(posixCharacterClassElement.getRange()).isEqualTo(new IndexRange(1, 1 + expectedText.length()));
 
     CharacterClassElementTree classElementTree = spy(posixCharacterClassElement);
     RegexBaseVisitor visitor = new RegexBaseVisitor();
