@@ -159,9 +159,11 @@ public final class IpAddressCandidateExtractor {
 
   private static void extractText(String text, boolean inUrl, List<String> addresses) {
     Matcher entries = LIST_ENTRY.matcher(text);
+    boolean inUrlValues = false;
     while (entries.find()) {
       String entry = entries.group();
-      extractListEntry(entry, inUrl && (entries.start() == 0 || entry.indexOf('=') >= 0), addresses);
+      inUrlValues |= entry.indexOf('?') >= 0 || entry.indexOf('#') >= 0;
+      extractListEntry(entry, inUrl && (entries.start() == 0 || inUrlValues || entry.indexOf('=') >= 0), addresses);
     }
   }
 

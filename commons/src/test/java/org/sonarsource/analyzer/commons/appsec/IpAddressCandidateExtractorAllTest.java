@@ -134,6 +134,12 @@ class IpAddressCandidateExtractorAllTest {
       .containsExactly("10.0.0.1", "10.0.0.2");
     assertThat(IpAddressCandidateExtractor.extractAll("http://example.org?one=10.0.0.1/33;two=10.0.0.2/33"))
       .containsExactly("10.0.0.1", "10.0.0.2");
+    assertThat(IpAddressCandidateExtractor.extractAll("http://example.org?peers=10.0.0.1,10.0.0.2/24"))
+      .containsExactly("10.0.0.1", "10.0.0.2");
+    assertThat(IpAddressCandidateExtractor.extractAll("http://example.org#10.0.0.1;10.0.0.2/33"))
+      .containsExactly("10.0.0.1", "10.0.0.2");
+    assertThat(IpAddressCandidateExtractor.extractAll("http://example.org/path;peer=10.0.0.1/33"))
+      .containsExactly("10.0.0.1");
   }
 
   @ParameterizedTest
