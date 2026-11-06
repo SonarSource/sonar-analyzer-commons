@@ -22,16 +22,32 @@ To learn more about the SonarQube product family, visit the [Sonar website](http
 ## Modules
 
 * [commons](commons) Logic useful for a language plugin
+* [sonar-analyzer-commons-configurations](sonar-analyzer-commons-configurations) JSON, npm, and NuGet exports of shared configuration
 * [recognizers](recognizers) Logic useful for detecting commented out code
 * [test-commons](test-commons) Logic useful to test a language analyzer
 * [xml-parsing](xml-parsing) Logic useful to analyze and test checks for XML file
 * [test-xml-parsing](test-xml-parsing) Logic useful to test XML parsing and XML-related rules
-* [regex-parsing](regex-parsing) Logic used to parse regular expressions (currently only for Java)
+* [regex-parsing](regex-parsing) Regular-expression parsing and shared checks, with Java, PHP, and Python source adapters
+* [performance-measure](performance-measure) Nested duration measurements and report merging
 
 ## Build
+Use JDK 21 and Maven 3.9.16. [mise.toml](mise.toml) pins both tools.
+Python 3.9 or later runs the local command tool.
+
+```sh
+mise trust
+mise install
+python3 scripts/dev.py doctor --resolve
+python3 scripts/dev.py verify
 ```
-mvn clean install
-```
+
+For a quick module test, run `python3 scripts/dev.py test recognizers`.
+For a full local install, run `python3 scripts/dev.py build`.
+These commands retain build outputs for incremental work and never publish.
+See [AGENTS.md](AGENTS.md) for module selection, failure diagnosis, source
+boundaries, and contribution rules. The optional [.devcontainer](.devcontainer)
+contains a development environment. CI signing and publishing require internal
+services; local unit tests do not require them.
 
 ### License
 Copyright 2009-2023 SonarSource.

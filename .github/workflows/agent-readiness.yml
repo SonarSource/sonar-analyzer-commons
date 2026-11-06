@@ -1,0 +1,46 @@
+name: Repository checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+  push:
+    branches: [master, 'branch-*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Check source boundaries, added credentials, and tooling tests
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          ALLOW_LARGE: ${{ contains(github.event.pull_request.labels.*.name, 'large-change-reviewed') }}
+        run: |
+          if ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+            BASE_SHA="$(git rev-list --max-parents=0 HEAD | head -n 1)"
+          fi
+          python3 scripts/dev.py check --base "$BASE_SHA"
+          if [ -n "$PR_TITLE" ]; then
+            if [ "$ALLOW_LARGE" = true ]; then
+              python3 scripts/repository_checks.py --base "$BASE_SHA" --title "$PR_TITLE" --allow-large
+            else
+              python3 scripts/repository_checks.py --base "$BASE_SHA" --title "$PR_TITLE"
+            fi
+          fi
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Reject new high and critical dependency advisories
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
