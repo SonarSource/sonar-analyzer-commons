@@ -139,31 +139,64 @@ public final class IpAddressCandidateExtractor {
     int start = 0;
     boolean inUrl = false;
     while (urls.find(start)) {
-      extractText(entry.substring(start, urls.start()), inUrl, addresses);
-      int authorityEnd = urls.end();
+      int urlStart = urls.start();
+      int authorityStart = urls.end();
+      extractText(entry.substring(start, urlStart), inUrl, addresses);
+      boolean wrapped = urlStart > 0 && entry.charAt(urlStart - 1) == '[';
+      int wrapperEnd = wrapped ? urlWrapperEnd(entry, urlStart) : -1;
+      if (wrapperEnd >= 0) {
+        // Remove the URL wrapper, keeping the IPv6 endpoint's own brackets and any attached suffix.
+        entry = entry.substring(0, wrapperEnd) + entry.substring(wrapperEnd + 1);
+        urls = URL_START.matcher(entry);
+      }
+      int authorityEnd = authorityStart;
       while (authorityEnd < entry.length() && "/?#".indexOf(entry.charAt(authorityEnd)) < 0) {
         authorityEnd++;
       }
-      String authority = entry.substring(urls.end(), authorityEnd);
+      String authority = entry.substring(authorityStart, authorityEnd);
       int hostStart = authority.lastIndexOf('@') + 1;
-      int hostEnd = hostStart;
-      while (hostEnd < authority.length() && ",;".indexOf(authority.charAt(hostEnd)) < 0) {
-        hostEnd++;
+      int hostEnd = urlHostEnd(authority, hostStart);
+      if (!wrapped || wrapperEnd >= 0) {
+        stripBracketsAndPort(authority.substring(hostStart, hostEnd))
+          .map(StrippedCandidate::candidate).ifPresent(candidate -> addValid(candidate, addresses));
       }
-      Matcher hostToken = ADDRESS_TOKEN.matcher(authority).region(hostStart, hostEnd);
-      if (hostToken.lookingAt()) {
-        hostEnd = hostToken.end();
-      }
-      String host = authority.substring(hostStart, hostEnd);
-      // A bracket enclosing the URL is distinct from brackets enclosing an IPv6 endpoint.
-      if (urls.start() > 0 && entry.charAt(urls.start() - 1) == '[' && host.endsWith("]")) {
-        host = host.substring(0, host.length() - 1);
-      }
-      stripBracketsAndPort(host).map(StrippedCandidate::candidate).ifPresent(candidate -> addValid(candidate, addresses));
-      start = urls.end() + hostEnd;
+      start = authorityStart + hostEnd;
       inUrl = true;
     }
     extractText(entry.substring(start), inUrl, addresses);
+  }
+
+  private static int urlWrapperEnd(String entry, int urlStart) {
+    int depth = 1;
+    for (int i = urlStart; i < entry.length(); i++) {
+      char current = entry.charAt(i);
+      if (current == '[') {
+        depth++;
+      } else if (current == ']' && --depth == 0) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  private static int urlHostEnd(String authority, int hostStart) {
+    int end = hostStart;
+    while (end < authority.length() && ",;".indexOf(authority.charAt(end)) < 0) {
+      end++;
+    }
+    int tokenStart = hostStart;
+    if (hostStart < end && authority.charAt(hostStart) == '[') {
+      int closing = authority.indexOf(']', hostStart);
+      if (closing >= 0 && closing < end) {
+        // A closing endpoint bracket bounds even an opaque zone. Keep the complete port or malformed suffix attached.
+        tokenStart = closing + 1;
+      }
+    }
+    Matcher token = ADDRESS_TOKEN.matcher(authority).region(tokenStart, end);
+    if (token.lookingAt()) {
+      return token.end();
+    }
+    return tokenStart > hostStart ? tokenStart : end;
   }
 
   private static void extractText(String text, boolean inUrl, List<String> addresses) {
@@ -181,7 +214,9 @@ public final class IpAddressCandidateExtractor {
     int previousEnd = 0;
     boolean inPath = false;
     while (tokens.find()) {
-      inPath = tokens.start() == previousEnd ? inPath : text.charAt(tokens.start() - 1) == '/';
+      if (tokens.start() != previousEnd) {
+        inPath = text.charAt(tokens.start() - 1) == '/';
+      }
       previousEnd = tokens.end();
       Optional<StrippedCandidate> stripped = stripBracketsAndPort(tokens.group());
       if (stripped.isEmpty()) {

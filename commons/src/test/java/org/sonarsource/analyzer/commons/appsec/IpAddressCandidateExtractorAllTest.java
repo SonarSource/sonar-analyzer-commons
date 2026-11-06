@@ -220,4 +220,62 @@ class IpAddressCandidateExtractorAllTest {
   void punctuationDoesNotSalvageMalformedUrlEndpoints(String content) {
     assertThat(IpAddressCandidateExtractor.extractAll(content)).isEmpty();
   }
+
+  @ParameterizedTest
+  @CsvSource({
+    "[http://[::1]/], ::1",
+    "[http://[2001:db8::1]/path], 2001:db8::1",
+    "[http://[::1]?q=1], ::1",
+    "[http://[::1]#fragment], ::1",
+    "[http://[::1]:80/x], ::1",
+    "[http://[fe80::1%eth0]/path], fe80::1%eth0",
+    "[http://[fe80::1%eth0]?q=1], fe80::1%eth0",
+    "[http://[fe80::1%eth0]#fragment], fe80::1%eth0"
+  })
+  void keepsIpv6HostBracketsInsideWrappedUrls(String content, String expected) {
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).containsExactly(expected);
+  }
+
+  @Test
+  void searchesWrappedUrlValuesAndLaterEntries() {
+    assertThat(IpAddressCandidateExtractor.extractAll(
+      "[http://[::1]/10.0.0.1?peer=10.0.0.2#10.0.0.3],http://10.0.0.4;[http://[::2]]"))
+      .containsExactly("::1", "10.0.0.1", "10.0.0.2", "10.0.0.3", "10.0.0.4", "::2");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "http://[fe80::1%eth0]!, fe80::1%eth0",
+    "<http://[fe80::1%eth0]>, fe80::1%eth0",
+    "<http://[fe80::1%eth0]:80>, fe80::1%eth0",
+    "http://[fe80::1%eth0]:65535!, fe80::1%eth0",
+    "http://[fe80::1%eth~0]!, fe80::1%eth~0",
+    "http://[fe80::1%eth!0]:80!, fe80::1%eth!0",
+    "http://[fe80::1%]:0!, fe80::1%",
+    "<http://[fe80::1%接口]:80>, fe80::1%接口",
+    "fe80::1%eth!0, fe80::1%eth!0",
+    "fe80::1%eth>0, fe80::1%eth>0"
+  })
+  void boundsBracketedUrlZonesWithoutChangingOpaqueZones(String content, String expected) {
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).containsExactly(expected);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "[http://[::1]", "[http://[::1]/path", "[http://[::1]?q=1", "[http://[::1]#fragment",
+    "[http://[::1]]suffix", "http://[fe80::1%eth0]:bad!", "http://[fe80::1%eth0]:80bad!",
+    "http://[fe80::1%eth0]:65536!", "http://[fe80::1%eth0]:000080!", "http://[fe80::1%eth0]:!",
+    "http://[fe80::1%eth0]:+80!", "http://[fe80::1%eth0]:-1!", "http://[fe80::1%eth0]:８０!",
+    "http://[fe80::1%eth0].", "http://[fe80::1%eth0]suffix!", "http://[fe80::1%eth0]]!",
+    "http://[fe80::1%eth0!", "[http://[fe80::1%eth0]"
+  })
+  void malformedWrappedAndZonedUrlEndpointsDoNotHideLaterAddresses(String malformed) {
+    assertThat(IpAddressCandidateExtractor.extractAll(malformed)).isEmpty();
+    for (String separator : new String[] {" ", ",", ";"}) {
+      assertThat(IpAddressCandidateExtractor.extractAll(malformed + separator + "10.0.0.2"))
+        .as("after %s separated by %s", malformed, separator)
+        .containsExactly("10.0.0.2");
+    }
+  }
+
 }
