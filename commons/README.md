@@ -1,6 +1,10 @@
-SonarSource Analyzers Commons (compatible with SQ >=7.9)
+SonarSource Analyzers Commons
 =========================
 Logic useful for an average language plugin
+
+The plugin API version is set in the root POM. Check an analyzer's supported
+SonarQube versions before updating this dependency. See [AGENTS.md](AGENTS.md)
+for source locations and tests.
 
 * [`RuleMetadataLoader`](./src/main/java/org/sonarsource/analyzer/commons/RuleMetadataLoader.java) - to define rules metadata based on `json` and `html` files, or, when constructed without a resource folder, directly from the `org.sonar.check.Rule` annotation
 * [`DeprecatedRuleKey`](./src/main/java/org/sonarsource/analyzer/commons/annotations/DeprecatedRuleKey.java) annotation - when used with [`RuleMetadataLoader`](./src/main/java/org/sonarsource/analyzer/commons/RuleMetadataLoader.java) in will add deprecated rule key for an annotated rule

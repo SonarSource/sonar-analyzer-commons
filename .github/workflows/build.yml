@@ -52,6 +52,9 @@ jobs:
           sonar-platform: none
           maven-args: -Pcoverage
 
+      - name: Generate dependency SBOM
+        run: mvn -B -ntp -C org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom
+
       - name: Upload Maven build as pipeline artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

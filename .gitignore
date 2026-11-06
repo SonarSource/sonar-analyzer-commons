@@ -33,3 +33,7 @@ Desktop.ini
 
 # ---- Claude Code
 .mcp.json
+
+# Python command-tool bytecode
+__pycache__/
+*.pyc

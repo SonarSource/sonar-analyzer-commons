@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="Local source feedback"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+  <description>Local feedback for unused code, naming, and source reading size.</description>
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod"/>
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateField"/>
+  <rule ref="category/java/bestpractices.xml/UnusedLocalVariable"/>
+  <rule ref="category/java/codestyle.xml/ClassNamingConventions"/>
+  <rule ref="category/java/design.xml/NcssCount">
+    <properties>
+      <property name="classReportLevel" value="1000"/>
+      <property name="methodReportLevel" value="100"/>
+    </properties>
+  </rule>
+</ruleset>
