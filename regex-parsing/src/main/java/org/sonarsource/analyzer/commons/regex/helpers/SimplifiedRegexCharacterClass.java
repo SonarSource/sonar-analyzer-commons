@@ -259,22 +259,26 @@ public class SimplifiedRegexCharacterClass {
           }
           return;
         }
-        boolean lastInsertedIsNotNull = false;
-        if (inner.contents.get(0) == null) {
-          characters.contents.put(0, tree);
-          lastInsertedIsNotNull = true;
-        }
-        for (Map.Entry<Integer, RegexSyntaxElement> entry : inner.contents.entrySet()) {
-          if (entry.getValue() == null) {
-            characters.contents.put(entry.getKey(), tree);
-            lastInsertedIsNotNull = true;
-          } else if (lastInsertedIsNotNull) {
-            characters.contents.put(entry.getKey(), null);
-            lastInsertedIsNotNull = false;
-          }
-        }
+        addExactComplement(inner, tree);
       } else {
         super.visitCharacterClass(tree);
+      }
+    }
+
+    private void addExactComplement(SimplifiedRegexCharacterClass inner, RegexSyntaxElement tree) {
+      boolean lastInsertedIsNotNull = false;
+      if (inner.contents.get(0) == null) {
+        characters.contents.put(0, tree);
+        lastInsertedIsNotNull = true;
+      }
+      for (Map.Entry<Integer, RegexSyntaxElement> entry : inner.contents.entrySet()) {
+        if (entry.getValue() == null) {
+          characters.contents.put(entry.getKey(), tree);
+          lastInsertedIsNotNull = true;
+        } else if (lastInsertedIsNotNull) {
+          characters.contents.put(entry.getKey(), null);
+          lastInsertedIsNotNull = false;
+        }
       }
     }
 
@@ -289,7 +293,7 @@ public class SimplifiedRegexCharacterClass {
           from = inner.knownCharacterLimit + 1;
           break;
         }
-        from = entry.getValue() == null ? entry.getKey() : Character.MAX_CODE_POINT + 1;
+        from = entry.getValue() == null ? entry.getKey() : (Character.MAX_CODE_POINT + 1);
       }
       if (from <= inner.knownCharacterLimit) {
         characters.addRange(from, inner.knownCharacterLimit, tree);

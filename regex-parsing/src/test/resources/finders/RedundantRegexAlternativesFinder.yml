@@ -19,7 +19,7 @@
 - '[[:space:]]|x' # Compliant
 - 'x|[[:space:]]' # Compliant
 - '[[:space:]]|\n' # Noncompliant {{Remove or rework this redundant alternative.}}
-#              ^^
+#              ^^^
 - '\n|[[:space:]]' # Noncompliant
 - '[[:alpha:]]|A' # Noncompliant
 - '[[:alnum:]]|5' # Noncompliant

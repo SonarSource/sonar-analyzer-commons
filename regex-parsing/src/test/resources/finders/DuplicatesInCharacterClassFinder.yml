@@ -86,7 +86,15 @@
 - '[\\\\abc]'
 - '[\s"\:\{\}\[\],&\*\#\?]'
 - '[0-9\\\d]' # Compliant
-- '[[:alnum:]alnum]'
+- '[[:alnum:]alnum]' # Noncompliant
+- '[[:alpha:]A]' # Noncompliant
+- '[[:digit:]0-9]' # Noncompliant
+- '[[:^digit:]A]' # Noncompliant
+- '[[:lower:]A]': 'i' # Noncompliant
+- '[[:digit:]a]' # Compliant
+- '[[:^digit:]5]' # Compliant
+- '[[:lower:]A]' # Compliant
+- '[[:alpha:]é]': 'u' # Compliant: additional Unicode membership is unknown
 
 - '[😂😊]'
 - '[^\ud800\udc00-\udbff\udfff]'
