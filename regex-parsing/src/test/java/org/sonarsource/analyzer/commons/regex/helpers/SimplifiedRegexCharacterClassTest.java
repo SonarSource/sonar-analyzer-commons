@@ -32,9 +32,11 @@ import org.sonarsource.analyzer.commons.regex.ast.DotTree;
 import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
 import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
 import org.sonarsource.analyzer.commons.regex.ast.MiscEscapeSequenceTree;
+import org.sonarsource.analyzer.commons.regex.ast.PosixCharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
+import org.sonarsource.analyzer.commons.regex.php.PhpRegexSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,6 +46,92 @@ import static org.mockito.Mockito.mock;
 class SimplifiedRegexCharacterClassTest {
 
   public static final int NO_FLAGS = 0;
+
+  @Test
+  void posix_membership_and_complements() {
+    String[][] properties = {
+      {"alnum", "Alnum"}, {"alpha", "Alpha"}, {"ascii", "ASCII"}, {"blank", "Blank"},
+      {"cntrl", "Cntrl"}, {"digit", "Digit"}, {"graph", "Graph"}, {"print", "Print"},
+      {"lower", "Lower"}, {"upper", "Upper"}, {"punct", "Punct"}, {"space", "Space"},
+      {"word", "IsWord"}, {"xdigit", "XDigit"}
+    };
+    for (String[] property : properties) {
+      for (int flags : new int[] {0, Pattern.CASE_INSENSITIVE, Pattern.UNICODE_CHARACTER_CLASS,
+        Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS}) {
+        String expectedRegex = "word".equals(property[0]) ? "\\w" : "\\p{" + property[1] + "}";
+        Pattern expected = Pattern.compile(expectedRegex, flags & Pattern.CASE_INSENSITIVE);
+        SimplifiedRegexCharacterClass positive = phpClass("[[:" + property[0] + ":]]", flags);
+        SimplifiedRegexCharacterClass negative = phpClass("[[:^" + property[0] + ":]]", flags);
+        SimplifiedRegexCharacterClass outerNegative = phpClass("[^[:" + property[0] + ":]]", flags);
+        SimplifiedRegexCharacterClass doubleNegative = phpClass("[^[:^" + property[0] + ":]]", flags);
+        boolean unknownNonAscii = (flags & Pattern.UNICODE_CHARACTER_CLASS) != 0 && !"ascii".equals(property[0]);
+        for (int codePoint : membershipCodePoints()) {
+          boolean member = expected.matcher(new String(Character.toChars(codePoint))).matches();
+          boolean known = !unknownNonAscii || codePoint < 128;
+          SimplifiedRegexCharacterClass singleton = singleton(codePoint);
+          assertThat(positive.supersetOf(singleton, false)).as("%s flags=%s char=%s", property[0], flags, codePoint).isEqualTo(known && member);
+          assertThat(negative.supersetOf(singleton, false)).as("negated %s flags=%s char=%s", property[0], flags, codePoint).isEqualTo(known && !member);
+          assertThat(outerNegative.supersetOf(singleton, false)).isEqualTo(known && !member);
+          assertThat(doubleNegative.supersetOf(singleton, false)).isEqualTo(known && member);
+        }
+      }
+    }
+  }
+
+  private static int[] membershipCodePoints() {
+    int[] values = new int[259];
+    for (int i = 0; i < 256; i++) {
+      values[i] = i;
+    }
+    values[256] = 0x100;
+    values[257] = 0x1F600;
+    values[258] = Character.MAX_CODE_POINT;
+    return values;
+  }
+
+  @Test
+  void posix_unknown_membership_is_not_empty_or_universal() {
+    for (String property : new String[] {"unknown", "<", ">"}) {
+      PosixCharacterClassElementTree tree = new PosixCharacterClassElementTree(new PhpRegexSource("", '\''),
+        new IndexRange(0, 0), false, property, new FlagSet());
+      SimplifiedRegexCharacterClass unknown = new SimplifiedRegexCharacterClass(tree, true);
+      assertThat(unknown.isEmpty()).isFalse();
+      assertThat(unknown.matchesAnyCharacter()).isFalse();
+      assertThat(unknown.supersetOf(singleton('a'), false)).isFalse();
+      assertThat(unknown.supersetOf(singleton(Character.MAX_CODE_POINT), false)).isFalse();
+      assertThat(unknown.supersetOf(SimplifiedRegexCharacterClass.of(parseRegex(".", new FlagSet(Pattern.DOTALL)).getResult()), false)).isFalse();
+      assertThat(singleton('a').supersetOf(unknown, false)).isFalse();
+      assertThat(unknown.intersects(singleton('a'), true)).isTrue();
+      assertThat(unknown.intersects(singleton('a'), false)).isFalse();
+    }
+    SimplifiedRegexCharacterClass unicodeDigit = phpClass("[[:digit:]]", Pattern.UNICODE_CHARACTER_CLASS);
+    assertThat(phpClass("[0-9]", 0).supersetOf(unicodeDigit, false)).isFalse();
+    assertThat(unicodeDigit.matchesAnyCharacter()).isFalse();
+    assertThat(unicodeDigit.isEmpty()).isFalse();
+    assertThat(unicodeDigit.intersects(singleton(0x660), true)).isTrue();
+    assertThat(unicodeDigit.intersects(singleton(0x660), false)).isFalse();
+  }
+
+  @Test
+  void posix_unions_and_negation() {
+    assertThat(phpClass("[x[:digit:]A-F]", 0).supersetOf(phpClass("[x0-9A-F]", 0), false)).isTrue();
+    assertThat(phpClass("[[:^digit:]0-9]", 0).matchesAnyCharacter()).isTrue();
+    assertThat(phpClass("[^[:digit:]A-F]", 0).supersetOf(singleton('G'), false)).isTrue();
+    assertThat(phpClass("[^[:digit:]A-F]", 0).supersetOf(singleton('A'), false)).isFalse();
+    assertThat(phpClass("[^[:digit:]A-F]", Pattern.UNICODE_CHARACTER_CLASS).supersetOf(singleton('G'), false)).isTrue();
+    assertThat(phpClass("[^[:digit:]A-F]", Pattern.UNICODE_CHARACTER_CLASS).supersetOf(singleton('A'), false)).isFalse();
+    assertThat(phpClass("[[:digit:]é]", Pattern.UNICODE_CHARACTER_CLASS).supersetOf(singleton('é'), false)).isTrue();
+  }
+
+  private static SimplifiedRegexCharacterClass phpClass(String regex, int flags) {
+    RegexParseResult result = new RegexParser(new PhpRegexSource(regex, '\''), new FlagSet(flags)).parse();
+    assertThat(result.getSyntaxErrors()).isEmpty();
+    return SimplifiedRegexCharacterClass.of(result.getResult(), true);
+  }
+
+  private static SimplifiedRegexCharacterClass singleton(int codePoint) {
+    return new SimplifiedRegexCharacterClass(new CharacterTree(new PhpRegexSource("", '\''), new IndexRange(0, 0), codePoint, false, new FlagSet()));
+  }
 
   @Test
   void testIntersectionWithTrueAsDefaultAnswer() {

@@ -28,8 +28,8 @@ public class SupersetAutomataChecker extends AbstractAutomataChecker {
 
   @Override
   protected boolean checkAuto1AndAuto2Successors(SubAutomaton auto1, SubAutomaton auto2, boolean defaultAnswer, boolean hasConsumedInput) {
-    SimplifiedRegexCharacterClass characterClass1 = SimplifiedRegexCharacterClass.of(auto1.start);
-    SimplifiedRegexCharacterClass characterClass2 = SimplifiedRegexCharacterClass.of(auto2.start);
+    SimplifiedRegexCharacterClass characterClass1 = SimplifiedRegexCharacterClass.of(auto1.start, true);
+    SimplifiedRegexCharacterClass characterClass2 = SimplifiedRegexCharacterClass.of(auto2.start, true);
     return ((characterClass1 != null) && (characterClass2 != null)) ?
       (characterClass1.supersetOf(characterClass2, defaultAnswer) &&
         auto2.allSuccessorMatch(successor2 ->

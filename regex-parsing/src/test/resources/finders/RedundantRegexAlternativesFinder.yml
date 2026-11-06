@@ -18,4 +18,69 @@
 - '.*' # Compliant
 - '[[:space:]]|x' # Compliant
 - 'x|[[:space:]]' # Compliant
-- '[[:space:]]|\n' # Compliant, false negative
+- '[[:space:]]|\n' # Noncompliant
+- '[[:alpha:]]|A' # Noncompliant
+- '[[:alnum:]]|7' # Noncompliant
+- '[[:blank:]]|\t' # Noncompliant
+- '[[:cntrl:]]|\x7f' # Noncompliant
+- '[[:graph:]]|!' # Noncompliant
+- '[[:print:]]| ' # Noncompliant
+- '[[:punct:]]|_' # Noncompliant
+- '[[:word:]]|_' # Noncompliant
+- '[[:xdigit:]]|F' # Noncompliant
+- '[[:ascii:]]|\x7f' # Noncompliant
+- '[[:upper:]]|Z' # Noncompliant
+- '[[:lower:]]|z' # Noncompliant
+- '[[:lower:]]|A': 'i' # Noncompliant
+- '[[:upper:]]|a': 'i' # Noncompliant
+- '(?i:[[:lower:]]|A)' # Noncompliant
+- '[[:^lower:]]|A' # Noncompliant
+- '[[:^lower:]]|A': 'i' # Compliant
+- '[^[:lower:]]|A': 'i' # Compliant
+- '[^[:^lower:]]|A': 'i' # Noncompliant
+- '[[:^digit:]]|A' # Noncompliant
+- '[^[:digit:]]|A' # Noncompliant
+- '[^[:^digit:]]|7' # Noncompliant
+- '[[:^digit:]]|[A-Z]' # Noncompliant
+- '[[:digit:]A-F]|[0-9A-F]' # Noncompliant
+- '[x[:space:]]|[x\n]' # Noncompliant
+- '[^[:digit:]A-F]|G' # Noncompliant
+- '[[:alpha:]]|A|B' # Noncompliant
+- 'A|[[:alpha:]]' # Noncompliant
+- '([[:alpha:]])|(A)' # Noncompliant
+- '(A)|([[:alpha:]])' # Compliant
+- 'A|([[:alpha:]])' # Compliant
+- '([[:alpha:]])|A' # Noncompliant
+- '[[:lower:]]|A' # Compliant
+- '[[:upper:]]|a' # Compliant
+- '(?i:[[:lower:]])|A' # Noncompliant
+- '(?-i:[[:lower:]])|A': 'i' # Compliant
+- '[[:digit:]]|a' # Compliant
+- '[[:^digit:]]|7' # Compliant
+- '[^[:digit:]]|7' # Compliant
+- '[[:digit:]a]|[0-9b]' # Compliant
+- '[[:space:]]|[\nx]' # Compliant
+- '[[:alpha:]]|[A-Z0-9]' # Compliant
+- '[[:<:]]|a' # Compliant
+- '[[:>:]]|a' # Compliant
+- '[[:<:]]|[[:>:]]' # Compliant
+- '[[:<:]]|[[:<:]]' # Compliant
+- '[^[:<:]]|a' # Compliant
+- '[[:<:]]|.': 's' # Compliant
+- '.|[[:>:]]': 's' # Compliant
+- '[[:space:]]|\n': 'u' # Noncompliant
+- '[[:digit:]]|7': 'u' # Noncompliant
+- '[[:^digit:]]|A': 'u' # Noncompliant
+- '[^[:digit:]]|A': 'u' # Noncompliant
+- '[^[:^digit:]]|7': 'u' # Noncompliant
+- '[[:lower:]]|A': 'iu' # Noncompliant
+- '[[:^lower:]]|A': 'iu' # Compliant
+- '[[:ascii:]]|\x7f': 'u' # Noncompliant
+- '[[:^ascii:]]|é': 'u' # Noncompliant
+- '[[:digit:]]|é': 'u' # Compliant
+- '[[:^digit:]]|é': 'u' # Compliant
+- '[^[:digit:]]|é': 'u' # Compliant
+- '[^[:^digit:]]|é': 'u' # Compliant
+- '[0-9]|[[:digit:]]': 'u' # Noncompliant
+- '([0-9])|[[:digit:]]': 'u' # Compliant
+- '[[:digit:]]|[[:digit:]]': 'u' # Compliant
