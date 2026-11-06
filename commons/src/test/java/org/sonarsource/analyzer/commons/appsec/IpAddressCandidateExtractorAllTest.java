@@ -278,4 +278,40 @@ class IpAddressCandidateExtractorAllTest {
     }
   }
 
+
+  @ParameterizedTest
+  @CsvSource({
+    "<[fe80::1%eth0]>, fe80::1%eth0",
+    "[fe80::1%eth0]:80!, fe80::1%eth0",
+    "<[fe80::1%eth0]:80>, fe80::1%eth0",
+    "[fe80::1%eth!0]:65535!, fe80::1%eth!0",
+    "<[fe80::1%eth>0]>, fe80::1%eth>0",
+    "[fe80::1%接口]!, fe80::1%接口",
+    "[fe80::1%]:0!, fe80::1%",
+    "[::ffff:192.0.2.1%eth0]!, ::ffff:192.0.2.1%eth0",
+    "[fe80::1%eth0]/64!, fe80::1%eth0/64"
+  })
+  void boundsBracketedZonesInText(String content, String expected) {
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).containsExactly(expected);
+  }
+
+  @Test
+  void continuesAfterBracketedZonesAndKeepsOpaqueUnbracketedZones() {
+    assertThat(IpAddressCandidateExtractor.extractAll(
+      "<[fe80::1%eth0]>!10.0.0.1&[fe80::2%eth0]:80!10.0.0.2 fe80::3%eth>0"))
+      .containsExactly("fe80::1%eth0", "10.0.0.1", "fe80::2%eth0", "10.0.0.2", "fe80::3%eth>0");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "[fe80::1%eth0]:bad", "[fe80::1%eth0]:80bad", "[fe80::1%eth0]:65536", "[fe80::1%eth0]:000080",
+    "[fe80::1%eth0]:", "[fe80::1%eth0]:+80", "[fe80::1%eth0]:-1", "[fe80::1%eth0]:８０",
+    "[fe80::1%eth0]:80:90", "[fe80::1%eth0]:80%zone", "[fe80::1%eth0]suffix", "[fe80::1%eth0].",
+    "[fe80::1%eth0]]", "[[fe80::1%eth0]]", "[fe80::1%eth0", "[fe80::1%eth0]/129"
+  })
+  void rejectsMalformedBracketedZonesAndContinuesAfterPunctuation(String malformed) {
+    assertThat(IpAddressCandidateExtractor.extractAll(malformed + "!10.0.0.2"))
+      .containsExactly("10.0.0.2");
+  }
+
 }

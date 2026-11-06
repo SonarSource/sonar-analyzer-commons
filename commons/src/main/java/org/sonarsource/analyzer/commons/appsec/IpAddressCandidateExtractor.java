@@ -36,7 +36,7 @@ public final class IpAddressCandidateExtractor {
   // Keep entire identifiers and malformed endpoints together, rather than recovering shorter valid addresses.
   // Zones are opaque to address validation, but stop at path and value separators.
   private static final Pattern ADDRESS_TOKEN = Pattern.compile("[\\p{L}\\p{N}_.:\\[\\]+-]+(?:%[^,;/?#=&]*)?");
-  private static final Pattern CIDR_SUFFIX = Pattern.compile("[\\p{L}\\p{N}_.:%\\[\\]+-]+");
+  private static final Pattern ADDRESS_SUFFIX = Pattern.compile("[\\p{L}\\p{N}_.:%\\[\\]+-]+");
 
   private IpAddressCandidateExtractor() {
   }
@@ -187,19 +187,25 @@ public final class IpAddressCandidateExtractor {
     while (end < authority.length() && ",;".indexOf(authority.charAt(end)) < 0) {
       end++;
     }
-    int tokenStart = hostStart;
-    if (hostStart < end && authority.charAt(hostStart) == '[') {
-      int closing = authority.indexOf(']', hostStart);
+    return addressTokenEnd(authority, hostStart, end);
+  }
+
+  private static int addressTokenEnd(String text, int start, int end) {
+    int tokenStart = start;
+    Pattern pattern = ADDRESS_TOKEN;
+    if (start < end && text.charAt(start) == '[') {
+      pattern = ADDRESS_SUFFIX;
+      int closing = text.indexOf(']', start);
       if (closing >= 0 && closing < end) {
         // A closing endpoint bracket bounds even an opaque zone. Keep the complete port or malformed suffix attached.
         tokenStart = closing + 1;
       }
     }
-    Matcher token = ADDRESS_TOKEN.matcher(authority).region(tokenStart, end);
+    Matcher token = pattern.matcher(text).region(tokenStart, end);
     if (token.lookingAt()) {
       return token.end();
     }
-    return tokenStart > hostStart ? tokenStart : end;
+    return tokenStart > start ? tokenStart : end;
   }
 
   private static void extractText(String text, boolean inUrl, List<String> addresses) {
@@ -217,19 +223,22 @@ public final class IpAddressCandidateExtractor {
     int previousEnd = 0;
     boolean inPath = false;
     while (tokens.find()) {
-      if (tokens.start() != previousEnd) {
-        inPath = text.charAt(tokens.start() - 1) == '/';
+      int start = tokens.start();
+      int end = addressTokenEnd(text, start, tokens.end());
+      if (start != previousEnd) {
+        inPath = text.charAt(start - 1) == '/';
       }
-      previousEnd = tokens.end();
-      Optional<StrippedCandidate> stripped = stripBracketsAndPort(tokens.group());
+      previousEnd = end;
+      Optional<StrippedCandidate> stripped = stripBracketsAndPort(text.substring(start, end));
+      tokens.region(end, text.length());
       if (stripped.isEmpty()) {
         continue;
       }
       StrippedCandidate endpoint = stripped.get();
       String candidate = endpoint.candidate();
       if (!inUrl && !inPath && !endpoint.portRemoved()) {
-        int prefixEnd = standalonePrefixEnd(text, tokens.end());
-        candidate += text.substring(tokens.end(), prefixEnd);
+        int prefixEnd = standalonePrefixEnd(text, end);
+        candidate += text.substring(end, prefixEnd);
         // Consume malformed prefixes too, while leaving later separate values available to the scanner.
         tokens.region(prefixEnd, text.length());
         previousEnd = prefixEnd;
@@ -242,7 +251,7 @@ public final class IpAddressCandidateExtractor {
     if (end + 1 >= text.length() || text.charAt(end) != '/') {
       return end;
     }
-    Matcher suffix = CIDR_SUFFIX.matcher(text).region(end + 1, text.length());
+    Matcher suffix = ADDRESS_SUFFIX.matcher(text).region(end + 1, text.length());
     if (!suffix.lookingAt() || (suffix.end() < text.length() && text.charAt(suffix.end()) == '/')) {
       return end;
     }
