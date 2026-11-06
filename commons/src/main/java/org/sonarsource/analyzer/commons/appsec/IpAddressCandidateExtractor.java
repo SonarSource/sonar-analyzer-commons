@@ -30,9 +30,10 @@ public final class IpAddressCandidateExtractor {
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
   private static final Pattern CONTENT_PART = Pattern.compile(
-    "(?<url>(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//(?:[^/?#,@\\s;\"'()<>]*@)?)"
+    "(?<url>(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//)"
       + "|(?<entry>[\\p{L}\\p{N}\\p{M}._:+\\-\\[\\]/]+(?:%[^\\s,;=\"'()<>?&#]*)?)", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ENTRY_END = Pattern.compile("[\\s,;\"'()<>]", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern URL_USER_INFO = Pattern.compile("[^/?#,@\\s;\"'()<>]*@", Pattern.UNICODE_CHARACTER_CLASS);
 
   private IpAddressCandidateExtractor() {
   }
@@ -125,6 +126,10 @@ public final class IpAddressCandidateExtractor {
         if (parts.start() >= urlEnd) {
           Matcher end = ENTRY_END.matcher(content);
           urlEnd = end.find(parts.end()) ? end.start() : content.length();
+        }
+        Matcher userInfo = URL_USER_INFO.matcher(content).region(parts.end(), urlEnd);
+        if (userInfo.lookingAt()) {
+          parts.region(userInfo.end(), content.length());
         }
       } else {
         extractEntry(parts.group("entry"), parts.start() < urlEnd, addresses);
