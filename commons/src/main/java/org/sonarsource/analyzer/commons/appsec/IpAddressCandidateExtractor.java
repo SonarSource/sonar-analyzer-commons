@@ -29,9 +29,9 @@ public final class IpAddressCandidateExtractor {
     "^(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//(?:[^/?#,@\\s]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
-  private static final Pattern CONTENT_PART = Pattern.compile(
-    "(?<url>(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//)"
-      + "|(?<entry>[\\p{L}\\p{N}\\p{M}._:+\\-\\[\\]/]+(?:%[^\\s,;=\"'()<>?&#]*)?)", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern URL_AUTHORITY_START = Pattern.compile("//");
+  private static final Pattern CONTENT_ENTRY = Pattern.compile(
+    "[\\p{L}\\p{N}\\p{M}._:+\\-\\[\\]/]+(?:%[^\\s,;=\"'()<>?&#]*)?", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ENTRY_END = Pattern.compile("[\\s,;\"'()<>]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern URL_USER_INFO = Pattern.compile("[^/?#,@\\s;\"'()<>]*@", Pattern.UNICODE_CHARACTER_CLASS);
 
@@ -113,29 +113,41 @@ public final class IpAddressCandidateExtractor {
    * Other slash suffixes, slashes in URLs, and entries with multiple path segments are treated as paths.
    * Adjacent letters, digits, dots, hyphens, and underscores remain part of a candidate, preventing partial matches.
    * Bracketed IPv4 endpoints and bracketed lists are not supported.
+   * Zones are opaque, as in the address validator; percent-encoded URL content is not decoded.
    *
    * @return an empty list if no valid address is found
    * @throws NullPointerException if {@code content} is null
    */
   public static List<String> extractAll(String content) {
     List<String> addresses = new ArrayList<>();
-    Matcher parts = CONTENT_PART.matcher(content);
+    Matcher urls = URL_AUTHORITY_START.matcher(content);
+    Matcher entries = CONTENT_ENTRY.matcher(content);
+    int position = 0;
     int urlEnd = 0;
-    while (parts.find()) {
-      if (parts.group("url") != null) {
-        if (parts.start() >= urlEnd) {
-          Matcher end = ENTRY_END.matcher(content);
-          urlEnd = end.find(parts.end()) ? end.start() : content.length();
-        }
-        Matcher userInfo = URL_USER_INFO.matcher(content).region(parts.end(), urlEnd);
-        if (userInfo.lookingAt()) {
-          parts.region(userInfo.end(), content.length());
-        }
-      } else {
-        extractEntry(parts.group("entry"), parts.start() < urlEnd, addresses);
+    // Locate authority markers before tokenizing entries, independently of the scheme spelling.
+    // Compound schemes (jdbc:mysql://), labels, and stray brackets must not expose user information.
+    // Scheme text preceding the marker cannot validate as an IP address.
+    while (urls.find(position)) {
+      extractEntries(entries, position, urls.start(), urlEnd, addresses);
+      position = urls.end();
+      if (urls.start() >= urlEnd) {
+        Matcher end = ENTRY_END.matcher(content);
+        urlEnd = end.find(position) ? end.start() : content.length();
+      }
+      Matcher userInfo = URL_USER_INFO.matcher(content).region(position, urlEnd);
+      if (userInfo.lookingAt()) {
+        position = userInfo.end();
       }
     }
+    extractEntries(entries, position, content.length(), urlEnd, addresses);
     return addresses;
+  }
+
+  private static void extractEntries(Matcher entries, int start, int end, int urlEnd, List<String> addresses) {
+    entries.region(start, end);
+    while (entries.find()) {
+      extractEntry(entries.group(), entries.start() < urlEnd, addresses);
+    }
   }
 
   private static void extractEntry(String entry, boolean inUrl, List<String> addresses) {

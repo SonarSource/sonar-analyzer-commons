@@ -71,6 +71,35 @@ class IpAddressCandidateExtractorTest {
     assertThat(IpAddressCandidateExtractor.extractAll(content)).containsExactly(expected.split(" "));
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"jdbc:mysql://", "jdbc:postgresql://", "url:http://", "[http://", "prefix[http://"})
+  void shouldRecognizeUrlsInsideEntries(String prefix) {
+    assertThat(IpAddressCandidateExtractor.extractAll(prefix + "10.0.0.9@example.org/10.0.0.2?q=10.0.0.1/24#2001:db8::1/64"))
+      .containsExactly("10.0.0.2", "10.0.0.1", "2001:db8::1");
+    assertThat(IpAddressCandidateExtractor.extractAll(prefix + "10.0.0.9:80/path?q=10.0.0.1/24"))
+      .containsExactly("10.0.0.9", "10.0.0.1");
+  }
+
+  @Test
+  void shouldPreserveAddressesBeforeEmbeddedUrls() {
+    assertThat(IpAddressCandidateExtractor.extractAll("/10.0.0.8/jdbc:mysql://10.0.0.9@example.org/10.0.0.2 10.0.0.3/24"))
+      .containsExactly("10.0.0.8", "10.0.0.2", "10.0.0.3/24");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"2001:db8::1%2C10.0.0.2", "fe80::1%eth0|10.0.0.1", "fe80::1%zone!name", "fe80::1%25eth0"})
+  void shouldPreserveOpaqueZonesAcceptedByValidation(String literal) {
+    assertThat(IpAddressClassifier.parse(literal)).isPresent();
+    assertThat(IpAddressCandidateExtractor.extractAll(literal)).containsExactly(literal);
+    assertThat(IpAddressCandidateExtractor.extractAll("http://example.org/?ip=" + literal)).containsExactly(literal);
+  }
+
+  @Test
+  void shouldNotDecodePercentEncodedSeparatorsOrSalvageInvalidIpv4Zones() {
+    assertThat(IpAddressCandidateExtractor.extractAll("http://example.org/?ip=10.0.0.1%2C10.0.0.2 10.0.0.3"))
+      .containsExactly("10.0.0.3");
+  }
+
   @Test
   void shouldExtractAddressesAcrossLines() {
     assertThat(IpAddressCandidateExtractor.extractAll("  10.0.0.1\t10.0.0.2\n10.0.0.1"))
