@@ -16,6 +16,8 @@
  */
 package org.sonarsource.analyzer.commons.appsec;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,6 +29,10 @@ public final class IpAddressCandidateExtractor {
     "^(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//(?:[^/?#,@\\s]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
+  private static final Pattern URL_PREFIX_ANYWHERE = Pattern.compile(
+    "(?<![\\p{L}\\p{N}._:+/-])(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//(?:[^/?#\\s\"'()]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern ENTRIES = Pattern.compile("[^\\s,;\"'()]+", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern VALUE_SEPARATORS = Pattern.compile("[=?#&@]");
 
   private IpAddressCandidateExtractor() {
   }
@@ -90,6 +96,68 @@ public final class IpAddressCandidateExtractor {
         // An IP address with a port identifies an endpoint, where a CIDR prefix doesn't make sense.
         // Treat the suffix as a URL path.
         (stripped.portRemoved() ? "" : cidr));
+  }
+
+  /**
+   * Finds all syntactically valid IP address literals throughout the content, in source order, including duplicates.
+   * Unlike {@link #extract(String)}, this operation validates addresses, but does not apply security-rule exceptions.
+   * Supports whitespace, comma and semicolon lists, quoted or parenthesized values, and values after {@code =}.
+   * Complete entries are validated so malformed addresses, identifiers and invalid endpoints cannot yield partial matches.
+   * A trailing sentence dot is part of the entry, not a delimiter.
+   *
+   * <p>URL schemes and authority user information are excluded; hosts, paths, queries and fragments are searched.
+   * IPv6 endpoint brackets and valid IPv4/bracketed-IPv6 ports are removed, preserving address spelling and zones.
+   * Standalone CIDRs retain their valid prefix. A single numeric-looking slash suffix is treated as a CIDR attempt;
+   * other slash suffixes, URLs, and entries containing multiple slashes are paths.
+   *
+   * @return the addresses, or an empty list if none are found
+   * @throws NullPointerException if {@code content} is null
+   */
+  public static List<String> extractAll(String content) {
+    List<String> addresses = new ArrayList<>();
+    // Keep a leading path separator so even numeric URL paths can never become standalone CIDR suffixes.
+    String searchable = URL_PREFIX_ANYWHERE.matcher(content).replaceAll("/");
+    Matcher entries = ENTRIES.matcher(searchable);
+    while (entries.find()) {
+      extractEntry(entries.group(), addresses);
+    }
+    return addresses;
+  }
+
+  private static void extractEntry(String entry, List<String> addresses) {
+    boolean path = false;
+    for (String value : VALUE_SEPARATORS.split(entry)) {
+      int slash = value.indexOf('/');
+      if (!path && isStandaloneCidr(value, slash)) {
+        addAddress(value.substring(0, slash), value.substring(slash), addresses);
+      } else {
+        path |= slash >= 0;
+        for (String segment : value.split("/")) {
+          addAddress(segment, "", addresses);
+        }
+      }
+    }
+  }
+
+  private static boolean isStandaloneCidr(String value, int slash) {
+    if (slash <= 0 || slash != value.lastIndexOf('/') || slash == value.length() - 1) {
+      return false;
+    }
+    char first = value.charAt(slash + 1);
+    // Reject malformed numeric prefixes (including signed, non-ASCII and overlong ones) as a whole.
+    if (!Character.isDigit(first) && first != '+' && first != '-') {
+      return false;
+    }
+    return stripBracketsAndPort(value.substring(0, slash))
+      .filter(stripped -> !stripped.portRemoved())
+      .isPresent();
+  }
+
+  private static void addAddress(String endpoint, String cidr, List<String> addresses) {
+    stripBracketsAndPort(endpoint)
+      .map(stripped -> stripped.candidate() + cidr)
+      .filter(candidate -> IpAddressClassifier.parse(candidate).isPresent())
+      .ifPresent(addresses::add);
   }
 
   private static Optional<StrippedCandidate> stripBracketsAndPort(String candidate) {
