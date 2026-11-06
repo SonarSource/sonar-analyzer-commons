@@ -103,7 +103,7 @@ class IpAddressCandidateExtractorTest {
     "fe80::1%eth[0", "fe80::1%eth0]",
     // Invalid standalone CIDRs invalidate the whole entry, not just its suffix.
     "192.0.2.1/33", "192.0.2.1/1000", "192.0.2.1/-1", "192.0.2.1/+24", "192.0.2.1/２４",
-    "192.0.2.1/24x", "192.0.2.1/24.", "192.0.2.1/99999999999999999999999999",
+    "192.0.2.1/𝟚𝟜", "192.0.2.1/24x", "192.0.2.1/24.", "192.0.2.1/99999999999999999999999999",
     "2001:db8::1/129", "[2001:db8::1]/129", "::ffff:192.0.2.1/129",
     // Exclude user information and host names, even when an address appears inside them.
     "http://192.0.2.1@example.org/path", "http://host192.0.2.1/path", "http://192.0.2.1.example.org/path",

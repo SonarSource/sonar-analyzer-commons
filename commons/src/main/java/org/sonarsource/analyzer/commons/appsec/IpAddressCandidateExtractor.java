@@ -143,7 +143,7 @@ public final class IpAddressCandidateExtractor {
     if (slash <= 0 || slash != value.lastIndexOf('/') || slash == value.length() - 1) {
       return false;
     }
-    char first = value.charAt(slash + 1);
+    int first = value.codePointAt(slash + 1);
     // Reject malformed numeric prefixes (including signed, non-ASCII and overlong ones) as a whole.
     if (!Character.isDigit(first) && first != '+' && first != '-') {
       return false;
