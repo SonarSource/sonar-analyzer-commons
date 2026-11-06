@@ -170,4 +170,54 @@ class IpAddressCandidateExtractorAllTest {
     assertThat(IpAddressCandidateExtractor.extractAll("0.0.0.0 127.0.0.1 224.0.0.1 255.255.255.255 8.8.8.8 :: ff02::1"))
       .containsExactly("0.0.0.0", "127.0.0.1", "224.0.0.1", "255.255.255.255", "8.8.8.8", "::", "ff02::1");
   }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"|", "&", "!", "<", ">", "@"})
+  void cidrSuffixDoesNotSwallowLaterAddresses(String separator) {
+    assertThat(IpAddressCandidateExtractor.extractAll("10.0.0.0/8" + separator + "10.0.0.2"))
+      .containsExactly("10.0.0.0/8", "10.0.0.2");
+    assertThat(IpAddressCandidateExtractor.extractAll("10.0.0.0/33" + separator + "10.0.0.2"))
+      .containsExactly("10.0.0.2");
+  }
+
+  @Test
+  void boundsEachCidrValueAndKeepsMalformedSuffixesAttached() {
+    assertThat(IpAddressCandidateExtractor.extractAll("allow=10.0.0.0/8&gw=10.0.0.2/24"))
+      .containsExactly("10.0.0.0/8", "10.0.0.2/24");
+    assertThat(IpAddressCandidateExtractor.extractAll("10.0.0.1/24!"))
+      .containsExactly("10.0.0.1/24");
+    assertThat(IpAddressCandidateExtractor.extractAll("2001:db8::1/64|2001:db8::2/129|10.0.0.2"))
+      .containsExactly("2001:db8::1/64", "10.0.0.2");
+    for (String suffix : new String[] {"24bad", "24.", "24.0", "24:80", "+24", "-1", "２４", "24%zone", "24["}) {
+      assertThat(IpAddressCandidateExtractor.extractAll("10.0.0.1/" + suffix + "!10.0.0.2"))
+        .as("malformed prefix %s", suffix)
+        .containsExactly("10.0.0.2");
+    }
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "<http://10.0.0.1>, 10.0.0.1",
+    "http://10.0.0.1!, 10.0.0.1",
+    "[http://10.0.0.1], 10.0.0.1",
+    "<http://10.0.0.1:80>, 10.0.0.1",
+    "http://[2001:db8::1]:80!, 2001:db8::1",
+    "[http://[2001:db8::1]], 2001:db8::1",
+    "[http://[2001:db8::1]:80], 2001:db8::1",
+    "[http://[fe80::1%eth0]], fe80::1%eth0"
+  })
+  void findsUrlHostsEnclosedByPunctuation(String content, String expected) {
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).containsExactly(expected);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "http://10.0.0.1:65536!", "http://10.0.0.1:bad!", "http://10.0.0.1.",
+    "http://host10.0.0.1!", "http://host:10.0.0.1!", "http://[192.0.2.1]!",
+    "http://[2001:db8::1]:bad!", "http://2001:db8::1]!", "[http://[2001:db8::1]",
+    "[http://10.0.0.1]suffix", "http:///path", "//"
+  })
+  void punctuationDoesNotSalvageMalformedUrlEndpoints(String content) {
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).isEmpty();
+  }
 }

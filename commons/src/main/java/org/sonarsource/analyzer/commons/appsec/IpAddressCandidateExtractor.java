@@ -36,6 +36,7 @@ public final class IpAddressCandidateExtractor {
   // Keep entire identifiers and malformed endpoints together, rather than recovering shorter valid addresses.
   // Zones are opaque to address validation, but stop at path and value separators.
   private static final Pattern ADDRESS_TOKEN = Pattern.compile("[\\p{L}\\p{N}_.:\\[\\]+-]+(?:%[^,;/?#=&]*)?");
+  private static final Pattern CIDR_SUFFIX = Pattern.compile("[\\p{L}\\p{N}_.:%\\[\\]+-]+");
 
   private IpAddressCandidateExtractor() {
   }
@@ -149,7 +150,15 @@ public final class IpAddressCandidateExtractor {
       while (hostEnd < authority.length() && ",;".indexOf(authority.charAt(hostEnd)) < 0) {
         hostEnd++;
       }
+      Matcher hostToken = ADDRESS_TOKEN.matcher(authority).region(hostStart, hostEnd);
+      if (hostToken.lookingAt()) {
+        hostEnd = hostToken.end();
+      }
       String host = authority.substring(hostStart, hostEnd);
+      // A bracket enclosing the URL is distinct from brackets enclosing an IPv6 endpoint.
+      if (urls.start() > 0 && entry.charAt(urls.start() - 1) == '[' && host.endsWith("]")) {
+        host = host.substring(0, host.length() - 1);
+      }
       stripBracketsAndPort(host).map(StrippedCandidate::candidate).ifPresent(candidate -> addValid(candidate, addresses));
       start = urls.end() + hostEnd;
       inUrl = true;
@@ -169,34 +178,42 @@ public final class IpAddressCandidateExtractor {
 
   private static void extractListEntry(String text, boolean inUrl, List<String> addresses) {
     Matcher tokens = ADDRESS_TOKEN.matcher(text);
+    int previousEnd = 0;
+    boolean inPath = false;
     while (tokens.find()) {
+      inPath = tokens.start() == previousEnd ? inPath : text.charAt(tokens.start() - 1) == '/';
+      previousEnd = tokens.end();
       Optional<StrippedCandidate> stripped = stripBracketsAndPort(tokens.group());
       if (stripped.isEmpty()) {
         continue;
       }
       StrippedCandidate endpoint = stripped.get();
       String candidate = endpoint.candidate();
-      if (!inUrl && !endpoint.portRemoved() && isStandalonePrefix(text, tokens.end())) {
-        candidate += text.substring(tokens.end());
-        // Consume even an invalid CIDR suffix so it cannot yield a shorter address.
-        addValid(candidate, addresses);
-        return;
+      if (!inUrl && !inPath && !endpoint.portRemoved()) {
+        int prefixEnd = standalonePrefixEnd(text, tokens.end());
+        candidate += text.substring(tokens.end(), prefixEnd);
+        // Consume malformed prefixes too, while leaving later separate values available to the scanner.
+        tokens.region(prefixEnd, text.length());
+        previousEnd = prefixEnd;
       }
       addValid(candidate, addresses);
     }
   }
 
-  private static boolean isStandalonePrefix(String text, int end) {
-    if (end + 1 >= text.length() || text.charAt(end) != '/' || text.indexOf('/') != end || text.lastIndexOf('/') != end) {
-      return false;
+  private static int standalonePrefixEnd(String text, int end) {
+    if (end + 1 >= text.length() || text.charAt(end) != '/') {
+      return end;
     }
-    String suffix = text.substring(end + 1);
+    Matcher suffix = CIDR_SUFFIX.matcher(text).region(end + 1, text.length());
+    if (!suffix.lookingAt() || (suffix.end() < text.length() && text.charAt(suffix.end()) == '/')) {
+      return end;
+    }
     // An address in the next segment identifies a path, not a prefix length.
-    if (stripBracketsAndPort(suffix).filter(endpoint -> IpAddressClassifier.parse(endpoint.candidate()).isPresent()).isPresent()) {
-      return false;
+    if (stripBracketsAndPort(suffix.group()).filter(endpoint -> IpAddressClassifier.parse(endpoint.candidate()).isPresent()).isPresent()) {
+      return end;
     }
-    char first = suffix.charAt(0);
-    return Character.isDigit(first) || first == '+' || first == '-';
+    char first = text.charAt(end + 1);
+    return (Character.isDigit(first) || first == '+' || first == '-') ? suffix.end() : end;
   }
 
   private static void addValid(String candidate, List<String> addresses) {
