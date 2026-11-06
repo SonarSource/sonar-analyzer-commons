@@ -18,4 +18,46 @@
 - '.*' # Compliant
 - '[[:space:]]|x' # Compliant
 - 'x|[[:space:]]' # Compliant
-- '[[:space:]]|\n' # Compliant, false negative
+- '[[:space:]]|\n' # Noncompliant
+- '[[:alpha:]]|A' # Noncompliant
+- '[[:alnum:]]|5' # Noncompliant
+- '[[:^digit:]]|A' # Noncompliant
+- '[^[:digit:]]|A' # Noncompliant
+- '[^[:^alpha:]]|A' # Noncompliant
+- '[[:digit:]a-f]|b' # Noncompliant
+- '[[:alpha:][:digit:]]|[A-Z0-9]' # Noncompliant
+- '[[:lower:]]|A': 'i' # Noncompliant
+- '[[:upper:]]|a': 'i' # Noncompliant
+- '[[:^lower:]]|A': 'i' # Compliant
+- '[[:lower:]]|A' # Compliant
+- '[[:upper:]]|a' # Compliant
+- '[[:digit:]]|A' # Compliant
+- '[[:^digit:]]|5' # Compliant
+- '[[:alpha:]]|[A-Z0-9]' # Compliant, overlap without inclusion
+- '([[:alpha:]])|(A)' # Noncompliant
+- '(A)|([[:alpha:]])' # Compliant, capturing groups prevent reordering
+- 'A|[[:alpha:]]' # Noncompliant
+- '[[:space:]]|\n|\t' # Noncompliant
+- '[[:<:]]|x' # Compliant
+- '[[:>:]]|x' # Compliant
+- '[^[:<:]]|x' # Compliant
+- '[[:<:]a]|a' # Compliant
+- '[[:>:]]|[[:>:]]' # Compliant
+- '[[:space:]]|\n': 'u' # Noncompliant
+- '[^[:digit:]]|A': 'u' # Noncompliant
+- '[[:^digit:]]|A': 'u' # Noncompliant
+- '[[:alpha:]]|é': 'u' # Compliant, Unicode membership is unknown
+- '[[:^digit:]]|é': 'u' # Compliant
+- '[^[:digit:]]|é': 'u' # Compliant
+- '[[:ascii:]]|[\x00-\x7f]': 'u' # Noncompliant
+- '[[:digit:][:^digit:]]|é': 'u' # Compliant, do not infer universal coverage
+- '(?i:[[:lower:]])|A' # Noncompliant
+- '(?i:[[:^lower:]])|A' # Compliant
+- '[[:lower:]]|(?i:a)' # Compliant
+- '[0-9[:alpha:]]|[A-F3]' # Noncompliant
+- '[a[:^digit:]0]|A' # Noncompliant
+- '[[:^digit:]a0]|[A0]' # Noncompliant
+- '[^[:digit:]A-Z]|a' # Noncompliant
+- '[^[:digit:]A-Z]|A' # Compliant
+- '[[:alpha:]é]|é': 'u' # Noncompliant
+- '[^[:^alpha:]0-9]|A': 'u' # Noncompliant

@@ -16,15 +16,44 @@
  */
 package org.sonarsource.analyzer.commons.regex.finders;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
+import org.sonarsource.analyzer.commons.regex.RegexParser;
+import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
+import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
+import org.sonarsource.analyzer.commons.regex.php.PhpRegexSource;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class RedundantRegexAlternativesFinderTest {
 
   @Test
   void test() {
     Verifier.verify(new RedundantRegexAlternativesFinderCheck(), "RedundantRegexAlternativesFinder.yml");
+  }
+
+  @Test
+  void posix_alternatives_preserve_issue_locations_and_grouping() {
+    List<RegexSyntaxElement> reported = new ArrayList<>();
+    var result = new RegexParser(new PhpRegexSource("[[:space:]]|\\n|\\t", '\''), new FlagSet()).parse();
+    assertThat(result.getSyntaxErrors()).isEmpty();
+    new RedundantRegexAlternativesFinder((element, message, cost, secondaries) -> {
+      reported.add(element);
+      assertThat(message).isEqualTo("Remove or rework this redundant alternative.");
+      assertThat(element.getRange().getBeginningOffset()).isEqualTo(12);
+      assertThat(element.getRange().getEndingOffset()).isEqualTo(14);
+      assertThat(secondaries).hasSize(2);
+      assertThat(secondaries.get(0).message()).isEqualTo("Alternative to keep");
+      assertThat(secondaries.get(0).syntaxElements().get(0).getRange().getBeginningOffset()).isZero();
+      assertThat(secondaries.get(0).syntaxElements().get(0).getRange().getEndingOffset()).isEqualTo(11);
+      assertThat(secondaries.get(1).message()).isEqualTo("Other redundant alternative");
+      assertThat(secondaries.get(1).syntaxElements().get(0).getRange().getBeginningOffset()).isEqualTo(15);
+      assertThat(secondaries.get(1).syntaxElements().get(0).getRange().getEndingOffset()).isEqualTo(17);
+    }).visit(result);
+    assertThat(reported).hasSize(1);
   }
 
   static class RedundantRegexAlternativesFinderCheck extends FinderCheck {
