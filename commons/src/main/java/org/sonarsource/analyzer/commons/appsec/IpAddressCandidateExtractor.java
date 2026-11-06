@@ -80,12 +80,14 @@ public final class IpAddressCandidateExtractor {
       } else if (part.region(index, entry.length()).lookingAt()) {
         int end = part.end();
         String candidate = part.group();
-        String suffix = standalonePrefix(entry, end, path);
-        stripBracketsAndPort(candidate)
-          .map(stripped -> stripped.candidate() + (stripped.portRemoved() ? "" : suffix))
-          .filter(address -> IpAddressClassifier.parse(address).isPresent())
+        Optional<StrippedCandidate> stripped = stripBracketsAndPort(candidate)
+          .filter(address -> IpAddressClassifier.parse(address.candidate()).isPresent());
+        String suffix = standalonePrefix(entry, end, path || stripped.map(StrippedCandidate::portRemoved).orElse(true));
+        stripped.map(address -> address.candidate() + suffix)
+          .filter(address -> suffix.isEmpty() || IpAddressClassifier.parse(address).isPresent())
           .ifPresent(addresses::add);
-        index = end;
+        // A consumed CIDR slash must not turn later standalone values into path segments.
+        index = end + suffix.length();
       } else {
         path |= entry.charAt(index) == '/';
         index++;
@@ -97,11 +99,18 @@ public final class IpAddressCandidateExtractor {
     if (path || end + 1 >= entry.length() || entry.charAt(end) != '/') {
       return "";
     }
-    String suffix = entry.substring(end + 1);
+    Matcher prefix = ADDRESS_PART.matcher(entry).region(end + 1, entry.length());
+    if (!prefix.lookingAt()) {
+      return "";
+    }
+    String suffix = prefix.group();
     // Multiple segments, another address, or a named segment make this a path rather than a CIDR entry.
+    // Keep a trailing dot on a numeric prefix so validation rejects a sentence-ending dot.
     int first = suffix.codePointAt(0);
+    int dot = suffix.indexOf('.');
     if ((!Character.isDigit(first) && first != '+' && first != '-')
-      || suffix.indexOf('/') >= 0 || suffix.indexOf('.') >= 0 || suffix.indexOf(':') >= 0) {
+      || (prefix.end() < entry.length() && entry.charAt(prefix.end()) == '/')
+      || (dot >= 0 && dot != suffix.length() - 1) || suffix.indexOf(':') >= 0) {
       return "";
     }
     return "/" + suffix;
