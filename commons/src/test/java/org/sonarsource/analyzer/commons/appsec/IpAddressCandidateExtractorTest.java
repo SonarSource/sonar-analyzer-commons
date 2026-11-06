@@ -69,6 +69,13 @@ class IpAddressCandidateExtractorTest {
     "ip=192.0.2.1/24 | 192.0.2.1/24",
     "[fe80::1%接口]/64 | fe80::1%接口/64",
     // Slashes in URLs and path entries are never CIDR prefixes.
+    "ipaddresses/192.168.2.3 | 192.168.2.3",
+    "registry/192.0.2.1 | 192.0.2.1",
+    "example.org/192.0.2.1 | 192.0.2.1",
+    "localhost/2001:db8::1 | 2001:db8::1",
+    "192.0.2.1/198.51.100.2 | 192.0.2.1 198.51.100.2",
+    "192.0.2.1/2001:db8::1 | 192.0.2.1 2001:db8::1",
+    "192.0.2.1/198.51.100.2:80 | 192.0.2.1 198.51.100.2",
     "http://192.0.2.1/33 | 192.0.2.1",
     "http://example.org?ip=192.0.2.1/33 | 192.0.2.1",
     "http://example.org/192.0.2.1/24 | 192.0.2.1",
@@ -85,7 +92,7 @@ class IpAddressCandidateExtractorTest {
 
   @ParameterizedTest
   @ValueSource(strings = {
-    "", "ordinary text", "example.org", "1.2.3", "999.0.2.1", "010.0.0.1", "192.0.2.01",
+    "", "ordinary text", "example.org", "example.org/24", "999.0.2.1/24", "1.2.3", "999.0.2.1", "010.0.0.1", "192.0.2.01",
     // Never recover a shorter address from an identifier, version, or malformed literal.
     "prefix192.0.2.1", "192.0.2.1suffix", "x-192.0.2.1", "192.0.2.1-x", "x_192.0.2.1", "192.0.2.1_x",
     "接口192.0.2.1", "192.0.2.1接口", "1192.0.2.1", "192.0.2.1234",

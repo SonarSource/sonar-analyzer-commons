@@ -107,8 +107,8 @@ public final class IpAddressCandidateExtractor {
    *
    * <p>URL schemes and authority user information are excluded; hosts, paths, queries and fragments are searched.
    * IPv6 endpoint brackets and valid IPv4/bracketed-IPv6 ports are removed, preserving address spelling and zones.
-   * Standalone CIDRs retain their valid prefix. A single numeric-looking slash suffix is treated as a CIDR attempt;
-   * other slash suffixes, URLs, and entries containing multiple slashes are paths.
+   * Standalone CIDRs retain their valid prefix. A single numeric-looking slash suffix on an address is treated as a CIDR attempt,
+   * unless the suffix is itself an address endpoint. Other slash suffixes, URLs, and entries containing multiple slashes are paths.
    *
    * @return the addresses, or an empty list if none are found
    * @throws NullPointerException if {@code content} is null
@@ -150,7 +150,12 @@ public final class IpAddressCandidateExtractor {
     }
     return stripBracketsAndPort(value.substring(0, slash))
       .filter(stripped -> !stripped.portRemoved())
-      .isPresent();
+      .filter(stripped -> IpAddressClassifier.parse(stripped.candidate()).isPresent())
+      .isPresent()
+      // Both sides of an address/address path are separate entries, not a malformed CIDR.
+      && stripBracketsAndPort(value.substring(slash + 1))
+        .filter(stripped -> IpAddressClassifier.parse(stripped.candidate()).isPresent())
+        .isEmpty();
   }
 
   private static void addAddress(String endpoint, String cidr, List<String> addresses) {
