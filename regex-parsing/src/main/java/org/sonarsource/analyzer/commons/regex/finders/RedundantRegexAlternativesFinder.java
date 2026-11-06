@@ -26,7 +26,6 @@ import java.util.Set;
 import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.ast.CapturingGroupTree;
-import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
@@ -48,10 +47,7 @@ public class RedundantRegexAlternativesFinder extends RegexBaseVisitor {
   @Override
   public void visitDisjunction(DisjunctionTree tree) {
     RedundantAlternativeCollector collector = new RedundantAlternativeCollector();
-    List<RegexTree> alternatives = tree.getAlternatives().stream()
-      // We don't handle POSIX character classes correctly (SONARPHP-1239)
-      .filter(t -> !hasPosixCharacterClass(t))
-      .toList();
+    List<RegexTree> alternatives = tree.getAlternatives();
     for (int i = 0; i + 1 < alternatives.size(); i++) {
       for (int j = i + 1; j < alternatives.size(); j++) {
         collector.evaluate(alternatives.get(i), alternatives.get(j));
@@ -131,21 +127,4 @@ public class RedundantRegexAlternativesFinder extends RegexBaseVisitor {
     }
   }
 
-  private static boolean hasPosixCharacterClass(RegexTree tree) {
-    PosixCharacterClassVisitor posixCharacterClassVisitor = new PosixCharacterClassVisitor();
-    posixCharacterClassVisitor.visit(tree);
-    return posixCharacterClassVisitor.hasPosixCharacterClass;
-  }
-
-  private static class PosixCharacterClassVisitor extends RegexBaseVisitor {
-    boolean hasPosixCharacterClass = false;
-
-    @Override
-    public void visitInCharClass(CharacterClassElementTree tree) {
-      if (tree.is(CharacterClassElementTree.Kind.POSIX_CLASS)) {
-        hasPosixCharacterClass = true;
-      }
-      super.visitInCharClass(tree);
-    }
-  }
 }

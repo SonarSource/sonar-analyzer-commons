@@ -18,4 +18,56 @@
 - '.*' # Compliant
 - '[[:space:]]|x' # Compliant
 - 'x|[[:space:]]' # Compliant
-- '[[:space:]]|\n' # Compliant, false negative
+- '[[:space:]]|\n' # Noncompliant
+- '[[:alpha:]]|A' # Noncompliant
+- '[[:alnum:]]|5' # Noncompliant
+- '[[:blank:]]|\t' # Noncompliant
+- '[[:cntrl:]]|\n' # Noncompliant
+- '[[:ascii:]]|x' # Noncompliant
+- '[[:graph:]]|!' # Noncompliant
+- '[[:print:]]| ' # Noncompliant
+- '[[:punct:]]|_' # Noncompliant
+- '[[:word:]]|_' # Noncompliant
+- '[[:xdigit:]]|F' # Noncompliant
+- '[[:digit:]a-f]|[2-5b-e]' # Noncompliant
+- '[[:alpha:][:digit:]_]|[A-Z0-9_]' # Noncompliant
+- '[[:^digit:]]|A' # Noncompliant
+- '[^[:digit:]]|A' # Noncompliant
+- '[^[:^alpha:]]|A' # Noncompliant
+- '[^[:digit:]a-f]|[g-z]' # Noncompliant
+- '[[:lower:]]|A': 'i' # Noncompliant
+- '[[:upper:]]|a': 'i' # Noncompliant
+- '[[:lower:]]|a' # Noncompliant
+- '[[:upper:]]|A' # Noncompliant
+- '[[:space:]]|\n|\t' # Noncompliant
+- '[[:space:]]|(\n)' # Noncompliant
+- '\n|[[:space:]]' # Noncompliant
+- '(\n)|[[:space:]]' # Compliant
+- '\n|([[:space:]])' # Compliant
+- '[[:lower:]]|A' # Compliant
+- '[[:upper:]]|a' # Compliant
+- '[[:^lower:]]|A': 'i' # Compliant
+- '[^[:lower:]]|A': 'i' # Compliant
+- '[[:digit:]]|x' # Compliant
+- '[[:^digit:]]|5' # Compliant
+- '[^[:digit:]]|5' # Compliant
+- '[[:alpha:]]|[A-Z0-9]' # Compliant
+- '[[:digit:]]|[5-9a-f]' # Compliant
+- '[[:punct:]]|A' # Compliant
+- '[[:blank:]]|\n' # Compliant
+- '[[:xdigit:]]|G' # Compliant
+- '[[:<:]]|a' # Compliant
+- '[[:>:]]|a' # Compliant
+- '[^[:<:]]|a' # Compliant
+- '[[:^>:]]|a' # Compliant
+- '[[:<:]]|.': 's' # Compliant
+- '.|[[:>:]]': 's' # Compliant
+- '[[:space:]]|\n': 'u' # Noncompliant
+- '[^[:digit:]]|A': 'u' # Noncompliant
+- '[[:lower:]]|A': 'iu' # Noncompliant
+- '[[:^lower:]]|A': 'iu' # Compliant
+- '[[:digit:]]|é': 'u' # Compliant
+- '[[:^digit:]]|é': 'u' # Compliant
+- '[^[:digit:]]|é': 'u' # Compliant
+- '[[:ascii:]]|é': 'u' # Compliant
+- '[[:^ascii:]]|é': 'u' # Noncompliant

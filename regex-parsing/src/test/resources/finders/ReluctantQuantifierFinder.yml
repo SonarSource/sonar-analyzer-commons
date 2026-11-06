@@ -25,6 +25,12 @@
 - '\S*?(?U:\s)' # Noncompliant {{Replace this use of a reluctant quantifier with "[\S\s]*+".}}
 - '\S*?(?U)\s' # Noncompliant {{Replace this use of a reluctant quantifier with "[\S\s]*+".}}
 
+- '\d*?[[:digit:]]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^[:digit:]\D]*+".}}
+- '\D*?[[:^digit:]]' # Noncompliant {{Replace this use of a reluctant quantifier with "[^[:^digit:]\d]*+".}}
+- '\D*?[^[:digit:]]' # Noncompliant {{Replace this use of a reluctant quantifier with "[[:digit:]\D]*+".}}
+- '\d*?[[:alpha:]]'
+- '\d*?[[:^digit:]]'
+
 # coverage
 - '(?:(?m))*?a'
 - '(?:(?m:.))*?(?:(?m))'

@@ -104,7 +104,8 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
         break;
       case CHARACTER_CLASS:
         CharacterClassTree characterClass = (CharacterClassTree) tree;
-        String body = characterClass.getContents().getText();
+        String classText = characterClass.getText();
+        String body = classText.substring(characterClass.isNegated() ? 2 : 1, classText.length() - 1);
         if (characterClass.isNegated()) {
           result = "[" + body + escapedCharacterToString(base) + "]";
         } else {

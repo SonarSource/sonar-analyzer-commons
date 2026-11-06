@@ -33,6 +33,7 @@ import org.sonarsource.analyzer.commons.regex.ast.CharacterTree;
 import org.sonarsource.analyzer.commons.regex.ast.DotTree;
 import org.sonarsource.analyzer.commons.regex.ast.EscapedCharacterClassTree;
 import org.sonarsource.analyzer.commons.regex.ast.MiscEscapeSequenceTree;
+import org.sonarsource.analyzer.commons.regex.ast.PosixCharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
 
@@ -51,6 +52,7 @@ public class SimplifiedRegexCharacterClass {
   private TreeMap<Integer, RegexSyntaxElement> contents = new TreeMap<>();
 
   private boolean containsUnknownCharacters = false;
+  private boolean containsUnknownAsciiCharacters = false;
 
   public SimplifiedRegexCharacterClass() {
   }
@@ -175,7 +177,7 @@ public class SimplifiedRegexCharacterClass {
       return true;
     }
     Map.Entry<Integer, RegexSyntaxElement> lastEntry = contents.lastEntry();
-    return lastEntry.getValue() != null && lastEntry.getKey() <= thatEntry.getKey();
+    return lastEntry != null && lastEntry.getValue() != null && lastEntry.getKey() <= thatEntry.getKey();
   }
 
   private boolean notSupersetOfEntries(Map.Entry<Integer, RegexSyntaxElement> thatEntry, Map.Entry<Integer, RegexSyntaxElement> thatNextEntry) {
@@ -219,6 +221,81 @@ public class SimplifiedRegexCharacterClass {
     }
 
     @Override
+    public void visitInCharClass(CharacterClassElementTree tree) {
+      if (tree instanceof PosixCharacterClassElementTree posix) {
+        addPosixCharacterClass(posix);
+      } else {
+        super.visitInCharClass(tree);
+      }
+    }
+
+    private void addPosixCharacterClass(PosixCharacterClassElementTree tree) {
+      String ranges = switch (tree.property()) {
+        case "alnum" -> "09AZaz";
+        case "alpha" -> "AZaz";
+        case "ascii" -> "\u0000\u007f";
+        case "blank" -> "\t\t  ";
+        case "cntrl" -> "\u0000\u001f\u007f\u007f";
+        case "digit" -> "09";
+        case "graph" -> "!~";
+        case "lower" -> "az";
+        case "print" -> " ~";
+        case "punct" -> "!/:@[`{~";
+        case "space" -> "\t\r  ";
+        case "upper" -> "AZ";
+        case "word" -> "09AZ__az";
+        case "xdigit" -> "09AFaf";
+        default -> null;
+      };
+      if (ranges == null) {
+        addUnknownCharacters();
+        return;
+      }
+      SimplifiedRegexCharacterClass outer = characters;
+      SimplifiedRegexCharacterClass inner = new SimplifiedRegexCharacterClass();
+      characters = inner;
+      for (int i = 0; i < ranges.length(); i += 2) {
+        addRange(ranges.charAt(i), ranges.charAt(i + 1), tree);
+      }
+      characters = outer;
+      boolean unknownUnicode = tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS) && !"ascii".equals(tree.property());
+      if (tree.isNegation()) {
+        addComplement(inner, tree, unknownUnicode ? 127 : Character.MAX_CODE_POINT);
+      } else {
+        inner.contents.forEach((from, element) -> {
+          if (element != null) {
+            Integer next = inner.contents.higherKey(from);
+            characters.addRange(from, next == null ? Character.MAX_CODE_POINT : (next - 1), tree);
+          }
+        });
+      }
+      characters.containsUnknownCharacters |= unknownUnicode;
+    }
+
+    private void addComplement(SimplifiedRegexCharacterClass inner, CharacterClassElementTree tree, int limit) {
+      int from = 0;
+      boolean included = false;
+      for (Map.Entry<Integer, RegexSyntaxElement> entry : inner.contents.entrySet()) {
+        if (!included && from < entry.getKey()) {
+          characters.addRange(from, Math.min(entry.getKey() - 1, limit), tree);
+        }
+        if (entry.getKey() > limit) {
+          return;
+        }
+        from = entry.getKey();
+        included = entry.getValue() != null;
+      }
+      if (!included && from <= limit) {
+        characters.addRange(from, limit, tree);
+      }
+    }
+
+    private void addUnknownCharacters() {
+      characters.containsUnknownCharacters = true;
+      characters.containsUnknownAsciiCharacters = true;
+    }
+
+    @Override
     public void visitCharacter(CharacterTree tree) {
       addRange(tree.codePointOrUnit(), tree.codePointOrUnit(), tree);
     }
@@ -230,7 +307,7 @@ public class SimplifiedRegexCharacterClass {
 
     @Override
     public void visitMiscEscapeSequence(MiscEscapeSequenceTree tree) {
-      characters.containsUnknownCharacters = true;
+      addUnknownCharacters();
     }
 
     @Override
@@ -242,10 +319,7 @@ public class SimplifiedRegexCharacterClass {
         super.visitCharacterClass(tree);
         characters = old;
         if (inner.containsUnknownCharacters) {
-          // When negating a class that contains unknown characters, we can't know for sure whether any character is in the
-          // class, so we don't add any known characters to it
-          characters.containsUnknownCharacters = true;
-          characters.contents = new TreeMap<>();
+          addUnknownComplement(inner, tree);
           return;
         }
         boolean lastInsertedIsNotNull = false;
@@ -267,9 +341,20 @@ public class SimplifiedRegexCharacterClass {
       }
     }
 
+    private void addUnknownComplement(SimplifiedRegexCharacterClass inner, CharacterClassTree tree) {
+      characters.containsUnknownCharacters = true;
+      if (inner.containsUnknownAsciiCharacters) {
+        characters.containsUnknownAsciiCharacters = true;
+        characters.contents = new TreeMap<>();
+      } else {
+        // Unicode POSIX membership is exact in ASCII, including after negation.
+        addComplement(inner, tree, 127);
+      }
+    }
+
     @Override
     public void visitCharacterClassIntersection(CharacterClassIntersectionTree tree) {
-      characters.containsUnknownCharacters = true;
+      addUnknownCharacters();
     }
 
     @Override
@@ -278,14 +363,14 @@ public class SimplifiedRegexCharacterClass {
         case 'd':
           characters.addRange('0', '9', tree);
           if (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS)) {
-            characters.containsUnknownCharacters = true;
+            addUnknownCharacters();
           }
           break;
         case 'D':
           characters.addRange(0x00, '0' - 1, tree);
           if (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS)) {
             characters.addRange('9' + 1, 0xff, tree);
-            characters.containsUnknownCharacters = true;
+            addUnknownCharacters();
           } else {
             characters.addRange('9' + 1, Character.MAX_CODE_POINT, tree);
           }
@@ -296,7 +381,7 @@ public class SimplifiedRegexCharacterClass {
           characters.addRange('_', '_', tree);
           characters.addRange('a', 'z', tree);
           if (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS)) {
-            characters.containsUnknownCharacters = true;
+            addUnknownCharacters();
           }
           break;
         case 'W':
@@ -306,7 +391,7 @@ public class SimplifiedRegexCharacterClass {
           characters.addRange('`', '`', tree);
           if (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS)) {
             characters.addRange('z' + 1, 'µ' - 1, tree);
-            characters.containsUnknownCharacters = true;
+            addUnknownCharacters();
           } else {
             characters.addRange('z' + 1, Character.MAX_CODE_POINT, tree);
           }
@@ -343,7 +428,7 @@ public class SimplifiedRegexCharacterClass {
           }
           break;
         default:
-          characters.containsUnknownCharacters = true;
+          addUnknownCharacters();
           break;
       }
     }
