@@ -18,4 +18,54 @@
 - '.*' # Compliant
 - '[[:space:]]|x' # Compliant
 - 'x|[[:space:]]' # Compliant
-- '[[:space:]]|\n' # Compliant, false negative
+- '[[:space:]]|\n' # Noncompliant {{Remove or rework this redundant alternative.}}
+#              ^^
+- '\n|[[:space:]]' # Noncompliant
+- '[[:alpha:]]|A' # Noncompliant
+- '[[:alnum:]]|5' # Noncompliant
+- '[[:blank:]]|\t' # Noncompliant
+- '[[:^digit:]]|A' # Noncompliant
+- '[^[:digit:]]|A' # Noncompliant
+- '[^[:^digit:]]|5' # Noncompliant
+- '[[:alpha:]0-9_]|[A-Z_5]' # Noncompliant
+- '[[:lower:][:upper:]]|[A-Za-z]' # Noncompliant
+- '[[:^lower:]]|A' # Noncompliant
+- '[[:lower:]]|A': 'i' # Noncompliant
+- '(?i)[[:lower:]]|A' # Noncompliant
+- '(?i:[[:lower:]])|A' # Noncompliant
+- '[[:^lower:]]|5': 'i' # Noncompliant
+- '[[:space:]]|(\n)' # Noncompliant
+- '[[:space:]]|\n|\r|\t' # Noncompliant
+
+- '[[:digit:]]|a' # Compliant
+- '[[:^digit:]]|5' # Compliant
+- '[^[:digit:]]|5' # Compliant
+- '[[:alpha:]]|5' # Compliant
+- '[[:lower:]]|A' # Compliant
+- '(?i)(?-i:[[:lower:]])|A' # Compliant
+- '[[:^lower:]]|A': 'i' # Compliant
+- '[a-f[:digit:]]|[d-z]' # Compliant: overlap is not coverage
+- '(\n)|[[:space:]]' # Compliant: later superset cannot replace a capture
+- '\n|([[:space:]])' # Compliant
+- '(\n)|([[:space:]])' # Compliant
+- '[[:<:]]|a' # Compliant
+- 'a|[[:>:]]' # Compliant
+- '[[:<:]a]|a' # Compliant
+- '[^[:>:]]|a' # Compliant
+- '[[:^<:]]|a' # Compliant
+- '[[:>:]]x|x' # Compliant
+
+- '[[:space:]]|\n': 'u' # Noncompliant
+- '[[:alpha:]]|A': 'u' # Noncompliant
+- '[[:lower:]]|A': 'ui' # Noncompliant
+- '[[:^digit:]]|a': 'u' # Noncompliant
+- '[^[:digit:]]|a': 'u' # Noncompliant
+- '[^[:^digit:]]|5': 'u' # Noncompliant
+- '[[:ascii:]]|[\x00-\x7f]': 'u' # Noncompliant
+- '[[:^ascii:]]|é': 'u' # Noncompliant
+- '[[:word:]]|é': 'u' # Compliant: additional Unicode membership is unknown
+- '[[:^word:]]|é': 'u' # Compliant
+- '[^[:word:]]|é': 'u' # Compliant
+- '[[:^lower:]]|A': 'ui' # Compliant
+- '[[:word:][:^word:]]|é': 'u' # Compliant: not a known universal set
+- '.|[[:word:]]': 'us' # Compliant: unknown membership must not prove coverage
