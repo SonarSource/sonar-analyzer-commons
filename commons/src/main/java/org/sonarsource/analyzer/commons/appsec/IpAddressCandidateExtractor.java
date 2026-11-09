@@ -138,15 +138,18 @@ public final class IpAddressCandidateExtractor {
     if (entry.isEmpty()) {
       return;
     }
-    if (URL_START.matcher(entry).find()) {
-      collectFromText(entry, addresses);
-      return;
-    }
     // Without URL syntax, CIDR suffixes are only recognized on a standalone value, not in a path or query.
     boolean standalone = entry.indexOf('?') < 0 && entry.indexOf('#') < 0;
-    for (String value : standalone ? ASSIGNMENT_DELIMITER.split(entry) : new String[] {entry}) {
-      Matcher cidr = standalone ? STANDALONE_CIDR.matcher(value) : null;
-      if (cidr != null && cidr.matches()) {
+    String[] values = standalone ? ASSIGNMENT_DELIMITER.split(entry) : new String[] {entry};
+    for (String value : values) {
+      if (URL_START.matcher(value).find()) {
+        // Slashes in the rest of the entry are likely part of the URL.
+        standalone = false;
+        collectFromText(value, addresses);
+        continue;
+      }
+      Matcher cidr = STANDALONE_CIDR.matcher(value);
+      if (standalone && cidr.matches()) {
         collectCidr(cidr.group(1), cidr.group(2), addresses);
       } else {
         collectFromText(value, addresses);
@@ -174,10 +177,7 @@ public final class IpAddressCandidateExtractor {
     while (position < text.length() && url.find(position)) {
       collectFromTokens(text.substring(position, url.start()), addresses);
       int hostStart = hostStart(text, url.end());
-      int hostEnd = hostStart;
-      while (hostEnd < text.length() && isTokenChar(text.charAt(hostEnd))) {
-        hostEnd++;
-      }
+      int hostEnd = tokenEnd(text, hostStart);
       addResolved(text.substring(hostStart, hostEnd), addresses);
       position = hostEnd;
     }
@@ -200,21 +200,26 @@ public final class IpAddressCandidateExtractor {
   private static void collectFromTokens(String text, List<String> addresses) {
     int i = 0;
     while (i < text.length()) {
-      if (isTokenChar(text.charAt(i))) {
-        int end = i + 1;
-        while (end < text.length() && isTokenChar(text.charAt(end))) {
-          end++;
-        }
+      int end = tokenEnd(text, i);
+      if (end > i) {
         addResolved(text.substring(i, end), addresses);
         i = end;
       } else {
-        i++;
+        i += Character.charCount(text.codePointAt(i));
       }
     }
   }
 
-  private static boolean isTokenChar(char c) {
-    return Character.isLetterOrDigit(c) || ".-_:%[]".indexOf(c) >= 0;
+  private static int tokenEnd(String text, int start) {
+    int end = start;
+    while (end < text.length() && isTokenChar(text.codePointAt(end))) {
+      end += Character.charCount(text.codePointAt(end));
+    }
+    return end;
+  }
+
+  private static boolean isTokenChar(int codePoint) {
+    return Character.isLetterOrDigit(codePoint) || (codePoint < 128 && ".-_:%[]".indexOf(codePoint) >= 0);
   }
 
   private static void addResolved(String token, List<String> addresses) {

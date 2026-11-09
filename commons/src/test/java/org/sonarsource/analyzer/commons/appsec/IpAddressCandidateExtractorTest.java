@@ -260,6 +260,13 @@ class IpAddressCandidateExtractorTest {
       of("git+ssh://10.0.0.1/path", "10.0.0.1"),
       of("http://localhost:8080/a"),
       of("http://"),
+      // A URL in another value does not affect CIDR handling
+      of("cidr=0.0.0.0/0&callback=http://example.org", "0.0.0.0/0"),
+      of("ip=10.0.0.0/99&u=http://x"),
+      of("u=http://example.org&ip=10.0.0.0/8", "10.0.0.0"),
+      // Supplementary-plane characters
+      of("😀10.0.0.1", "10.0.0.1"),
+      of("10.0.0.1😀", "10.0.0.1"),
       // Malformed endpoints and brackets do not hide a later address
       of("[10.0.0.1 10.0.0.2", "10.0.0.2"),
       of("[2001:db8::1 10.0.0.2", "10.0.0.2"),
@@ -320,6 +327,8 @@ class IpAddressCandidateExtractorTest {
     "１.２.３.４",
     "é1.2.3.4",
     "1.2.3.4é",
+    "1.2.3.4\uD835\uDFD3",
+    "\uD835\uDC9C1.2.3.4",
     "1.2.3.4/33",
     "::1/129"
   })
