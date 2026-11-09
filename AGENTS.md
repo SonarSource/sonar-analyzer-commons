@@ -91,8 +91,13 @@ excluded. Generated files under `target/` are also excluded. To format only
 files in a change, add `'-DspotlessFiles=.*MyClass\.java'`. This option accepts
 comma-separated Java regular expressions matched against absolute file paths;
 quote the patterns in the shell. Keep unrelated formatting out of a
-behavior change. The goals run only when requested; the existing source tree
-has not been reformatted, and formatting is not a new default CI gate.
+behavior change. Spotless uses `origin/master` as its ratchet reference. It
+checks whole Java files added or modified since the common ancestor with that
+reference. Fetch `origin/master` before a local run. Existing unchanged files
+are outside the ratchet, so the source tree does not need a bulk reformat.
+CI fetches full Git history and runs the same check after the shared Maven
+build has configured private artifact access. Formatting violations fail the
+build job. Run the apply goal locally before pushing a Java change.
 
 New public APIs affect many analyzers. Prefer the existing API and a small
 implementation change. Keep `internal` implementation classes behind their
