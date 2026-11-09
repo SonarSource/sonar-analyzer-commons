@@ -37,7 +37,7 @@ jobs:
     needs: [release]
     # Run after a successful release, or when release was skipped via publishPackagesOnly.
     if: ${{ !cancelled() && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
-    runs-on: sonar-xs-public
+    runs-on: sonar-xs
     name: Promote NuGet to releases
     permissions:
       id-token: write
@@ -81,7 +81,7 @@ jobs:
     needs: [release]
     # Run after a successful release, or when release was skipped via publishPackagesOnly.
     if: ${{ !cancelled() && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
-    runs-on: sonar-xs-public
+    runs-on: sonar-xs
     name: Promote npm to releases
     permissions:
       id-token: write
@@ -126,7 +126,7 @@ jobs:
     # Explicit condition required: when `release` is skipped (publishPackagesOnly), GitHub skips
     # downstream jobs that lack an if, even if promote-nuget succeeded.
     if: ${{ !cancelled() && needs.promote-nuget.result == 'success' }}
-    runs-on: sonar-xs-public
+    runs-on: github-ubuntu-latest-s
     name: Publish NuGet to nuget.org
     permissions:
       id-token: write

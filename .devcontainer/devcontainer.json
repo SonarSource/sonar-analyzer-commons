@@ -1,6 +1,5 @@
 {
   "name": "Analyzer commons (JDK 21, Maven 3)",
   "build": {"dockerfile": "Dockerfile"},
-  "postCreateCommand": "mvn -B -ntp -C validate",
   "remoteUser": "root"
 }

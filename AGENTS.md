@@ -8,6 +8,11 @@ standalone analyzer or a SonarQube server. Start with the module table in
 
 Use Git, JDK 21 or later, and Maven 3.9 or later for the Java build.
 `mise.toml` selects the existing Java 21.0 and Maven 3.9 release lines.
+Before the first Maven command, configure the approved Repox Maven mirror at
+`https://repox.jfrog.io/artifactory/sonarsource` in `~/.m2/settings.xml`.
+Keep credentials outside Git. The development container does not copy host
+Maven settings and does not run Maven automatically. Configure the approved
+mirror and reader access inside the container before you run the commands.
 Activate your chosen tools, then run these commands from the repository root:
 
 ```sh
@@ -54,8 +59,10 @@ duration is guaranteed.
 
 The CycloneDX goal records resolved dependencies under `target/`. CI retains
 these files with the build output. `-C` enables strict artifact checksums; it
-does not lock transitive artifact content. Dependency review rejects new high
-and critical advisories when GitHub dependency review is enabled.
+does not lock transitive artifact content. The organization SCA check and NEXT
+quality gate provide the existing dependency checks. NEXT checks new malware,
+licensing, and vulnerability measures. The separate GitHub dependency-review
+workflow is not used because this repository does not support that service.
 
 For a failure, read the first Maven `ERROR` and the module's
 `target/surefire-reports/`. Maven prints the test counts and elapsed time. Keep
