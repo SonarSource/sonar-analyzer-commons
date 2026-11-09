@@ -6,78 +6,85 @@ standalone analyzer or a SonarQube server. Start with the module table in
 
 ## Prepare and check
 
-Use Python 3.9 or later, Git, JDK 21 or later, and Maven 3.9 or later.
-`mise.toml` selects the existing Java 21.0 and Maven 3.9 release lines. From the
-repository root, run:
+Use Git, JDK 21 or later, and Maven 3.9 or later for the Java build.
+`mise.toml` selects the existing Java 21.0 and Maven 3.9 release lines.
+Activate your chosen tools, then run these commands from the repository root:
 
 ```sh
-mise trust
-mise install
-python3 scripts/dev.py doctor --resolve
-python3 scripts/dev.py test recognizers
+mvn --version
+mvn -B -ntp -C validate
+mvn -B -ntp -C -Pcoverage verify
 ```
 
-`doctor` checks the JVM used by Maven. That JVM can differ from `java` on PATH.
-The parent POM is `org.sonarsource.parent:parent`. Local tests do not require
-Vault, a SonarQube server, npm, NuGet, or publishing credentials. If an artifact
-returns HTTP 401 or 403, check your Maven mirror and server settings. Keep those
-settings outside Git. Do not print tokens or copy CI deployer credentials.
-The optional `.devcontainer` uses the Maven 3 image with JDK 21. It installs Git
-and Python from Debian packages. The image and packages can receive updates.
+`mvn --version` reports the JVM used by Maven. That JVM can differ from `java`
+on PATH. Maven checks the minimum JDK through the parent POM. `validate` also
+checks parent POM and build-extension resolution; it does not resolve every
+test dependency. The parent POM is `org.sonarsource.parent:parent`. Local tests
+do not require Vault, a SonarQube server, npm, NuGet, or publishing credentials.
+If an artifact returns HTTP 401 or 403, check your Maven mirror and server
+settings. Keep those settings outside Git. Do not print tokens or copy CI
+deployer credentials. The optional `.devcontainer` uses the Maven 3 image with
+JDK 21. Its image and Debian packages can receive updates.
 
 ## Select work and tests
 
 ```sh
-python3 scripts/dev.py affected origin/master
-python3 scripts/dev.py test commons --test TokenLocationTest
-python3 scripts/dev.py test regex-parsing --test EmptyGroupFinderTest
-python3 scripts/dev.py repeat recognizers --test CodeRecognizerTest
-python3 scripts/dev.py verify
-python3 scripts/dev.py build
-python3 scripts/dev.py sbom
-python3 scripts/dev.py reproduce recognizers
-python3 scripts/dev.py quality recognizers
+mvn -B -ntp -C -pl recognizers -am test
+mvn -B -ntp -C -pl regex-parsing -am install -DskipTests
+mvn -B -ntp -C -pl regex-parsing test -Dtest=EmptyGroupFinderTest -DfailIfNoTests=true
+mvn -B -ntp -C -pl regex-parsing -am test
+mvn -B -ntp -C install
+mvn -B -ntp -C org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
+mvn -B -ntp -C -pl recognizers -am compile pmd:pmd pmd:cpd
 ```
 
-`affected` includes local edits and reverse dependencies, including test
-dependencies. It gives a conservative module list. It cannot identify external
-analyzer consumers. Module names are directory names. The Maven commands include
-`-pl` and `-am` for selected modules. A class selector uses
-`-Dsurefire.failIfNoSpecifiedTests=false` so upstream modules can have no matching
-class. Always run the module suite after a focused test.
-The tool also requires a fresh report with executed tests in the selected
-module. A misspelled class or method fails instead of passing silently.
+`-pl` selects module directory names. `-am` also builds their reactor
+dependencies. For a named test, first install the selected module and its
+upstream modules with `-DskipTests`, then run the test in the selected module
+without `-am`. Use `-DfailIfNoTests=true` on the selected-module command so an empty method
+selection also fails. Do not set `surefire.failIfNoSpecifiedTests=false`. Run the full module
+suite after the focused test. The install preparation skips tests; it does not
+replace the test command.
 
-`test` runs unit tests. `verify` also runs the offline repository checks and
-Maven verification, including the existing JAR size limits. `build` installs
-artifacts in the local Maven cache. None of these commands deploys artifacts.
-They keep `target/` for incremental builds. Use `mvn clean` only when stale
-outputs are a possible cause. Cold dependency downloads take longer than a warm
-build. No fixed build duration is guaranteed.
+`test` runs unit tests. `verify` also checks packages and the existing JAR size
+limits. `-Pcoverage verify` checks the coverage floor. `install` puts artifacts
+in the local Maven cache. These commands retain `target/` for incremental work.
+Use `mvn clean` only when stale outputs are a possible cause. No fixed build
+duration is guaranteed.
 
-`sbom` records the resolved dependency graph in CycloneDX files under `target/`.
-CI retains these files with the build output. Maven uses strict checksum checks,
-but this is not a content lock for every transitive artifact. Dependency review
-rejects new high and critical advisories when GitHub dependency review is enabled.
-`reproduce` makes two clean packages of one module and compares their bytes. It
-uses the commit time for archive timestamps and the inherited `Build-Time`
-manifest field. It skips tests, so run tests separately first. A local match does
-not guarantee that signing or publishing produces identical bytes.
+The CycloneDX goal records resolved dependencies under `target/`. CI retains
+these files with the build output. `-C` enables strict artifact checksums; it
+does not lock transitive artifact content. Dependency review rejects new high
+and critical advisories when GitHub dependency review is enabled.
 
-The command writes its duration, exit status, and command to `target/agent/`.
-It fails if Maven changes a tracked file. Read the first Maven `ERROR` and the
-module's `target/surefire-reports/` after a test failure. Preserve the failing
-sample, exact command, JDK, and revision. Do not rerun until green without
-recording and correcting the cause. `repeat` runs a selected suite twice and
-stops at the first failure. It is a local flake check, not proof of determinism.
+For a failure, read the first Maven `ERROR` and the module's
+`target/surefire-reports/`. Maven prints the test counts and elapsed time. Keep
+the command, JDK, revision, failing sample, and relevant log. Correct the cause
+before repeating a failed run. Run the same Maven test command twice when a
+local repeat check is useful; a repeated pass does not prove determinism.
+Inspect `git diff` before and after a build. CI uses a separate Git check to
+reject changes to tracked source files under `src/`.
+
+Python 3.9 or later is needed only for the independent repository checks:
+
+```sh
+python3 scripts/check_sources.py affected origin/master
+python3 scripts/check_sources.py check --base HEAD
+python3 -m unittest discover -s scripts/tests -v
+```
+
+The affected-module query includes local edits and reverse dependencies,
+including test dependencies. It gives a conservative module list. It cannot
+identify external analyzer consumers. These scripts do not run Maven.
 
 ## Follow the source contracts
 
 Use two spaces in Java and XML, and four spaces in Python. Use the existing
 package names and `*Test` class names. Keep imports explicit. Match package
-directories. `scripts/dev.py check` rejects reactor cycles, undeclared local
-source imports, package-directory errors, and added whitespace errors. It also
-runs the command-tool tests. `.editorconfig` gives editor defaults. Test resources
+directories. `scripts/check_sources.py check` rejects reactor cycles, undeclared local
+source imports, package-directory errors, and added whitespace errors. Run the
+repository-check tests separately with the command above. `.editorconfig` gives
+editor defaults. Test resources
 can contain deliberate invalid source and whitespace; do not format them.
 Use `check --base <ref>` to include committed changes in whitespace and
 credential checks. CI supplies the PR base explicitly. With no base, the tool
@@ -95,7 +102,7 @@ JAR size. Compiler checks and tests check types; NEXT analysis supplies broader
 null, dead-code, duplication, and size feedback. Do not claim that the local
 checks replace this analysis.
 
-`quality` produces local PMD and duplicate-code reports under each selected
+`pmd:pmd pmd:cpd` produces local PMD and duplicate-code reports under each selected
 module's `target/site/`. It supplies feedback for unused private code, class
 names, large classes/methods, and duplicated token blocks. These reports are
 not a new merge gate, and they do not prove null safety or API compatibility.
@@ -121,8 +128,8 @@ each PR small enough to explain and test. The readiness workflow checks the
 title and reports changed line counts. Its size limit requires a maintainer's
 `large-change-reviewed` label for an exceptional PR.
 
-Before completion, run the affected module suites, `python3 scripts/dev.py
-verify`, and inspect the full diff. Required CI and NEXT checks must pass before
+Before completion, run the affected module suites, `mvn -B -ntp -C -Pcoverage
+verify`, the independent repository checks, and inspect the full diff. Required CI and NEXT checks must pass before
 merge. A local pass does not establish downstream compatibility or a green CI
 result. If an API or common parser changes, identify affected consumers in the
 PR. Do not merge, tag, sign, release, promote, publish, or force-push unless the

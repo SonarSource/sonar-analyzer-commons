@@ -1,6 +1,6 @@
 {
   "name": "Analyzer commons (JDK 21, Maven 3)",
   "build": {"dockerfile": "Dockerfile"},
-  "postCreateCommand": "python3 scripts/dev.py doctor --resolve",
+  "postCreateCommand": "mvn -B -ntp -C validate",
   "remoteUser": "root"
 }

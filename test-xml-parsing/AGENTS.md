@@ -8,5 +8,5 @@ Start with `SonarXmlCheckVerifierTest` and its sample files. Verify a compliant
 file and a file with expected issues when changing matching or diagnostics.
 Keep deliberate sample formatting unchanged.
 
-Run `python3 scripts/dev.py test test-xml-parsing` from the root. `-am` supplies
+Run `mvn -pl test-xml-parsing -am test` from the root. `-am` supplies
 the local `xml-parsing` and `test-commons` dependencies.

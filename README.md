@@ -33,18 +33,17 @@ To learn more about the SonarQube product family, visit the [Sonar website](http
 ## Build
 Use JDK 21 or later and Maven 3.9 or later. [mise.toml](mise.toml) selects the
 existing Java 21.0 and Maven 3.9 release lines.
-Python 3.9 or later runs the local command tool.
+Activate the chosen Java and Maven tools, then run:
 
 ```sh
-mise trust
-mise install
-python3 scripts/dev.py doctor --resolve
-python3 scripts/dev.py verify
+mvn --version
+mvn -B -ntp -C -Pcoverage verify
 ```
 
-For a quick module test, run `python3 scripts/dev.py test recognizers`.
-For a full local install, run `python3 scripts/dev.py build`.
-These commands retain build outputs for incremental work and never publish.
+For a quick module test, run `mvn -pl recognizers -am test`.
+For a full local install, run `mvn install`.
+Python 3.9 or later is used only by the separate repository checks described in
+[AGENTS.md](AGENTS.md); Maven builds and tests do not need it.
 See [AGENTS.md](AGENTS.md) for module selection, failure diagnosis, source
 boundaries, and contribution rules. The optional [.devcontainer](.devcontainer)
 contains a development environment. CI signing and publishing require internal

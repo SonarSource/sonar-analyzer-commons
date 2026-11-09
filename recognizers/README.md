@@ -6,7 +6,7 @@ Classes required to detect code-like strings (e.g. for commented out code)
 `LanguageFootprint`. `KeywordsDetector`, `EndWithDetector`, `ContainsDetector`,
 `CamelCaseDetector`, and `RegexDetector` supply individual recognition signals.
 Start with `CodeRecognizerTest` for a small test example. Run this module with
-`python3 scripts/dev.py test recognizers` from the repository root.
+`mvn -pl recognizers -am test` from the repository root.
 
 ### License
 Copyright 2009-2023 SonarSource.

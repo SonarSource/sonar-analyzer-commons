@@ -1,2 +1,2 @@
 #!/bin/sh
-exec python3 scripts/dev.py check --base HEAD
+exec python3 scripts/check_sources.py check --base HEAD

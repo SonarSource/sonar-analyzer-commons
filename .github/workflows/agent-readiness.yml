@@ -26,7 +26,8 @@ jobs:
           if ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
             BASE_SHA="$(git rev-list --max-parents=0 HEAD | head -n 1)"
           fi
-          python3 scripts/dev.py check --base "$BASE_SHA"
+          python3 scripts/check_sources.py check --base "$BASE_SHA"
+          python3 -m unittest discover -s scripts/tests -v
           if [ -n "$PR_TITLE" ]; then
             if [ "$ALLOW_LARGE" = true ]; then
               python3 scripts/repository_checks.py --base "$BASE_SHA" --title "$PR_TITLE" --allow-large

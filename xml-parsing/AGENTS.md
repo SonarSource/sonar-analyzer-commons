@@ -13,5 +13,5 @@ safety when changing parser setup.
 The test helper is in the separate `test-xml-parsing` module. This module also
 declares `test-commons` as a provided dependency, so use `-am` in a scoped build.
 
-Run `python3 scripts/dev.py test xml-parsing test-xml-parsing` from the root.
+Run `mvn -pl xml-parsing,test-xml-parsing -am test` from the root.
 Use `XmlFileTest` and the adjacent parser/factory tests as references.
