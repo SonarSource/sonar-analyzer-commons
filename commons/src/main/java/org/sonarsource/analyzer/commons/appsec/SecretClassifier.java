@@ -106,6 +106,7 @@ public final class SecretClassifier {
       "p[@a]ssw[o0]rd",
       // Boolean / null / scalar literals, e.g. "password = undefined", "enabled: true"
       "^(?:none|undefined|null|true|false|yes|no|1|0)$",
+      "^\\(bool\\)(?:true|false)$",
       // Starts with "your", e.g. "yourpassword", "your_super_secret"
       "^your",
       // Same character 4 times in a row, e.g. "abbbbc"
@@ -226,7 +227,7 @@ public final class SecretClassifier {
       // Leetspeak "password" variants with "@" that the "pass" substring misses
       "p@ssword", "p@ssw0rd",
       // Boolean / null / scalar literals
-      "undefined", "true", "null",
+      "undefined", "true", "null", "(bool)True", "(bool)False",
       // "your..." prefix
       "yourpassword",
       // Same-character repetitions
@@ -316,6 +317,8 @@ public final class SecretClassifier {
     "Xk9Lm2Qp7Rs4Tv1Wz0",
     "9f8e7d6c5b4a392817",
     "Tr0ub4dor&3xpl0!t",
+    // Boolean casts are matched only as whole values
+    "prefix(bool)True", "(bool)FalseSuffix",
     // Leading "__" without a closing "__"
     "__not_closed",
     // Credential words are matched only as whole values, so a value that merely contains one stays a candidate
