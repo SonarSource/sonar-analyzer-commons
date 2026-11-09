@@ -16,9 +16,12 @@
  */
 package org.sonarsource.analyzer.commons.appsec;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 
 /** Heuristically extracts an IP address candidate string from a string literal's content. */
 public final class IpAddressCandidateExtractor {
@@ -27,6 +30,10 @@ public final class IpAddressCandidateExtractor {
     "^(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//(?:[^/?#,@\\s]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
+  private static final Pattern ENTRY_DELIMITER = Pattern.compile("[\\s,;'\"()]+", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern ASSIGNMENT_DELIMITER = Pattern.compile("[=&]");
+  private static final Pattern URL_START = Pattern.compile("(?<![a-zA-Z0-9+.-])(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//");
+  private static final Pattern STANDALONE_CIDR = Pattern.compile("([^/]+)/(\\d+)");
 
   private IpAddressCandidateExtractor() {
   }
@@ -90,6 +97,175 @@ public final class IpAddressCandidateExtractor {
         // An IP address with a port identifies an endpoint, where a CIDR prefix doesn't make sense.
         // Treat the suffix as a URL path.
         (stripped.portRemoved() ? "" : cidr));
+  }
+
+  /**
+   * Finds all syntactically valid IP addresses in the given string, in source order and including repeated occurrences.
+   * Returns an empty list if there is none. The addresses are not classified: whether an address is permitted
+   * by a security rule is left to the caller, see {@link IpAddressClassifier}.
+   *
+   * <p>Unlike {@link #extract(String)}, the whole string is searched, so addresses can be found in path segments,
+   * after ordinary text, in lists separated by whitespace, commas, or semicolons, and after an equals sign.
+   * Quotes and parentheses can enclose values. IPv4, IPv6, IPv6 with an embedded IPv4 tail and IPv6 zones are supported.
+   * A complete IPv6 address is a single match.
+   *
+   * <p>A match must be delimited: it must not touch a letter, digit, dot, hyphen or underscore.
+   * Hence, no address is recovered from a longer malformed address or identifier, such as {@code 1.2.3.4.5},
+   * {@code v1.2.3.4} or {@code 1.2.3.4-beta}. A sentence-ending dot, as in {@code "see 1.2.3.4."}, prevents a match.
+   *
+   * <p>The returned text is stripped of URL syntax (scheme, user information, and path), IPv6 endpoint brackets,
+   * and ports. Ports are removed from IPv4 endpoints and bracketed IPv6 endpoints only, and must be valid
+   * (one to five ASCII digits, up to 65535); an invalid port invalidates the endpoint.
+   * Bracketed IPv4 endpoints and bracketed lists are not supported.
+   * The zone of an IPv6 address and a valid CIDR suffix of a standalone address entry, such as {@code 10.0.0.0/8}, are preserved.
+   * An invalid suffix invalidates the entry. Slashes in URLs, in endpoints with ports, and in paths are path separators.
+   *
+   * @throws NullPointerException if {@code content} is null
+   */
+  public static List<String> extractAll(String content) {
+    List<String> addresses = new ArrayList<>();
+    int start = 0;
+    Matcher delimiter = ENTRY_DELIMITER.matcher(content);
+    while (delimiter.find()) {
+      collectFromEntry(content.substring(start, delimiter.start()), addresses);
+      start = delimiter.end();
+    }
+    collectFromEntry(content.substring(start), addresses);
+    return addresses;
+  }
+
+  private static void collectFromEntry(String entry, List<String> addresses) {
+    if (entry.isEmpty()) {
+      return;
+    }
+    if (URL_START.matcher(entry).find()) {
+      collectFromText(entry, addresses);
+      return;
+    }
+    // Without URL syntax, CIDR suffixes are only recognized on a standalone value, not in a path or query.
+    boolean standalone = entry.indexOf('?') < 0 && entry.indexOf('#') < 0;
+    for (String value : standalone ? ASSIGNMENT_DELIMITER.split(entry) : new String[] {entry}) {
+      Matcher cidr = standalone ? STANDALONE_CIDR.matcher(value) : null;
+      if (cidr != null && cidr.matches()) {
+        collectCidr(cidr.group(1), cidr.group(2), addresses);
+      } else {
+        collectFromText(value, addresses);
+      }
+    }
+  }
+
+  private static void collectCidr(String endpoint, String prefix, List<String> addresses) {
+    Resolved resolved = resolve(endpoint);
+    if (resolved == null) {
+      return;
+    }
+    if (resolved.portRemoved()) {
+      // Slash suffixes after ports are paths.
+      addresses.add(resolved.address());
+    } else if (IpAddressClassifier.parse(resolved.address() + "/" + prefix).isPresent()) {
+      addresses.add(resolved.address() + "/" + prefix);
+    }
+  }
+
+  /** Collects addresses from text that may contain URLs, whose scheme and user information are not candidates. */
+  private static void collectFromText(String text, List<String> addresses) {
+    int position = 0;
+    Matcher url = URL_START.matcher(text);
+    while (position < text.length() && url.find(position)) {
+      collectFromTokens(text.substring(position, url.start()), addresses);
+      int hostStart = hostStart(text, url.end());
+      int hostEnd = hostStart;
+      while (hostEnd < text.length() && isTokenChar(text.charAt(hostEnd))) {
+        hostEnd++;
+      }
+      addResolved(text.substring(hostStart, hostEnd), addresses);
+      position = hostEnd;
+    }
+    if (position < text.length()) {
+      collectFromTokens(text.substring(position), addresses);
+    }
+  }
+
+  /** Skips the user information of the URL authority starting at the given index. */
+  private static int hostStart(String text, int authorityStart) {
+    int authorityEnd = authorityStart;
+    while (authorityEnd < text.length() && "/?#".indexOf(text.charAt(authorityEnd)) < 0) {
+      authorityEnd++;
+    }
+    int userInfoEnd = text.lastIndexOf('@', authorityEnd - 1);
+    return userInfoEnd >= authorityStart ? (userInfoEnd + 1) : authorityStart;
+  }
+
+  /** Every maximal run of characters that can be part of an address is a candidate. */
+  private static void collectFromTokens(String text, List<String> addresses) {
+    int i = 0;
+    while (i < text.length()) {
+      if (isTokenChar(text.charAt(i))) {
+        int end = i + 1;
+        while (end < text.length() && isTokenChar(text.charAt(end))) {
+          end++;
+        }
+        addResolved(text.substring(i, end), addresses);
+        i = end;
+      } else {
+        i++;
+      }
+    }
+  }
+
+  private static boolean isTokenChar(char c) {
+    return Character.isLetterOrDigit(c) || ".-_:%[]".indexOf(c) >= 0;
+  }
+
+  private static void addResolved(String token, List<String> addresses) {
+    Resolved resolved = resolve(token);
+    if (resolved != null) {
+      addresses.add(resolved.address());
+    }
+  }
+
+  /** Strips IPv6 brackets and the port of an endpoint, and returns it only if the remaining address is valid. */
+  @Nullable
+  private static Resolved resolve(String token) {
+    Resolved endpoint = token.startsWith("[") ? resolveBracketed(token) : resolveUnbracketed(token);
+    if (endpoint == null
+      || endpoint.address().indexOf('[') >= 0
+      || endpoint.address().indexOf(']') >= 0
+      || IpAddressClassifier.parse(endpoint.address()).isEmpty()) {
+      return null;
+    }
+    return endpoint;
+  }
+
+  @Nullable
+  private static Resolved resolveBracketed(String token) {
+    int closing = token.indexOf(']');
+    if (closing < 0) {
+      return null;
+    }
+    String address = token.substring(1, closing);
+    // IPv4 addresses must not be enclosed in brackets.
+    if (address.indexOf(':') < 0) {
+      return null;
+    }
+    String rest = token.substring(closing + 1);
+    if (rest.isEmpty()) {
+      return new Resolved(address, false);
+    }
+    return rest.charAt(0) == ':' && isPort(rest.substring(1)) ? new Resolved(address, true) : null;
+  }
+
+  @Nullable
+  private static Resolved resolveUnbracketed(String token) {
+    int colon = token.indexOf(':');
+    // Only an IPv4 endpoint has a port without brackets; the last group of an IPv6 address is not a port.
+    if (colon > 0 && token.substring(0, colon).indexOf('.') >= 0) {
+      return isPort(token.substring(colon + 1)) ? new Resolved(token.substring(0, colon), true) : null;
+    }
+    return new Resolved(token, false);
+  }
+
+  private record Resolved(String address, boolean portRemoved) {
   }
 
   private static Optional<StrippedCandidate> stripBracketsAndPort(String candidate) {
