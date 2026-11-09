@@ -38,6 +38,8 @@ jobs:
       - &checkout
         name: Checkout source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
       - name: Setup development environment with mise
         uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
@@ -51,6 +53,15 @@ jobs:
           deploy-pull-request: true
           sonar-platform: none
           maven-args: -Pcoverage
+
+      - name: Check Java formatting
+        run: mvn -B -ntp -C com.diffplug.spotless:spotless-maven-plugin:check
+
+      - name: Generate dependency SBOM
+        run: mvn -B -ntp -C org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
+
+      - name: Check that the build preserved tracked source files
+        run: git diff --exit-code -- ':(glob)**/src/**'
 
       - name: Upload Maven build as pipeline artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -91,10 +91,12 @@ To retrieve such ranges use these static util methods of `XmlFile`:
 
 
 ## <a name="safeParser"></a>To instantiate safe parser
-If you don't need precise location of nodes in the file and you don't want/need to keep entire file in the memory you should use `SafetyFactory` to instantiate a safe parser.
-This parsers are configured the way to avoid any kind of vulnerability.
-* `SafelyFactory.createXMLInputFactory()`
-* `SafelyFactory.createDocumentBuilder()`
+If source locations are not needed, use the safe parser factories directly.
+They disable external entity loading.
+* `SafeStaxParserFactory.createXMLInputFactory()`
+* `SafeDomParserFactory.createDocumentBuilder(boolean namespaceAware)`
+
+`SafetyFactory` is a deprecated adapter.
 
 ## <a name="writingCheck"></a>To write a check for XML file
 Implement a class extending `SonarXmlCheck`.
@@ -109,11 +111,11 @@ public class FileCheck extends SonarXmlCheck {
 }
 ```
 
-If you want to write a check which will rely on XPath, implement a class extending `SimpleXpathBasedCheck`.
+If you want to write a check which will rely on XPath, implement a class extending `SimpleXPathBasedCheck`.
 This class provides numerous methods to simplify writing checks which will query DOM.
 
 ```
-public class MyXPathCheck extends SimpleXpathBasedCheck {
+public class MyXPathCheck extends SimpleXPathBasedCheck {
 
   // all the <a> nodes of a DOM, whatever their position in the tree
   private final XPathExpression myXPathExpressin = getXPathExpression("//a");
