@@ -146,7 +146,7 @@ public final class IpAddressCandidateExtractor {
     boolean hasUrl = url.find();
     String values = hasUrl ? entry.substring(0, url.start()) : entry;
     // Without URL syntax, CIDR suffixes are only recognized on a standalone value, not in a path or query.
-    boolean standalone = entry.indexOf('?') < 0 && entry.indexOf('#') < 0;
+    boolean standalone = values.indexOf('?') < 0 && values.indexOf('#') < 0;
     for (String value : standalone ? ASSIGNMENT_DELIMITER.split(values) : new String[] {values}) {
       Matcher cidr = STANDALONE_CIDR.matcher(value);
       if (standalone && cidr.matches()) {
