@@ -119,6 +119,8 @@ public final class IpAddressCandidateExtractor {
    * Bracketed IPv4 endpoints and bracketed lists are not supported.
    * The zone of an IPv6 address and a valid CIDR suffix of a standalone address entry, such as {@code 10.0.0.0/8}, are preserved.
    * An invalid suffix invalidates the entry. Slashes in URLs, in endpoints with ports, and in paths are path separators.
+   * An entry is a run of text between whitespace, quotes, parentheses, commas, and semicolons; its values are separated by {@code =} and {@code &}.
+   * From the first URL of an entry on, the rest of the entry is URL text, so later values do not get CIDR handling.
    *
    * @throws NullPointerException if {@code content} is null
    */
@@ -138,22 +140,23 @@ public final class IpAddressCandidateExtractor {
     if (entry.isEmpty()) {
       return;
     }
+    // Detect URLs before splitting values, because user information can contain `=` and `&`.
+    // Everything from the first URL on is URL text, where slashes are path separators.
+    Matcher url = URL_START.matcher(entry);
+    boolean hasUrl = url.find();
+    String values = hasUrl ? entry.substring(0, url.start()) : entry;
     // Without URL syntax, CIDR suffixes are only recognized on a standalone value, not in a path or query.
     boolean standalone = entry.indexOf('?') < 0 && entry.indexOf('#') < 0;
-    String[] values = standalone ? ASSIGNMENT_DELIMITER.split(entry) : new String[] {entry};
-    for (String value : values) {
-      if (URL_START.matcher(value).find()) {
-        // Slashes in the rest of the entry are likely part of the URL.
-        standalone = false;
-        collectFromText(value, addresses);
-        continue;
-      }
+    for (String value : standalone ? ASSIGNMENT_DELIMITER.split(values) : new String[] {values}) {
       Matcher cidr = STANDALONE_CIDR.matcher(value);
       if (standalone && cidr.matches()) {
         collectCidr(cidr.group(1), cidr.group(2), addresses);
       } else {
         collectFromText(value, addresses);
       }
+    }
+    if (hasUrl) {
+      collectFromText(entry.substring(url.start()), addresses);
     }
   }
 

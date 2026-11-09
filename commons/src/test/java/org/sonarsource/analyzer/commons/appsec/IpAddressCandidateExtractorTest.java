@@ -260,10 +260,14 @@ class IpAddressCandidateExtractorTest {
       of("git+ssh://10.0.0.1/path", "10.0.0.1"),
       of("http://localhost:8080/a"),
       of("http://"),
-      // A URL in another value does not affect CIDR handling
+      // Values before a URL keep CIDR handling; the URL and the rest of the entry are URL text
       of("cidr=0.0.0.0/0&callback=http://example.org", "0.0.0.0/0"),
       of("ip=10.0.0.0/99&u=http://x"),
       of("u=http://example.org&ip=10.0.0.0/8", "10.0.0.0"),
+      of("u=http://example.org&ip=10.0.0.0/99", "10.0.0.0"),
+      of("http://a=10.0.0.5@example.org/path"),
+      of("http://a&b=10.0.0.5@10.0.0.6/path", "10.0.0.6"),
+      of("x=http://user=1@10.0.0.7:80/p", "10.0.0.7"),
       // Supplementary-plane characters
       of("😀10.0.0.1", "10.0.0.1"),
       of("10.0.0.1😀", "10.0.0.1"),
