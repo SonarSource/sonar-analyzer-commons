@@ -106,6 +106,7 @@ public final class SecretClassifier {
       "p[@a]ssw[o0]rd",
       // Boolean / null / scalar literals, e.g. "password = undefined", "enabled: true"
       "^(?:none|undefined|null|true|false|yes|no|1|0)$",
+      // Boolean values from the CODESYS export file format, e.g. "(bool)True", "(bool)False"
       "^\\(bool\\)(?:true|false)$",
       // Starts with "your", e.g. "yourpassword", "your_super_secret"
       "^your",
