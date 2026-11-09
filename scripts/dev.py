@@ -17,7 +17,6 @@ import repository_checks
 
 ROOT = Path(__file__).resolve().parents[1]
 NS = {"m": "http://maven.apache.org/POM/4.0.0"}
-MAVEN_VERSION = "3.9.16"
 
 
 def project_graph(root, include_tests=True):
@@ -122,8 +121,10 @@ def doctor(resolve=False):
             print(error.stdout, file=sys.stderr)
         return 1
     print(version, end="")
-    if not re.search(r"Apache Maven " + re.escape(MAVEN_VERSION) + r"\b", version) or not re.search(r"Java version: 21[.,]", version):
-        print("Use Maven 3.9.16 and JDK 21 from mise.toml. Maven can use a different JVM from `java` on PATH.", file=sys.stderr)
+    maven = re.search(r"Apache Maven (\d+)\.(\d+)", version)
+    java = re.search(r"Java version: (\d+)[.,]", version)
+    if not maven or tuple(map(int, maven.groups())) < (3, 9) or not java or int(java.group(1)) < 21:
+        print("Use Maven 3.9 or later and JDK 21 or later. Maven can use a different JVM from `java` on PATH.", file=sys.stderr)
         return 1
     if resolve:
         return run_maven(["validate"], "doctor")
@@ -270,7 +271,7 @@ def main():
         return 1
     goals = {"verify": ["-Pcoverage", "verify"], "build": ["install"],
              "quality": ["compile", "pmd:pmd", "pmd:cpd"],
-             "sbom": ["org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom"]}
+             "sbom": ["org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom"]}
     return run_maven([*options, *goals[args.command]], args.command)
 
 

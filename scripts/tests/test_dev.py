@@ -43,6 +43,21 @@ class RepositoryCommandsTest(unittest.TestCase):
         subprocess.run(["git", "-C", str(self.root), "-c", "user.name=Tool test", "-c",
                         "user.email=tool@example.invalid", "commit", "-qm", "Initial source"], check=True)
 
+    def test_doctor_accepts_supported_release_updates(self):
+        for maven, java in (("3.9.0", "21.0.1"), ("3.9.99", "21.0.99"), ("3.10.0", "27.0.1")):
+            with self.subTest(maven=maven, java=java):
+                output = f"Apache Maven {maven}\nJava version: {java}\n"
+                with patch.object(dev.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, stdout=output)), contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(dev.doctor(), 0)
+
+    def test_doctor_rejects_unsupported_or_unknown_tool_versions(self):
+        for output in ("Apache Maven 3.8.8\nJava version: 21.0.1\n",
+                       "Apache Maven 3.9.16\nJava version: 17.0.1\n",
+                       "Apache Maven unknown\nJava version: 21.0.1\n",
+                       "Apache Maven 3.9.16\nJava version: unknown\n"):
+            with self.subTest(output=output), patch.object(dev.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, stdout=output)), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(dev.doctor(), 1)
+
     def test_affected_includes_transitive_consumers(self):
         graph = {"core": set(), "consumer": {"core"}, "downstream": {"consumer"}, "other": set()}
         self.assertEqual(dev.affected_modules(graph, ["core/src/main/java/One.java"]), ["consumer", "core", "downstream"])

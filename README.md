@@ -31,7 +31,8 @@ To learn more about the SonarQube product family, visit the [Sonar website](http
 * [performance-measure](performance-measure) Nested duration measurements and report merging
 
 ## Build
-Use JDK 21 and Maven 3.9.16. [mise.toml](mise.toml) pins both tools.
+Use JDK 21 or later and Maven 3.9 or later. [mise.toml](mise.toml) selects the
+existing Java 21.0 and Maven 3.9 release lines.
 Python 3.9 or later runs the local command tool.
 
 ```sh

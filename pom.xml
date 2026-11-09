@@ -160,21 +160,22 @@
   </dependencyManagement>
 
   <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-pmd-plugin</artifactId>
-        <version>3.26.0</version>
-        <configuration>
-          <rulesets>
-            <ruleset>${maven.multiModuleProjectDirectory}/config/pmd.xml</ruleset>
-          </rulesets>
-          <linkXRef>false</linkXRef>
-          <targetJdk>21</targetJdk>
-          <minimumTokens>100</minimumTokens>
-        </configuration>
-      </plugin>
-    </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-pmd-plugin</artifactId>
+          <configuration>
+            <rulesets>
+              <ruleset>${maven.multiModuleProjectDirectory}/config/pmd.xml</ruleset>
+            </rulesets>
+            <linkXRef>false</linkXRef>
+            <targetJdk>21</targetJdk>
+            <minimumTokens>100</minimumTokens>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
 
   <profiles>

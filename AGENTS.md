@@ -6,8 +6,9 @@ standalone analyzer or a SonarQube server. Start with the module table in
 
 ## Prepare and check
 
-Use Python 3.9 or later, Git, JDK 21, and Maven 3.9.16. `mise.toml` pins the local
-JDK and Maven versions. From the repository root, run:
+Use Python 3.9 or later, Git, JDK 21 or later, and Maven 3.9 or later.
+`mise.toml` selects the existing Java 21.0 and Maven 3.9 release lines. From the
+repository root, run:
 
 ```sh
 mise trust
@@ -21,8 +22,8 @@ The parent POM is `org.sonarsource.parent:parent`. Local tests do not require
 Vault, a SonarQube server, npm, NuGet, or publishing credentials. If an artifact
 returns HTTP 401 or 403, check your Maven mirror and server settings. Keep those
 settings outside Git. Do not print tokens or copy CI deployer credentials.
-The optional `.devcontainer` uses a base image fixed by digest. It installs Git
-and Python from Debian packages. Those package versions are not locked.
+The optional `.devcontainer` uses the Maven 3 image with JDK 21. It installs Git
+and Python from Debian packages. The image and packages can receive updates.
 
 ## Select work and tests
 
