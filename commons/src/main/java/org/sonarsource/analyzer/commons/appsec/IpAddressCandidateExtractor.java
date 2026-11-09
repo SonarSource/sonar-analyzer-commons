@@ -33,7 +33,7 @@ public final class IpAddressCandidateExtractor {
   private static final Pattern ENTRY_DELIMITER = Pattern.compile("[\\s,;'\"()]+", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ASSIGNMENT_DELIMITER = Pattern.compile("[=&]");
   private static final Pattern URL_START = Pattern.compile("(?<![a-zA-Z0-9+.-])(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//");
-  private static final Pattern STANDALONE_CIDR = Pattern.compile("([^/]+)/(\\d+)");
+  private static final Pattern STANDALONE_CIDR = Pattern.compile("([^/]+)/([^/]*)");
 
   private IpAddressCandidateExtractor() {
   }
@@ -154,16 +154,16 @@ public final class IpAddressCandidateExtractor {
     }
   }
 
-  private static void collectCidr(String endpoint, String prefix, List<String> addresses) {
+  /** An address followed by a single slash is a CIDR entry: an invalid suffix invalidates it. Otherwise, the slash separates a path. */
+  private static void collectCidr(String endpoint, String suffix, List<String> addresses) {
     Resolved resolved = resolve(endpoint);
     if (resolved == null) {
-      return;
-    }
-    if (resolved.portRemoved()) {
+      collectFromText(endpoint + "/" + suffix, addresses);
+    } else if (resolved.portRemoved()) {
       // Slash suffixes after ports are paths.
-      addresses.add(resolved.address());
-    } else if (IpAddressClassifier.parse(resolved.address() + "/" + prefix).isPresent()) {
-      addresses.add(resolved.address() + "/" + prefix);
+      collectFromText(endpoint + "/" + suffix, addresses);
+    } else if (IpAddressClassifier.parse(resolved.address() + "/" + suffix).isPresent()) {
+      addresses.add(resolved.address() + "/" + suffix);
     }
   }
 
