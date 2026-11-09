@@ -65,31 +65,34 @@ local repeat check is useful; a repeated pass does not prove determinism.
 Inspect `git diff` before and after a build. CI uses a separate Git check to
 reject changes to tracked source files under `src/`.
 
-Python 3.9 or later is needed only for the independent repository checks:
-
-```sh
-python3 scripts/check_sources.py affected origin/master
-python3 scripts/check_sources.py check --base HEAD
-python3 -m unittest discover -s scripts/tests -v
-```
-
-The affected-module query includes local edits and reverse dependencies,
-including test dependencies. It gives a conservative module list. It cannot
-identify external analyzer consumers. These scripts do not run Maven.
+Use `git diff --name-only origin/master` to identify changed modules. Read their
+POMs and use Maven `-amd` to include reactor consumers, for example
+`mvn -pl regex-parsing -am -amd test`. Identify external analyzer consumers
+separately; they are outside this reactor.
 
 ## Follow the source contracts
 
-Use two spaces in Java and XML, and four spaces in Python. Use the existing
+Use two spaces in Java and XML. Use the existing
 package names and `*Test` class names. Keep imports explicit. Match package
-directories. `scripts/check_sources.py check` rejects reactor cycles, undeclared local
-source imports, package-directory errors, and added whitespace errors. Run the
-repository-check tests separately with the command above. `.editorconfig` gives
-editor defaults. Test resources
-can contain deliberate invalid source and whitespace; do not format them.
-Use `check --base <ref>` to include committed changes in whitespace and
-credential checks. CI supplies the PR base explicitly. With no base, the tool
-checks local changes from `HEAD`.
-The same checks run in CI.
+directories. Maven rejects reactor dependency cycles. `.editorconfig` gives
+editor defaults. Use the Maven formatter for Java implementation and test code:
+
+```sh
+mvn com.diffplug.spotless:spotless-maven-plugin:apply
+mvn com.diffplug.spotless:spotless-maven-plugin:check
+```
+
+Spotless uses the Eclipse formatter with the shared
+[SonarSource profile](https://github.com/SonarSource/sonar-developer-toolset/blob/master/eclipse/sonar-formatter.xml).
+Spotless loads that profile from its canonical URL. It selects only
+`src/main/java/**/*.java` and `src/test/java/**/*.java` in each module. Test
+resources can contain deliberate invalid source and whitespace; they are
+excluded. Generated files under `target/` are also excluded. To format only
+files in a change, add `'-DspotlessFiles=.*MyClass\.java'`. This option accepts
+comma-separated Java regular expressions matched against absolute file paths;
+quote the patterns in the shell. Keep unrelated formatting out of a
+behavior change. The goals run only when requested; the existing source tree
+has not been reformatted, and formatting is not a new default CI gate.
 
 New public APIs affect many analyzers. Prefer the existing API and a small
 implementation change. Keep `internal` implementation classes behind their
@@ -121,12 +124,10 @@ Work on a side branch. Use `fix/`, `feat/`, or `chore/` with a short description
 Use an `ACOMMONS-<number>` prefix in the commit and PR title when a ticket exists;
 otherwise use a conventional title such as `chore: Improve local checks`.
 Separate behavior changes from broad formatting or dependency updates. Keep
-each PR small enough to explain and test. The readiness workflow checks the
-title and reports changed line counts. Its size limit requires a maintainer's
-`large-change-reviewed` label for an exceptional PR.
+each PR small enough to explain and test.
 
 Before completion, run the affected module suites, `mvn -B -ntp -C -Pcoverage
-verify`, the independent repository checks, and inspect the full diff. Required CI and NEXT checks must pass before
+verify`, and inspect the full diff. Required CI and NEXT checks must pass before
 merge. A local pass does not establish downstream compatibility or a green CI
 result. If an API or common parser changes, identify affected consumers in the
 PR. Do not merge, tag, sign, release, promote, publish, or force-push unless the
@@ -150,7 +151,6 @@ unrelated change. Marketing owns the marked root README section and logo URLs.
 
 Use network access for required dependency resolution and source references.
 Do not send repository source, test corpora, credentials, or build logs to an
-external service unless the task authorizes that service. Repository checks
-scan added lines for selected credential formats; they cannot detect every
-secret. Stop and remove a real credential if one is found, then follow the
+external service unless the task authorizes that service. Stop and remove a
+real credential if one is found, then follow the
 organization's credential-rotation process.

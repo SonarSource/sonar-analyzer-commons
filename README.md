@@ -42,8 +42,8 @@ mvn -B -ntp -C -Pcoverage verify
 
 For a quick module test, run `mvn -pl recognizers -am test`.
 For a full local install, run `mvn install`.
-Python 3.9 or later is used only by the separate repository checks described in
-[AGENTS.md](AGENTS.md); Maven builds and tests do not need it.
+To format Java implementation and test code, run
+`mvn com.diffplug.spotless:spotless-maven-plugin:apply`.
 See [AGENTS.md](AGENTS.md) for module selection, failure diagnosis, source
 boundaries, and contribution rules. The optional [.devcontainer](.devcontainer)
 contains a development environment. CI signing and publishing require internal
