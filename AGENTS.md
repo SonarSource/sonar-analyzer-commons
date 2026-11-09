@@ -89,10 +89,7 @@ can contain deliberate invalid source and whitespace; do not format them.
 Use `check --base <ref>` to include committed changes in whitespace and
 credential checks. CI supplies the PR base explicitly. With no base, the tool
 checks local changes from `HEAD`.
-To run these fast checks before a commit, opt in with
-`git config --local core.hooksPath .githooks`. This is a repository-local setting;
-the setup command does not change global Git configuration. The same checks run
-in CI even when the local hook is not enabled.
+The same checks run in CI.
 
 New public APIs affect many analyzers. Prefer the existing API and a small
 implementation change. Keep `internal` implementation classes behind their
