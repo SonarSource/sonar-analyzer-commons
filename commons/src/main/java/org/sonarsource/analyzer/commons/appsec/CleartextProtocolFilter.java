@@ -223,7 +223,6 @@ public final class CleartextProtocolFilter {
   private static final Pattern CLEARTEXT_AUTHORITY = Pattern.compile(
     "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]++@)?(?<rest>[^\\s/?#]++)", Pattern.CASE_INSENSITIVE);
 
-  // JS-2698: exact authorities and case-sensitive path + query + fragment patterns.
   // Matching an identifier is separate from deciding whether an actual connection is safe.
   private static final Map<String, Pattern> IDENTIFIER_URLS = Map.ofEntries(
     Map.entry("adnovum.ch", Pattern.compile("^/nevisidm/ws")),
@@ -261,7 +260,7 @@ public final class CleartextProtocolFilter {
     "^http://([^\\s/?#\\\\]+)([/?#][^\\s\\\\]*)?$", Pattern.CASE_INSENSITIVE);
 
   /**
-   * Recognizes the namespace, schema, vocabulary and protocol identifier inventory shared with SonarJS.
+   * Recognizes the namespace, schema, vocabulary and protocol identifier inventory shared.
    * The analyzer must verify the identifier role in its AST before suppressing an issue. A matching
    * URL used as a network destination still requires transport analysis.
    *
