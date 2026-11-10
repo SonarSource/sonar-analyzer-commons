@@ -24,6 +24,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,6 +39,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CleartextProtocolCorpusExporterTest {
+
+  private static final Pattern INVALID_IDENTIFIER_CHARACTERS = Pattern.compile("[\\s\\\\]");
 
   @ParameterizedTest(name = "[{index}] {0}")
   @MethodSource("safeUrls")
@@ -52,15 +56,15 @@ class CleartextProtocolCorpusExporterTest {
 
   @ParameterizedTest(name = "[{index}] {0}")
   @MethodSource("knownIdentifierUrls")
-  void knownIdentifierDoesNotMakeAConnectionSafe(String url) {
-    assertThat(CleartextProtocolFilter.isKnownIdentifier(url)).isTrue();
+  void exportedPatternsShouldRecognizeIdentifiersWithoutMakingConnectionsSafe(String url) {
+    assertThat(matchesIdentifier(url, exportedIdentifierPatterns())).isTrue();
     assertThat(CleartextProtocolFilter.isSafeWithoutTls(url)).isFalse();
   }
 
   @ParameterizedTest(name = "[{index}] {0}")
   @MethodSource("notIdentifierUrls")
-  void notIdentifierUrl(String url) {
-    assertThat(CleartextProtocolFilter.isKnownIdentifier(url)).isFalse();
+  void exportedPatternsShouldRejectNonIdentifiers(String url) {
+    assertThat(matchesIdentifier(url, exportedIdentifierPatterns())).isFalse();
   }
 
   @Test
@@ -69,7 +73,7 @@ class CleartextProtocolCorpusExporterTest {
       .map(String::strip)
       .map(url -> url.substring("http://".length()).split("[/?#]", 2)[0].toLowerCase(Locale.ROOT))
       .collect(Collectors.toSet());
-    assertThat(CleartextProtocolFilter.exportIdentifierUrls())
+    assertThat(exportedIdentifierPatterns())
       .hasSize(29)
       .containsOnlyKeys(authorities);
   }
@@ -151,6 +155,37 @@ class CleartextProtocolCorpusExporterTest {
     assertThat(match.get("caseInsensitive").getAsBoolean()).isTrue();
     return exclusions.getAsJsonArray("safeUrlPrefixes").asList().stream()
       .map(value -> value.getAsString().toLowerCase(Locale.ROOT)).toList();
+  }
+
+  private static Map<String, Pattern> exportedIdentifierPatterns() {
+    var exclusions = JsonParser.parseString(CleartextProtocolFilterExporter.toJson()).getAsJsonObject();
+    var match = exclusions.getAsJsonObject("match").getAsJsonObject("identifierUrls");
+    var authorityMatch = match.getAsJsonObject("authority");
+    assertThat(authorityMatch.get("semantics").getAsString()).isEqualTo("exact");
+    assertThat(authorityMatch.get("caseInsensitive").getAsBoolean()).isTrue();
+    var patternMatch = match.getAsJsonObject("pattern");
+    assertThat(patternMatch.get("semantics").getAsString()).isEqualTo("find");
+    assertThat(patternMatch.get("target").getAsString()).isEqualTo("pathQueryFragment");
+    int flags = patternMatch.get("caseInsensitive").getAsBoolean() ? Pattern.CASE_INSENSITIVE : 0;
+    Map<String, Pattern> patterns = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    exclusions.getAsJsonObject("identifierUrls").entrySet()
+      .forEach(entry -> patterns.put(entry.getKey(), Pattern.compile(entry.getValue().getAsString(), flags)));
+    return patterns;
+  }
+
+  private static boolean matchesIdentifier(String url, Map<String, Pattern> patterns) {
+    var stripped = url.strip();
+    if (!stripped.regionMatches(true, 0, "http://", 0, 7) || INVALID_IDENTIFIER_CHARACTERS.matcher(stripped).find()) {
+      return false;
+    }
+    // Preserve raw authority and suffix: no port removal, path normalization or escape decoding.
+    var parts = stripped.substring(7).split("(?=[/?#])", 2);
+    var pattern = patterns.get(parts[0]);
+    var suffix = parts.length == 1 ? "/" : parts[1];
+    if (!suffix.startsWith("/")) {
+      suffix = "/" + suffix;
+    }
+    return pattern != null && pattern.matcher(suffix).find();
   }
 
   private static boolean matchesExclusion(String url, List<Pattern> patterns, List<String> prefixes) {

@@ -28,7 +28,6 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,18 +35,25 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class CleartextProtocolFilterTest {
 
-  // Keep direct matcher coverage here; the configurations module validates the full shared corpus.
-  @ParameterizedTest
-  @CsvSource({
-    "HTTP://WWW.TOPOGRAFIX.COM/GPX/1/1, true",
-    "http://www.topografix.com/gpx, false",
-    "http://neverssl.com, true",
-    "http://osmand.net?mode=extensions#schema, true",
-    "http://identifier.invalid, false",
-    "https://auth0.com/oauth/grant-type, false"
-  })
-  void knownIdentifierUrl(String url, boolean expected) {
-    assertThat(CleartextProtocolFilter.isKnownIdentifier(url)).isEqualTo(expected);
+  @ParameterizedTest(name = "[{index}] {0}")
+  @MethodSource("knownIdentifierUrls")
+  void knownIdentifierDoesNotMakeAConnectionSafe(String url) {
+    assertThat(CleartextProtocolFilter.isKnownIdentifier(url)).isTrue();
+    assertThat(CleartextProtocolFilter.isSafeWithoutTls(url)).isFalse();
+  }
+
+  @ParameterizedTest(name = "[{index}] {0}")
+  @MethodSource("notIdentifierUrls")
+  void notIdentifierUrl(String url) {
+    assertThat(CleartextProtocolFilter.isKnownIdentifier(url)).isFalse();
+  }
+
+  static Stream<String> knownIdentifierUrls() throws IOException, ParseException {
+    return samples("identifierUrls");
+  }
+
+  static Stream<String> notIdentifierUrls() throws IOException, ParseException {
+    return samples("nonIdentifierUrls");
   }
 
   @Test
