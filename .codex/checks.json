@@ -1,0 +1,11 @@
+{
+  "repository": "sonar-analyzer-commons",
+  "workflow": "Build",
+  "sonar_server": "https://next.sonarqube.com/sonarqube",
+  "sonar_project": "org.sonarsource.analyzer-commons:sonar-analyzer-commons-parent",
+  "local_checks": {
+    "committed_diff": ["git", "show", "--format=", "--check", "HEAD"],
+    "maven_verify": ["mvn", "clean", "verify", "-Pcoverage", "-DskipTests=false", "-B"]
+  },
+  "required_pr_jobs": ["Build", "NEXT analysis", "Promote", "Promote NuGet", "Promote npm"]
+}

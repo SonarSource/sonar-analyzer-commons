@@ -1,0 +1,6 @@
+{
+  "hooks": {
+    "PreToolUse": [{"matcher": "^Bash$", "hooks": [{"type": "command", "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/checks.py\" pre-tool-use", "timeout": 3600, "statusMessage": "Checking committed HEAD before git push"}]}],
+    "Stop": [{"hooks": [{"type": "command", "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/checks.py\" stop", "timeout": 60, "statusMessage": "Checking local and PR status"}]}]
+  }
+}
