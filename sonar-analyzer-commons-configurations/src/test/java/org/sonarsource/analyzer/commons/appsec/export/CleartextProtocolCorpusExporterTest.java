@@ -67,7 +67,8 @@ class CleartextProtocolCorpusExporterTest {
     assertThat(exportedSamples("safeUrls").filter(url -> !matchesExclusion(url, patterns, prefixes)))
       .containsExactly("wss://acme.com", "ircs://acme.com",
         "http://local-kubernetes-hostname/something", "http://local-kubernetes-hostname:8080/something", "ws://my-service",
-        "http://my-service/api", "https://insecure.com", "not-a-url", "");
+        "http://my-service/api", "https://insecure.com", "not-a-url", "",
+        "https://auth0.com/oauth/grant-type", "auth0.com/oauth/grant-type");
   }
 
   @Test

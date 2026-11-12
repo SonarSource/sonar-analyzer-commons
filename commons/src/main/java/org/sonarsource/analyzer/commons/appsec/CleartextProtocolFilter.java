@@ -159,17 +159,53 @@ public final class CleartextProtocolFilter {
     // JSON Schema
     "^json-schema\\.org|" +
     // Eclipse EMF/Ecore
-    "^www\\.eclipse\\.org" +
+    "^www\\.eclipse\\.org|" +
+    // Domain-wide exclusions: HTTP diagnostics and OsmAnd identifiers
+    "^neverssl\\.com|^osmand\\.net" +
     ")(?=:|$)", Pattern.CASE_INSENSITIVE);
 
   // --- Well-known identifier URLs -------------------------------------------------------
   // Unlike the namespace URI authorities above, these hosts also serve ordinary content, so
   // only full http:// URLs starting with one of these prefixes are considered safe.
   private static final Set<String> SAFE_URL_PREFIXES = Set.of(
-    // XMPP protocol namespaces (XEPs)
+    // XMPP protocol and stream feature namespaces (XEPs)
     "http://jabber.org/protocol/",
+    "http://jabber.org/features/",
     // Xerces/JAXP XML parser feature flags
-    "http://apache.org/xml/features/"
+    "http://apache.org/xml/features/",
+    // Namespace, schema, vocabulary and protocol identifier prefixes, stored lowercase for matching
+    "http://adnovum.ch/nevisidm/ws",
+    "http://auth0.com/oauth/grant-type",
+    "http://bigcontent.io/cms/schema",
+    "http://cv.iptc.org/newscodes/digitalsourcetype",
+    "http://dashif.org/guidelines",
+    "http://dashif.org/thumbnail_tile",
+    "http://data.europa.eu/esco",
+    "http://data.europa.eu/p27",
+    "http://dbpedia.org/ontology",
+    "http://dbpedia.org/property",
+    "http://dbpedia.org/resource",
+    "http://hapifhir.io/fhir",
+    "http://macedir.org/entity-category",
+    "http://metadatahub.bijnpo.nl/graph",
+    "http://pds.nasa.gov/pds4",
+    "http://powerbi.com/product/schema",
+    "http://purl.oclc.org/ooxml",
+    "http://snomed.info/sct",
+    "http://terminology.hl7.org/codesystem",
+    "http://tizen.org/feature",
+    "http://tizen.org/system",
+    "http://www.ebu.ch/metadata/ontologies",
+    "http://www.garmin.com/xmlschemas",
+    "http://www.iab.com/vast",
+    "http://www.ifxforum.org/ifx_150",
+    "http://www.naxml.org/posbo",
+    "http://www.nlm.nih.gov/research/umls/rxnorm",
+    "http://www.openarchives.org/oai",
+    "http://www.pcats.org/schema",
+    "http://www.sat.gob.gt/face2",
+    "http://www.sitemaps.org/schemas",
+    "http://www.topografix.com/gpx"
   );
 
   // --- IANA-reserved documentation / placeholder domains --------------------------------
