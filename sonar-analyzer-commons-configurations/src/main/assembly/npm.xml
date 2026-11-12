@@ -30,5 +30,15 @@
       <outputDirectory>package</outputDirectory>
       <destName>secret-exclusion-corpus.json</destName>
     </file>
+    <file>
+      <source>${project.build.directory}/generated-resources/cleartext-protocol-exclusions.json</source>
+      <outputDirectory>package</outputDirectory>
+      <destName>cleartext-protocol-exclusions.json</destName>
+    </file>
+    <file>
+      <source>${generated.cleartext.corpus.json}</source>
+      <outputDirectory>package</outputDirectory>
+      <destName>cleartext-protocol-corpus.json</destName>
+    </file>
   </files>
 </assembly>

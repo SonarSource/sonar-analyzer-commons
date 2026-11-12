@@ -223,6 +223,24 @@ public final class CleartextProtocolFilter {
   private static final Pattern CLEARTEXT_AUTHORITY = Pattern.compile(
     "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]++@)?(?<rest>[^\\s/?#]++)", Pattern.CASE_INSENSITIVE);
 
+  /**
+   * Returns the existing host exclusions for non-JVM analyzers.
+   * All patterns use case-insensitive search semantics.
+   */
+  public static Map<String, Pattern> exportHostPatterns() {
+    return Map.of(
+      "internal", SAFE_HOSTS,
+      "namespace", NAMESPACE_URI_AUTHORITIES,
+      "documentation", DOCUMENTATION_HOSTS);
+  }
+
+  /**
+   * Returns the existing identifier URL prefixes, matched case-insensitively against the complete URL.
+   */
+  public static Set<String> exportSafeUrlPrefixes() {
+    return SAFE_URL_PREFIXES;
+  }
+
   private CleartextProtocolFilter() {
   }
 
