@@ -5,6 +5,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -34,6 +35,20 @@ class HookTests(unittest.TestCase):
         hook_config = json.loads((SCRIPT.parent / "hooks.json").read_text())
         self.assertEqual("^Bash$", hook_config["hooks"]["PreToolUse"][0]["matcher"])
 
+    def test_state_is_scoped_to_checkout(self):
+        paths = []
+        for name in ("checkout-a", "checkout-b"):
+            script = Path(self.directory.name) / name / ".codex" / "checks.py"
+            script.parent.mkdir(parents=True)
+            shutil.copy2(SCRIPT, script)
+            shutil.copy2(SCRIPT.with_name("checks.json"), script.with_name("checks.json"))
+            spec = importlib.util.spec_from_file_location(name, script)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            paths.append(module.STATE)
+        self.assertNotEqual(*paths)
+        self.assertEqual(paths[0].parent, paths[1].parent)
+
     def test_successful_push_reports_checks_in_codex_context(self):
         with mock.patch.object(checks, "verify_head", return_value=(True, "maven_verify: passed")), \
              mock.patch.object(sys, "stdin", io.StringIO('{"tool_name":"Bash","tool_input":{"command":"git push"}}')), \
@@ -49,6 +64,14 @@ class HookTests(unittest.TestCase):
         self.assertFalse(passed)
         self.assertIn("separate Bash tool call", message)
         self.assertEqual((True, ""), checks.pre_tool_use({"tool_input": {"command": "git commit -m test"}}))
+
+    def test_shell_wrapped_push_is_rejected(self):
+        for command in ('sh -c "git push"', "bash -lc 'git push origin HEAD'",
+                        "zsh -c 'echo ready && git push'", "bash -c 'sh -c \"git push\"'"):
+            with self.subTest(command=command):
+                passed, message = checks.pre_tool_use({"tool_input": {"command": command}})
+                self.assertFalse(passed)
+                self.assertIn("separate Bash tool call", message)
 
     def test_stop_reports_json_and_running_checks(self):
         state = {"complete": False, "pr_error": "PR unavailable", "message": "maven_verify: running", "items": []}

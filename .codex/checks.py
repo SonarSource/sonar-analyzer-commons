@@ -3,6 +3,7 @@
 
 import argparse
 import datetime
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -15,7 +16,9 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = json.loads((Path(__file__).parent / "checks.json").read_text())
-STATE = Path(os.environ.get("CODEX_CHECK_STATE", Path(tempfile.gettempdir()) / "codex-repo-checks")) / CONFIG["repository"]
+CHECKOUT_ID = hashlib.sha256(os.fsencode(ROOT)).hexdigest()[:16]
+STATE = (Path(os.environ.get("CODEX_CHECK_STATE", Path(tempfile.gettempdir()) / "codex-repo-checks"))
+         / CONFIG["repository"] / CHECKOUT_ID)
 
 
 def run(command, *, cwd=ROOT, log=None, env=None):
@@ -194,6 +197,13 @@ def is_push(command):
         return False, False
     if not words:
         return False, False
+    if Path(words[0]).name in ("sh", "bash", "zsh"):
+        for index, word in enumerate(words[1:], 1):
+            if word.startswith("-") and "c" in word[1:] and index + 1 < len(words):
+                attempted, _ = is_push(words[index + 1])
+                if attempted:
+                    return True, False
+                break
     standalone = push_words(command) is not None
     for segment in re.split(r"[;&|\n]+", command):
         try:

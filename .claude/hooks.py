@@ -46,17 +46,21 @@ def transcript_messages(path_text):
             continue
         texts = [part for part in message_texts(entry) if part.strip()]
         if entry.get("type") == "user":
-            users.extend(re.sub(r"<system-reminder>.*?</system-reminder>", "", part, flags=re.DOTALL)
-                         for part in texts if "CI-OVERRIDE:" not in part and "CI-WAITING:" not in part)
+            user = re.sub(r"<system-reminder>.*?</system-reminder>", "", "\n".join(texts), flags=re.DOTALL)
+            if user.strip():
+                users.append(user)
         elif entry.get("type") == "assistant" and texts:
             last_reply = "\n".join(texts)
     return users, last_reply
 
 
 def authorized_override(reply, users):
+    latest = " ".join(users[-1].split()).casefold() if users else ""
+    if not latest.startswith("ci-override:"):
+        return None
     for match in re.finditer(r'CI-OVERRIDE:\s*["\u201c](.+?)["\u201d]', reply):
         quote = " ".join(match.group(1).split()).casefold()
-        if len(quote) >= 8 and any(quote in " ".join(user.split()).casefold() for user in users):
+        if len(quote) >= 8 and quote == latest:
             return match.group(1)
     return None
 
@@ -76,15 +80,15 @@ def stop(payload):
     try:
         state = checks.collect_status()
     except (KeyError, OSError, RuntimeError, ValueError) as error:
-        print(f"Incomplete: Check unavailable: {error}.")
+        print(json.dumps({"systemMessage": f"Incomplete: Check unavailable: {error}."}))
         return 0
     users, reply = transcript_messages(payload.get("transcript_path"))
     quote = authorized_override(reply, users)
     if quote and not state["complete"]:
-        print(f'CI override accepted (user said: "{quote}").\nIncomplete: {state["message"]}')
+        print(json.dumps({"systemMessage": f'CI override accepted (user said: "{quote}").\nIncomplete: {state["message"]}'}))
         return 0
     block, message = checks.stop_decision({**payload, "last_assistant_message": reply}, state)
-    print(json.dumps({"decision": "block", "reason": message}) if block else message)
+    print(json.dumps({"decision": "block", "reason": message} if block else {"systemMessage": message}))
     return 0
 
 
@@ -101,7 +105,7 @@ def main():
         if sys.argv[1] == "pre-tool-use":
             print(f"Repository check unavailable: {error}", file=sys.stderr)
             return 2
-        print(f"Incomplete: Check unavailable: {error}.")
+        print(json.dumps({"systemMessage": f"Incomplete: Check unavailable: {error}."}))
         return 0
 
 

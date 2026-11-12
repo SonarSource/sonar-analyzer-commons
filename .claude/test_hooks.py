@@ -56,17 +56,33 @@ class HookTests(unittest.TestCase):
             projects = Path(directory) / "projects" / "repo"
             projects.mkdir(parents=True)
             transcript = projects / "session.jsonl"
+            authorization = "CI-OVERRIDE: Please ignore CI for this PR."
             transcript.write_text("\n".join(json.dumps(item) for item in [
-                {"type": "user", "message": {"content": "Please ignore CI for this PR."}},
+                {"type": "user", "message": {"content": authorization}},
                 {"type": "assistant", "message": {"content": [{"type": "text", "text":
-                    'CI-OVERRIDE: "ignore CI for this PR"'}]}}]))
+                    f'CI-OVERRIDE: "{authorization}"'}]}}]))
+            outside = Path(directory) / "outside.jsonl"
+            outside.write_text(transcript.read_text())
             state = {"complete": False, "pr_error": None, "message": "Build: failed"}
             with mock.patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": directory}), \
                  mock.patch.object(hooks.checks, "collect_status", return_value=state):
                 code, output, _ = self.invoke("stop", {"transcript_path": str(transcript)})
+                self.assertEqual(([], ""), hooks.transcript_messages(str(outside)))
             self.assertEqual(0, code)
-            self.assertIn("CI override accepted", output)
-            self.assertEqual(([], ""), hooks.transcript_messages(str(Path(directory) / "outside.jsonl")))
+            self.assertIn("CI override accepted", json.loads(output)["systemMessage"])
+
+    def test_override_rejects_substrings_and_earlier_messages(self):
+        users = ["CI-OVERRIDE: Ignore CI for the old commit.", "Please fix the failing CI build"]
+        self.assertIsNone(hooks.authorized_override('CI-OVERRIDE: "fix the failing CI build"', users))
+        self.assertIsNone(hooks.authorized_override('CI-OVERRIDE: "CI-OVERRIDE: Ignore CI for the old commit."', users))
+        self.assertIsNone(hooks.authorized_override('CI-OVERRIDE: "ignore CI failures"', ["Don't ignore CI failures"]))
+
+    def test_nonblocking_stop_reports_system_message(self):
+        state = {"complete": True, "pr_error": None, "sha": "sha", "items": [], "message": "Build: passed"}
+        with mock.patch.object(hooks.checks, "collect_status", return_value=state):
+            code, output, _ = self.invoke("stop", {})
+        self.assertEqual(0, code)
+        self.assertIn("Build: passed", json.loads(output)["systemMessage"])
 
 
 if __name__ == "__main__":
