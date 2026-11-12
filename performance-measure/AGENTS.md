@@ -9,5 +9,5 @@ Preserve disabled-mode behavior, nesting, thread behavior, and report format.
 Do not make correctness tests depend on a fixed wall-clock duration. Use the
 adjacent measurement and merger tests for the behavior under change.
 
-Run `mvn -pl performance-measure -am test` from the root. No running
+Run `mise run test performance-measure` from the root. No running
 SonarQube service is needed for these unit tests.

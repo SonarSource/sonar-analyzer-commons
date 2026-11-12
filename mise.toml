@@ -1,3 +1,285 @@
+min_version = "2026.10.20"
+
 [tools]
 java = "21.0"
+python = "3"
 maven = "3.9"
+sonarqube-cli = "1"
+gh = "2"
+jq = "1"
+jfrog-cli = "2.103"
+
+[env]
+SONARQUBE_CLI_SERVER = "https://next.sonarqube.com/sonarqube"
+SONARQUBE_CLI_TOKEN = "{{ env.SONARQUBE_NEXT_TOKEN | default(value=env.SONARQUBE_CLI_TOKEN | default(value='')) }}"
+
+[hooks]
+postinstall = { task = "setup" }
+
+[vars]
+maven = "mvn -B -ntp -C -e -V -Dmaven.test.redirectTestOutputToFile=false"
+verification_args = "-Pcoverage -DskipTests=false"
+sonar_project = "org.sonarsource.analyzer-commons:sonar-analyzer-commons-parent"
+
+# Common tasks
+[tasks.build]
+description = "Build, test, verify, and install local artifacts"
+run = "{{vars.maven}} clean install {{vars.verification_args}}"
+
+[tasks.lint]
+shell = "bash -e -c"
+description = "Check Java formatting; use --fix to apply it"
+usage = 'flag "--fix" help="Apply Java formatting"'
+run = '''
+goal=check
+if [[ ${usage_fix:-false} == true ]]; then goal=apply; fi
+{{vars.maven}} com.diffplug.spotless:spotless-maven-plugin:"$goal"
+'''
+
+[tasks.clean]
+description = "Remove Maven build output"
+run = "{{vars.maven}} clean"
+
+[tasks.test]
+shell = "bash -e -c"
+description = "Run all tests, a module, or a class/method in a module"
+usage = '''
+arg "[module]" help="Maven module directory"
+arg "[test]" help="ClassName or ClassName#methodName"
+'''
+run = '''
+if [[ -n ${usage_test:-} ]]; then
+  {{vars.maven}} install -pl "$usage_module" -am -DskipTests
+  {{vars.maven}} test -pl "$usage_module" "-Dtest=$usage_test" -DfailIfNoTests=true -DskipTests=false
+elif [[ -n ${usage_module:-} ]]; then
+  {{vars.maven}} test -pl "$usage_module" -am -DskipTests=false
+else
+  {{vars.maven}} test -DskipTests=false
+fi
+'''
+
+# Project diagnostics use Mise's reporting, dependencies, timeouts, and JSON output.
+[tasks.setup]
+description = "Check setup without blocking; use --interactive for sign-in prompts"
+usage = 'flag "--interactive" help="Offer missing sign-in prompts in a terminal"'
+raw = true
+shell = "bash -e -o pipefail -c"
+run = '''
+if {{mise_bin | quote}} doctor project; then exit 0; fi
+warn_incomplete() {
+  echo 'WARNING: Setup is incomplete; continue with the available tooling. Run mise doctor project for details, or mise run setup --interactive to sign in.' >&2
+}
+interactive=${usage_interactive:-false}
+case "${CI:-}" in ''|0|false) ;; *) interactive=false ;; esac
+if [[ $interactive != true || ! -t 0 || ! -t 2 ]]; then
+  warn_incomplete
+  exit 0
+fi
+report=$({{mise_bin | quote}} doctor project --json) || true
+if jq -e 'any(.checks[]; .name == "sonar:auth" and .status == "fail")' <<< "$report" >/dev/null \
+    && [[ -z ${SONARQUBE_CLI_TOKEN:-} ]]; then
+  sonar auth login --server https://next.sonarqube.com/sonarqube || true
+fi
+{{mise_bin | quote}} doctor project || warn_incomplete
+'''
+
+[tasks."test:tooling"]
+description = "Test Mise tasks, credential checks, and setup without network access"
+run = "bash scripts/test-mise.sh {{mise_bin | quote}}"
+
+[doctor.checks.tools]
+description = "All tools selected by mise.toml are installed"
+shell = "bash -e -c"
+run = 'missing=$({{mise_bin | quote}} ls --local --current --missing --no-header); test -z "$missing"'
+hint = "Run mise install, then mise ls --local --current to inspect the selected versions."
+
+[doctor.checks."tools:java"]
+description = "The selected Java runtime starts"
+depends = "tools"
+run = "java -version"
+hint = "Run mise install java; inspect JAVA_HOME if Java still cannot start."
+
+[doctor.checks."tools:maven"]
+description = "The selected Maven installation starts with Java"
+depends = "tools:java"
+run = "mvn --version"
+hint = "Run mise install maven and check JAVA_HOME."
+
+[doctor.checks."tools:python"]
+description = "The selected Python interpreter starts"
+depends = "tools"
+run = "python --version"
+hint = "Run mise install python."
+
+[doctor.checks."tools:sonar"]
+description = "The selected SonarQube CLI starts"
+depends = "tools"
+run = "sonar --version"
+hint = "Run mise install sonarqube-cli."
+
+[doctor.checks."tools:gh"]
+description = "The selected GitHub CLI starts"
+depends = "tools"
+run = "gh --version"
+hint = "Run mise install gh."
+
+[doctor.checks."tools:jq"]
+description = "The selected JSON processor starts"
+depends = "tools"
+run = "jq --version"
+hint = "Run mise install jq."
+
+[doctor.checks."tools:git"]
+description = "Git is installed and starts"
+run = "git --version"
+hint = "Install Git and ensure it is on PATH."
+
+[doctor.checks."tools:bash"]
+description = "Bash is installed and starts"
+run = "bash --version"
+hint = "Install Bash and ensure it is on PATH. Windows requires Git Bash."
+
+[doctor.checks."sonar:auth"]
+description = "Authentication is verified for NEXT SonarQube Server"
+depends = ["tools:sonar", "tools:jq"]
+shell = "bash -e -o pipefail -c"
+run = '''
+sonar auth status --format json |
+  jq -e '.status == "connected" and .server == "https://next.sonarqube.com/sonarqube"'
+'''
+timeout = "40s"
+hint = '''
+sonar-analyzer-commons uses NEXT at https://next.sonarqube.com/sonarqube.
+
+SSO (interactive browser sign-in):
+  mise exec -- sonar auth login --server https://next.sonarqube.com/sonarqube
+
+Token (agents, CI, containers; no login command required):
+  export SONARQUBE_CLI_TOKEN='<your NEXT user token>'
+'''
+
+[doctor.checks."sonar:project"]
+description = "The SonarQube connection can read this repository project"
+depends = "sonar:auth"
+shell = "bash -e -o pipefail -c"
+run = '''
+sonar api get "/api/components/show?component={{vars.sonar_project}}" |
+  jq -e --arg project "{{vars.sonar_project}}" '.component.key == $project'
+'''
+timeout = "40s"
+hint = "Run `mise exec -- sonar auth login --server https://next.sonarqube.com/sonarqube` and verify your account has access to {{vars.sonar_project}}."
+
+[doctor.checks."sonar:analysis"]
+description = "Server-side agent analysis is enabled with available quota"
+depends = "sonar:auth"
+shell = "bash -e -o pipefail -c"
+run = '''
+sonar system status --format json | jq -e '.vortex.status == "enabled"'
+'''
+timeout = "50s"
+hint = "Inspect mise exec -- sonar system status. Your connection needs Vortex entitlement and available quota for mise run analyze."
+
+# Validate only the root: this does not resolve every module/test dependency.
+[doctor.checks."maven:project"]
+description = "Maven resolves the parent and validates the root project"
+depends = "tools:maven"
+run = "{{vars.maven}} -N validate"
+timeout = "60s"
+hint = "Configure the approved SonarSource mirror and reader credentials in your user Maven settings. A cached parent does not prove access to uncached dependencies; run mise run build to verify those. Never print the settings file."
+
+[doctor.checks."git:history"]
+description = "origin/master and shared history are available for formatting"
+depends = "tools:git"
+run = "git merge-base HEAD origin/master"
+hint = "Fetch origin/master with shared history; unshallow the checkout if necessary before mise run lint."
+
+# The shared build action owns CI versioning, signing, analysis, and deployment.
+# It has no custom build-command input. Supply its options from the same source
+# as the local build, without reimplementing the shared publication lifecycle.
+[tasks."ci:configure"]
+description = "Export shared Maven build options to GitHub Actions"
+shell = "bash -e -o pipefail -c"
+run = '''
+: "${GITHUB_OUTPUT:?Run in GitHub Actions or set GITHUB_OUTPUT to an output file}"
+printf '%s\n' 'maven-args={{vars.verification_args}}' >> "$GITHUB_OUTPUT"
+'''
+
+[tasks.verify]
+description = "Verify packages and coverage, optionally selecting Maven modules"
+run = "{{vars.maven}} verify {{vars.verification_args}}"
+
+[tasks."check:source"]
+description = "Check that builds preserved tracked source files"
+run = "git diff --exit-code -- ':(glob)**/src/**'"
+
+[tasks.dependencies]
+description = "Show the Maven dependency tree"
+run = "{{vars.maven}} dependency:tree"
+
+[tasks.sbom]
+description = "Create a CycloneDX dependency inventory under target"
+run = "{{vars.maven}} org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom"
+
+[tasks."licenses:format"]
+description = "Update source license headers"
+run = "{{vars.maven}} com.mycila:license-maven-plugin:format"
+
+[tasks.analyze]
+description = "Run deep agent analysis against the NEXT project"
+run = "sonar analyze agentic --project {{vars.sonar_project}} --depth DEEP"
+
+[tasks."lint:reports"]
+description = "Generate optional PMD and duplicate-code reports"
+run = "{{vars.maven}} compile pmd:pmd pmd:cpd"
+
+[doctor.checks."tools:jfrog"]
+description = "The selected JFrog CLI starts"
+depends = "tools"
+run = "jf --version"
+hint = "Run mise install jfrog-cli. Package deployment still requires CI credentials."
+
+[tasks."ci:nuget:prepare"]
+description = "CI only: prepare NuGet package"
+run = "bash scripts/ci-nuget-prepare.sh"
+
+[tasks."ci:nuget:sign"]
+description = "CI only: sign NuGet package with DigiCert"
+run = "bash scripts/ci-nuget-sign.sh"
+
+[tasks."ci:nuget:deploy"]
+description = "CI only: deploy signed NuGet package to Repox"
+run = "bash scripts/ci-nuget-deploy.sh"
+
+[tasks."ci:npm:deploy"]
+description = "CI only: deploy npm package to Repox"
+run = "bash scripts/ci-npm-deploy.sh"
+
+[tasks."ci:nuget:promote"]
+description = "CI only: promote NuGet build"
+run = "bash scripts/ci-nuget-promote.sh"
+
+[tasks."release:nuget:promote"]
+description = "CI only: promote NuGet package to releases"
+run = "bash scripts/release-nuget-promote.sh"
+
+[tasks."release:npm:promote"]
+description = "CI only: promote npm package to releases"
+run = "bash scripts/release-npm-promote.sh"
+
+[tasks."release:nuget:download"]
+description = "CI only: download released NuGet package from Repox"
+run = "bash scripts/release-nuget-download.sh"
+
+[tasks."release:nuget:publish"]
+description = "CI only: push NuGet package to nuget.org"
+run = "bash scripts/release-nuget-publish.sh"
+tools = { dotnet = "10" }
+
+[tasks."release:npm:download"]
+description = "CI only: download released npm package from Repox"
+run = "bash scripts/release-npm-download.sh"
+
+[tasks."release:npm:publish"]
+description = "CI only: publish npm package to npmjs.org"
+run = "bash scripts/release-npm-publish.sh"
+tools = { node = "26" }

@@ -6,56 +6,83 @@ standalone analyzer or a SonarQube server. Start with the module table in
 
 ## Prepare and check
 
-Use Git, JDK 21 or later, and Maven 3.9 or later for the Java build.
-`mise.toml` selects the existing Java 21.0 and Maven 3.9 release lines.
-Before the first Maven command, configure the approved Repox Maven mirror at
-`https://repox.jfrog.io/artifactory/sonarsource` in `~/.m2/settings.xml`.
-Keep credentials outside Git. The development container does not copy host
-Maven settings and does not run Maven automatically. Configure the approved
-mirror and reader access inside the container before you run the commands.
-Activate your chosen tools, then run these commands from the repository root:
+Use Mise for repository commands. [mise.toml](mise.toml) selects Java 21,
+Maven 3.9, Python 3, the SonarQube CLI, GitHub CLI, and jq. Git and Bash are
+host prerequisites; Windows requires Git Bash. No shell activation is needed.
+Start with:
 
 ```sh
-mvn --version
-mvn -B -ntp -C validate
-mvn -B -ntp -C -Pcoverage verify
+mise install
+mise doctor project
+mise run build
+mise run lint
 ```
 
-`mvn --version` reports the JVM used by Maven. That JVM can differ from `java`
-on PATH. Maven checks the minimum JDK through the parent POM. `validate` also
-checks parent POM and build-extension resolution; it does not resolve every
-test dependency. The parent POM is `org.sonarsource.parent:parent`. Local tests
-do not require Vault, a SonarQube server, npm, NuGet, or publishing credentials.
-If an artifact returns HTTP 401 or 403, check your Maven mirror and server
-settings. Keep those settings outside Git. Do not print tokens or copy CI
-deployer credentials. The optional `.devcontainer` uses the Maven 3 image with
-JDK 21. Its image and Debian packages can receive updates.
+The native post-install hook runs `setup`. It checks all independent prerequisites
+and reports missing access as warnings, without prompting or failing setup.
+Use `mise run setup --interactive` in a terminal for optional sign-in prompts.
+CI and non-terminal sessions never prompt. Use `mise doctor project --json` for
+machine-readable results and a failing exit status when requirements are missing.
+Plain `mise doctor` checks Mise itself. `mise tasks` lists supported commands;
+`mise run test --help` explains test selection. `mise ls` shows tool versions.
+Run `mise run test:tooling` after changing tasks, setup, or doctor checks.
+
+Doctor checks tool startup, root Maven validation, Git history for formatting,
+and NEXT authentication, project access, and agent-analysis entitlement. It
+suppresses probe output and prints repair hints. Probes have time limits and
+failed prerequisites block dependent checks. Root validation can use a cached
+parent: it does not prove access to every uncached module or test dependency.
+Doctor does not build the project, run tests or analysis, or start a server.
+The NEXT connection uses `SONARQUBE_NEXT_TOKEN`, `SONARQUBE_CLI_TOKEN`, or saved
+CLI credentials. A Cloud token does not grant NEXT access. Use `mise run analyze`
+for deep agent analysis when the doctor confirms the required access.
+
+Mise also installs JFrog CLI for the existing CI package tasks. Local unit tests
+do not require publishing credentials, npm, NuGet, Vault, or a SonarQube server.
+Configure the approved Repox mirror at
+`https://repox.jfrog.io/artifactory/sonarsource` and reader credentials in your
+user Maven settings. The parent POM is `org.sonarsource.parent:parent`.
+An HTTP 401/403 or an unresolved private parent is an access problem; do not
+replace the parent or disable checks. Never print settings or copy CI tokens.
+The optional [.devcontainer](.devcontainer) installs Mise and runs `mise install`
+after creation. It does not copy host Maven credentials; configure approved
+access inside the container. Setup reports missing access without blocking.
 
 ## Select work and tests
 
 ```sh
-mvn -B -ntp -C -pl recognizers -am test
-mvn -B -ntp -C -pl regex-parsing -am install -DskipTests
-mvn -B -ntp -C -pl regex-parsing test -Dtest=EmptyGroupFinderTest -DfailIfNoTests=true
-mvn -B -ntp -C -pl regex-parsing -am test
-mvn -B -ntp -C install
-mvn -B -ntp -C org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
-mvn -B -ntp -C -pl recognizers -am compile pmd:pmd pmd:cpd
+mise run test recognizers
+mise run test regex-parsing EmptyGroupFinderTest
+mise run test regex-parsing
+mise run build
+mise run sbom
+mise run lint:reports -- -pl recognizers -am
 ```
 
-`-pl` selects module directory names. `-am` also builds their reactor
-dependencies. For a named test, first install the selected module and its
-upstream modules with `-DskipTests`, then run the test in the selected module
-without `-am`. Use `-DfailIfNoTests=true` on the selected-module command so an empty method
-selection also fails. Do not set `surefire.failIfNoSpecifiedTests=false`. Run the full module
-suite after the focused test. The install preparation skips tests; it does not
-replace the test command.
+`test` accepts an optional module and class or method. A focused selection first
+installs that module and its dependencies with tests skipped, then runs the
+selection in its module. A missing class or method must fail; do not disable
+missing-test checks. Run the full module suite after a focused test.
+`build` cleans output and installs artifacts with tests and the CI `coverage`
+profile. It runs through Maven `verify`, including JAR-size and coverage checks.
+`verify` performs the same verification without cleaning or installing; use
+`mise run verify -- -pl <module> -am` to select modules.
+`test` retains incremental output. Use `mise run clean` to remove output.
+Tasks select the root directory, including when called from a module. Tasks
+without declared arguments, such as `verify`, forward extra Maven arguments
+after `--`. No fixed build duration is guaranteed.
 
-`test` runs unit tests. `verify` also checks packages and the existing JAR size
-limits. `-Pcoverage verify` checks the coverage floor. `install` puts artifacts
-in the local Maven cache. These commands retain `target/` for incremental work.
-Use `mvn clean` only when stale outputs are a possible cause. No fixed build
-duration is guaranteed.
+The [build workflow](.github/workflows/build.yml) calls Mise for formatting,
+inventory, source preservation, task tests, and repository-owned package
+operations. The shared Maven action owns CI versioning, build execution,
+signing, analysis, and Maven deployment. It has no custom build-command input;
+`mise run ci:configure` supplies its build options from the same definition
+used by local verification. Shared analysis and promotion actions retain their
+service-specific logic. `mise tasks` lists package tasks with `ci:` and
+`release:` prefixes. These operations require their authorized CI workflows and
+credentials; setup and doctor do not exercise publication or DigiCert signing.
+The [release workflow](.github/workflows/release.yml) installs Node 26 and .NET 10
+through the relevant Mise publish tasks. Local Java work does not need them.
 
 The CycloneDX goal records resolved dependencies under `target/`. CI retains
 these files with the build output. `-C` enables strict artifact checksums; it
@@ -69,12 +96,13 @@ For a failure, read the first Maven `ERROR` and the module's
 the command, JDK, revision, failing sample, and relevant log. Correct the cause
 before repeating a failed run. Run the same Maven test command twice when a
 local repeat check is useful; a repeated pass does not prove determinism.
-Inspect `git diff` before and after a build. CI uses a separate Git check to
+Inspect `git diff` before and after a build. CI uses `mise run check:source` to
 reject changes to tracked source files under `src/`.
 
 Use `git diff --name-only origin/master` to identify changed modules. Read their
 POMs and use Maven `-amd` to include reactor consumers, for example
-`mvn -pl regex-parsing -am -amd test`. Identify external analyzer consumers
+`mise run verify -- -pl regex-parsing -am -amd`. Identify external analyzer
+consumers
 separately; they are outside this reactor.
 
 ## Follow the source contracts
@@ -82,11 +110,11 @@ separately; they are outside this reactor.
 Use two spaces in Java and XML. Use the existing
 package names and `*Test` class names. Keep imports explicit. Match package
 directories. Maven rejects reactor dependency cycles. `.editorconfig` gives
-editor defaults. Use the Maven formatter for Java implementation and test code:
+editor defaults. Use Mise to format Java implementation and test code:
 
 ```sh
-mvn com.diffplug.spotless:spotless-maven-plugin:apply
-mvn com.diffplug.spotless:spotless-maven-plugin:check
+mise run lint --fix
+mise run lint
 ```
 
 Spotless uses the Eclipse formatter with the shared
@@ -94,11 +122,9 @@ Spotless uses the Eclipse formatter with the shared
 Spotless loads that profile from its canonical URL. It selects only
 `src/main/java/**/*.java` and `src/test/java/**/*.java` in each module. Test
 resources can contain deliberate invalid source and whitespace; they are
-excluded. Generated files under `target/` are also excluded. To format only
-files in a change, add `'-DspotlessFiles=.*MyClass\.java'`. This option accepts
-comma-separated Java regular expressions matched against absolute file paths;
-quote the patterns in the shell. Keep unrelated formatting out of a
-behavior change. Spotless uses `origin/master` as its ratchet reference. It
+excluded. Generated files under `target/` are also excluded. Keep unrelated
+formatting out of a behavior change. Spotless uses `origin/master` as its
+ratchet reference. It
 checks whole Java files added or modified since the common ancestor with that
 reference. Fetch `origin/master` before a local run. Existing unchanged files
 are outside the ratchet, so the source tree does not need a bulk reformat.
@@ -114,8 +140,8 @@ JAR size. Compiler checks and tests check types; NEXT analysis supplies broader
 null, dead-code, duplication, and size feedback. Do not claim that the local
 checks replace this analysis.
 
-`pmd:pmd pmd:cpd` produces local PMD and duplicate-code reports under each selected
-module's `target/site/`. It supplies feedback for unused private code, class
+`mise run lint:reports` produces local PMD and duplicate-code reports under
+each selected module's `target/site/`. It supplies feedback for unused private code, class
 names, large classes/methods, and duplicated token blocks. These reports are
 not a new merge gate, and they do not prove null safety or API compatibility.
 The VS Code extension recommendations enable EditorConfig and SonarQube for IDE
@@ -138,8 +164,8 @@ otherwise use a conventional title such as `chore: Improve local checks`.
 Separate behavior changes from broad formatting or dependency updates. Keep
 each PR small enough to explain and test.
 
-Before completion, run the affected module suites, `mvn -B -ntp -C -Pcoverage
-verify`, and inspect the full diff. Required CI and NEXT checks must pass before
+Before completion, run the affected module suites, `mise run build`, and inspect
+the full diff. Required CI and NEXT checks must pass before
 merge. A local pass does not establish downstream compatibility or a green CI
 result. If an API or common parser changes, identify affected consumers in the
 PR. Do not merge, tag, sign, release, promote, publish, or force-push unless the

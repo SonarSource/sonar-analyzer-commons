@@ -19,5 +19,5 @@ The POM relocates `org.json.simple` into an internal namespace during shading.
 Do not expose that shaded package in a public API. `verify` checks the existing
 JAR size limit. New dependencies increase the size of many analyzers.
 
-From the root, run `mvn -pl commons -am test`. A change to a public
+From the root, run `mise run test commons`. A change to a public
 utility also needs a check of affected analyzer callers outside this repository.

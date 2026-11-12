@@ -8,5 +8,5 @@ Start with `CodeRecognizerTest` and a detector's adjacent test. Test code-like
 and ordinary text, threshold boundaries, and empty inputs for relevant changes.
 Keep language-specific footprints outside this shared module.
 
-Run `mvn -pl recognizers -am test` from the root. Tests use JUnit 4.
+Run `mise run test recognizers` from the root. Tests use JUnit 4.
 `verify` also enforces the existing 10–11 KB JAR size range in the module POM.

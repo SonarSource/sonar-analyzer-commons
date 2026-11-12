@@ -17,7 +17,7 @@ Preserve the npm `package/` layout, NuGet metadata, and version conversion.
 CI handles signing, deployment, and promotion; local packaging does not need
 those credentials.
 
-Run `mvn -pl sonar-analyzer-commons-configurations -am test`, then
-`mvn -pl sonar-analyzer-commons-configurations -am verify` from the
+Run `mise run test sonar-analyzer-commons-configurations`, then
+`mise run verify -- -pl sonar-analyzer-commons-configurations -am` from the
 root. Inspect exporter tests for exact JSON and regex behavior. Archive outputs
 are under this module's `target/`; tests alone do not run the packaging phase.

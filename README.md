@@ -30,24 +30,43 @@ To learn more about the SonarQube product family, visit the [Sonar website](http
 * [regex-parsing](regex-parsing) Regular-expression parsing and shared checks, with Java, PHP, and Python source adapters
 * [performance-measure](performance-measure) Nested duration measurements and report merging
 
-## Build
-Use JDK 21 or later and Maven 3.9 or later. [mise.toml](mise.toml) selects the
-existing Java 21.0 and Maven 3.9 release lines.
-Activate the chosen Java and Maven tools, then run:
+## Setup and build
+
+Install Mise, Git, and Bash (Git Bash on Windows), then run:
 
 ```sh
-mvn --version
-mvn -B -ntp -C -Pcoverage verify
+mise install
+mise doctor project
+mise run build
+mise run lint
 ```
 
-For a quick module test, run `mvn -pl recognizers -am test`.
-For a full local install, run `mvn install`.
-To format Java implementation and test code, run
-`mvn com.diffplug.spotless:spotless-maven-plugin:apply`.
-See [AGENTS.md](AGENTS.md) for module selection, failure diagnosis, source
-boundaries, and contribution rules. The optional [.devcontainer](.devcontainer)
-contains a development environment. CI signing and publishing require internal
-services; local unit tests do not require them.
+[mise.toml](mise.toml) defines repository tools and commands for humans, agents,
+and repository-owned CI steps. Setup checks tools and access without prompting;
+missing configuration produces warnings. Use `mise run setup --interactive`
+for guided sign-in and `mise doctor project --json` for machine-readable results.
+Configure approved SonarSource Maven mirror and reader access before building.
+
+Use `mise tasks` to list commands. Common examples:
+
+```sh
+mise run test recognizers
+mise run test regex-parsing EmptyGroupFinderTest
+mise run verify
+mise run lint --fix
+mise run sbom
+```
+
+`build` cleans output and installs the default reactor with tests, packaging
+checks, and the CI coverage profile. `verify` keeps incremental output.
+NEXT agent analysis uses `mise run analyze` and needs separate authentication
+and entitlement. CI package tasks cover npm/NuGet preparation, signing,
+deployment, and promotion; these require CI credentials. Doctor does not run
+publication or claim that signing is ready.
+
+See [AGENTS.md](AGENTS.md) for module selection, task semantics, failure diagnosis,
+and contribution rules. The optional [.devcontainer](.devcontainer) installs
+Mise and the selected tools. Configure private Maven access inside the container.
 
 ### License
 Copyright 2009-2023 SonarSource.

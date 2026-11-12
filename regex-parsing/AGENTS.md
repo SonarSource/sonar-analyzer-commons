@@ -17,9 +17,8 @@ Finder tests pair a Java `*FinderTest` with
 issue verifier. `EmptyGroupFinderTest` is a small reference example. Preserve
 expected locations and compliant cases when changing a finding.
 
-From the root, run `mvn -pl regex-parsing -am install -DskipTests`, then
-`mvn -pl regex-parsing test -Dtest=EmptyGroupFinderTest -DfailIfNoTests=true`. Finish with
-`mvn -pl regex-parsing -am test`. The first command prepares the local
-dependencies; it does not run tests.
+From the root, run `mise run test regex-parsing EmptyGroupFinderTest`, then
+`mise run test regex-parsing`. The focused task first prepares local dependencies,
+then runs the selected test with missing-test checks enabled.
 This module uses `test-commons` in test scope. Maven's reactor builds that
 dependency with `-am`. No SonarQube server or external regex engine is needed.

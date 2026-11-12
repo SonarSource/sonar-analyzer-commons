@@ -1,5 +1,8 @@
 {
-  "name": "Analyzer commons (JDK 21, Maven 3)",
-  "build": {"dockerfile": "Dockerfile"},
-  "remoteUser": "root"
+  "name": "Analyzer commons (Mise, JDK 21, Maven 3.9)",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "remoteUser": "root",
+  "postCreateCommand": "mise trust mise.toml && mise install"
 }

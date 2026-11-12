@@ -33,3 +33,6 @@ Desktop.ini
 
 # ---- Claude Code
 .mcp.json
+
+# Python test output
+__pycache__/

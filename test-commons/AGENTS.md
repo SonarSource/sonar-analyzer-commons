@@ -15,5 +15,5 @@ Files under `src/test/resources/` are source samples, including deliberate
 errors, whitespace, and expected issue files. Do not format or regenerate them
 in bulk. Add the smallest sample that exposes the behavior.
 
-Run `mvn -pl test-commons -am test` from the root. Its reactor
+Run `mise run test test-commons` from the root. Its reactor
 consumers include `xml-parsing`, `test-xml-parsing`, and `regex-parsing`.
