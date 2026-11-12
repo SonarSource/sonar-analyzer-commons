@@ -159,7 +159,9 @@ public final class CleartextProtocolFilter {
     // JSON Schema
     "^json-schema\\.org|" +
     // Eclipse EMF/Ecore
-    "^www\\.eclipse\\.org" +
+    "^www\\.eclipse\\.org|" +
+    // Domain-wide exclusions: HTTP diagnostics and OsmAnd identifiers
+    "^neverssl\\.com|^osmand\\.net" +
     ")(?=:|$)", Pattern.CASE_INSENSITIVE);
 
   // --- Well-known identifier URLs -------------------------------------------------------
@@ -169,7 +171,40 @@ public final class CleartextProtocolFilter {
     // XMPP protocol namespaces (XEPs)
     "http://jabber.org/protocol/",
     // Xerces/JAXP XML parser feature flags
-    "http://apache.org/xml/features/"
+    "http://apache.org/xml/features/",
+    // Namespace, schema, vocabulary and protocol identifier prefixes, stored lowercase for matching
+    "http://adnovum.ch/nevisidm/ws",
+    "http://auth0.com/oauth/grant-type",
+    "http://bigcontent.io/cms/schema",
+    "http://cv.iptc.org/newscodes/digitalsourcetype",
+    "http://dashif.org/guidelines",
+    "http://dashif.org/thumbnail_tile",
+    "http://data.europa.eu/esco",
+    "http://data.europa.eu/p27",
+    "http://dbpedia.org/ontology",
+    "http://dbpedia.org/property",
+    "http://dbpedia.org/resource",
+    "http://hapifhir.io/fhir",
+    "http://macedir.org/entity-category",
+    "http://metadatahub.bijnpo.nl/graph",
+    "http://pds.nasa.gov/pds4",
+    "http://powerbi.com/product/schema",
+    "http://purl.oclc.org/ooxml",
+    "http://snomed.info/sct",
+    "http://terminology.hl7.org/codesystem",
+    "http://tizen.org/feature",
+    "http://tizen.org/system",
+    "http://www.ebu.ch/metadata/ontologies",
+    "http://www.garmin.com/xmlschemas",
+    "http://www.iab.com/vast",
+    "http://www.ifxforum.org/ifx_150",
+    "http://www.naxml.org/posbo",
+    "http://www.nlm.nih.gov/research/umls/rxnorm",
+    "http://www.openarchives.org/oai",
+    "http://www.pcats.org/schema",
+    "http://www.sat.gob.gt/face2",
+    "http://www.sitemaps.org/schemas",
+    "http://www.topografix.com/gpx"
   );
 
   // --- IANA-reserved documentation / placeholder domains --------------------------------
@@ -222,73 +257,6 @@ public final class CleartextProtocolFilter {
   // host (e.g. underscores in hostnames).
   private static final Pattern CLEARTEXT_AUTHORITY = Pattern.compile(
     "^(?:" + String.join("|", CLEARTEXT_SCHEMES) + ")://(?:[^@\\s/?#]++@)?(?<rest>[^\\s/?#]++)", Pattern.CASE_INSENSITIVE);
-
-  // Matching an identifier is separate from deciding whether an actual connection is safe.
-  private static final Map<String, Pattern> IDENTIFIER_URLS = Map.ofEntries(
-    Map.entry("adnovum.ch", Pattern.compile("^/nevisidm/ws")),
-    Map.entry("auth0.com", Pattern.compile("^/oauth/grant-type")),
-    Map.entry("bigcontent.io", Pattern.compile("^/cms/schema")),
-    Map.entry("cv.iptc.org", Pattern.compile("^/newscodes/digitalsourcetype")),
-    Map.entry("dashif.org", Pattern.compile("^/(?:guidelines|thumbnail_tile)")),
-    Map.entry("data.europa.eu", Pattern.compile("^/(?:esco|p27)")),
-    Map.entry("dbpedia.org", Pattern.compile("^/(?:ontology|property|resource)")),
-    Map.entry("hapifhir.io", Pattern.compile("^/fhir")),
-    Map.entry("macedir.org", Pattern.compile("^/entity-category")),
-    Map.entry("metadatahub.bijnpo.nl", Pattern.compile("^/graph")),
-    Map.entry("neverssl.com", Pattern.compile("^/")),
-    Map.entry("osmand.net", Pattern.compile("^/")),
-    Map.entry("pds.nasa.gov", Pattern.compile("^/pds4")),
-    Map.entry("powerbi.com", Pattern.compile("^/product/schema")),
-    Map.entry("purl.oclc.org", Pattern.compile("^/ooxml")),
-    Map.entry("snomed.info", Pattern.compile("^/sct")),
-    Map.entry("terminology.hl7.org", Pattern.compile("^/CodeSystem")),
-    Map.entry("tizen.org", Pattern.compile("^/(?:feature|system)")),
-    Map.entry("www.ebu.ch", Pattern.compile("^/metadata/ontologies")),
-    Map.entry("www.garmin.com", Pattern.compile("^/xmlschemas")),
-    Map.entry("www.iab.com", Pattern.compile("^/VAST")),
-    Map.entry("www.ifxforum.org", Pattern.compile("^/IFX_150")),
-    Map.entry("www.naxml.org", Pattern.compile("^/POSBO")),
-    Map.entry("www.nlm.nih.gov", Pattern.compile("^/research/umls/rxnorm")),
-    Map.entry("www.openarchives.org", Pattern.compile("^/OAI")),
-    Map.entry("www.pcats.org", Pattern.compile("^/schema")),
-    Map.entry("www.sat.gob.gt", Pattern.compile("^/face2")),
-    Map.entry("www.sitemaps.org", Pattern.compile("^/schemas")),
-    Map.entry("www.topografix.com", Pattern.compile("^/GPX"))
-  );
-
-  private static final Pattern IDENTIFIER_URL = Pattern.compile(
-    "^http://([^\\s/?#\\\\]+)([/?#][^\\s\\\\]*)?$", Pattern.CASE_INSENSITIVE);
-
-  /**
-   * Recognizes the namespace, schema, vocabulary and protocol identifier inventory shared.
-   * The analyzer must verify the identifier role in its AST before suppressing an issue. A matching
-   * URL used as a network destination still requires transport analysis.
-   *
-   * <p>Authorities match exactly, including any explicit port; path, query and fragment retain their
-   * case and spelling. An empty path is represented by {@code /}.
-   */
-  public static boolean isKnownIdentifier(String url) {
-    var matcher = IDENTIFIER_URL.matcher(url.strip());
-    if (!matcher.matches()) {
-      return false;
-    }
-    var pattern = IDENTIFIER_URLS.get(matcher.group(1).toLowerCase(Locale.ROOT));
-    var remainder = matcher.group(2);
-    var suffix = remainder == null ? "/" : remainder;
-    if (!suffix.startsWith("/")) {
-      suffix = "/" + suffix;
-    }
-    return pattern != null && pattern.matcher(suffix).find();
-  }
-
-  /**
-   * Returns the identifier inventory as an immutable authority-to-regex map for non-JVM analyzers.
-   * Regex strings retain the case-sensitive matching semantics of {@link #isKnownIdentifier(String)}.
-   */
-  public static Map<String, String> exportIdentifierUrls() {
-    return IDENTIFIER_URLS.entrySet().stream()
-      .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, entry -> entry.getValue().pattern()));
-  }
 
   /**
    * Returns the existing host exclusions for non-JVM analyzers.

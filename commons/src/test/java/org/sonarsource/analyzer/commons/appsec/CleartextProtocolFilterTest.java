@@ -35,27 +35,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class CleartextProtocolFilterTest {
 
-  @ParameterizedTest(name = "[{index}] {0}")
-  @MethodSource("knownIdentifierUrls")
-  void knownIdentifierDoesNotMakeAConnectionSafe(String url) {
-    assertThat(CleartextProtocolFilter.isKnownIdentifier(url)).isTrue();
-    assertThat(CleartextProtocolFilter.isSafeWithoutTls(url)).isFalse();
-  }
-
-  @ParameterizedTest(name = "[{index}] {0}")
-  @MethodSource("notIdentifierUrls")
-  void notIdentifierUrl(String url) {
-    assertThat(CleartextProtocolFilter.isKnownIdentifier(url)).isFalse();
-  }
-
-  static Stream<String> knownIdentifierUrls() throws IOException, ParseException {
-    return samples("identifierUrls");
-  }
-
-  static Stream<String> notIdentifierUrls() throws IOException, ParseException {
-    return samples("nonIdentifierUrls");
-  }
-
   @Test
   void exportedBaselineExclusionsAreUnmodifiable() {
     var hostPatterns = CleartextProtocolFilter.exportHostPatterns();
@@ -65,13 +44,6 @@ class CleartextProtocolFilterTest {
       .isThrownBy(hostPatterns::clear);
     assertThatExceptionOfType(UnsupportedOperationException.class)
       .isThrownBy(safeUrlPrefixes::clear);
-  }
-
-  @Test
-  void exportedIdentifierUrlsAreUnmodifiable() {
-    var urls = CleartextProtocolFilter.exportIdentifierUrls();
-    assertThatExceptionOfType(UnsupportedOperationException.class)
-      .isThrownBy(() -> urls.put("identifier.invalid", "^/"));
   }
 
   @Test

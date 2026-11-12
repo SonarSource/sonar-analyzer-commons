@@ -21,12 +21,9 @@ import java.util.TreeMap;
 import org.sonarsource.analyzer.commons.appsec.CleartextProtocolFilter;
 
 /**
- * Generates the cleartext URL exclusions and identifier inventory shared with non-JVM analyzers.
+ * Generates the existing cleartext URL exclusions shared with non-JVM analyzers.
  */
 public final class CleartextProtocolFilterExporter {
-
-  private static final String SEMANTICS = "semantics";
-  private static final String CASE_INSENSITIVE = "caseInsensitive";
 
   private CleartextProtocolFilterExporter() {
   }
@@ -39,40 +36,22 @@ public final class CleartextProtocolFilterExporter {
   }
 
   /**
-   * Converts the Java exclusions to JSON, translating regexes and sorting maps and sets for stable output.
-   * For example, an inventory entry for {@code identifier.invalid} with pattern {@code ^/schema}
-   * becomes this entry in the {@code identifierUrls} object:
-   * <pre>{@code
-   * {
-   *   "identifier.invalid": "^/schema"
-   * }
-   * }</pre>
+   * Converts the Java exclusions to JSON, translating host regexes and sorting maps and sets for stable output.
    * The caller writes the complete document to {@code cleartext-protocol-exclusions.json}.
    */
   public static String toJson() {
     JsonObject root = new JsonObject();
 
     JsonObject hostMatch = new JsonObject();
-    hostMatch.addProperty(SEMANTICS, "find");
-    hostMatch.addProperty(CASE_INSENSITIVE, true);
+    hostMatch.addProperty("semantics", "find");
+    hostMatch.addProperty("caseInsensitive", true);
     JsonObject prefixMatch = new JsonObject();
-    prefixMatch.addProperty(SEMANTICS, "prefix");
-    prefixMatch.addProperty(CASE_INSENSITIVE, true);
+    prefixMatch.addProperty("semantics", "prefix");
+    prefixMatch.addProperty("caseInsensitive", true);
     prefixMatch.addProperty("target", "fullUrl");
-    JsonObject identifierAuthorityMatch = new JsonObject();
-    identifierAuthorityMatch.addProperty(SEMANTICS, "exact");
-    identifierAuthorityMatch.addProperty(CASE_INSENSITIVE, true);
-    JsonObject identifierPatternMatch = new JsonObject();
-    identifierPatternMatch.addProperty(SEMANTICS, "find");
-    identifierPatternMatch.addProperty(CASE_INSENSITIVE, false);
-    identifierPatternMatch.addProperty("target", "pathQueryFragment");
-    JsonObject identifierMatch = new JsonObject();
-    identifierMatch.add("authority", identifierAuthorityMatch);
-    identifierMatch.add("pattern", identifierPatternMatch);
     JsonObject match = new JsonObject();
     match.add("hostPatterns", hostMatch);
     match.add("safeUrlPrefixes", prefixMatch);
-    match.add("identifierUrls", identifierMatch);
     root.add("match", match);
 
     root.add("cleartextProtocols", JsonExports.toArray(CleartextProtocolFilter.getCleartextProtocols().stream().sorted().toList()));
@@ -83,11 +62,6 @@ public final class CleartextProtocolFilterExporter {
     root.add("hostPatterns", hostPatterns);
 
     root.add("safeUrlPrefixes", JsonExports.toArray(CleartextProtocolFilter.exportSafeUrlPrefixes().stream().sorted().toList()));
-
-    JsonObject identifierUrls = new JsonObject();
-    new TreeMap<>(CleartextProtocolFilter.exportIdentifierUrls())
-      .forEach((authority, pattern) -> identifierUrls.addProperty(authority, RegexTranslator.toPortableRegex(pattern)));
-    root.add("identifierUrls", identifierUrls);
 
     return JsonExports.render(root);
   }

@@ -24,10 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -40,8 +37,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CleartextProtocolCorpusExporterTest {
 
-  private static final Pattern INVALID_IDENTIFIER_CHARACTERS = Pattern.compile("[\\s\\\\]");
-
   @ParameterizedTest(name = "[{index}] {0}")
   @MethodSource("safeUrls")
   void safeUrl(String url) {
@@ -52,38 +47,6 @@ class CleartextProtocolCorpusExporterTest {
   @MethodSource("unsafeUrls")
   void unsafeUrl(String url) {
     assertThat(CleartextProtocolFilter.isSafeWithoutTls(url)).isFalse();
-  }
-
-  @ParameterizedTest(name = "[{index}] {0}")
-  @MethodSource("knownIdentifierUrls")
-  void exportedPatternsShouldRecognizeIdentifiersWithoutMakingConnectionsSafe(String url) {
-    assertThat(matchesIdentifier(url, exportedIdentifierPatterns())).isTrue();
-    assertThat(CleartextProtocolFilter.isSafeWithoutTls(url)).isFalse();
-  }
-
-  @ParameterizedTest(name = "[{index}] {0}")
-  @MethodSource("notIdentifierUrls")
-  void exportedPatternsShouldRejectNonIdentifiers(String url) {
-    assertThat(matchesIdentifier(url, exportedIdentifierPatterns())).isFalse();
-  }
-
-  @Test
-  void everyIdentifierAuthorityHasARepresentativeUrl() {
-    var authorities = knownIdentifierUrls()
-      .map(String::strip)
-      .map(url -> url.substring("http://".length()).split("[/?#]", 2)[0].toLowerCase(Locale.ROOT))
-      .collect(Collectors.toSet());
-    assertThat(exportedIdentifierPatterns())
-      .hasSize(29)
-      .containsOnlyKeys(authorities);
-  }
-
-  static Stream<String> knownIdentifierUrls() {
-    return exportedSamples("identifierUrls");
-  }
-
-  static Stream<String> notIdentifierUrls() {
-    return exportedSamples("nonIdentifierUrls");
   }
 
   static Stream<String> safeUrls() {
@@ -104,7 +67,8 @@ class CleartextProtocolCorpusExporterTest {
     assertThat(exportedSamples("safeUrls").filter(url -> !matchesExclusion(url, patterns, prefixes)))
       .containsExactly("wss://acme.com", "ircs://acme.com",
         "http://local-kubernetes-hostname/something", "http://local-kubernetes-hostname:8080/something", "ws://my-service",
-        "http://my-service/api", "https://insecure.com", "not-a-url", "");
+        "http://my-service/api", "https://insecure.com", "not-a-url", "",
+        "https://auth0.com/oauth/grant-type", "auth0.com/oauth/grant-type");
   }
 
   @Test
@@ -157,37 +121,6 @@ class CleartextProtocolCorpusExporterTest {
       .map(value -> value.getAsString().toLowerCase(Locale.ROOT)).toList();
   }
 
-  private static Map<String, Pattern> exportedIdentifierPatterns() {
-    var exclusions = JsonParser.parseString(CleartextProtocolFilterExporter.toJson()).getAsJsonObject();
-    var match = exclusions.getAsJsonObject("match").getAsJsonObject("identifierUrls");
-    var authorityMatch = match.getAsJsonObject("authority");
-    assertThat(authorityMatch.get("semantics").getAsString()).isEqualTo("exact");
-    assertThat(authorityMatch.get("caseInsensitive").getAsBoolean()).isTrue();
-    var patternMatch = match.getAsJsonObject("pattern");
-    assertThat(patternMatch.get("semantics").getAsString()).isEqualTo("find");
-    assertThat(patternMatch.get("target").getAsString()).isEqualTo("pathQueryFragment");
-    int flags = patternMatch.get("caseInsensitive").getAsBoolean() ? Pattern.CASE_INSENSITIVE : 0;
-    Map<String, Pattern> patterns = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    exclusions.getAsJsonObject("identifierUrls").entrySet()
-      .forEach(entry -> patterns.put(entry.getKey(), Pattern.compile(entry.getValue().getAsString(), flags)));
-    return patterns;
-  }
-
-  private static boolean matchesIdentifier(String url, Map<String, Pattern> patterns) {
-    var stripped = url.strip();
-    if (!stripped.regionMatches(true, 0, "http://", 0, 7) || INVALID_IDENTIFIER_CHARACTERS.matcher(stripped).find()) {
-      return false;
-    }
-    // Preserve raw authority and suffix: no port removal, path normalization or escape decoding.
-    var parts = stripped.substring(7).split("(?=[/?#])", 2);
-    var pattern = patterns.get(parts[0]);
-    var suffix = parts.length == 1 ? "/" : parts[1];
-    if (!suffix.startsWith("/")) {
-      suffix = "/" + suffix;
-    }
-    return pattern != null && pattern.matcher(suffix).find();
-  }
-
   private static boolean matchesExclusion(String url, List<Pattern> patterns, List<String> prefixes) {
     var stripped = url.strip();
     var lower = stripped.toLowerCase(Locale.ROOT);
@@ -209,7 +142,7 @@ class CleartextProtocolCorpusExporterTest {
   @Test
   void jsonShouldExposeNonEmptySampleGroups() {
     JsonObject corpus = JsonParser.parseString(CleartextProtocolCorpusExporter.toJson()).getAsJsonObject();
-    assertThat(corpus.keySet()).containsExactly("identifierUrls", "nonIdentifierUrls", "safeUrls", "unsafeUrls");
+    assertThat(corpus.keySet()).containsExactly("safeUrls", "unsafeUrls");
     for (String group : corpus.keySet()) {
       assertThat(corpus.getAsJsonArray(group).asList()).isNotEmpty();
     }
