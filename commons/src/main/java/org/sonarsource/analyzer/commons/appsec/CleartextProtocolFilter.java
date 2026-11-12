@@ -168,8 +168,9 @@ public final class CleartextProtocolFilter {
   // Unlike the namespace URI authorities above, these hosts also serve ordinary content, so
   // only full http:// URLs starting with one of these prefixes are considered safe.
   private static final Set<String> SAFE_URL_PREFIXES = Set.of(
-    // XMPP protocol namespaces (XEPs)
+    // XMPP protocol and stream feature namespaces (XEPs)
     "http://jabber.org/protocol/",
+    "http://jabber.org/features/",
     // Xerces/JAXP XML parser feature flags
     "http://apache.org/xml/features/",
     // Namespace, schema, vocabulary and protocol identifier prefixes, stored lowercase for matching
