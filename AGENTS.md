@@ -9,6 +9,26 @@ standalone analyzer or a SonarQube server. Start with the module table in
 Use Mise for repository commands. [mise.toml](mise.toml) selects Java 21,
 Maven 3.9, Python 3, the SonarQube CLI, GitHub CLI, and jq. Git and Bash are
 host prerequisites; Windows requires Git Bash. No shell activation is needed.
+
+At the start of each task, run `mise ls --local --current --missing --no-header`.
+If it lists missing tools, run `mise install` yourself without asking for
+confirmation. Do this before edits or checks, including changes to documentation.
+After installation, run `mise doctor project`. If a later command reports a
+missing project tool, repeat the tool check and install the missing tools.
+Do not ask the user to run these commands.
+
+If a Mise command fails, including a command run by a hook, run
+`mise doctor project` once and read the failed checks.
+If missing tools or an incomplete installation can explain the failure,
+run `mise install` yourself. Then rerun the doctor and the failed command.
+For build, test, configuration, or authentication failures, inspect the error
+and fix the cause. Do not report a missing tool and stop without trying setup.
+
+Honor an explicit instruction that forbids installation. If Mise is unavailable,
+or installation or setup fails, report the cause and skip checks that need the
+missing tools. Continue independent work and authorized commits and pushes.
+Do not retry the same setup failure without investigating its cause.
+
 Start with:
 
 ```sh

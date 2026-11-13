@@ -36,3 +36,4 @@ Desktop.ini
 
 # Python test output
 __pycache__/
+.opencode/node_modules/

@@ -1,0 +1,50 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "^shell$",
+        "hooks": [
+          {
+            "type": "command",
+            "id": "repository-push-checks",
+            "command": "python3",
+            "args": [".kolk/hooks.py", "post-tool-use"],
+            "timeout_seconds": 3600,
+            "fail_open": true,
+            "env_allowlist": [
+              "GH_TOKEN",
+              "GITHUB_TOKEN",
+              "SONARQUBE_CLI_TOKEN",
+              "SONARQUBE_CLI_SERVER",
+              "SONARQUBE_NEXT_TOKEN",
+              "MISE_DATA_DIR",
+              "MISE_CONFIG_DIR",
+              "MISE_CACHE_DIR"
+            ]
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "id": "repository-ci-status",
+            "command": "python3",
+            "args": [".kolk/hooks.py", "stop"],
+            "timeout_seconds": 60,
+            "fail_open": true,
+            "env_allowlist": [
+              "GH_TOKEN",
+              "GITHUB_TOKEN",
+              "MISE_DATA_DIR",
+              "MISE_CONFIG_DIR",
+              "MISE_CACHE_DIR"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

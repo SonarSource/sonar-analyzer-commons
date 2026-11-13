@@ -1,0 +1,25 @@
+{
+  "repository": "sonar-analyzer-commons",
+  "workflow": "Build",
+  "sonar_server": "https://next.sonarqube.com/sonarqube",
+  "sonar_project": "org.sonarsource.analyzer-commons:sonar-analyzer-commons-parent",
+  "local_checks": {
+    "committed_diff": ["git", "show", "--format=", "--check", "HEAD"],
+    "build": ["mise", "run", "build"],
+    "lint": ["mise", "run", "lint"],
+    "agent_hooks": ["mise", "run", "test:agent-hooks"]
+  },
+  "required_pr_jobs": ["Build", "NEXT analysis", "Promote", "Promote NuGet", "Promote npm"],
+  "local_check_tools": {
+    "build": {
+      "mise": ["java", "maven"]
+    },
+    "lint": {
+      "mise": ["java", "maven"],
+      "commands": ["bash"]
+    },
+    "agent_hooks": {
+      "mise": ["python", "node"]
+    }
+  }
+}

@@ -1,7 +1,5 @@
 # Repository Codex checks
 
-Trust the project and review the hooks with `/hooks` in the Codex CLI. The PreToolUse Bash hook runs only before a standalone `git push` (or `git push 2>&1 | tail -30`). It checks committed `HEAD` in an isolated checkout: `git show --format= --check HEAD` and `mvn clean verify -Pcoverage -DskipTests=false -B`. A failure blocks the push. A success reports each command, result, and log path through Codex hook context. The working tree does not affect the build result.
+Review and trust `.codex/hooks.json` with `/hooks` in Codex. The Bash `PostToolUse` hook runs the shared local checks after a push. Failures are reported to the agent and do not prevent the push. Missing tools skip dependent checks and produce setup guidance.
 
-After push, `python3 .codex/checks.py finalize` checks the **Build** PR workflow for exactly `HEAD` and requires an approved review. Required jobs are `Build`, `NEXT analysis`, `Promote`, `Promote NuGet`, and `Promote npm`. The Stop hook reports every passed, failed, running, or pending item. When PR CI applies, it asks Codex to fix failures or monitor active jobs; review approval alone does not block stopping. A `CI-WAITING:` line in the last reply allows an incomplete handoff while jobs are being monitored. The loop guard releases repeated identical blocks. Fetch errors only produce a status report.
-
-Run `python3 .codex/checks.py --help` for commands. `verify-head` runs the local checks manually. Logs and JSON results are in `<state base>/sonar-analyzer-commons/<checkout hash>/`, where the state base is `CODEX_CHECK_STATE` if set, or `codex-repo-checks` in the system temp directory otherwise. The checkout hash isolates worktrees.
+The `Stop` hook reports local and PR status and asks the agent to fix or monitor incomplete PR CI. It uses the same policy and manual commands as the [Claude hooks](../.claude/HOOKS.md). Run `mise run test:agent-hooks` to check the shared runner and adapters.
