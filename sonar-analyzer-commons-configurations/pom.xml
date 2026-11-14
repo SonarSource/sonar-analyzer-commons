@@ -26,7 +26,7 @@
     <generated.cleartext.json>${project.build.directory}/generated-resources/cleartext-protocol-exclusions.json</generated.cleartext.json>
     <generated.cleartext.corpus.json>${project.build.directory}/generated-resources/cleartext-protocol-corpus.json</generated.cleartext.corpus.json>
     <version.exec.plugin>3.6.4</version.exec.plugin>
-    <version.build-helper.plugin>3.7.0</version.build-helper.plugin>
+    <version.build-helper.plugin>3.8.0</version.build-helper.plugin>
   </properties>
 
   <dependencies>
