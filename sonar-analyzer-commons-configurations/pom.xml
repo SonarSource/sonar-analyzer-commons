@@ -25,7 +25,7 @@
     <generated.corpus.json>${project.build.directory}/generated-resources/secret-exclusion-corpus.json</generated.corpus.json>
     <generated.cleartext.json>${project.build.directory}/generated-resources/cleartext-protocol-exclusions.json</generated.cleartext.json>
     <generated.cleartext.corpus.json>${project.build.directory}/generated-resources/cleartext-protocol-corpus.json</generated.cleartext.corpus.json>
-    <version.exec.plugin>3.6.4</version.exec.plugin>
+    <version.exec.plugin>3.7.0</version.exec.plugin>
     <version.build-helper.plugin>3.7.0</version.build-helper.plugin>
   </properties>
 
