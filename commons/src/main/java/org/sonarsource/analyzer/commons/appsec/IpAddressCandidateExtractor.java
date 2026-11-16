@@ -16,6 +16,8 @@
  */
 package org.sonarsource.analyzer.commons.appsec;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,6 +28,10 @@ public final class IpAddressCandidateExtractor {
   private static final Pattern URL_PREFIX = Pattern.compile(
     "^(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//(?:[^/?#,@\\s]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern URL_START = Pattern.compile("(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//");
+  private static final Pattern URL_PIECE_DELIMITER = Pattern.compile("[?#&=]");
+  // A signed number is still an attempt at a prefix length, which the classifier then rejects.
+  private static final Pattern CIDR_ATTEMPT = Pattern.compile("[+-]?[0-9]+");
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
 
   private IpAddressCandidateExtractor() {
@@ -87,9 +93,175 @@ public final class IpAddressCandidateExtractor {
     return stripBracketsAndPort(candidate)
       .filter(stripped -> !stripped.candidate().isEmpty())
       .map(stripped -> stripped.candidate() +
-        // An IP address with a port identifies an endpoint, where a CIDR prefix doesn't make sense.
-        // Treat the suffix as a URL path.
+      // An IP address with a port identifies an endpoint, where a CIDR prefix doesn't make sense.
+      // Treat the suffix as a URL path.
         (stripped.portRemoved() ? "" : cidr));
+  }
+
+  /**
+   * Finds every syntactically valid IP address literal in the complete string, in source order, keeping repeated occurrences.
+   * Returns an empty list if there is none. Whether an address is permitted by a rule is not decided here.
+   * The existing {@link #extract(String)} is unchanged and still examines only the start of the string.
+   *
+   * <p>Entries are delimited by any character other than a letter, a digit, {@code .}, {@code -}, {@code _},
+   * {@code :}, {@code %}, {@code /}, {@code @}, {@code [} and {@code ]}. In particular, whitespace, commas, semicolons,
+   * equals signs, quotes and parentheses delimit entries. An address must span a whole entry or a whole path segment,
+   * so it never touches a letter, digit, extra dot, hyphen or underscore; a sentence-ending dot prevents a match.
+   * A valid-looking address is not recovered from a longer malformed address or identifier.
+   *
+   * <ul>
+   *   <li>Supports IPv4, IPv6, IPv6 with an embedded IPv4 tail, and IPv6 zones as accepted by {@link IpAddressClassifier#parse(String)}.
+   *     A complete IPv6 address is a single match.</li>
+   *   <li>In URLs, excludes the scheme and the user information, and searches the host, path segments, query values and fragment.
+   *     A host name does not stop the search of the rest of the URL.</li>
+   *   <li>Removes the brackets of an IPv6 endpoint, and the port of an IPv4 endpoint or bracketed IPv6 endpoint.
+   *     A valid port has one to five ASCII digits and a value up to 65535; an invalid port invalidates the endpoint.
+   *     A bracketed IPv4 address is not supported, and neither are bracketed lists.</li>
+   *   <li>Preserves a valid CIDR prefix on an entry that is a standalone address, for example {@code 10.0.0.0/8}.
+   *     A prefix that is invalid for the address family invalidates the entry.
+   *     Other slashes, including all slashes within a URL, are path separators.</li>
+   * </ul>
+   *
+   * <p>Every returned text is accepted by {@link IpAddressClassifier#parse(String)}.
+   */
+  public static List<String> extractAll(String content) {
+    List<String> addresses = new ArrayList<>();
+    int length = content.length();
+    int i = 0;
+    while (i < length) {
+      if (!isEntryChar(content, i)) {
+        i++;
+        continue;
+      }
+      boolean url = URL_START.matcher(content).region(i, length).lookingAt();
+      int end = i + 1;
+      while (end < length && (url ? isUrlChar(content, end) : isEntryChar(content, end))) {
+        end++;
+      }
+      String entry = content.substring(i, end);
+      if (url) {
+        collectFromUrl(entry, addresses);
+      } else {
+        collectFromEntry(entry, addresses);
+      }
+      i = end;
+    }
+    return addresses;
+  }
+
+  private static boolean isEntryChar(String content, int index) {
+    char c = content.charAt(index);
+    // A plus sign can only be the sign of a CIDR-like suffix, so it stays in the entry to invalidate it.
+    return (c == '+' && index > 0 && content.charAt(index - 1) == '/') || isLetterOrDigit(content, index) || "._-:%/@[]".indexOf(c) >= 0;
+  }
+
+  private static boolean isUrlChar(String content, int index) {
+    return isLetterOrDigit(content, index) || "._-~:%/@[]?#&=!$*+".indexOf(content.charAt(index)) >= 0;
+  }
+
+  // Judge the whole code point, so that the halves of a supplementary letter or digit are not separators.
+  private static boolean isLetterOrDigit(String content, int index) {
+    char c = content.charAt(index);
+    int codePoint = Character.isLowSurrogate(c) && index > 0 && Character.isHighSurrogate(content.charAt(index - 1))
+      ? content.codePointAt(index - 1)
+      : content.codePointAt(index);
+    return Character.isLetterOrDigit(codePoint);
+  }
+
+  private static void collectFromUrl(String url, List<String> addresses) {
+    Matcher start = URL_START.matcher(url);
+    if (!start.lookingAt()) {
+      collectFromPath(url, addresses);
+      return;
+    }
+    int authorityEnd = start.end();
+    while (authorityEnd < url.length() && "/?#".indexOf(url.charAt(authorityEnd)) < 0) {
+      authorityEnd++;
+    }
+    collectFromAuthority(url.substring(start.end(), authorityEnd), addresses);
+    // Query values and fragments can hold nested URLs, so delimit pieces before looking for URL starts.
+    for (String piece : URL_PIECE_DELIMITER.split(url.substring(authorityEnd))) {
+      collectFromPiece(piece, addresses);
+    }
+  }
+
+  // A piece has no query or fragment delimiter, so it holds a chain of nested authorities, then a path.
+  // Iterate instead of recursing: the nesting depth is only bounded by the length of the content.
+  private static void collectFromPiece(String piece, List<String> addresses) {
+    Matcher start = URL_START.matcher(piece);
+    int from = 0;
+    while (start.region(from, piece.length()).lookingAt()) {
+      int authorityEnd = piece.indexOf('/', start.end());
+      if (authorityEnd < 0) {
+        authorityEnd = piece.length();
+      }
+      collectFromAuthority(piece.substring(start.end(), authorityEnd), addresses);
+      from = authorityEnd;
+    }
+    collectFromPath(piece.substring(from), addresses);
+  }
+
+  private static void collectFromAuthority(String authority, List<String> addresses) {
+    parseEndpoint(authority.substring(authority.lastIndexOf('@') + 1)).ifPresent(endpoint -> addresses.add(endpoint.address()));
+  }
+
+  private static void collectFromEntry(String entry, List<String> addresses) {
+    int slash = entry.indexOf('/');
+    if (slash > 0 && slash == entry.lastIndexOf('/') && CIDR_ATTEMPT.matcher(entry.substring(slash + 1)).matches()) {
+      Optional<Endpoint> endpoint = parseEndpoint(entry.substring(0, slash));
+      if (endpoint.isPresent() && !endpoint.get().portRemoved()) {
+        // A standalone address entry: the suffix is a CIDR prefix, which invalidates the entry when it is invalid.
+        String cidr = endpoint.get().address() + entry.substring(slash);
+        if (IpAddressClassifier.parse(cidr).isPresent()) {
+          addresses.add(cidr);
+        }
+        return;
+      }
+    }
+    collectFromPath(entry, addresses);
+  }
+
+  private static void collectFromPath(String path, List<String> addresses) {
+    for (String segment : path.split("/")) {
+      parseEndpoint(segment).ifPresent(endpoint -> addresses.add(endpoint.address()));
+    }
+  }
+
+  /** Parses a bare IP address, an IPv4 address with a port, or a bracketed IPv6 address with an optional port. */
+  private static Optional<Endpoint> parseEndpoint(String text) {
+    String address = text;
+    boolean portRemoved = false;
+    if (text.startsWith("[")) {
+      int closing = text.indexOf(']');
+      if (closing < 0 || (closing + 1 < text.length() && !isPortSuffix(text.substring(closing + 1)))) {
+        return Optional.empty();
+      }
+      address = text.substring(1, closing);
+      portRemoved = closing + 1 < text.length();
+      if (address.indexOf(':') < 0) {
+        return Optional.empty();
+      }
+    } else {
+      int colon = text.indexOf(':');
+      if (colon > 0 && colon == text.lastIndexOf(':') && text.lastIndexOf('.', colon) >= 0) {
+        if (!isPort(text.substring(colon + 1))) {
+          return Optional.empty();
+        }
+        address = text.substring(0, colon);
+        portRemoved = true;
+      }
+    }
+    // The classifier ignores zones, so it cannot reject stray brackets in them.
+    return address.indexOf('[') < 0 && address.indexOf(']') < 0 && IpAddressClassifier.parse(address).isPresent()
+      ? Optional.of(new Endpoint(address, portRemoved))
+      : Optional.empty();
+  }
+
+  private static boolean isPortSuffix(String suffix) {
+    return suffix.startsWith(":") && isPort(suffix.substring(1));
+  }
+
+  private record Endpoint(String address, boolean portRemoved) {
   }
 
   private static Optional<StrippedCandidate> stripBracketsAndPort(String candidate) {
