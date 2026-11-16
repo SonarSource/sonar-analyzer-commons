@@ -190,9 +190,10 @@ jobs:
           original = path.read_bytes()
           old = b"        version: 2026.10.17\n"
           new = b"        version: 2026.11.8\n"
-          if original.count(old) != 1:
+          lines = original.splitlines(keepends=True)
+          if lines.count(old) != 1:
               raise SystemExit("Expected exactly one pinned Mise version to replace")
-          path.write_bytes(original.replace(old, new, 1))
+          path.write_bytes(b"".join(new if line == old else line for line in lines))
           PY
       - name: Promote artifacts
         uses: ./.ci-actions/shared/promote
