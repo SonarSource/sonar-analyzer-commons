@@ -105,8 +105,12 @@ public final class IpAddressCandidateExtractor {
    * The existing {@link #extract(String)} is unchanged and still examines only the start of the string.
    *
    * <p>Entries are delimited by any character other than a letter, a digit, {@code .}, {@code -}, {@code _},
-   * {@code :}, {@code %}, {@code /}, {@code @}, {@code [} and {@code ]}. In particular, whitespace, commas, semicolons,
-   * equals signs, quotes and parentheses delimit entries. An address must span a whole entry or a whole path segment,
+   * {@code :}, {@code %}, {@code /}, {@code @}, {@code +}, {@code [} and {@code ]}. In particular, whitespace, commas,
+   * semicolons, equals signs, quotes and parentheses delimit entries. The plus sign belongs to the entry so that URL
+   * schemes such as {@code git+ssh} stay intact; it is never part of an address, so it prevents a match.
+   * An IPv6 zone is opaque: after a {@code %} that follows a colon, the characters {@code |}, {@code ~}, {@code !},
+   * {@code $}, {@code *} and {@code ^} also stay in the entry, up to the next {@code /}, {@code ?}, {@code #},
+   * {@code &} or {@code =}. Other characters still delimit the entry, so a zone is not arbitrary text. An address must span a whole entry or a whole path segment,
    * so it never touches a letter, digit, extra dot, hyphen or underscore; a sentence-ending dot prevents a match.
    * A valid-looking address is not recovered from a longer malformed address or identifier.
    *
