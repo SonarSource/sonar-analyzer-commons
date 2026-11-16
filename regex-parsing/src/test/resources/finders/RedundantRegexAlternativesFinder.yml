@@ -16,6 +16,84 @@
 - '|a' # Compliant
 - '[ab]' # Compliant
 - '.*' # Compliant
+
+- 'features': POSIX_CHARACTER_CLASS
+- '[[:space:]]|\n' # Noncompliant {{Remove or rework this redundant alternative.}}
+- '\n|[[:space:]]' # Noncompliant
 - '[[:space:]]|x' # Compliant
 - 'x|[[:space:]]' # Compliant
-- '[[:space:]]|\n' # Compliant, false negative
+- '[[:alpha:]]|Q' # Noncompliant
+- '[[:alnum:]]|7' # Noncompliant
+- '[[:alnum:]]|[[:digit:]]' # Noncompliant
+- '[[:alpha:]]|[[:digit:]]' # Compliant
+- '[[:digit:]]|[[:alpha:]]' # Compliant
+- '[[:alpha:]]|[[:alnum:]]' # Noncompliant
+- '[[:alpha:]]|[[:digit:]]|[[:alnum:]]' # Noncompliant
+- '[[:digit:]]|[[:^digit:]]' # Compliant
+- '[[:^digit:]]|[[:digit:]]' # Compliant
+- '[[:^digit:]]|a' # Noncompliant
+- '[[:^digit:]]|5' # Compliant
+- '[^[:digit:]]|a' # Noncompliant
+- '[^[:^digit:]]|5' # Noncompliant
+- '[^[:^digit:]]|a' # Compliant
+- '[[:digit:][:alpha:]]|[[:alnum:]]' # Noncompliant
+- '[[:alnum:]]|[[:digit:][:alpha:]]' # Noncompliant
+- '[[:digit:]a-f]|[b-d5]' # Noncompliant
+- '[[:digit:]a-f]|[b-dz]' # Compliant
+- '[[:lower:]]|[a-z]' # Noncompliant
+- '[a-z]|[[:lower:]]' # Noncompliant
+- '[[:lower:]]|Q' # Compliant
+- '[[:upper:]]|q' # Compliant
+- '[[:lower:]]|Q': 'i' # Noncompliant
+- '[[:upper:]]|q': 'i' # Noncompliant
+- '[[:^lower:]]|Q': 'i' # Compliant
+- '[[:^lower:]]|Q' # Noncompliant
+- '[[:^lower:]]|5': 'i' # Noncompliant
+- '[[:^lower:]]|q': 'i' # Compliant
+- '[[:ascii:]]|\x7f' # Noncompliant
+- '[[:ascii:]]|\x80' # Compliant
+- '[[:cntrl:]]|\x1f' # Noncompliant
+- '[[:cntrl:]]|\x7f' # Noncompliant
+- '[[:cntrl:]]| ' # Compliant
+- '[[:blank:]]|\t' # Noncompliant
+- '[[:blank:]]|\n' # Compliant
+- '[[:graph:]]|!' # Noncompliant
+- '[[:graph:]]| ' # Compliant
+- '[[:print:]]| ' # Noncompliant
+- '[[:print:]]|\x7f' # Compliant
+- '[[:punct:]]|_' # Noncompliant
+- '[[:punct:]]|a' # Compliant
+- '[[:punct:]]|0' # Compliant
+- '[[:space:]]|\x0b' # Noncompliant
+- '[[:word:]]|_' # Noncompliant
+- '[[:word:]]|-' # Compliant
+- '[[:xdigit:]]|f' # Noncompliant
+- '[[:xdigit:]]|F' # Noncompliant
+- '[[:xdigit:]]|g' # Compliant
+- '(a)|[[:alpha:]]' # Compliant
+- '[[:alpha:]]|(a)' # Noncompliant
+- '(a)|[[:alpha:]]b' # Compliant
+- '[[:space:]]|\n|x' # Noncompliant
+- '\n|[[:space:]]|\r' # Noncompliant
+# Unicode character class mode: only the ASCII membership is known
+- '[[:alpha:]]|Q': 'u' # Noncompliant
+- '[[:alpha:]]|é': 'u' # Compliant
+- '[[:space:]]|\n': 'u' # Noncompliant
+- '[[:^alpha:]]|5': 'u' # Noncompliant
+- '[[:^alpha:]]|é': 'u' # Compliant
+- '[[:^digit:]]|é': 'u' # Compliant
+- '[[:alpha:]]|[[:alnum:]]': 'u' # Compliant
+- '[[:alnum:]]|[[:alpha:]]': 'u' # Compliant, the non-ASCII membership is unknown
+- '[^[:alpha:]]|5': 'u' # Compliant
+- '[[:ascii:]]|a': 'u' # Noncompliant
+- '[[:ascii:]]|é': 'u' # Compliant
+- '[[:^ascii:]]|é': 'u' # Noncompliant
+- '[[:^ascii:]]|a': 'u' # Compliant
+# Word boundary markers are not character sets
+- '[[:<:]]|a' # Compliant
+- 'a|[[:<:]]' # Compliant
+- '[[:>:]]|a' # Compliant
+- '[[:<:]]|[[:>:]]' # Compliant
+- '[[:<:]]|[[:<:]]' # Compliant
+- '[^[:<:]]|a' # Compliant
+- '[[:<:]a]|b' # Compliant

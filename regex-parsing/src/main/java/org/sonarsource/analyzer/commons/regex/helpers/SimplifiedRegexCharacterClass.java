@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
@@ -33,10 +34,13 @@ import org.sonarsource.analyzer.commons.regex.ast.CharacterTree;
 import org.sonarsource.analyzer.commons.regex.ast.DotTree;
 import org.sonarsource.analyzer.commons.regex.ast.EscapedCharacterClassTree;
 import org.sonarsource.analyzer.commons.regex.ast.MiscEscapeSequenceTree;
+import org.sonarsource.analyzer.commons.regex.ast.PosixCharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
 
 public class SimplifiedRegexCharacterClass {
+
+  private static final int MAX_ASCII = 0x7F;
 
   /**
    * This map defines the contents of the character class in the following way:<br>
@@ -268,6 +272,96 @@ public class SimplifiedRegexCharacterClass {
     }
 
     @Override
+    public void visitInCharClass(CharacterClassElementTree tree) {
+      if (tree instanceof PosixCharacterClassElementTree posixTree) {
+        addPosixClass(posixTree);
+      } else {
+        super.visitInCharClass(tree);
+      }
+    }
+
+    /**
+     * Models the PHP/PCRE POSIX bracket classes with their ASCII meaning in the default locale. Anything else (the word
+     * boundary markers, or the characters above ASCII in Unicode character class mode) is unknown and never treated as
+     * an empty or universal set.
+     */
+    private void addPosixClass(PosixCharacterClassElementTree tree) {
+      IntPredicate posixMembers = posixMembers(tree.property(), tree.activeFlags().contains(Pattern.CASE_INSENSITIVE));
+      if (posixMembers == null) {
+        characters.containsUnknownCharacters = true;
+        return;
+      }
+      boolean negation = tree.isNegation();
+      int rangeStart = -1;
+      for (int c = 0; c <= MAX_ASCII; c++) {
+        boolean member = posixMembers.test(c) != negation;
+        if (member && rangeStart < 0) {
+          rangeStart = c;
+        } else if (!member && rangeStart >= 0) {
+          characters.addRange(rangeStart, c - 1, tree);
+          rangeStart = -1;
+        }
+      }
+      boolean unicodeMembersUnknown = tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS) && !"ascii".equals(tree.property());
+      if (unicodeMembersUnknown) {
+        if (rangeStart >= 0) {
+          characters.addRange(rangeStart, MAX_ASCII, tree);
+        }
+        characters.containsUnknownCharacters = true;
+      } else if (negation) {
+        // Without Unicode support, all the characters above ASCII are outside of the positive class
+        characters.addRange(rangeStart >= 0 ? rangeStart : MAX_ASCII + 1, Character.MAX_CODE_POINT, tree);
+      } else if (rangeStart >= 0) {
+        characters.addRange(rangeStart, MAX_ASCII, tree);
+      }
+    }
+
+    @Nullable
+    private static IntPredicate posixMembers(String property, boolean caseInsensitive) {
+      switch (property) {
+        case "alnum":
+          return c -> isLetter(c) || isDigit(c);
+        case "alpha":
+          return Builder::isLetter;
+        case "ascii":
+          return c -> true;
+        case "blank":
+          return c -> c == ' ' || c == '\t';
+        case "cntrl":
+          return c -> c < ' ' || c == 0x7F;
+        case "digit":
+          return Builder::isDigit;
+        case "graph":
+          return c -> c > ' ' && c < 0x7F;
+        case "lower":
+          return caseInsensitive ? Builder::isLetter : c -> c >= 'a' && c <= 'z';
+        case "print":
+          return c -> c >= ' ' && c < 0x7F;
+        case "punct":
+          return c -> c > ' ' && c < 0x7F && !isLetter(c) && !isDigit(c);
+        case "space":
+          return c -> c == ' ' || (c >= '\t' && c <= '\r');
+        case "upper":
+          return caseInsensitive ? Builder::isLetter : c -> c >= 'A' && c <= 'Z';
+        case "word":
+          return c -> isLetter(c) || isDigit(c) || c == '_';
+        case "xdigit":
+          return c -> isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+        default:
+          // Word boundary markers ("<" and ">") are not character sets
+          return null;
+      }
+    }
+
+    private static boolean isLetter(int c) {
+      return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+    }
+
+    private static boolean isDigit(int c) {
+      return c >= '0' && c <= '9';
+    }
+
+    @Override
     public void visitCharacterClassIntersection(CharacterClassIntersectionTree tree) {
       characters.containsUnknownCharacters = true;
     }
@@ -302,7 +396,7 @@ public class SimplifiedRegexCharacterClass {
         case 'W':
           characters.addRange(0x00, '0' - 1, tree);
           characters.addRange('9' + 1, 'A' - 1, tree);
-          characters.addRange('Z'+1, '_' - 1, tree);
+          characters.addRange('Z' + 1, '_' - 1, tree);
           characters.addRange('`', '`', tree);
           if (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS)) {
             characters.addRange('z' + 1, 'µ' - 1, tree);

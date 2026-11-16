@@ -16,12 +16,14 @@
  */
 package org.sonarsource.analyzer.commons.regex.helpers;
 
-
 import java.util.List;
 import java.util.regex.Pattern;
 import org.assertj.core.api.AbstractBooleanAssert;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.sonarsource.analyzer.commons.regex.java.JavaRegexSource;
+import org.sonarsource.analyzer.commons.regex.php.PhpRegexSource;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.RegexParser;
 import org.sonarsource.analyzer.commons.regex.RegexSource;
@@ -301,7 +303,7 @@ class SimplifiedRegexCharacterClassTest {
     assertSupersetOf(".", "\t", false, Pattern.DOTALL).isTrue();
     assertSupersetOf(".", ".", false, Pattern.DOTALL).isTrue();
     // UNIX_LINES is ignored when DOTALL is set
-    assertSupersetOf(".", "\n", false, Pattern.UNIX_LINES|Pattern.DOTALL).isTrue();
+    assertSupersetOf(".", "\n", false, Pattern.UNIX_LINES | Pattern.DOTALL).isTrue();
   }
 
   @Test
@@ -471,6 +473,94 @@ class SimplifiedRegexCharacterClassTest {
     assertThat(characterClass.intersects(characterClassReverse, false)).isTrue();
   }
 
+  @ParameterizedTest
+  @CsvSource(delimiter = ';', value = {
+    "[[:alnum:]];a;true", "[[:alnum:]];Z;true", "[[:alnum:]];5;true", "[[:alnum:]];_;false",
+    "[[:alpha:]];q;true", "[[:alpha:]];5;false",
+    "[[:ascii:]];\\x00;true", "[[:ascii:]];\\x7f;true", "[[:ascii:]];\\x80;false",
+    "[[:blank:]];\\t;true", "[[:blank:]];\\x20;true", "[[:blank:]];\\n;false",
+    "[[:cntrl:]];\\x00;true", "[[:cntrl:]];\\x1f;true", "[[:cntrl:]];\\x20;false", "[[:cntrl:]];\\x7f;true",
+    "[[:digit:]];0;true", "[[:digit:]];9;true", "[[:digit:]];a;false", "[[:digit:]];/;false", "[[:digit:]];:;false",
+    "[[:graph:]];!;true", "[[:graph:]];~;true", "[[:graph:]];\\x20;false", "[[:graph:]];\\x7f;false",
+    "[[:print:]];\\x20;true", "[[:print:]];~;true", "[[:print:]];\\x7f;false", "[[:print:]];\\x1f;false",
+    "[[:punct:]];!;true", "[[:punct:]];_;true", "[[:punct:]];~;true", "[[:punct:]];a;false", "[[:punct:]];5;false", "[[:punct:]];\\x20;false",
+    "[[:space:]];\\x20;true", "[[:space:]];\\t;true", "[[:space:]];\\n;true", "[[:space:]];\\x0b;true", "[[:space:]];\\f;true", "[[:space:]];\\r;true", "[[:space:]];x;false",
+    "[[:space:]];\\x08;false",
+    "[[:word:]];_;true", "[[:word:]];a;true", "[[:word:]];-;false",
+    "[[:xdigit:]];a;true", "[[:xdigit:]];F;true", "[[:xdigit:]];g;false", "[[:xdigit:]];9;true",
+    "[[:lower:]];a;true", "[[:lower:]];A;false", "[[:upper:]];A;true", "[[:upper:]];a;false",
+    "[[:^digit:]];5;false", "[[:^digit:]];a;true", "[[:^digit:]];\\x80;true", "[[:^digit:]];\\x{10000};true",
+    "[[:^ascii:]];a;false", "[[:^ascii:]];\\x80;true",
+    "[^[:space:]];\\n;false", "[^[:space:]];x;true",
+    "[^[:^space:]];\\n;true", "[^[:^space:]];x;false",
+    "[[:alpha:]5];5;true", "[[:alpha:]5];6;false", "[[:digit:]a-c];b;true", "[[:digit:]a-c];d;false"
+  })
+  void posix_class_membership(String characterClass, String character, boolean expected) {
+    assertPhpSupersetOf(characterClass, character, false, NO_FLAGS).isEqualTo(expected);
+  }
+
+  @ParameterizedTest
+  @CsvSource(delimiter = ';', value = {
+    "[[:lower:]];A;true", "[[:lower:]];a;true", "[[:lower:]];5;false",
+    "[[:upper:]];a;true", "[[:upper:]];A;true",
+    "[[:^lower:]];A;false", "[[:^lower:]];a;false", "[[:^lower:]];5;true",
+    "[[:^upper:]];a;false", "[[:^upper:]];-;true",
+    "[^[:lower:]];A;false", "[^[:lower:]];-;true",
+    "[[:alpha:]];Q;true", "[[:digit:]];Q;false"
+  })
+  void posix_class_case_insensitive(String characterClass, String character, boolean expected) {
+    assertPhpSupersetOf(characterClass, character, false, Pattern.CASE_INSENSITIVE).isEqualTo(expected);
+  }
+
+  @ParameterizedTest
+  @CsvSource(delimiter = ';', value = {
+    "[[:alpha:]];a;true", "[[:alpha:]];\\x{e9};false", "[[:space:]];\\n;true", "[[:digit:]];5;true",
+    "[[:^alpha:]];5;true", "[[:^alpha:]];a;false", "[[:^alpha:]];\\x{e9};false",
+    "[[:ascii:]];a;true", "[[:ascii:]];\\x{e9};false",
+    "[[:^ascii:]];\\x{e9};true", "[[:^ascii:]];a;false",
+    "[^[:alpha:]];5;false", "[^[:alpha:]];\\x{e9};false"
+  })
+  void posix_class_unicode_mode(String characterClass, String character, boolean expected) {
+    assertPhpSupersetOf(characterClass, character, false, Pattern.UNICODE_CHARACTER_CLASS).isEqualTo(expected);
+  }
+
+  @Test
+  void posix_class_unknown_membership_is_neither_empty_nor_universal() {
+    // Characters above ASCII are unknown in Unicode character class mode
+    assertPhpSupersetOf("[[:alpha:]]", "\\x{e9}", true, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
+    assertPhpSupersetOf("[[:alpha:]]", "[[:alpha:]]", false, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
+    assertPhpSupersetOf("[[:alpha:]]", "[[:alpha:]]", true, Pattern.UNICODE_CHARACTER_CLASS).isTrue();
+    assertPhpSupersetOf("[a-z]", "[[:alpha:]]", false, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
+    assertPhpSupersetOf("[[:alpha:]]", "[a-z]", false, Pattern.UNICODE_CHARACTER_CLASS).isTrue();
+    assertPhpSupersetOf("[^[:alpha:]]", "5", false, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
+    assertPhpSupersetOf("[^[:^alpha:]]", "a", false, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
+    assertThat(posixClass("[[:alpha:]]", Pattern.UNICODE_CHARACTER_CLASS).isEmpty()).isFalse();
+    assertThat(posixClass("[[:alpha:]]", Pattern.UNICODE_CHARACTER_CLASS).matchesAnyCharacter()).isFalse();
+  }
+
+  @Test
+  void posix_word_boundary_markers_are_unknown() {
+    for (String marker : new String[] {"[[:<:]]", "[[:>:]]", "[^[:<:]]"}) {
+      assertPhpSupersetOf(marker, "a", false, NO_FLAGS).isFalse();
+      assertPhpSupersetOf("a", marker, false, NO_FLAGS).isFalse();
+      assertPhpSupersetOf(marker, "[a-z]", false, NO_FLAGS).isFalse();
+      assertThat(posixClass(marker, NO_FLAGS).isEmpty()).isFalse();
+      assertThat(posixClass(marker, NO_FLAGS).matchesAnyCharacter()).isFalse();
+    }
+    assertThat(posixClass("[[:<:]]", NO_FLAGS).intersects(posixClass("[a-z]", NO_FLAGS), true)).isTrue();
+    assertThat(posixClass("[[:<:]]", NO_FLAGS).intersects(posixClass("[a-z]", NO_FLAGS), false)).isFalse();
+  }
+
+  private static AbstractBooleanAssert<?> assertPhpSupersetOf(String superset, String subset, boolean defaultAnswer, int flags) {
+    return assertThat(posixClass(superset, flags).supersetOf(posixClass(subset, flags), defaultAnswer));
+  }
+
+  private static SimplifiedRegexCharacterClass posixClass(String regex, int flags) {
+    RegexParseResult result = new RegexParser(new PhpRegexSource(regex, '\''), new FlagSet(flags)).parse();
+    assertThat(result.getSyntaxErrors()).isEmpty();
+    return SimplifiedRegexCharacterClass.of(result.getResult());
+  }
+
   private static AbstractBooleanAssert<?> assertIntersects(String regex1, String regex2, boolean defaultAnswer, int flags) {
     FlagSet flagSet = new FlagSet(flags);
     RegexTree tree1 = parseRegex(regex1, flagSet).getResult();
@@ -495,4 +585,3 @@ class SimplifiedRegexCharacterClassTest {
     return result;
   }
 }
-
