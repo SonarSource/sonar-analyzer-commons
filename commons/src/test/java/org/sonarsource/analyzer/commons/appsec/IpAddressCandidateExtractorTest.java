@@ -211,6 +211,13 @@ class IpAddressCandidateExtractorTest {
       found("192.0.2.1|192.0.2.2 192.0.2.3%20|192.0.2.4", "192.0.2.1", "192.0.2.2", "192.0.2.4"),
       found("http://example.org/a%20|192.0.2.1", "192.0.2.1"),
       found("fe80::1%eth0/|192.0.2.1", "fe80::1%eth0", "192.0.2.1"),
+      // A closing bracket ends the zone, so punctuation after it separates entries
+      found("[fe80::1%eth0]|192.0.2.1", "fe80::1%eth0", "192.0.2.1"),
+      found("[fe80::1%eth0]:8080|192.0.2.1", "fe80::1%eth0", "192.0.2.1"),
+      found("http://[fe80::1%eth0]|192.0.2.1", "fe80::1%eth0", "192.0.2.1"),
+      found("http://x?ip=[fe80::1%eth0]:80|192.0.2.1", "fe80::1%eth0", "192.0.2.1"),
+      found("[fe80::1%eth0|x]|192.0.2.1", "fe80::1%eth0|x", "192.0.2.1"),
+      found("fe80::1%eth0+x 192.0.2.1", "fe80::1%eth0+x", "192.0.2.1"),
       // Scheme-like runs
       found("a+b+c://192.0.2.1/x", "192.0.2.1"),
       found("1+a://192.0.2.1", "192.0.2.1"),

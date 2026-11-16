@@ -107,10 +107,11 @@ public final class IpAddressCandidateExtractor {
    * <p>Entries are delimited by any character other than a letter, a digit, {@code .}, {@code -}, {@code _},
    * {@code :}, {@code %}, {@code /}, {@code @}, {@code +}, {@code [} and {@code ]}. In particular, whitespace, commas,
    * semicolons, equals signs, quotes and parentheses delimit entries. The plus sign belongs to the entry so that URL
-   * schemes such as {@code git+ssh} stay intact; it is never part of an address, so it prevents a match.
+   * schemes such as {@code git+ssh} stay intact; it prevents a match when it touches an address, but an IPv6 zone can contain it.
    * An IPv6 zone is opaque: after a {@code %} that follows a colon, the characters {@code |}, {@code ~}, {@code !},
    * {@code $}, {@code *} and {@code ^} also stay in the entry, up to the next {@code /}, {@code ?}, {@code #},
-   * {@code &} or {@code =}. Other characters still delimit the entry, so a zone is not arbitrary text. An address must span a whole entry or a whole path segment,
+   * {@code &}, {@code =} or {@code ]}, which closes a bracketed zone.
+   * Other characters still delimit the entry, so a zone is not arbitrary text. An address must span a whole entry or a whole path segment,
    * so it never touches a letter, digit, extra dot, hyphen or underscore; a sentence-ending dot prevents a match.
    * A valid-looking address is not recovered from a longer malformed address or identifier.
    *
@@ -168,7 +169,7 @@ public final class IpAddressCandidateExtractor {
         colon = true;
       } else if (c == '%' && colon) {
         zone = true;
-      } else if ("/?#&=".indexOf(c) >= 0) {
+      } else if ("/?#&=]".indexOf(c) >= 0) {
         colon = false;
         zone = false;
       }
