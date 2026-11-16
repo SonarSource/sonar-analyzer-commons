@@ -518,7 +518,9 @@ class SimplifiedRegexCharacterClassTest {
     "[[:^alpha:]];5;true", "[[:^alpha:]];a;false", "[[:^alpha:]];\\x{e9};false",
     "[[:ascii:]];a;true", "[[:ascii:]];\\x{e9};false",
     "[[:^ascii:]];\\x{e9};true", "[[:^ascii:]];a;false",
-    "[^[:alpha:]];5;false", "[^[:alpha:]];\\x{e9};false"
+    "[^[:alpha:]];5;true", "[^[:alpha:]];\\x20;true", "[^[:alpha:]];a;false", "[^[:alpha:]];\\x{e9};false",
+    "[^[:^alpha:]];a;true", "[^[:^alpha:]];5;false", "[^[:^alpha:]];\\x{e9};false",
+    "[^[:alpha:]x];5;true", "[^[:alpha:]x];x;false", "[^[:alpha:]5];5;false", "[^[:alpha:]\\x{e9}];\\x{e9};false"
   })
   void posix_class_unicode_mode(String characterClass, String character, boolean expected) {
     assertPhpSupersetOf(characterClass, character, false, Pattern.UNICODE_CHARACTER_CLASS).isEqualTo(expected);
@@ -532,8 +534,13 @@ class SimplifiedRegexCharacterClassTest {
     assertPhpSupersetOf("[[:alpha:]]", "[[:alpha:]]", true, Pattern.UNICODE_CHARACTER_CLASS).isTrue();
     assertPhpSupersetOf("[a-z]", "[[:alpha:]]", false, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
     assertPhpSupersetOf("[[:alpha:]]", "[a-z]", false, Pattern.UNICODE_CHARACTER_CLASS).isTrue();
-    assertPhpSupersetOf("[^[:alpha:]]", "5", false, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
-    assertPhpSupersetOf("[^[:^alpha:]]", "a", false, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
+    assertPhpSupersetOf("[^[:alpha:]]", "5", false, Pattern.UNICODE_CHARACTER_CLASS).isTrue();
+    assertPhpSupersetOf("[^[:alpha:]]", "[[:alpha:]]", true, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
+    assertPhpSupersetOf("[^[:alpha:]]", "\\x{e9}", true, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
+    assertPhpSupersetOf("[^[:^alpha:]]", "a", false, Pattern.UNICODE_CHARACTER_CLASS).isTrue();
+    assertThat(posixClass("[^[:alpha:]]", Pattern.UNICODE_CHARACTER_CLASS).matchesAnyCharacter()).isFalse();
+    assertThat(posixClass("[^[:alpha:]]", Pattern.UNICODE_CHARACTER_CLASS).intersects(posixClass("\\x{e9}", NO_FLAGS), false)).isFalse();
+    assertThat(posixClass("[^[:alpha:]]", Pattern.UNICODE_CHARACTER_CLASS).intersects(posixClass("\\x{e9}", NO_FLAGS), true)).isTrue();
     assertThat(posixClass("[[:alpha:]]", Pattern.UNICODE_CHARACTER_CLASS).isEmpty()).isFalse();
     assertThat(posixClass("[[:alpha:]]", Pattern.UNICODE_CHARACTER_CLASS).matchesAnyCharacter()).isFalse();
   }

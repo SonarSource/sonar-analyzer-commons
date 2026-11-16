@@ -84,7 +84,16 @@
 - '[[:^digit:]]|é': 'u' # Compliant
 - '[[:alpha:]]|[[:alnum:]]': 'u' # Compliant
 - '[[:alnum:]]|[[:alpha:]]': 'u' # Compliant, the non-ASCII membership is unknown
-- '[^[:alpha:]]|5': 'u' # Compliant
+- '[^[:alpha:]]|5': 'u' # Noncompliant
+- '[^[:alpha:]]|a': 'u' # Compliant
+- '[^[:alpha:]]|é': 'u' # Compliant
+- '[^[:alpha:]]|[[:alpha:]]': 'u' # Compliant
+- '[^[:^alpha:]]|a': 'u' # Noncompliant
+- '[^[:^alpha:]]|5': 'u' # Compliant
+- '[^[:^alpha:]]|é': 'u' # Compliant
+- '[^[:alpha:]x]|5': 'u' # Noncompliant
+- '[^[:alpha:]x]|x': 'u' # Compliant
+- '[^[:<:]]|5': 'u' # Compliant
 - '[[:ascii:]]|a': 'u' # Noncompliant
 - '[[:ascii:]]|é': 'u' # Compliant
 - '[[:^ascii:]]|é': 'u' # Noncompliant
