@@ -547,7 +547,7 @@ class SimplifiedRegexCharacterClassTest {
 
   @Test
   void posix_word_boundary_markers_are_unknown() {
-    for (String marker : new String[] {"[[:<:]]", "[[:>:]]", "[^[:<:]]"}) {
+    for (String marker : new String[] {"[[:<:]]", "[[:>:]]", "[^[:<:]]", "[[:^<:]]", "[[:^>:]]"}) {
       assertPhpSupersetOf(marker, "a", false, NO_FLAGS).isFalse();
       assertPhpSupersetOf("a", marker, false, NO_FLAGS).isFalse();
       assertPhpSupersetOf(marker, "[a-z]", false, NO_FLAGS).isFalse();

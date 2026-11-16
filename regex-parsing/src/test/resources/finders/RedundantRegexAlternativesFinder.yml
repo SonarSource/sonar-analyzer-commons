@@ -106,3 +106,6 @@
 - '[[:<:]]|[[:<:]]' # Compliant
 - '[^[:<:]]|a' # Compliant
 - '[[:<:]a]|b' # Compliant
+- '[[:^<:]]|a' # Compliant
+- 'a|[[:^>:]]' # Compliant
+- '[[:^<:]]|[[:^>:]]' # Compliant
