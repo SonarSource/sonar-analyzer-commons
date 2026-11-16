@@ -553,12 +553,19 @@ class SimplifiedRegexCharacterClassTest {
       assertPhpSupersetOf(marker, "[a-z]", false, NO_FLAGS).isFalse();
       // Only an unknown set is a superset of "a" when the default answer is true
       assertPhpSupersetOf("a", marker, true, NO_FLAGS).isTrue();
+      assertPhpSupersetOf(marker, "a", true, NO_FLAGS).isFalse();
       assertThat(posixClass(marker, NO_FLAGS).intersects(posixClass("[a-z]", NO_FLAGS), true)).isTrue();
       assertThat(posixClass(marker, NO_FLAGS).intersects(posixClass("[a-z]", NO_FLAGS), false)).isFalse();
       assertThat(posixClass(marker, NO_FLAGS).isEmpty()).isFalse();
       assertThat(posixClass(marker, NO_FLAGS).matchesAnyCharacter()).isFalse();
     }
-    assertThat(posixClass("[[:<:]]", Pattern.UNICODE_CHARACTER_CLASS).intersects(posixClass("[a-z]", NO_FLAGS), false)).isFalse();
+    for (String marker : new String[] {"[[:<:]]", "[^[:<:]]", "[[:^>:]]", "[^[:^<:]]"}) {
+      assertPhpSupersetOf(marker, "a", true, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
+      assertThat(posixClass(marker, Pattern.UNICODE_CHARACTER_CLASS).isEmpty()).isFalse();
+      assertThat(posixClass(marker, Pattern.UNICODE_CHARACTER_CLASS).intersects(posixClass("[a-z]", NO_FLAGS), false)).isFalse();
+      assertThat(posixClass("[a-z]", NO_FLAGS).intersects(posixClass(marker, Pattern.UNICODE_CHARACTER_CLASS), true)).isTrue();
+      assertThat(posixClass("[a-z]", NO_FLAGS).intersects(posixClass(marker, Pattern.UNICODE_CHARACTER_CLASS), false)).isFalse();
+    }
   }
 
   private static AbstractBooleanAssert<?> assertPhpSupersetOf(String superset, String subset, boolean defaultAnswer, int flags) {
