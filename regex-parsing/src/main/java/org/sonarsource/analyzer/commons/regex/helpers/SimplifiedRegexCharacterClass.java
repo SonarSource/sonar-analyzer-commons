@@ -324,13 +324,10 @@ public class SimplifiedRegexCharacterClass {
      */
     private void addPosixClass(PosixCharacterClassElementTree tree) {
       String property = tree.property();
-      IntPredicate posixMembers = posixMembers(property);
+      IntPredicate posixMembers = posixMembers(property, tree.activeFlags().contains(Pattern.CASE_INSENSITIVE));
       if (posixMembers == null) {
         characters.markUnknown();
         return;
-      }
-      if (tree.activeFlags().contains(Pattern.CASE_INSENSITIVE) && ("lower".equals(property) || "upper".equals(property))) {
-        posixMembers = Builder::isLetter;
       }
       boolean negation = tree.isNegation();
       IntPredicate asciiMembers = negation ? posixMembers.negate() : posixMembers;
@@ -341,6 +338,14 @@ public class SimplifiedRegexCharacterClass {
         // Without Unicode support, all the characters above ASCII are outside of the positive class
         characters.addRange(MAX_ASCII + 1, Character.MAX_CODE_POINT, tree);
       }
+    }
+
+    @Nullable
+    private static IntPredicate posixMembers(String property, boolean caseInsensitive) {
+      if (caseInsensitive && ("lower".equals(property) || "upper".equals(property))) {
+        return Builder::isLetter;
+      }
+      return posixMembers(property);
     }
 
     @Nullable
