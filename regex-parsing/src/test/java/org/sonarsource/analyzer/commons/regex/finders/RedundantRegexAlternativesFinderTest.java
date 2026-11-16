@@ -16,15 +16,47 @@
  */
 package org.sonarsource.analyzer.commons.regex.finders;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.sonarsource.analyzer.commons.regex.RegexIssueLocation;
+import org.sonarsource.analyzer.commons.regex.RegexParser;
+import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
+import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
+import org.sonarsource.analyzer.commons.regex.php.PhpRegexSource;
 import org.sonarsource.analyzer.commons.regex.RegexIssueReporter;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class RedundantRegexAlternativesFinderTest {
 
   @Test
   void test() {
     Verifier.verify(new RedundantRegexAlternativesFinderCheck(), "RedundantRegexAlternativesFinder.yml");
+  }
+
+  @Test
+  void preserves_issue_locations_and_grouping() {
+    var result = new RegexParser(new PhpRegexSource("[[:alpha:]]|A|B", '\''), new FlagSet()).parse();
+    assertThat(result.getSyntaxErrors()).isEmpty();
+    List<RegexSyntaxElement> primaryLocations = new ArrayList<>();
+    List<RegexIssueLocation> secondaryLocations = new ArrayList<>();
+    new RedundantRegexAlternativesFinder((element, message, cost, secondaries) -> {
+      primaryLocations.add(element);
+      assertThat(message).isEqualTo("Remove or rework this redundant alternative.");
+      assertThat(cost).isNull();
+      secondaryLocations.addAll(secondaries);
+    }).visit(result);
+    assertThat(primaryLocations).hasSize(1);
+    assertThat(primaryLocations.get(0).getRange().getBeginningOffset()).isEqualTo(12);
+    assertThat(primaryLocations.get(0).getRange().getEndingOffset()).isEqualTo(13);
+    assertThat(secondaryLocations).extracting(RegexIssueLocation::message)
+      .containsExactly("Alternative to keep", "Other redundant alternative");
+    assertThat(secondaryLocations).extracting(location -> location.syntaxElements().get(0).getRange().getBeginningOffset())
+      .containsExactly(0, 14);
+    assertThat(secondaryLocations).extracting(location -> location.syntaxElements().get(0).getRange().getEndingOffset())
+      .containsExactly(11, 15);
   }
 
   static class RedundantRegexAlternativesFinderCheck extends FinderCheck {

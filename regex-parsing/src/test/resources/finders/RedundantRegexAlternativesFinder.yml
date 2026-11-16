@@ -18,4 +18,57 @@
 - '.*' # Compliant
 - '[[:space:]]|x' # Compliant
 - 'x|[[:space:]]' # Compliant
-- '[[:space:]]|\n' # Compliant, false negative
+- '[[:space:]]|\n' # Noncompliant
+
+- '[[:alpha:]]|A' # Noncompliant
+- '[[:alnum:]]|7' # Noncompliant
+- '[[:blank:]]|\t' # Noncompliant
+- '[[:cntrl:]]|\x7f' # Noncompliant
+- '[[:ascii:]]|\x00' # Noncompliant
+- '[[:digit:]]|[0-9]' # Noncompliant
+- '[[:graph:]]|!' # Noncompliant
+- '[[:print:]]| ' # Noncompliant
+- '[[:punct:]]|_' # Noncompliant
+- '[[:word:]]|_' # Noncompliant
+- '[[:xdigit:]]|F' # Noncompliant
+- '[[:lower:]]|A': 'i' # Noncompliant
+- '[[:upper:]]|a': 'i' # Noncompliant
+- '(?i:[[:lower:]]|A)' # Noncompliant
+- '(?i:[[:^lower:]]|!)' # Noncompliant
+- '[[:^digit:]]|A' # Noncompliant
+- '[^[:digit:]]|A' # Noncompliant
+- '[^[:^digit:]]|5' # Noncompliant
+- '[[:digit:]a-z_]|[a-z0-9]' # Noncompliant
+- '[[:digit:][:alpha:]]|[0-9A-Z]' # Noncompliant
+- '[[:^digit:]0-9]|x' # Noncompliant
+- '[[:alpha:]]|(A)' # Noncompliant
+- 'A|[[:alpha:]]' # Noncompliant
+- '([[:alpha:]])|(A)' # Noncompliant
+- '[[:digit:]]|5|6' # Noncompliant
+- '[[:space:]]|\n': 'u' # Noncompliant
+- '[^[:digit:]]|A': 'u' # Noncompliant
+- '[[:^digit:]]|A': 'u' # Noncompliant
+- '[[:ascii:]]|A': 'u' # Noncompliant
+
+- '[[:digit:]]|A' # Compliant
+- '[[:^digit:]]|5' # Compliant
+- '[^[:digit:]]|5' # Compliant
+- '[[:space:]]|[ x]' # Compliant
+- '[[:digit:]a-c]|[b-z]' # Compliant
+- '[[:lower:]]|A' # Compliant
+- '[[:upper:]]|a' # Compliant
+- '(?i:[[:^lower:]]|A)' # Compliant
+- '(?i:(?-i:[[:lower:]])|A)' # Compliant
+- '(A)|[[:alpha:]]' # Compliant
+- 'A|([[:alpha:]])' # Compliant
+- '[[:alpha:]]|é' # Compliant
+- '[[:alpha:]]|é': 'u' # Compliant
+- '[[:^alpha:]]|é': 'u' # Compliant
+- '[^[:alpha:]]|é': 'u' # Compliant
+- '[[:alpha:]]|[[:alpha:]]': 'u' # Compliant, additional membership is unknown
+- '[^[:alpha:][:^alpha:]]|x': 'u' # Compliant
+- '[[:<:]]|x' # Compliant
+- '[[:>:]]|x' # Compliant
+- '[^[:<:]]|x' # Compliant
+- '[[:<:]x]|x' # Compliant
+- '[[:^>:]x]|x' # Compliant
