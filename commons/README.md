@@ -15,7 +15,7 @@ for source locations and tests.
 * [`ExternalReportProvider`](./src/main/java/org/sonarsource/analyzer/commons/ExternalReportProvider.java) - to get the list of io.File with external reports
 * [`ProgressReport`](./src/main/java/org/sonarsource/analyzer/commons/ProgressReport.java) - to produce logs with number of analyzed files
 * [`FileProvider`](./src/main/java/org/sonarsource/analyzer/commons/FileProvider.java) - to get files matching given pattern in the given directory
-* [`IpAddressCandidateExtractor`](./src/main/java/org/sonarsource/analyzer/commons/appsec/IpAddressCandidateExtractor.java) - to extract IP address candidates from bare addresses, endpoints, and URLs
+* [`IpAddressCandidateExtractor`](./src/main/java/org/sonarsource/analyzer/commons/appsec/IpAddressCandidateExtractor.java) - `extractAll` finds validated IP address literals throughout text, lists, paths, and URLs, preserving source order and duplicates; `extract` retains the legacy single-candidate heuristic
 * [`IpAddressClassifier`](./src/main/java/org/sonarsource/analyzer/commons/appsec/IpAddressClassifier.java) - to parse numeric IP addresses and CIDRs and query their classification
 
 ### License

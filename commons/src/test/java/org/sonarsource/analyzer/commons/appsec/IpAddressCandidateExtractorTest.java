@@ -16,6 +16,7 @@
  */
 package org.sonarsource.analyzer.commons.appsec;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -134,6 +135,137 @@ class IpAddressCandidateExtractorTest {
   })
   void couldProduceNonIpAddressResult(String content, String expected) {
     assertThat(IpAddressCandidateExtractor.extract(content)).hasValue(expected);
+  }
+
+  @Test
+  void shouldHandleLongNonAddressEntries() {
+    assertThat(IpAddressCandidateExtractor.extractAll("a".repeat(20_000))).isEmpty();
+    assertThat(IpAddressCandidateExtractor.extractAll("http://example.org?q=".repeat(2_000))).isEmpty();
+  }
+
+  @Test
+  void shouldFindQuotedAndWhitespaceDelimitedValuesWithoutChangingLegacyExtraction() {
+    String content = " \t\n'10.0.0.1' (\"[2001:db8::1]:80\")\u00a010.0.0.1 ";
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).containsExactly("10.0.0.1", "2001:db8::1", "10.0.0.1");
+    assertThat(IpAddressCandidateExtractor.extract(content)).isEmpty();
+  }
+
+  @ParameterizedTest
+  @CsvSource(delimiter = '|', value = {
+    "/registry/ipaddresses/192.168.2.3 | 192.168.2.3",
+    "connect to 10.0.0.1, 10.0.0.2 | 10.0.0.1;10.0.0.2",
+    "  10.0.0.1\t10.0.0.2;10.0.0.1 | 10.0.0.1;10.0.0.2;10.0.0.1",
+    "10.0.0.1\u00a010.0.0.2 | 10.0.0.1;10.0.0.2",
+    "ip=10.0.0.1 | 10.0.0.1",
+    "ip=\"10.0.0.1\" | 10.0.0.1",
+    "(10.0.0.1);(2001:db8::1) | 10.0.0.1;2001:db8::1",
+    "10.0.0.1/0,10.0.0.2/32 | 10.0.0.1/0;10.0.0.2/32",
+    "network=10.0.0.1/032 | 10.0.0.1/032",
+    "10.0.0.1/00032 | 10.0.0.1/00032",
+    "2001:db8::1/0;[2001:db8::2]/128 | 2001:db8::1/0;2001:db8::2/128",
+    "2001:db8::1/064 | 2001:db8::1/064",
+    "2001:DB8:0000::AbCd | 2001:DB8:0000::AbCd",
+    "::00000:2 | ::00000:2",
+    "::;::1 | ::;::1",
+    "::ffff:192.0.2.1 | ::ffff:192.0.2.1",
+    "2001:db8::192.0.2.1 | 2001:db8::192.0.2.1",
+    "[::FFFF:192.0.2.1]:443 | ::FFFF:192.0.2.1",
+    "fe80::1%eth0 | fe80::1%eth0",
+    "[fe80::1%接口]:80 | fe80::1%接口",
+    "fe80::1%3/64 | fe80::1%3/64",
+    "fe80::1% | fe80::1%",
+    "[fe80::1%eth0.]:80 | fe80::1%eth0.",
+    "fe80::1%eth0./64 | fe80::1%eth0./64",
+    "[fe80::1%eth-0]/64 | fe80::1%eth-0/64",
+    "10.0.0.1:0;10.0.0.2:65535;10.0.0.3:00080 | 10.0.0.1;10.0.0.2;10.0.0.3",
+    "[2001:db8::1]:0;[2001:db8::2]:65535 | 2001:db8::1;2001:db8::2",
+    "2001:db8::1:8080 | 2001:db8::1:8080",
+    "http://10.0.0.1:8080/path | 10.0.0.1",
+    "visit https://example.org/10.0.0.1 | 10.0.0.1",
+    "git+ssh://[2001:db8::1]:22/10.0.0.1 | 2001:db8::1;10.0.0.1",
+    "custom-scheme.v1://10.0.0.1/33 | 10.0.0.1",
+    "//[2001:db8::1]/129 | 2001:db8::1",
+    "http://10.0.0.1/10.0.0.2?ip=10.0.0.3#10.0.0.4 | 10.0.0.1;10.0.0.2;10.0.0.3;10.0.0.4",
+    "http://example.org?ip=10.0.0.1&peer=[2001:db8::1]:80#10.0.0.2 | 10.0.0.1;2001:db8::1;10.0.0.2",
+    "http://example.org?ip=10.0.0.1/33 | 10.0.0.1",
+    "http://example.org/logs//10.0.0.1@tag | 10.0.0.1",
+    "http://example.org/logs/(//10.0.0.1@tag) | 10.0.0.1",
+    "http://example.org/logs/key=//10.0.0.1@tag | 10.0.0.1",
+    "http://example.org/logs/key&//10.0.0.1@tag | 10.0.0.1",
+    "http://example.org#key=//10.0.0.1@tag | 10.0.0.1",
+    "http://example.org#part?ip=//10.0.0.1@tag | 10.0.0.1",
+    "http://example.org#part??ip=//10.0.0.1@tag&peer=10.0.0.2 | 10.0.0.1;10.0.0.2",
+    "http://example.org?next=http://example.com/path#part?ip=//10.0.0.1@tag | 10.0.0.1",
+    "folder/key=10.0.0.1/24 | 10.0.0.1",
+    "http://example.org?next=(//10.0.0.9@example.com/10.0.0.1) | 10.0.0.1",
+    "http://example.org?first=http://10.0.0.1/path&second=http://10.0.0.9@example.com/10.0.0.2 | 10.0.0.1;10.0.0.2",
+    "http://example.org?first=http://10.0.0.1&second=http://10.0.0.9@example.com/10.0.0.2 | 10.0.0.1;10.0.0.2",
+    "http://example.org?first=//10.0.0.1/path&second=//10.0.0.9@example.com/10.0.0.2 | 10.0.0.1;10.0.0.2",
+    "http://example.org?next=http://example.com/key=//10.0.0.1@tag | 10.0.0.1",
+    "http://example.org?next=http://example.com#key=//10.0.0.1@tag | 10.0.0.1",
+    "(http://10.0.0.1) | 10.0.0.1",
+    "((http://[2001:db8::1]:80)) | 2001:db8::1",
+    "ip=('http://10.0.0.1') | 10.0.0.1",
+    "http://example.org?next=//10.0.0.9@example.com/10.0.0.1 | 10.0.0.1",
+    "http://example.org/(10.0.0.1/33) | 10.0.0.1",
+    "http://example.org/(10.0.0.1/24) | 10.0.0.1",
+    "http://example.org/'10.0.0.1/24' | 10.0.0.1",
+    "/folder/(10.0.0.1/33) | 10.0.0.1",
+    "http://10.0.0.9:secret@10.0.0.1/10.0.0.2 | 10.0.0.1;10.0.0.2",
+    "http://10.0.0.9,secret@10.0.0.1/path | 10.0.0.1",
+    "http://10.0.0.9;secret@10.0.0.1/path | 10.0.0.1",
+    "http://10.0.0.9@example.org/10.0.0.1 | 10.0.0.1",
+    "http://10.0.0.9(foo)@example.org/10.0.0.1 | 10.0.0.1",
+    "http://10.0.0.9(foo)@10.0.0.1/33 | 10.0.0.1",
+    "http://name'10.0.0.9@example.org/10.0.0.1 | 10.0.0.1",
+    "http://example.org/path@10.0.0.1?email=user@10.0.0.2 | 10.0.0.1;10.0.0.2",
+    "http://10.0.0.1,http://10.0.0.2;https://example.org/10.0.0.3 | 10.0.0.1;10.0.0.2;10.0.0.3",
+    "http://example.org?redirect=http://10.0.0.9@example.com/10.0.0.1 | 10.0.0.1",
+    "/10.0.0.1/33 | 10.0.0.1",
+    "folder/10.0.0.1/24 | 10.0.0.1",
+    "10.0.0.1:80/33 | 10.0.0.1",
+    "[2001:db8::1]:80/129 | 2001:db8::1",
+    "[2001:db8::1 10.0.0.1 | 10.0.0.1",
+    "[2001:db8::1]:bad,10.0.0.1 | 10.0.0.1",
+    "10.0.0.9:65536;10.0.0.1 | 10.0.0.1",
+    "http://[bad/10.0.0.1 | 10.0.0.1",
+    "10.0.0.9/33 10.0.0.1 | 10.0.0.1",
+    "8.8.8.8 127.0.0.1 224.0.0.1 | 8.8.8.8;127.0.0.1;224.0.0.1"
+  })
+  void shouldExtractAllAddresses(String content, String expected) {
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).containsExactly(expected.split(";"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "example.org", "no addresses here", "http://example.org/path?name=localhost",
+    "999.2.3.4", "256.0.0.1", "192.00.2.1", "127.1", "0x7f000001",
+    "1.2.3.4.5", "v1.2.3.4", "1.2.3.4.", ".1.2.3.4", "11.2.3.456",
+    "prefix192.0.2.1", "192.0.2.1suffix", "192.0.2.1-foo", "foo-192.0.2.1",
+    "192.0.2.1_foo", "foo_192.0.2.1", "é192.0.2.1", "192.0.2.1接口", "١192.0.2.1",
+    "2001:db8::1suffix", "prefix2001:db8::1", "2001:db8::1.", "2001:db8::1-foo",
+    "fe80::1%eth0.", "::ffff:192.0.2.1%zone.",
+    "2001:db8:::1", "2001:db8::1::2", "1:2:3:4:5:6:7:8:9", "::ffff:999.2.3.4",
+    "::ffff:192.00.2.1", "::ffff:192.0.2.1.5", "bad::ffff:192.0.2.1:80",
+    "[192.0.2.1]", "[192.0.2.1]:80", "[192.0.2.1:8080]",
+    "[2001:db8::1", "2001:db8::1]", "[[2001:db8::1]]", "[2001:db8::1]extra",
+    "[2001:db8::1]8080", "2001:db8::1%eth[0", "2001:db8::1%eth0]",
+    "192.0.2.1:", "192.0.2.1:bad", "192.0.2.1:-1", "192.0.2.1:+80", "192.0.2.1:８０",
+    "192.0.2.1:65536", "192.0.2.1:000080", "192.0.2.1:99999999999999999999",
+    "[2001:db8::1]:", "[2001:db8::1]:bad", "[2001:db8::1]:-1", "[2001:db8::1]:+80",
+    "[2001:db8::1]:８０", "[2001:db8::1]:65536", "[2001:db8::1]:000080",
+    "192.0.2.1/33", "192.0.2.1/100", "192.0.2.1/", "192.0.2.1/-1", "192.0.2.1/+24",
+    "192.0.2.1/２４", "192.0.2.1/24x", "192.0.2.1/not-a-prefix",
+    "192.0.2.1/99999999999999999999", "2001:db8::1/129", "[2001:db8::1]/129",
+    "2001:db8::1/", "2001:db8::1/-1", "2001:db8::1/+64", "2001:db8::1/６４",
+    "http://192.0.2.1@example.org", "http://[2001:db8::1]@example.org",
+    "http://192.0.2.1:65536/path", "http://[2001:db8::1]:bad/path",
+    "http://10.0.0.1(foo)/", "http://[2001:db8::1]:80(foo)/"
+  })
+  void shouldRejectInvalidAddressesWithoutHidingLaterEntries(String content) {
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).isEmpty();
+    assertThat(IpAddressCandidateExtractor.extractAll(content + " 198.51.100.1")).containsExactly("198.51.100.1");
+    assertThat(IpAddressCandidateExtractor.extractAll(content + ",198.51.100.1")).containsExactly("198.51.100.1");
   }
 
   @ParameterizedTest
