@@ -128,25 +128,9 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
     if (base == null) {
       return true;
     }
-    PropertyVisitor visitor = new PropertyVisitor();
-    visitor.visitInCharClass(base);
-    visitor.visitInCharClass(tree);
-    if (visitor.hasProperty) {
-      // Property rewrites need separate handling for flag scopes and complements.
-      return false;
-    }
-    SimplifiedRegexCharacterClass baseSimplifiedCharacterClass = new SimplifiedRegexCharacterClass(base);
-    SimplifiedRegexCharacterClass treeSimplifiedCharacterClass = new SimplifiedRegexCharacterClass(tree);
+    SimplifiedRegexCharacterClass baseSimplifiedCharacterClass = SimplifiedRegexCharacterClass.withUnknownProperties(base);
+    SimplifiedRegexCharacterClass treeSimplifiedCharacterClass = SimplifiedRegexCharacterClass.withUnknownProperties(tree);
     return baseSimplifiedCharacterClass.intersects(treeSimplifiedCharacterClass, false);
-  }
-
-  private static class PropertyVisitor extends RegexBaseVisitor {
-    boolean hasProperty;
-
-    @Override
-    public void visitEscapedCharacterClass(EscapedCharacterClassTree tree) {
-      hasProperty |= tree.isProperty();
-    }
   }
 
   private static String escapedCharacterFollowedByEscapedCharacter(EscapedCharacterClassTree escapedClass, String ignoredSymbol) {

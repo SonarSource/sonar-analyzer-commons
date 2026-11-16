@@ -39,7 +39,8 @@ class PosixUnicodeSemanticsTest {
     "\\p{Alpha}++(?iu:k);aK", "\\p{ASCII}++(?iu:s);aſ", "\\P{Lower}++(?iu:K);0k",
     "\\p{Alpha}*+(?iu:k);K", "[\\p{Alpha}]++(?iu:[k]);aK",
     "(?!\\p{Alpha})(?iu:k);K", "(?!\\p{ASCII})(?iu:s);ſ", "(?!\\P{Lower})(?iu:K);k",
-    "(?![\\p{Alpha}])(?iu:[k]);K", "(?!\\p{Digit}[a-z])0(?iu:k);0K"
+    "(?![\\p{Alpha}])(?iu:[k]);K", "(?!\\p{Digit}[a-z])0(?iu:k);0K",
+    "a++b\\p{Alpha}(?iu:k);abxK"
   })
   void preserves_matching_continuations(String regex, String witness) {
     assertThat(Pattern.matches(regex, witness)).as(regex).isTrue();
@@ -58,6 +59,19 @@ class PosixUnicodeSemanticsTest {
 
   @ParameterizedTest
   @CsvSource(delimiter = ';', value = {
+    "(?U)a++a\\p{L};a", "(?U)a++a\\p{Alpha};a", "(?iu)a++a\\p{IsLatin};a",
+    "(?U)(?!a)a\\p{L};(?!a)", "(?U)(?!a)a\\p{Alpha};(?!a)",
+    "a++a\\p{Alpha}(?iu:k);a", "[ab]++a\\p{Digit}(?iu:k);a",
+    "a++a\\P{Upper}(?iu:s);a", "(?!a)a\\p{Alpha}(?iu:k);(?!a)"
+  })
+  void retains_reports_independent_of_property_membership(String regex, String location) {
+    List<RegexSyntaxElement> issues = impossibleMatches(regex);
+    assertThat(issues).as(regex).hasSize(1);
+    assertThat(issues.get(0).getText()).isEqualTo(location);
+  }
+
+  @ParameterizedTest
+  @CsvSource(delimiter = ';', value = {
     "\\p{Alpha}*?(?iu:k);[^k\\P{Alpha}]*+(?iu:k);aKb",
     "(?i:\\p{Lower})*?A;[^A\\P{Lower}]*+A;BA!",
     "\\w*?\\p{Upper};[\\P{Upper}\\W]*+\\p{Upper};!A",
@@ -72,6 +86,28 @@ class PosixUnicodeSemanticsTest {
   @Test
   void retains_existing_reluctant_report() {
     assertThat(reluctantReports("\\w*?k")).hasSize(1);
+  }
+
+  @ParameterizedTest
+  @CsvSource(delimiter = ';', value = {
+    "\\w*?[a\\p{Upper}];[^a\\p{Upper}\\W]*+",
+    "\\w*?[a\\P{Upper}];[^a\\P{Upper}\\W]*+",
+    "\\w*?[a\\p{L}];[^a\\p{L}\\W]*+",
+    "(?U)\\w*?[a\\p{Upper}];[^a\\p{Upper}\\W]*+"
+  })
+  void retains_reluctant_reports_proved_by_known_members(String regex, String replacement) {
+    assertThat(reluctantReports(regex))
+      .containsExactly("Replace this use of a reluctant quantifier with \"" + replacement.replace("\\", "\\\\") + "\".");
+    String rewritten = regex.replace("\\w*?", replacement);
+    for (String witness : List.of("a", "bA", "bba!", "éaK")) {
+      assertThat(Pattern.compile(regex).split(witness, -1)).as(regex + " on " + witness)
+        .containsExactly(Pattern.compile(rewritten).split(witness, -1));
+    }
+  }
+
+  @Test
+  void keeps_negated_unknown_property_conservative() {
+    assertThat(reluctantReports("\\w*?[^a\\p{Upper}]")).isEmpty();
   }
 
   @ParameterizedTest
@@ -115,11 +151,11 @@ class PosixUnicodeSemanticsTest {
     return issues;
   }
 
-  private static List<RegexSyntaxElement> reluctantReports(String regex) {
+  private static List<String> reluctantReports(String regex) {
     var parsed = new RegexParser(new JavaRegexSource(regex.replace("\\", "\\\\")), new FlagSet()).parse();
     assertThat(parsed.getSyntaxErrors()).isEmpty();
-    List<RegexSyntaxElement> issues = new ArrayList<>();
-    new ReluctantQuantifierFinder((tree, message, cost, secondaries) -> issues.add(tree)).visit(parsed);
+    List<String> issues = new ArrayList<>();
+    new ReluctantQuantifierFinder((tree, message, cost, secondaries) -> issues.add(message)).visit(parsed);
     return issues;
   }
 

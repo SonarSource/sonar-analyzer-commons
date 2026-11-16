@@ -64,6 +64,20 @@ public class SimplifiedRegexCharacterClass {
     add(tree);
   }
 
+  /**
+   * Keeps property membership unknown while retaining independently known class members.
+   */
+  public static SimplifiedRegexCharacterClass withUnknownProperties(CharacterClassElementTree tree) {
+    SimplifiedRegexCharacterClass characters = new SimplifiedRegexCharacterClass();
+    new Builder(characters, false).visitInCharClass(tree);
+    return characters;
+  }
+
+  static boolean canModelPosixProperty(EscapedCharacterClassTree tree) {
+    return tree.isProperty() && tree.getSource() instanceof JavaRegexSource && Builder.ASCII_POSIX_RANGES.containsKey(tree.property()) &&
+      !tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS | Pattern.CANON_EQ | Pattern.LITERAL) && !Builder.hasUnicodeCaseFolding(tree);
+  }
+
   @Nullable
   public static SimplifiedRegexCharacterClass of(AutomatonState tree) {
     if (tree instanceof CharacterClassElementTree characterClassElementTree) {
@@ -229,9 +243,15 @@ public class SimplifiedRegexCharacterClass {
       Map.entry("Space", new int[] {'\t', '\r', ' ', ' '}));
 
     private SimplifiedRegexCharacterClass characters;
+    private final boolean modelProperties;
 
     public Builder(SimplifiedRegexCharacterClass characters) {
+      this(characters, true);
+    }
+
+    private Builder(SimplifiedRegexCharacterClass characters, boolean modelProperties) {
       this.characters = characters;
+      this.modelProperties = modelProperties;
     }
 
     @Override
@@ -372,12 +392,11 @@ public class SimplifiedRegexCharacterClass {
     }
 
     private void addPosixProperty(EscapedCharacterClassTree tree) {
-      int[] ranges = ASCII_POSIX_RANGES.get(tree.property());
-      if (!(tree.getSource() instanceof JavaRegexSource) || ranges == null ||
-        tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS | Pattern.CANON_EQ | Pattern.LITERAL) || hasUnicodeCaseFolding(tree)) {
+      if (!modelProperties || !canModelPosixProperty(tree)) {
         characters.containsUnknownCharacters = true;
         return;
       }
+      int[] ranges = ASCII_POSIX_RANGES.get(tree.property());
       SimplifiedRegexCharacterClass property = new SimplifiedRegexCharacterClass();
       Builder builder = tree.isNegation() ? new Builder(property) : this;
       for (int i = 0; i < ranges.length; i += 2) {

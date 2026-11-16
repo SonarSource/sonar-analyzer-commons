@@ -16,7 +16,6 @@
  */
 package org.sonarsource.analyzer.commons.regex.helpers;
 
-
 public class IntersectAutomataChecker extends AbstractAutomataChecker {
   public IntersectAutomataChecker(boolean defaultAnswer) {
     super(defaultAnswer);
@@ -29,14 +28,10 @@ public class IntersectAutomataChecker extends AbstractAutomataChecker {
 
   @Override
   protected boolean checkAuto1AndAuto2Successors(SubAutomaton auto1, SubAutomaton auto2, boolean defaultAnswer, boolean hasConsumedInput) {
-    SimplifiedRegexCharacterClass characterClass1 = SimplifiedRegexCharacterClass.of(auto1.start);
-    SimplifiedRegexCharacterClass characterClass2 = SimplifiedRegexCharacterClass.of(auto2.start);
-    return ((characterClass1 != null) && (characterClass2 != null)) ?
-      (characterClass1.intersects(characterClass2, defaultAnswer) &&
-        auto1.anySuccessorMatch(successor1 ->
-          auto2.anySuccessorMatch(successor2 ->
-            check(successor1, successor2, true)))
-      ) : defaultAnswer;
+    SimplifiedRegexCharacterClass characterClass1 = simplify(auto1.start);
+    SimplifiedRegexCharacterClass characterClass2 = simplify(auto2.start);
+    return ((characterClass1 != null) && (characterClass2 != null)) ? (characterClass1.intersects(characterClass2, defaultAnswer) &&
+      auto1.anySuccessorMatch(successor1 -> auto2.anySuccessorMatch(successor2 -> check(successor1, successor2, true)))) : defaultAnswer;
   }
 
   @Override
@@ -49,4 +44,3 @@ public class IntersectAutomataChecker extends AbstractAutomataChecker {
     return auto2.anySuccessorMatch(successor -> check(auto1, successor, hasConsumedInput));
   }
 }
-

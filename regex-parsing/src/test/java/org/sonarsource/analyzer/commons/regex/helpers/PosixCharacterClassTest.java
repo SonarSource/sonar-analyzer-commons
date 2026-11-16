@@ -17,9 +17,11 @@
 package org.sonarsource.analyzer.commons.regex.helpers;
 
 import java.util.regex.Pattern;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.sonarsource.analyzer.commons.regex.RegexParser;
+import org.sonarsource.analyzer.commons.regex.ast.DisjunctionTree;
 import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
 import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
 import org.sonarsource.analyzer.commons.regex.java.JavaRegexSource;
@@ -27,6 +29,25 @@ import org.sonarsource.analyzer.commons.regex.java.JavaRegexSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PosixCharacterClassTest {
+
+  @Test
+  void separates_cached_proofs_for_ascii_and_mixed_unicode_comparisons() {
+    var property = new RegexParser(new JavaRegexSource("\\\\p{Alpha}"), new FlagSet()).parse();
+    var alternatives = new RegexParser(new JavaRegexSource("a|(?iu:k)"), new FlagSet()).parse();
+    assertThat(property.getSyntaxErrors()).isEmpty();
+    assertThat(alternatives.getSyntaxErrors()).isEmpty();
+    assertThat(Pattern.matches("a|(?iu:k)", "K")).isTrue();
+    assertThat(Pattern.matches("\\p{Alpha}", "K")).isFalse();
+    var wholeProperty = new SubAutomaton(property.getResult(), property.getFinalState(), false);
+    var wholeAlternatives = new SubAutomaton(alternatives.getResult(), alternatives.getFinalState(), false);
+    var plainAlternative = ((DisjunctionTree) alternatives.getResult()).getAlternatives().get(0);
+    var plain = new SubAutomaton(plainAlternative, alternatives.getFinalState(), false);
+    var checker = new SupersetAutomataChecker(false);
+    assertThat(checker.check(wholeProperty, wholeAlternatives)).isFalse();
+    assertThat(checker.check(wholeProperty, plain)).isTrue();
+    assertThat(checker.check(wholeProperty, wholeAlternatives)).isFalse();
+    assertThat(checker.check(wholeProperty, plain)).isTrue();
+  }
 
   @ParameterizedTest
   @ValueSource(strings = {"Lower", "Upper", "ASCII", "Alpha", "Digit", "Alnum", "Punct", "Graph", "Print", "Blank", "Cntrl", "XDigit", "Space"})

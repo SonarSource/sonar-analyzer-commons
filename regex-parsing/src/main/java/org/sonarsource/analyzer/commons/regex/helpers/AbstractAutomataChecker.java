@@ -32,7 +32,6 @@ import org.sonarsource.analyzer.commons.regex.ast.LookAroundTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
-import org.sonarsource.analyzer.commons.regex.java.JavaRegexSource;
 
 import static org.sonarsource.analyzer.commons.regex.ast.AutomatonState.TransitionType.BACK_REFERENCE;
 import static org.sonarsource.analyzer.commons.regex.ast.AutomatonState.TransitionType.EPSILON;
@@ -42,6 +41,7 @@ import static org.sonarsource.analyzer.commons.regex.ast.AutomatonState.Transiti
 public abstract class AbstractAutomataChecker {
 
   private final OrderedAutomataPairCache<Boolean> cache = new OrderedAutomataPairCache<>();
+  private boolean unknownProperties;
   protected final boolean defaultAnswer;
 
   protected AbstractAutomataChecker(boolean defaultAnswer) {
@@ -52,15 +52,25 @@ public abstract class AbstractAutomataChecker {
     PropertyFlagsVisitor flagsVisitor = new PropertyFlagsVisitor();
     flagsVisitor.inspect(auto1);
     flagsVisitor.inspect(auto2);
-    if (flagsVisitor.hasJavaProperty && flagsVisitor.hasUnicodeSemantics) {
-      // Unicode folds outside the ASCII property model can change inclusion and intersection results.
-      return defaultAnswer;
+    boolean nextUnknownProperties = flagsVisitor.hasModeledProperty && flagsVisitor.hasUnicodeSemantics;
+    if (unknownProperties != nextUnknownProperties) {
+      // Cached proofs depend on whether property membership is known.
+      cache.clear();
+      unknownProperties = nextUnknownProperties;
     }
     return check(auto1, auto2, false);
   }
 
+  @CheckForNull
+  SimplifiedRegexCharacterClass simplify(AutomatonState state) {
+    // Unicode folds can invalidate property membership without invalidating independent literal proofs.
+    return unknownProperties && state instanceof CharacterClassElementTree element
+      ? SimplifiedRegexCharacterClass.withUnknownProperties(element)
+      : SimplifiedRegexCharacterClass.of(state);
+  }
+
   private static class PropertyFlagsVisitor extends RegexBaseVisitor {
-    boolean hasJavaProperty;
+    boolean hasModeledProperty;
     boolean hasUnicodeSemantics;
 
     void inspect(SubAutomaton auto) {
@@ -98,7 +108,7 @@ public abstract class AbstractAutomataChecker {
 
     @Override
     public void visitEscapedCharacterClass(EscapedCharacterClassTree tree) {
-      hasJavaProperty |= tree.isProperty() && tree.getSource() instanceof JavaRegexSource;
+      hasModeledProperty |= SimplifiedRegexCharacterClass.canModelPosixProperty(tree);
     }
 
     private void checkFlags(FlagSet flags) {
