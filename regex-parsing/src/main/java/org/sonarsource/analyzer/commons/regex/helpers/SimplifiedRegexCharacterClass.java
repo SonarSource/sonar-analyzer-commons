@@ -17,6 +17,7 @@
 package org.sonarsource.analyzer.commons.regex.helpers;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -226,6 +227,10 @@ public class SimplifiedRegexCharacterClass {
 
   private static class Builder extends RegexBaseVisitor {
 
+    private static final IntPredicate POSIX_LETTER = asciiRange('a', 'z').or(asciiRange('A', 'Z'));
+
+    private static final Map<String, IntPredicate> POSIX_MEMBERS = posixMembersByName();
+
     private SimplifiedRegexCharacterClass characters;
 
     public Builder(SimplifiedRegexCharacterClass characters) {
@@ -343,54 +348,36 @@ public class SimplifiedRegexCharacterClass {
     @Nullable
     private static IntPredicate posixMembers(String property, boolean caseInsensitive) {
       if (caseInsensitive && ("lower".equals(property) || "upper".equals(property))) {
-        return Builder::isLetter;
+        return POSIX_LETTER;
       }
-      return posixMembers(property);
+      return POSIX_MEMBERS.get(property);
     }
 
-    @Nullable
-    private static IntPredicate posixMembers(String property) {
-      switch (property) {
-        case "alnum":
-          return c -> isLetter(c) || isDigit(c);
-        case "alpha":
-          return Builder::isLetter;
-        case "ascii":
-          return c -> true;
-        case "blank":
-          return c -> c == ' ' || c == '\t';
-        case "cntrl":
-          return c -> c < ' ' || c == 0x7F;
-        case "digit":
-          return Builder::isDigit;
-        case "graph":
-          return c -> c > ' ' && c < 0x7F;
-        case "lower":
-          return c -> c >= 'a' && c <= 'z';
-        case "print":
-          return c -> c >= ' ' && c < 0x7F;
-        case "punct":
-          return c -> (c > ' ' && c < 0x7F) && !isLetter(c) && !isDigit(c);
-        case "space":
-          return c -> c == ' ' || (c >= '\t' && c <= '\r');
-        case "upper":
-          return c -> c >= 'A' && c <= 'Z';
-        case "word":
-          return c -> isLetter(c) || isDigit(c) || c == '_';
-        case "xdigit":
-          return c -> isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-        default:
-          // Word boundary markers ("<" and ">") are not character sets
-          return null;
-      }
+    private static IntPredicate asciiRange(int from, int to) {
+      return c -> c >= from && c <= to;
     }
 
-    private static boolean isLetter(int c) {
-      return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-    }
-
-    private static boolean isDigit(int c) {
-      return c >= '0' && c <= '9';
+    private static Map<String, IntPredicate> posixMembersByName() {
+      IntPredicate digit = asciiRange('0', '9');
+      IntPredicate alnum = POSIX_LETTER.or(digit);
+      IntPredicate graph = asciiRange(0x21, 0x7E);
+      Map<String, IntPredicate> members = new HashMap<>();
+      members.put("alnum", alnum);
+      members.put("alpha", POSIX_LETTER);
+      members.put("ascii", asciiRange(0, MAX_ASCII));
+      members.put("blank", asciiRange(' ', ' ').or(asciiRange('\t', '\t')));
+      members.put("cntrl", asciiRange(0, 0x1F).or(asciiRange(0x7F, 0x7F)));
+      members.put("digit", digit);
+      members.put("graph", graph);
+      members.put("lower", asciiRange('a', 'z'));
+      members.put("print", asciiRange(' ', 0x7E));
+      members.put("punct", graph.and(alnum.negate()));
+      members.put("space", asciiRange('\t', '\r').or(asciiRange(' ', ' ')));
+      members.put("upper", asciiRange('A', 'Z'));
+      members.put("word", alnum.or(asciiRange('_', '_')));
+      members.put("xdigit", digit.or(asciiRange('a', 'f')).or(asciiRange('A', 'F')));
+      // Word boundary markers ("<" and ">") are not character sets: they have no entry
+      return members;
     }
 
     @Override
