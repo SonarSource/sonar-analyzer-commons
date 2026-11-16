@@ -35,6 +35,7 @@ import org.sonarsource.analyzer.commons.regex.ast.EscapedCharacterClassTree;
 import org.sonarsource.analyzer.commons.regex.ast.MiscEscapeSequenceTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
+import org.sonarsource.analyzer.commons.regex.java.JavaRegexSource;
 
 public class SimplifiedRegexCharacterClass {
 
@@ -48,7 +49,7 @@ public class SimplifiedRegexCharacterClass {
    * non-null and the tree returned by {@code getValue} will be the element of the character class which matches that
    * code point.
    */
-  private TreeMap<Integer, RegexSyntaxElement> contents = new TreeMap<>();
+  private final TreeMap<Integer, RegexSyntaxElement> contents = new TreeMap<>();
 
   private boolean containsUnknownCharacters = false;
 
@@ -212,6 +213,21 @@ public class SimplifiedRegexCharacterClass {
 
   private static class Builder extends RegexBaseVisitor {
 
+    private static final Map<String, int[]> ASCII_POSIX_RANGES = Map.ofEntries(
+      Map.entry("Lower", new int[] {'a', 'z'}),
+      Map.entry("Upper", new int[] {'A', 'Z'}),
+      Map.entry("ASCII", new int[] {0, 0x7F}),
+      Map.entry("Alpha", new int[] {'A', 'Z', 'a', 'z'}),
+      Map.entry("Digit", new int[] {'0', '9'}),
+      Map.entry("Alnum", new int[] {'0', '9', 'A', 'Z', 'a', 'z'}),
+      Map.entry("Punct", new int[] {'!', '/', ':', '@', '[', '`', '{', '~'}),
+      Map.entry("Graph", new int[] {'!', '~'}),
+      Map.entry("Print", new int[] {' ', '~'}),
+      Map.entry("Blank", new int[] {'\t', '\t', ' ', ' '}),
+      Map.entry("Cntrl", new int[] {0, 0x1F, 0x7F, 0x7F}),
+      Map.entry("XDigit", new int[] {'0', '9', 'A', 'F', 'a', 'f'}),
+      Map.entry("Space", new int[] {'\t', '\r', ' ', ' '}));
+
     private SimplifiedRegexCharacterClass characters;
 
     public Builder(SimplifiedRegexCharacterClass characters) {
@@ -241,29 +257,30 @@ public class SimplifiedRegexCharacterClass {
         characters = inner;
         super.visitCharacterClass(tree);
         characters = old;
-        if (inner.containsUnknownCharacters) {
-          // When negating a class that contains unknown characters, we can't know for sure whether any character is in the
-          // class, so we don't add any known characters to it
-          characters.containsUnknownCharacters = true;
-          characters.contents = new TreeMap<>();
-          return;
-        }
-        boolean lastInsertedIsNotNull = false;
-        if (inner.contents.get(0) == null) {
-          characters.contents.put(0, tree);
-          lastInsertedIsNotNull = true;
-        }
-        for (Map.Entry<Integer, RegexSyntaxElement> entry : inner.contents.entrySet()) {
-          if (entry.getValue() == null) {
-            characters.contents.put(entry.getKey(), tree);
-            lastInsertedIsNotNull = true;
-          } else if (lastInsertedIsNotNull) {
-            characters.contents.put(entry.getKey(), null);
-            lastInsertedIsNotNull = false;
-          }
-        }
+        addComplement(inner, tree);
       } else {
         super.visitCharacterClass(tree);
+      }
+    }
+
+    private void addComplement(SimplifiedRegexCharacterClass inner, CharacterClassElementTree tree) {
+      if (inner.containsUnknownCharacters || hasUnicodeCaseFolding(tree)) {
+        characters.containsUnknownCharacters = true;
+        return;
+      }
+      int from = 0;
+      for (Map.Entry<Integer, RegexSyntaxElement> entry : inner.contents.entrySet()) {
+        if (entry.getValue() == null) {
+          from = entry.getKey();
+        } else {
+          if (from < entry.getKey()) {
+            characters.addRange(from, entry.getKey() - 1, tree);
+          }
+          from = Character.MAX_CODE_POINT + 1;
+        }
+      }
+      if (from <= Character.MAX_CODE_POINT) {
+        characters.addRange(from, Character.MAX_CODE_POINT, tree);
       }
     }
 
@@ -274,12 +291,18 @@ public class SimplifiedRegexCharacterClass {
 
     @Override
     public void visitEscapedCharacterClass(EscapedCharacterClassTree tree) {
+      if (tree.isProperty()) {
+        addPosixProperty(tree);
+      } else {
+        addPredefinedCharacterClass(tree);
+      }
+    }
+
+    private void addPredefinedCharacterClass(EscapedCharacterClassTree tree) {
       switch (tree.getType()) {
         case 'd':
           characters.addRange('0', '9', tree);
-          if (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS)) {
-            characters.containsUnknownCharacters = true;
-          }
+          characters.containsUnknownCharacters |= tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS);
           break;
         case 'D':
           characters.addRange(0x00, '0' - 1, tree);
@@ -302,7 +325,7 @@ public class SimplifiedRegexCharacterClass {
         case 'W':
           characters.addRange(0x00, '0' - 1, tree);
           characters.addRange('9' + 1, 'A' - 1, tree);
-          characters.addRange('Z'+1, '_' - 1, tree);
+          characters.addRange('Z' + 1, '_' - 1, tree);
           characters.addRange('`', '`', tree);
           if (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS)) {
             characters.addRange('z' + 1, 'µ' - 1, tree);
@@ -346,6 +369,27 @@ public class SimplifiedRegexCharacterClass {
           characters.containsUnknownCharacters = true;
           break;
       }
+    }
+
+    private void addPosixProperty(EscapedCharacterClassTree tree) {
+      int[] ranges = ASCII_POSIX_RANGES.get(tree.property());
+      if (!(tree.getSource() instanceof JavaRegexSource) || ranges == null ||
+        tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS | Pattern.CANON_EQ | Pattern.LITERAL) || hasUnicodeCaseFolding(tree)) {
+        characters.containsUnknownCharacters = true;
+        return;
+      }
+      SimplifiedRegexCharacterClass property = new SimplifiedRegexCharacterClass();
+      Builder builder = tree.isNegation() ? new Builder(property) : this;
+      for (int i = 0; i < ranges.length; i += 2) {
+        builder.addRange(ranges[i], ranges[i + 1], tree);
+      }
+      if (tree.isNegation()) {
+        addComplement(property, tree);
+      }
+    }
+
+    private static boolean hasUnicodeCaseFolding(CharacterClassElementTree tree) {
+      return tree.activeFlags().contains(Pattern.CASE_INSENSITIVE) && tree.activeFlags().contains(Pattern.UNICODE_CASE);
     }
 
     private void addRange(int from, int to, CharacterClassElementTree tree) {

@@ -16,14 +16,23 @@
  */
 package org.sonarsource.analyzer.commons.regex.helpers;
 
-
+import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
 import org.sonarsource.analyzer.commons.regex.ast.BoundaryTree;
+import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
+import org.sonarsource.analyzer.commons.regex.ast.EscapedCharacterClassTree;
+import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
 import org.sonarsource.analyzer.commons.regex.ast.LookAroundTree;
+import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
+import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.ast.RepetitionTree;
+import org.sonarsource.analyzer.commons.regex.java.JavaRegexSource;
 
 import static org.sonarsource.analyzer.commons.regex.ast.AutomatonState.TransitionType.BACK_REFERENCE;
 import static org.sonarsource.analyzer.commons.regex.ast.AutomatonState.TransitionType.EPSILON;
@@ -40,7 +49,62 @@ public abstract class AbstractAutomataChecker {
   }
 
   public boolean check(SubAutomaton auto1, SubAutomaton auto2) {
+    PropertyFlagsVisitor flagsVisitor = new PropertyFlagsVisitor();
+    flagsVisitor.inspect(auto1);
+    flagsVisitor.inspect(auto2);
+    if (flagsVisitor.hasJavaProperty && flagsVisitor.hasUnicodeSemantics) {
+      // Unicode folds outside the ASCII property model can change inclusion and intersection results.
+      return defaultAnswer;
+    }
     return check(auto1, auto2, false);
+  }
+
+  private static class PropertyFlagsVisitor extends RegexBaseVisitor {
+    boolean hasJavaProperty;
+    boolean hasUnicodeSemantics;
+
+    void inspect(SubAutomaton auto) {
+      Set<AutomatonState> visited = new HashSet<>();
+      ArrayDeque<AutomatonState> pending = new ArrayDeque<>();
+      pending.push(auto.start);
+      while (!pending.isEmpty()) {
+        AutomatonState state = pending.pop();
+        if (state == auto.end || !visited.add(state)) {
+          continue;
+        }
+        inspect(state);
+        for (AutomatonState successor : state.successors()) {
+          if (successor.toRegexTree().map(tree -> !auto.excludedRange.contains(tree.getRange())).orElse(true)) {
+            pending.push(successor);
+          }
+        }
+      }
+    }
+
+    private void inspect(AutomatonState state) {
+      if (state instanceof RegexTree tree) {
+        checkFlags(tree.activeFlags());
+      }
+      if (state instanceof CharacterClassElementTree element) {
+        visitInCharClass(element);
+      }
+    }
+
+    @Override
+    public void visitInCharClass(CharacterClassElementTree tree) {
+      checkFlags(tree.activeFlags());
+      super.visitInCharClass(tree);
+    }
+
+    @Override
+    public void visitEscapedCharacterClass(EscapedCharacterClassTree tree) {
+      hasJavaProperty |= tree.isProperty() && tree.getSource() instanceof JavaRegexSource;
+    }
+
+    private void checkFlags(FlagSet flags) {
+      hasUnicodeSemantics |= flags.contains(Pattern.UNICODE_CHARACTER_CLASS | Pattern.CANON_EQ) ||
+        (flags.contains(Pattern.CASE_INSENSITIVE) && flags.contains(Pattern.UNICODE_CASE));
+    }
   }
 
   protected boolean check(SubAutomaton auto1, SubAutomaton auto2, boolean hasConsumedInput) {
@@ -160,8 +224,12 @@ public abstract class AbstractAutomataChecker {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       OrderedAutomataPair that = (OrderedAutomataPair) o;
       return hasConsumedInput == that.hasConsumedInput && auto1.equals(that.auto1) && auto2.equals(that.auto2);
     }

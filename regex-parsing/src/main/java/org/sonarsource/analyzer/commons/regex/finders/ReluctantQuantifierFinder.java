@@ -55,8 +55,7 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
     }
     if (repetitionPos >= 0 && items.get(repetitionPos).is(RegexTree.Kind.REPETITION)) {
       RepetitionTree repetition = (RepetitionTree) items.get(repetitionPos);
-      getReluctantlyQuantifiedElement(repetition).flatMap(element ->
-          findNegatedCharacterClassFor(items.get(items.size() - 1), getBaseCharacter(element)))
+      getReluctantlyQuantifiedElement(repetition).flatMap(element -> findNegatedCharacterClassFor(items.get(items.size() - 1), getBaseCharacter(element)))
         .ifPresent(negatedClass -> {
           String newQuantifier = makePossessiveOrGreedy(repetition.getQuantifier(), supportsAnyOfFeatures(tree, RegexFeature.POSSESSIVE_QUANTIFIER));
           String message = String.format(MESSAGE, negatedClass, newQuantifier);
@@ -76,7 +75,7 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
     return (repetition.getQuantifier().getModifier() == Quantifier.Modifier.RELUCTANT
       && !repetition.getQuantifier().isFixed()
       && (element.is(RegexTree.Kind.DOT) || element.is(RegexTree.Kind.ESCAPED_CHARACTER_CLASS))) ? Optional.of(element)
-      : Optional.empty();
+        : Optional.empty();
   }
 
   protected String makePossessiveOrGreedy(Quantifier quantifier, boolean possessive) {
@@ -90,7 +89,7 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
   }
 
   private static Optional<String> findNegatedCharacterClassFor(RegexTree tree, @Nullable EscapedCharacterClassTree base) {
-    if (tree instanceof CharacterClassElementTree element && hasNoIntersection(element, base)) {
+    if (tree instanceof CharacterClassElementTree element && !canRewrite(element, base)) {
       return Optional.empty();
     }
     String result;
@@ -112,7 +111,7 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
         }
         break;
       case NON_CAPTURING_GROUP:
-        RegexTree element = ((NonCapturingGroupTree)tree).getElement();
+        RegexTree element = ((NonCapturingGroupTree) tree).getElement();
         return element == null ? Optional.empty() : findNegatedCharacterClassFor(element, base);
       default:
         return Optional.empty();
@@ -125,13 +124,29 @@ public class ReluctantQuantifierFinder extends RegexBaseVisitor {
     return tree.is(RegexTree.Kind.DOT) ? null : (EscapedCharacterClassTree) tree;
   }
 
-  private static boolean hasNoIntersection(CharacterClassElementTree tree, @Nullable CharacterClassElementTree base) {
+  private static boolean canRewrite(CharacterClassElementTree tree, @Nullable EscapedCharacterClassTree base) {
     if (base == null) {
+      return true;
+    }
+    PropertyVisitor visitor = new PropertyVisitor();
+    visitor.visitInCharClass(base);
+    visitor.visitInCharClass(tree);
+    if (visitor.hasProperty) {
+      // Property rewrites need separate handling for flag scopes and complements.
       return false;
     }
     SimplifiedRegexCharacterClass baseSimplifiedCharacterClass = new SimplifiedRegexCharacterClass(base);
     SimplifiedRegexCharacterClass treeSimplifiedCharacterClass = new SimplifiedRegexCharacterClass(tree);
-    return !baseSimplifiedCharacterClass.intersects(treeSimplifiedCharacterClass, false);
+    return baseSimplifiedCharacterClass.intersects(treeSimplifiedCharacterClass, false);
+  }
+
+  private static class PropertyVisitor extends RegexBaseVisitor {
+    boolean hasProperty;
+
+    @Override
+    public void visitEscapedCharacterClass(EscapedCharacterClassTree tree) {
+      hasProperty |= tree.isProperty();
+    }
   }
 
   private static String escapedCharacterFollowedByEscapedCharacter(EscapedCharacterClassTree escapedClass, String ignoredSymbol) {
