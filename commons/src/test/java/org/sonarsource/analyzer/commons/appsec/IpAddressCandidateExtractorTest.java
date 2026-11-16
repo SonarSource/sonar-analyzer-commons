@@ -218,6 +218,17 @@ class IpAddressCandidateExtractorTest {
       found("http://x?ip=[fe80::1%eth0]:80|192.0.2.1", "fe80::1%eth0", "192.0.2.1"),
       found("[fe80::1%eth0|x]|192.0.2.1", "fe80::1%eth0|x", "192.0.2.1"),
       found("fe80::1%eth0+x 192.0.2.1", "fe80::1%eth0+x", "192.0.2.1"),
+      // Only a percent sign after an IPv6 address starts a zone
+      found("load:50%|192.0.2.1", "192.0.2.1"),
+      found("cpu:90%|192.0.2.1,mem:10%|192.0.2.2", "192.0.2.1", "192.0.2.2"),
+      found("abc:def:ghi%|192.0.2.1", "192.0.2.1"),
+      found("1:2:3:4:5:6:7:8:9%|192.0.2.1", "192.0.2.1"),
+      found("192.0.2.1:80%|192.0.2.2", "192.0.2.2"),
+      found("http://192.0.2.1:80%|192.0.2.2", "192.0.2.2"),
+      found("http://example.org:80/a%|192.0.2.1", "192.0.2.1"),
+      found("http://user:pass@[fe80::1%eth0]|192.0.2.1", "fe80::1%eth0", "192.0.2.1"),
+      found("fe80::1%a|b%c|192.0.2.1", "fe80::1%a|b%c|192.0.2.1"),
+      found("[fe80::1%a|b]:80", "fe80::1%a|b"),
       // Scheme-like runs
       found("a+b+c://192.0.2.1/x", "192.0.2.1"),
       found("1+a://192.0.2.1", "192.0.2.1"),
@@ -360,6 +371,8 @@ class IpAddressCandidateExtractorTest {
       .containsExactly("192.0.2.1");
     assertThat(IpAddressCandidateExtractor.extractAll("a+".repeat(200_000))).isEmpty();
     assertThat(IpAddressCandidateExtractor.extractAll("1+".repeat(200_000) + " 192.0.2.1")).containsExactly("192.0.2.1");
+    assertThat(IpAddressCandidateExtractor.extractAll("a:b:c%".repeat(100_000))).isEmpty();
+    assertThat(IpAddressCandidateExtractor.extractAll("::1%".repeat(100_000))).hasSize(1); // One long opaque zone
     assertThat(IpAddressCandidateExtractor.extractAll("a/".repeat(100_000) + "192.0.2.1")).containsExactly("192.0.2.1");
   }
 

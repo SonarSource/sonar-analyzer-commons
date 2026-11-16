@@ -108,9 +108,10 @@ public final class IpAddressCandidateExtractor {
    * {@code :}, {@code %}, {@code /}, {@code @}, {@code +}, {@code [} and {@code ]}. In particular, whitespace, commas,
    * semicolons, equals signs, quotes and parentheses delimit entries. The plus sign belongs to the entry so that URL
    * schemes such as {@code git+ssh} stay intact; it prevents a match when it touches an address, but an IPv6 zone can contain it.
-   * An IPv6 zone is opaque: after a {@code %} that follows a colon, the characters {@code |}, {@code ~}, {@code !},
+   * An IPv6 zone is opaque: after a {@code %} that follows an IPv6 address, the characters {@code |}, {@code ~}, {@code !},
    * {@code $}, {@code *} and {@code ^} also stay in the entry, up to the next {@code /}, {@code ?}, {@code #},
-   * {@code &}, {@code =} or {@code ]}, which closes a bracketed zone.
+   * {@code &}, {@code =}, {@code @} or {@code ]}, which closes a bracketed zone.
+   * A percent sign after other text, such as {@code load:50%}, does not start a zone.
    * Other characters still delimit the entry, so a zone is not arbitrary text. An address must span a whole entry or a whole path segment,
    * so it never touches a letter, digit, extra dot, hyphen or underscore; a sentence-ending dot prevents a match.
    * A valid-looking address is not recovered from a longer malformed address or identifier.
@@ -155,8 +156,11 @@ public final class IpAddressCandidateExtractor {
 
   private static int entryEnd(String content, int start, boolean url) {
     int length = content.length();
-    boolean colon = false;
+    // A segment is the text since the last delimiter of a URL, an authority, a bracketed address or a path.
+    int segmentStart = start;
+    int colons = 0;
     boolean zone = false;
+    boolean notZone = false;
     int end = start;
     while (end < length) {
       char c = content.charAt(end);
@@ -165,17 +169,26 @@ public final class IpAddressCandidateExtractor {
       if (!accepted) {
         break;
       }
-      if (c == ':') {
-        colon = true;
-      } else if (c == '%' && colon) {
-        zone = true;
-      } else if ("/?#&=]".indexOf(c) >= 0) {
-        colon = false;
+      if ("/?#&=]@".indexOf(c) >= 0) {
+        segmentStart = end + 1;
+        colons = 0;
         zone = false;
+        notZone = false;
+      } else if (c == ':') {
+        colons++;
+      } else if (c == '%' && !zone && !notZone) {
+        // Only the first percent sign can start a zone, and only after an IPv6 address: this is checked once per segment.
+        zone = colons >= 2 && isIpv6(content, segmentStart, end);
+        notZone = !zone;
       }
       end++;
     }
     return end;
+  }
+
+  private static boolean isIpv6(String content, int segmentStart, int end) {
+    int from = content.startsWith("[", segmentStart) ? segmentStart + 1 : segmentStart;
+    return IpAddressClassifier.parse(content.substring(from, end)).isPresent();
   }
 
   private static boolean isEntryChar(String content, int index) {
@@ -235,10 +248,12 @@ public final class IpAddressCandidateExtractor {
   private static void collectFromEntry(String entry, List<String> addresses) {
     int slash = entry.indexOf('/');
     if (slash > 0 && slash == entry.lastIndexOf('/') && CIDR_ATTEMPT.matcher(entry.substring(slash + 1)).matches()) {
-      Optional<Endpoint> endpoint = parseEndpoint(entry.substring(0, slash));
-      if (endpoint.isPresent() && !endpoint.get().portRemoved()) {
+      String standalone = entry.substring(0, slash);
+      Optional<String> address = parseEndpoint(standalone);
+      // Without a port, the endpoint is the address, possibly in brackets.
+      if (address.isPresent() && (standalone.equals(address.get()) || standalone.equals("[" + address.get() + "]"))) {
         // A standalone address entry: the suffix is a CIDR prefix, which invalidates the entry when it is invalid.
-        String cidr = endpoint.get().address() + entry.substring(slash);
+        String cidr = address.get() + entry.substring(slash);
         if (IpAddressClassifier.parse(cidr).isPresent()) {
           addresses.add(cidr);
         }
@@ -250,21 +265,19 @@ public final class IpAddressCandidateExtractor {
 
   private static void collectFromPath(String path, List<String> addresses) {
     for (String segment : path.split("/")) {
-      parseEndpoint(segment).ifPresent(endpoint -> addresses.add(endpoint.address()));
+      parseEndpoint(segment).ifPresent(addresses::add);
     }
   }
 
   /** Parses a bare IP address, an IPv4 address with a port, or a bracketed IPv6 address with an optional port. */
-  private static Optional<Endpoint> parseEndpoint(String text) {
+  private static Optional<String> parseEndpoint(String text) {
     String address = text;
-    boolean portRemoved = false;
     if (text.startsWith("[")) {
       int closing = text.indexOf(']');
       if (closing < 0 || (closing + 1 < text.length() && !isPortSuffix(text.substring(closing + 1)))) {
         return Optional.empty();
       }
       address = text.substring(1, closing);
-      portRemoved = closing + 1 < text.length();
       if (address.indexOf(':') < 0) {
         return Optional.empty();
       }
@@ -275,20 +288,16 @@ public final class IpAddressCandidateExtractor {
           return Optional.empty();
         }
         address = text.substring(0, colon);
-        portRemoved = true;
       }
     }
     // The classifier ignores zones, so it cannot reject stray brackets in them.
     return address.indexOf('[') < 0 && address.indexOf(']') < 0 && IpAddressClassifier.parse(address).isPresent()
-      ? Optional.of(new Endpoint(address, portRemoved))
+      ? Optional.of(address)
       : Optional.empty();
   }
 
   private static boolean isPortSuffix(String suffix) {
     return suffix.startsWith(":") && isPort(suffix.substring(1));
-  }
-
-  private record Endpoint(String address, boolean portRemoved) {
   }
 
   private static Optional<StrippedCandidate> stripBracketsAndPort(String candidate) {
