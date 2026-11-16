@@ -125,8 +125,10 @@ public final class IpAddressCandidateExtractor {
       if (entries.group("url") != null && (entries.start() >= urlEnd || entries.group("scheme") != null)) {
         Matcher delimiter = URL_END.matcher(content);
         urlEnd = delimiter.find(entries.end()) ? delimiter.start() : content.length();
+      } else if (entries.group("url") != null) {
+        // Repeated slashes are paths, not a new authority. Rescan any swallowed entry delimiters.
+        entries.region(entries.start() + 2, content.length());
       } else {
-        // Repeated slashes within an existing URL are paths, not a new authority.
         extractEntry(entries.group(), entries.start() < urlEnd, addresses);
       }
     }
