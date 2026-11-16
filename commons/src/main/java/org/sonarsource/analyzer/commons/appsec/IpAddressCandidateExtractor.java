@@ -173,7 +173,7 @@ public final class IpAddressCandidateExtractor {
   }
 
   private static Optional<StrippedCandidate> validEndpoint(String candidate) {
-    return stripBracketsAndPort(candidate).filter(stripped -> isValidAddress(stripped.candidate()));
+    return stripBracketsAndPort(candidate).filter(stripped -> IpAddressClassifier.parse(stripped.candidate()).isPresent());
   }
 
   private static boolean isNumericPrefix(String suffix) {
@@ -181,25 +181,9 @@ public final class IpAddressCandidateExtractor {
   }
 
   private static void addIfValid(String candidate, List<String> addresses) {
-    if (isValidAddress(candidate)) {
+    if (IpAddressClassifier.parse(candidate).isPresent()) {
       addresses.add(candidate);
     }
-  }
-
-  private static boolean isValidAddress(String candidate) {
-    // InetAddress accepts overlong IPv6 groups consisting of leading zeroes; they are not valid IPv6 syntax.
-    int zone = candidate.indexOf('%');
-    int slash = candidate.indexOf('/');
-    int end = zone >= 0 ? zone : candidate.length();
-    if (slash >= 0) {
-      end = Math.min(end, slash);
-    }
-    for (String group : candidate.substring(0, end).split(":")) {
-      if (group.length() > 4 && group.indexOf('.') < 0) {
-        return false;
-      }
-    }
-    return IpAddressClassifier.parse(candidate).isPresent();
   }
 
   private static Optional<StrippedCandidate> stripBracketsAndPort(String candidate) {

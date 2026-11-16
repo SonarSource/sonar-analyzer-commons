@@ -172,6 +172,14 @@ class IpAddressCandidateExtractorTest {
     assertThat(IpAddressCandidateExtractor.extract(content)).isEmpty();
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"::00000:2", "2001:db8::00000:1", "::00000", "::00000%eth0/64"})
+  void shouldPreserveNumericSpellingsAcceptedByClassifier(String literal) {
+    // The existing parser delegates numeric spellings to InetAddress, including zero-prefixed IPv6 groups.
+    assertThat(IpAddressClassifier.parse(literal)).isPresent();
+    assertThat(IpAddressCandidateExtractor.extractAll(literal)).containsExactly(literal);
+  }
+
   @Test
   void shouldSearchLongTextAndNestedUrls() {
     String content = "word".repeat(25_000) + " 192.0.2.1 " + "https://example.org/".repeat(1_000) + "192.0.2.2";
@@ -193,6 +201,7 @@ class IpAddressCandidateExtractorTest {
     "<192.0.2.1>!{2001:db8::1} | 192.0.2.1,2001:db8::1",
     ":: 0.0.0.0 255.255.255.255 ::1 | ::,0.0.0.0,255.255.255.255,::1",
     "::0000:2 | ::0000:2",
+    "[::00000]:80 | ::00000",
     "2001:DB8:0:0:0:0:0:0001 | 2001:DB8:0:0:0:0:0:0001",
     "::ffff:192.0.2.1 2001:db8::192.0.2.2 | ::ffff:192.0.2.1,2001:db8::192.0.2.2",
     "[::ffff:192.0.2.1]:80 | ::ffff:192.0.2.1",
@@ -242,8 +251,7 @@ class IpAddressCandidateExtractorTest {
     "version=1.2.3", "1.2.3.4.5", "192.0.2.1.", ".192.0.2.1", "192.0.2.1.5",
     "prefix192.0.2.1", "192.0.2.1suffix", "x2001:db8::1", "2001:db8::1x",
     "é192.0.2.1", "192.0.2.1接口", "_192.0.2.1", "192.0.2.1_", "-192.0.2.1", "192.0.2.1-foo",
-    "999.0.2.1", "192.00.2.1", "256.1.2.3", "::00000:2", "2001:db8:::1", "2001:db8::192.0.2.999",
-    "2001:db8::00000:1", "::00000", "[::00000]:80", "::00000%eth0/64",
+    "999.0.2.1", "192.00.2.1", "256.1.2.3", "2001:db8:::1", "2001:db8::192.0.2.999",
     "gggg::192.0.2.1", "::ffff:192.0.2.1.5", "2001:db8::1:65536",
     "192.0.2.1:", "192.0.2.1:bad", "192.0.2.1:+80", "192.0.2.1:-1", "192.0.2.1:８０",
     "192.0.2.1:65536", "192.0.2.1:000080", "192.0.2.1:80:90", "192.0.2.1:80extra",
