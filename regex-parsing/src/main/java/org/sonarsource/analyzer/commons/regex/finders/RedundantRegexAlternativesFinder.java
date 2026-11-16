@@ -49,7 +49,7 @@ public class RedundantRegexAlternativesFinder extends RegexBaseVisitor {
   public void visitDisjunction(DisjunctionTree tree) {
     RedundantAlternativeCollector collector = new RedundantAlternativeCollector();
     List<RegexTree> alternatives = tree.getAlternatives().stream()
-      // We don't handle POSIX character classes correctly (SONARPHP-1239)
+      // PHP bracket-style POSIX character classes remain unsupported (SONARPHP-1239).
       .filter(t -> !hasPosixCharacterClass(t))
       .toList();
     for (int i = 0; i + 1 < alternatives.size(); i++) {
@@ -60,6 +60,7 @@ public class RedundantRegexAlternativesFinder extends RegexBaseVisitor {
     collector.supersetSubsetListMap.forEach(this::reportRedundantIssue);
     super.visitDisjunction(tree);
   }
+
   private void reportRedundantIssue(RegexTree supersetAlternative, Set<RegexTree> redundantSubsetAlternatives) {
     List<RegexTree> redundantAlternatives = new ArrayList<>(redundantSubsetAlternatives);
     redundantAlternatives.sort(Comparator.comparing(element -> element.getRange().getBeginningOffset()));
