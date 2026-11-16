@@ -203,7 +203,7 @@ public final class IpAddressCandidateExtractor {
   // Judge the whole code point, so that the halves of a supplementary letter or digit are not separators.
   private static boolean isLetterOrDigit(String content, int index) {
     char c = content.charAt(index);
-    int codePoint = Character.isLowSurrogate(c) && index > 0 && Character.isHighSurrogate(content.charAt(index - 1))
+    int codePoint = (Character.isLowSurrogate(c) && index > 0 && Character.isHighSurrogate(content.charAt(index - 1)))
       ? content.codePointAt(index - 1)
       : content.codePointAt(index);
     return Character.isLetterOrDigit(codePoint);
