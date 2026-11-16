@@ -32,7 +32,7 @@ public final class IpAddressCandidateExtractor {
   private static final String ZONE_PUNCTUATION = "|~!$*^";
   private static final Pattern URL_PIECE_DELIMITER = Pattern.compile("[?#&=]");
   // A signed number is still an attempt at a prefix length, which the classifier then rejects.
-  private static final Pattern CIDR_ATTEMPT = Pattern.compile("[+-]?[0-9]+");
+  private static final Pattern CIDR_ATTEMPT = Pattern.compile("[+-]?\\d+");
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
 
   private IpAddressCandidateExtractor() {
@@ -293,29 +293,26 @@ public final class IpAddressCandidateExtractor {
 
   /** Parses a bare IP address, an IPv4 address with a port, or a bracketed IPv6 address with an optional port. */
   private static Optional<String> parseEndpoint(String text) {
-    String address = text;
-    if (text.startsWith("[")) {
-      int closing = text.indexOf(']');
-      if (closing < 0 || (closing + 1 < text.length() && !isPortSuffix(text.substring(closing + 1)))) {
-        return Optional.empty();
-      }
-      address = text.substring(1, closing);
-      if (address.indexOf(':') < 0) {
-        return Optional.empty();
-      }
-    } else {
-      int colon = text.indexOf(':');
-      if (colon > 0 && colon == text.lastIndexOf(':') && text.lastIndexOf('.', colon) >= 0) {
-        if (!isPort(text.substring(colon + 1))) {
-          return Optional.empty();
-        }
-        address = text.substring(0, colon);
-      }
-    }
+    Optional<String> address = text.startsWith("[") ? unbracket(text) : removeIpv4Port(text);
     // The classifier ignores zones, so it cannot reject stray brackets in them.
-    return address.indexOf('[') < 0 && address.indexOf(']') < 0 && IpAddressClassifier.parse(address).isPresent()
-      ? Optional.of(address)
-      : Optional.empty();
+    return address.filter(a -> a.indexOf('[') < 0 && a.indexOf(']') < 0 && IpAddressClassifier.parse(a).isPresent());
+  }
+
+  private static Optional<String> unbracket(String text) {
+    int closing = text.indexOf(']');
+    if (closing < 0 || (closing + 1 < text.length() && !isPortSuffix(text.substring(closing + 1)))) {
+      return Optional.empty();
+    }
+    String address = text.substring(1, closing);
+    return address.indexOf(':') < 0 ? Optional.empty() : Optional.of(address);
+  }
+
+  private static Optional<String> removeIpv4Port(String text) {
+    int colon = text.indexOf(':');
+    if (colon > 0 && colon == text.lastIndexOf(':') && text.lastIndexOf('.', colon) >= 0) {
+      return isPort(text.substring(colon + 1)) ? Optional.of(text.substring(0, colon)) : Optional.empty();
+    }
+    return Optional.of(text);
   }
 
   private static boolean isPortSuffix(String suffix) {
