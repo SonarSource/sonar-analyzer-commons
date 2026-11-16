@@ -188,7 +188,7 @@ public final class IpAddressCandidateExtractor {
   }
 
   private static boolean isIpv6(String content, int segmentStart, int end) {
-    int from = content.startsWith("[", segmentStart) ? segmentStart + 1 : segmentStart;
+    int from = content.startsWith("[", segmentStart) ? (segmentStart + 1) : segmentStart;
     return IpAddressClassifier.parse(content.substring(from, end)).isPresent();
   }
 
