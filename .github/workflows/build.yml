@@ -173,6 +173,9 @@ jobs:
       - *checkout
       - name: Promote artifacts
         uses: SonarSource/ci-github-actions/promote@v2
+        # The shared action pins its own Mise and supplies its own JFrog configuration.
+        env:
+          MISE_OVERRIDE_CONFIG_FILENAMES: mise.local.toml
         with:
           promote-pull-request: true
 
@@ -223,6 +226,9 @@ jobs:
       - *checkout
       - name: Promote npm build
         uses: SonarSource/ci-github-actions/promote@v2
+        # The shared action pins its own Mise and supplies its own JFrog configuration.
+        env:
+          MISE_OVERRIDE_CONFIG_FILENAMES: mise.local.toml
         with:
           build-name: ${{ github.event.repository.name }}_npm
           promote-pull-request: true
