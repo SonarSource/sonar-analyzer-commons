@@ -234,6 +234,18 @@ class IpAddressCandidateExtractorTest {
       found("[fe80::1%a@b|c]", "fe80::1%a@b|c"),
       found("[fe80::1%a@b|c]:80|192.0.2.1", "fe80::1%a@b|c", "192.0.2.1"),
       found("http://user@[fe80::1%a|b]/x", "fe80::1%a|b"),
+      // User information is separate from a host that can contain an at sign in its zone
+      found("http://[fe80::1%a@b]/x", "fe80::1%a@b"),
+      found("http://[fe80::1%a@b]:8080/x", "fe80::1%a@b"),
+      found("http://user:pass@[fe80::1%a@b]:8080/x", "fe80::1%a@b"),
+      found("http://u@v@[fe80::1%a@b]/x", "fe80::1%a@b"),
+      found("//u@[fe80::1%a@b]", "fe80::1%a@b"),
+      found("http://u@v@192.0.2.1:80/x", "192.0.2.1"),
+      found("http://u[x@192.0.2.1/x", "192.0.2.1"),
+      found("http://x?r=//u@[fe80::1%a@b]/y", "fe80::1%a@b"),
+      found("http://[fe80::1%a@b/x 192.0.2.1", "192.0.2.1"),
+      found("http://u@[fe80::1%a@b 192.0.2.1", "192.0.2.1"),
+      found("http://u@[fe80::1%a@b]x/y/192.0.2.1", "192.0.2.1"),
       // Scheme-like runs
       found("a+b+c://192.0.2.1/x", "192.0.2.1"),
       found("1+a://192.0.2.1", "192.0.2.1"),
@@ -378,6 +390,8 @@ class IpAddressCandidateExtractorTest {
     assertThat(IpAddressCandidateExtractor.extractAll("1+".repeat(200_000) + " 192.0.2.1")).containsExactly("192.0.2.1");
     assertThat(IpAddressCandidateExtractor.extractAll("a:b:c%".repeat(100_000))).isEmpty();
     assertThat(IpAddressCandidateExtractor.extractAll("::1%".repeat(100_000))).hasSize(1); // One long opaque zone
+    assertThat(IpAddressCandidateExtractor.extractAll("http://" + "@[".repeat(100_000))).isEmpty();
+    assertThat(IpAddressCandidateExtractor.extractAll("http://" + "a@".repeat(100_000) + "192.0.2.1")).containsExactly("192.0.2.1");
     assertThat(IpAddressCandidateExtractor.extractAll("a/".repeat(100_000) + "192.0.2.1")).containsExactly("192.0.2.1");
   }
 
