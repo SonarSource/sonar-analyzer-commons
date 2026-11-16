@@ -171,8 +171,31 @@ jobs:
       contents: write
     steps:
       - *checkout
+      # The pinned shared promote action requests Mise 2026.10.17, below the minimum of mise.toml.
+      # Use a copy of that exact revision with a newer Mise version until the shared action is updated.
+      - &checkout-shared-actions
+        name: Checkout shared CI actions
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: SonarSource/ci-github-actions
+          ref: e2032bdce92b0675c839fd6a697c8bb0078985d5
+          path: .ci-actions/shared
+          persist-credentials: false
+      - &pin-shared-promote-mise
+        name: Use a Mise version that satisfies the repository minimum
+        shell: bash
+        run: |
+          python3 -I - <<'PY'
+          import pathlib
+          path = pathlib.Path(".ci-actions/shared/promote/action.yml")
+          text = path.read_text()
+          old = "version: 2026.10.17"
+          if text.count(old) != 1:
+              raise SystemExit(f"expected exactly one '{old}' in {path}, found {text.count(old)}")
+          path.write_text(text.replace(old, "version: 2026.11.8"))
+          PY
       - name: Promote artifacts
-        uses: SonarSource/ci-github-actions/promote@v2
+        uses: ./.ci-actions/shared/promote
         with:
           promote-pull-request: true
 
@@ -221,8 +244,10 @@ jobs:
       contents: write
     steps:
       - *checkout
+      - *checkout-shared-actions
+      - *pin-shared-promote-mise
       - name: Promote npm build
-        uses: SonarSource/ci-github-actions/promote@v2
+        uses: ./.ci-actions/shared/promote
         with:
           build-name: ${{ github.event.repository.name }}_npm
           promote-pull-request: true
