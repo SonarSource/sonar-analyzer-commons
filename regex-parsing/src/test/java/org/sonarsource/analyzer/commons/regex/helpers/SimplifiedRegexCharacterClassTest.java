@@ -559,6 +559,10 @@ class SimplifiedRegexCharacterClassTest {
       assertThat(posixClass(marker, NO_FLAGS).isEmpty()).isFalse();
       assertThat(posixClass(marker, NO_FLAGS).matchesAnyCharacter()).isFalse();
     }
+  }
+
+  @Test
+  void posix_word_boundary_markers_are_unknown_in_unicode_mode() {
     for (String marker : new String[] {"[[:<:]]", "[^[:<:]]", "[[:^>:]]", "[^[:^<:]]"}) {
       assertPhpSupersetOf(marker, "a", true, Pattern.UNICODE_CHARACTER_CLASS).isFalse();
       assertThat(posixClass(marker, Pattern.UNICODE_CHARACTER_CLASS).isEmpty()).isFalse();

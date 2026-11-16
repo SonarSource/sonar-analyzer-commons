@@ -289,10 +289,16 @@ public class SimplifiedRegexCharacterClass {
     }
 
     private void addAsciiComplement(SimplifiedRegexCharacterClass inner, CharacterClassTree tree) {
+      addAsciiRanges(c -> {
+        Map.Entry<Integer, RegexSyntaxElement> entry = inner.contents.floorEntry(c);
+        return entry == null || entry.getValue() == null;
+      }, tree);
+    }
+
+    private void addAsciiRanges(IntPredicate members, CharacterClassElementTree tree) {
       int rangeStart = -1;
       for (int c = 0; c <= MAX_ASCII + 1; c++) {
-        Map.Entry<Integer, RegexSyntaxElement> entry = c <= MAX_ASCII ? inner.contents.floorEntry(c) : null;
-        boolean member = c <= MAX_ASCII && (entry == null || entry.getValue() == null);
+        boolean member = c <= MAX_ASCII && members.test(c);
         if (member && rangeStart < 0) {
           rangeStart = c;
         } else if (!member && rangeStart >= 0) {
@@ -317,38 +323,28 @@ public class SimplifiedRegexCharacterClass {
      * an empty or universal set.
      */
     private void addPosixClass(PosixCharacterClassElementTree tree) {
-      IntPredicate posixMembers = posixMembers(tree.property(), tree.activeFlags().contains(Pattern.CASE_INSENSITIVE));
+      String property = tree.property();
+      IntPredicate posixMembers = posixMembers(property);
       if (posixMembers == null) {
         characters.markUnknown();
         return;
       }
-      boolean negation = tree.isNegation();
-      int rangeStart = -1;
-      for (int c = 0; c <= MAX_ASCII; c++) {
-        boolean member = posixMembers.test(c) != negation;
-        if (member && rangeStart < 0) {
-          rangeStart = c;
-        } else if (!member && rangeStart >= 0) {
-          characters.addRange(rangeStart, c - 1, tree);
-          rangeStart = -1;
-        }
+      if (tree.activeFlags().contains(Pattern.CASE_INSENSITIVE) && ("lower".equals(property) || "upper".equals(property))) {
+        posixMembers = Builder::isLetter;
       }
-      boolean unicodeMembersUnknown = tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS) && !"ascii".equals(tree.property());
-      if (unicodeMembersUnknown) {
-        if (rangeStart >= 0) {
-          characters.addRange(rangeStart, MAX_ASCII, tree);
-        }
+      boolean negation = tree.isNegation();
+      IntPredicate asciiMembers = negation ? posixMembers.negate() : posixMembers;
+      addAsciiRanges(asciiMembers, tree);
+      if (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS) && !"ascii".equals(property)) {
         characters.containsUnknownCharacters = true;
       } else if (negation) {
         // Without Unicode support, all the characters above ASCII are outside of the positive class
-        characters.addRange(rangeStart >= 0 ? rangeStart : MAX_ASCII + 1, Character.MAX_CODE_POINT, tree);
-      } else if (rangeStart >= 0) {
-        characters.addRange(rangeStart, MAX_ASCII, tree);
+        characters.addRange(MAX_ASCII + 1, Character.MAX_CODE_POINT, tree);
       }
     }
 
     @Nullable
-    private static IntPredicate posixMembers(String property, boolean caseInsensitive) {
+    private static IntPredicate posixMembers(String property) {
       switch (property) {
         case "alnum":
           return c -> isLetter(c) || isDigit(c);
@@ -365,15 +361,15 @@ public class SimplifiedRegexCharacterClass {
         case "graph":
           return c -> c > ' ' && c < 0x7F;
         case "lower":
-          return caseInsensitive ? Builder::isLetter : c -> c >= 'a' && c <= 'z';
+          return c -> c >= 'a' && c <= 'z';
         case "print":
           return c -> c >= ' ' && c < 0x7F;
         case "punct":
-          return c -> c > ' ' && c < 0x7F && !isLetter(c) && !isDigit(c);
+          return c -> (c > ' ' && c < 0x7F) && !isLetter(c) && !isDigit(c);
         case "space":
           return c -> c == ' ' || (c >= '\t' && c <= '\r');
         case "upper":
-          return caseInsensitive ? Builder::isLetter : c -> c >= 'A' && c <= 'Z';
+          return c -> c >= 'A' && c <= 'Z';
         case "word":
           return c -> isLetter(c) || isDigit(c) || c == '_';
         case "xdigit":
