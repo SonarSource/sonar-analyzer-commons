@@ -16,7 +16,6 @@
  */
 package org.sonarsource.analyzer.commons.regex.helpers;
 
-
 import java.util.HashMap;
 import java.util.Objects;
 import javax.annotation.CheckForNull;
@@ -40,6 +39,9 @@ public abstract class AbstractAutomataChecker {
   }
 
   public boolean check(SubAutomaton auto1, SubAutomaton auto2) {
+    if (SimplifiedRegexCharacterClass.hasUnsupportedCaseFolding(auto1, auto2)) {
+      return defaultAnswer;
+    }
     return check(auto1, auto2, false);
   }
 
@@ -59,13 +61,19 @@ public abstract class AbstractAutomataChecker {
       return cache.save(entry, auto2.allowPrefix && answer);
     } else if (auto2.isAtEnd() && auto1.incomingTransitionType() != EPSILON) {
       return cache.save(entry, auto1.allowPrefix && answer);
-    } else if (auto2.incomingTransitionType() == EPSILON && !auto2.isAtEnd()) {
-      return cache.save(entry, checkAuto2Successors(auto1, auto2, defaultAnswer, hasConsumedInput));
+    } else {
+      return cache.save(entry, checkSuccessors(auto1, auto2, hasConsumedInput));
+    }
+  }
+
+  private boolean checkSuccessors(SubAutomaton auto1, SubAutomaton auto2, boolean hasConsumedInput) {
+    if (auto2.incomingTransitionType() == EPSILON && !auto2.isAtEnd()) {
+      return checkAuto2Successors(auto1, auto2, defaultAnswer, hasConsumedInput);
     } else if (auto1.incomingTransitionType() == EPSILON) {
       // In this branch auto1 can't be at the end
-      return cache.save(entry, checkAuto1Successors(auto1, auto2, defaultAnswer, hasConsumedInput));
+      return checkAuto1Successors(auto1, auto2, defaultAnswer, hasConsumedInput);
     } else {
-      return cache.save(entry, checkAuto1AndAuto2Successors(auto1, auto2, defaultAnswer, hasConsumedInput));
+      return checkAuto1AndAuto2Successors(auto1, auto2, defaultAnswer, hasConsumedInput);
     }
   }
 
@@ -160,8 +168,12 @@ public abstract class AbstractAutomataChecker {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       OrderedAutomataPair that = (OrderedAutomataPair) o;
       return hasConsumedInput == that.hasConsumedInput && auto1.equals(that.auto1) && auto2.equals(that.auto2);
     }

@@ -16,11 +16,14 @@
  */
 package org.sonarsource.analyzer.commons.regex.helpers;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
@@ -207,6 +210,37 @@ public class SimplifiedRegexCharacterClass {
   private boolean hasUnsupportedCaseFolding(SimplifiedRegexCharacterClass that) {
     // Unicode folding of literals/ranges is only partially modeled. Do not compare that approximation with POSIX sets.
     return (containsPosixProperty || that.containsPosixProperty) && (containsUnicodeCase || that.containsUnicodeCase);
+  }
+
+  static boolean hasUnsupportedCaseFolding(SubAutomaton first, SubAutomaton second) {
+    // A property and an incompletely modeled fold can occur at different positions in the same comparison.
+    SimplifiedRegexCharacterClass flags = new SimplifiedRegexCharacterClass();
+    return flags.scanFlags(first) || flags.scanFlags(second);
+  }
+
+  private boolean scanFlags(SubAutomaton automaton) {
+    Set<AutomatonState> visited = new HashSet<>();
+    ArrayDeque<AutomatonState> pending = new ArrayDeque<>();
+    pending.add(automaton.start);
+    while (!pending.isEmpty()) {
+      AutomatonState state = pending.removeFirst();
+      if (state == automaton.end || !visited.add(state)) {
+        continue;
+      }
+      if (visited.size() > AbstractAutomataChecker.OrderedAutomataPairCache.MAX_CACHE_SIZE) {
+        return true;
+      }
+      if (state instanceof CharacterClassElementTree element) {
+        SimplifiedRegexCharacterClass characters = new SimplifiedRegexCharacterClass(element);
+        if (hasUnsupportedCaseFolding(characters)) {
+          return true;
+        }
+        containsPosixProperty |= characters.containsPosixProperty;
+        containsUnicodeCase |= characters.containsUnicodeCase;
+      }
+      pending.addAll(state.successors());
+    }
+    return false;
   }
 
   private boolean notSupersetOfEntries(Map.Entry<Integer, RegexSyntaxElement> thatEntry, Map.Entry<Integer, RegexSyntaxElement> thatNextEntry) {

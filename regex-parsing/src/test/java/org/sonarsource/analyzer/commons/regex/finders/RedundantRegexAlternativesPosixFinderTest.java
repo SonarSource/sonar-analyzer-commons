@@ -103,6 +103,8 @@ class RedundantRegexAlternativesPosixFinderTest {
     "(?iu:[^k])|\\P{ASCII}",
     "\\P{ASCII}|(?iu:[^k])",
     "(?iu:\\p{Lower})|[a-z]",
+    "\\p{ASCII}(?i:k)|a(?iu:k)",
+    "a(?iu:k)|\\p{ASCII}(?i:k)",
     "\\p{Lower}|[a-z]x",
     "[a-z&&[^b]]|\\p{Lower}",
     "\\p{lower}|a"
