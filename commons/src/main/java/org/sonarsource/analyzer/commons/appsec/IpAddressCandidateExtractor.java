@@ -143,7 +143,7 @@ public final class IpAddressCandidateExtractor {
   }
 
   private static void findBetweenUrls(String content, int start, int end, int urlEnd, List<String> addresses) {
-    int split = Math.max(start, Math.min(end, urlEnd));
+    int split = Math.clamp(urlEnd, start, end);
     findAddresses(content.substring(start, split), true, addresses);
     findAddresses(content.substring(split, end), false, addresses);
   }
