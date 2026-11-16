@@ -245,6 +245,7 @@ public final class IpAddressCandidateExtractor {
   private static void collectFromAuthority(String authority, List<String> addresses) {
     // The host follows the last at sign outside a bracketed host, because a zone can contain an at sign.
     int hostStart = 0;
+    int lastAt = -1;
     boolean bracketed = false;
     for (int i = 0; i < authority.length(); i++) {
       char c = authority.charAt(i);
@@ -252,9 +253,16 @@ public final class IpAddressCandidateExtractor {
         bracketed |= i == hostStart;
       } else if (c == ']') {
         bracketed = false;
-      } else if (c == '@' && !bracketed) {
-        hostStart = i + 1;
+      } else if (c == '@') {
+        lastAt = i;
+        if (!bracketed) {
+          hostStart = i + 1;
+        }
       }
+    }
+    if (bracketed) {
+      // The bracket was never closed, so it was no host bracket.
+      hostStart = lastAt + 1;
     }
     collectFromPath(authority.substring(hostStart), addresses);
   }

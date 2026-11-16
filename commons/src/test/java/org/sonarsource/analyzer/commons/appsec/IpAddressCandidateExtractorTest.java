@@ -244,6 +244,9 @@ class IpAddressCandidateExtractorTest {
       found("http://u[x@192.0.2.1/x", "192.0.2.1"),
       found("http://x?r=//u@[fe80::1%a@b]/y", "fe80::1%a@b"),
       found("http://[fe80::1%a@b/x 192.0.2.1", "192.0.2.1"),
+      found("http://[user@192.0.2.1/x", "192.0.2.1"),
+      found("http://u@[x@192.0.2.1:80/x", "192.0.2.1"),
+      found("http://[fe80::1%a@b/x"),
       found("http://u@[fe80::1%a@b 192.0.2.1", "192.0.2.1"),
       found("http://u@[fe80::1%a@b]x/y/192.0.2.1", "192.0.2.1"),
       // Scheme-like runs
