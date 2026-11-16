@@ -229,6 +229,11 @@ class IpAddressCandidateExtractorTest {
       found("http://user:pass@[fe80::1%eth0]|192.0.2.1", "fe80::1%eth0", "192.0.2.1"),
       found("fe80::1%a|b%c|192.0.2.1", "fe80::1%a|b%c|192.0.2.1"),
       found("[fe80::1%a|b]:80", "fe80::1%a|b"),
+      // An at sign inside a zone belongs to the zone; before it, it ends user information
+      found("fe80::1%eth0@x|192.0.2.1 192.0.2.2", "fe80::1%eth0@x|192.0.2.1", "192.0.2.2"),
+      found("[fe80::1%a@b|c]", "fe80::1%a@b|c"),
+      found("[fe80::1%a@b|c]:80|192.0.2.1", "fe80::1%a@b|c", "192.0.2.1"),
+      found("http://user@[fe80::1%a|b]/x", "fe80::1%a|b"),
       // Scheme-like runs
       found("a+b+c://192.0.2.1/x", "192.0.2.1"),
       found("1+a://192.0.2.1", "192.0.2.1"),

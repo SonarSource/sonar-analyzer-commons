@@ -110,7 +110,7 @@ public final class IpAddressCandidateExtractor {
    * schemes such as {@code git+ssh} stay intact; it prevents a match when it touches an address, but an IPv6 zone can contain it.
    * An IPv6 zone is opaque: after a {@code %} that follows an IPv6 address, the characters {@code |}, {@code ~}, {@code !},
    * {@code $}, {@code *} and {@code ^} also stay in the entry, up to the next {@code /}, {@code ?}, {@code #},
-   * {@code &}, {@code =}, {@code @} or {@code ]}, which closes a bracketed zone.
+   * {@code &}, {@code =} or {@code ]}, which closes a bracketed zone. An {@code @} inside a zone belongs to it.
    * A percent sign after other text, such as {@code load:50%}, does not start a zone.
    * Other characters still delimit the entry, so a zone is not arbitrary text. An address must span a whole entry or a whole path segment,
    * so it never touches a letter, digit, extra dot, hyphen or underscore; a sentence-ending dot prevents a match.
@@ -169,7 +169,8 @@ public final class IpAddressCandidateExtractor {
       if (!accepted) {
         break;
       }
-      if ("/?#&=]@".indexOf(c) >= 0) {
+      // User information ends at an at sign, but an at sign inside a zone belongs to the opaque zone.
+      if ("/?#&=]".indexOf(c) >= 0 || (c == '@' && !zone)) {
         segmentStart = end + 1;
         colons = 0;
         zone = false;
