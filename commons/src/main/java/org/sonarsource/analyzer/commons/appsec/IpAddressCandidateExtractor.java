@@ -29,6 +29,7 @@ public final class IpAddressCandidateExtractor {
     "^(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//(?:[^/?#,@\\s]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern URL_START = Pattern.compile("(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//");
+  private static final String ZONE_PUNCTUATION = "|~!$*^";
   private static final Pattern URL_PIECE_DELIMITER = Pattern.compile("[?#&=]");
   // A signed number is still an attempt at a prefix length, which the classifier then rejects.
   private static final Pattern CIDR_ATTEMPT = Pattern.compile("[+-]?[0-9]+");
@@ -133,11 +134,9 @@ public final class IpAddressCandidateExtractor {
         i++;
         continue;
       }
+      // The scheme characters are all entry characters, so this scan cannot restart inside the entry.
       boolean url = URL_START.matcher(content).region(i, length).lookingAt();
-      int end = i + 1;
-      while (end < length && (url ? isUrlChar(content, end) : isEntryChar(content, end))) {
-        end++;
-      }
+      int end = entryEnd(content, i, url);
       String entry = content.substring(i, end);
       if (url) {
         collectFromUrl(entry, addresses);
@@ -149,10 +148,33 @@ public final class IpAddressCandidateExtractor {
     return addresses;
   }
 
+  private static int entryEnd(String content, int start, boolean url) {
+    int length = content.length();
+    boolean colon = false;
+    boolean zone = false;
+    int end = start;
+    while (end < length) {
+      char c = content.charAt(end);
+      // A zone is opaque, so it keeps the punctuation that would otherwise delimit entries.
+      boolean accepted = (url ? isUrlChar(content, end) : isEntryChar(content, end)) || (zone && ZONE_PUNCTUATION.indexOf(c) >= 0);
+      if (!accepted) {
+        break;
+      }
+      if (c == ':') {
+        colon = true;
+      } else if (c == '%' && colon) {
+        zone = true;
+      } else if ("/?#&=".indexOf(c) >= 0) {
+        colon = false;
+        zone = false;
+      }
+      end++;
+    }
+    return end;
+  }
+
   private static boolean isEntryChar(String content, int index) {
-    char c = content.charAt(index);
-    // A plus sign can only be the sign of a CIDR-like suffix, so it stays in the entry to invalidate it.
-    return (c == '+' && index > 0 && content.charAt(index - 1) == '/') || isLetterOrDigit(content, index) || "._-:%/@[]".indexOf(c) >= 0;
+    return isLetterOrDigit(content, index) || "._-+:%/@[]".indexOf(content.charAt(index)) >= 0;
   }
 
   private static boolean isUrlChar(String content, int index) {
@@ -202,7 +224,7 @@ public final class IpAddressCandidateExtractor {
   }
 
   private static void collectFromAuthority(String authority, List<String> addresses) {
-    parseEndpoint(authority.substring(authority.lastIndexOf('@') + 1)).ifPresent(endpoint -> addresses.add(endpoint.address()));
+    collectFromPath(authority.substring(authority.lastIndexOf('@') + 1), addresses);
   }
 
   private static void collectFromEntry(String entry, List<String> addresses) {

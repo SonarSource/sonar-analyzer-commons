@@ -204,6 +204,17 @@ class IpAddressCandidateExtractorTest {
       found("fe80::1%\uD835\uDC00 192.0.2.1", "fe80::1%\uD835\uDC00", "192.0.2.1"),
       found("\uD835\uDC00 192.0.2.1 \uD835\uDFCE", "192.0.2.1"),
       found("2001:db8::1%eth[0 192.0.2.1", "192.0.2.1"),
+      // Zones are opaque: punctuation inside one does not split the address
+      found("fe80::1%eth0|10.0.0.1", "fe80::1%eth0|10.0.0.1"),
+      found("http://x?ip=fe80::1%eth0|10.0.0.1&y=192.0.2.1", "fe80::1%eth0|10.0.0.1", "192.0.2.1"),
+      found("fe80::1%eth0|x,192.0.2.1", "fe80::1%eth0|x", "192.0.2.1"),
+      found("192.0.2.1|192.0.2.2 192.0.2.3%20|192.0.2.4", "192.0.2.1", "192.0.2.2", "192.0.2.4"),
+      found("http://example.org/a%20|192.0.2.1", "192.0.2.1"),
+      found("fe80::1%eth0/|192.0.2.1", "fe80::1%eth0", "192.0.2.1"),
+      // Scheme-like runs
+      found("a+b+c://192.0.2.1/x", "192.0.2.1"),
+      found("1+a://192.0.2.1", "192.0.2.1"),
+      found("1+1+192.0.2.1 192.0.2.2", "192.0.2.2"),
       // Endpoints
       found("192.0.2.1:8080", "192.0.2.1"),
       found("192.0.2.1:0 192.0.2.2:65535 192.0.2.3:00080", "192.0.2.1", "192.0.2.2", "192.0.2.3"),
@@ -340,6 +351,8 @@ class IpAddressCandidateExtractorTest {
     assertThat(IpAddressCandidateExtractor.extractAll("?" + "//".repeat(100_000) + "?x")).isEmpty();
     assertThat(IpAddressCandidateExtractor.extractAll("http://example.org/?a=" + "//a".repeat(50_000) + "&b=192.0.2.1"))
       .containsExactly("192.0.2.1");
+    assertThat(IpAddressCandidateExtractor.extractAll("a+".repeat(200_000))).isEmpty();
+    assertThat(IpAddressCandidateExtractor.extractAll("1+".repeat(200_000) + " 192.0.2.1")).containsExactly("192.0.2.1");
     assertThat(IpAddressCandidateExtractor.extractAll("a/".repeat(100_000) + "192.0.2.1")).containsExactly("192.0.2.1");
   }
 
