@@ -17,8 +17,15 @@
 package org.sonarsource.analyzer.commons.regex.helpers;
 
 public class SupersetAutomataChecker extends AbstractAutomataChecker {
+  private final boolean modelPosixClasses;
+
   public SupersetAutomataChecker(boolean defaultAnswer) {
+    this(defaultAnswer, false);
+  }
+
+  public SupersetAutomataChecker(boolean defaultAnswer, boolean modelPosixClasses) {
     super(defaultAnswer);
+    this.modelPosixClasses = modelPosixClasses;
   }
 
   @Override
@@ -28,14 +35,10 @@ public class SupersetAutomataChecker extends AbstractAutomataChecker {
 
   @Override
   protected boolean checkAuto1AndAuto2Successors(SubAutomaton auto1, SubAutomaton auto2, boolean defaultAnswer, boolean hasConsumedInput) {
-    SimplifiedRegexCharacterClass characterClass1 = SimplifiedRegexCharacterClass.of(auto1.start);
-    SimplifiedRegexCharacterClass characterClass2 = SimplifiedRegexCharacterClass.of(auto2.start);
-    return ((characterClass1 != null) && (characterClass2 != null)) ?
-      (characterClass1.supersetOf(characterClass2, defaultAnswer) &&
-        auto2.allSuccessorMatch(successor2 ->
-          auto1.anySuccessorMatch(successor1 ->
-            check(successor1, successor2, true)))) :
-      defaultAnswer;
+    SimplifiedRegexCharacterClass characterClass1 = SimplifiedRegexCharacterClass.of(auto1.start, modelPosixClasses);
+    SimplifiedRegexCharacterClass characterClass2 = SimplifiedRegexCharacterClass.of(auto2.start, modelPosixClasses);
+    return ((characterClass1 != null) && (characterClass2 != null)) ? (characterClass1.supersetOf(characterClass2, defaultAnswer) &&
+      auto2.allSuccessorMatch(successor2 -> auto1.anySuccessorMatch(successor1 -> check(successor1, successor2, true)))) : defaultAnswer;
   }
 
   @Override

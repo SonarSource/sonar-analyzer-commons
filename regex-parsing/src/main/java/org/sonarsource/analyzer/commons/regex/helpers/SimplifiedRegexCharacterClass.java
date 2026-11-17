@@ -33,6 +33,7 @@ import org.sonarsource.analyzer.commons.regex.ast.CharacterTree;
 import org.sonarsource.analyzer.commons.regex.ast.DotTree;
 import org.sonarsource.analyzer.commons.regex.ast.EscapedCharacterClassTree;
 import org.sonarsource.analyzer.commons.regex.ast.MiscEscapeSequenceTree;
+import org.sonarsource.analyzer.commons.regex.ast.PosixCharacterClassElementTree;
 import org.sonarsource.analyzer.commons.regex.ast.RegexBaseVisitor;
 import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
 
@@ -59,14 +60,27 @@ public class SimplifiedRegexCharacterClass {
     add(tree);
   }
 
+  /**
+   * @param modelPosixClasses when true, POSIX bracket classes get their PHP/PCRE meaning. Otherwise they contribute no characters,
+   * which is the historical behaviour relied upon by the other rules.
+   */
+  public SimplifiedRegexCharacterClass(CharacterClassElementTree tree, boolean modelPosixClasses) {
+    add(tree, modelPosixClasses);
+  }
+
   public SimplifiedRegexCharacterClass(DotTree tree) {
     add(tree);
   }
 
   @Nullable
   public static SimplifiedRegexCharacterClass of(AutomatonState tree) {
+    return of(tree, false);
+  }
+
+  @Nullable
+  public static SimplifiedRegexCharacterClass of(AutomatonState tree, boolean modelPosixClasses) {
     if (tree instanceof CharacterClassElementTree characterClassElementTree) {
-      return new SimplifiedRegexCharacterClass(characterClassElementTree);
+      return new SimplifiedRegexCharacterClass(characterClassElementTree, modelPosixClasses);
     } else if (tree instanceof DotTree dotTree) {
       return new SimplifiedRegexCharacterClass(dotTree);
     } else {
@@ -79,7 +93,11 @@ public class SimplifiedRegexCharacterClass {
   }
 
   public void add(CharacterClassElementTree tree) {
-    new Builder(this).visitInCharClass(tree);
+    add(tree, false);
+  }
+
+  public void add(CharacterClassElementTree tree, boolean modelPosixClasses) {
+    new Builder(this, modelPosixClasses).visitInCharClass(tree);
   }
 
   public void add(DotTree tree) {
@@ -175,7 +193,7 @@ public class SimplifiedRegexCharacterClass {
       return true;
     }
     Map.Entry<Integer, RegexSyntaxElement> lastEntry = contents.lastEntry();
-    return lastEntry.getValue() != null && lastEntry.getKey() <= thatEntry.getKey();
+    return lastEntry != null && lastEntry.getValue() != null && lastEntry.getKey() <= thatEntry.getKey();
   }
 
   private boolean notSupersetOfEntries(Map.Entry<Integer, RegexSyntaxElement> thatEntry, Map.Entry<Integer, RegexSyntaxElement> thatNextEntry) {
@@ -213,9 +231,11 @@ public class SimplifiedRegexCharacterClass {
   private static class Builder extends RegexBaseVisitor {
 
     private SimplifiedRegexCharacterClass characters;
+    private final boolean modelPosixClasses;
 
-    public Builder(SimplifiedRegexCharacterClass characters) {
+    public Builder(SimplifiedRegexCharacterClass characters, boolean modelPosixClasses) {
       this.characters = characters;
+      this.modelPosixClasses = modelPosixClasses;
     }
 
     @Override
@@ -268,6 +288,86 @@ public class SimplifiedRegexCharacterClass {
     }
 
     @Override
+    public void visitInCharClass(CharacterClassElementTree tree) {
+      if (modelPosixClasses && tree instanceof PosixCharacterClassElementTree posix) {
+        addPosixClass(posix);
+      } else {
+        super.visitInCharClass(tree);
+      }
+    }
+
+    /**
+     * Models PHP/PCRE POSIX classes in the default locale. Outside of Unicode character-class mode the ASCII sets are exact.
+     * In Unicode mode only the ASCII membership is known (except for "ascii", which is exact), anything else is unknown.
+     * Word-boundary markers ("[:<:]", "[:>:]") are not character sets, so their content is unknown.
+     */
+    private void addPosixClass(PosixCharacterClassElementTree tree) {
+      int[][] ranges = posixRanges(tree.property(), tree.activeFlags().contains(Pattern.CASE_INSENSITIVE));
+      if (ranges == null) {
+        characters.containsUnknownCharacters = true;
+        return;
+      }
+      boolean unicode = tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS) && !"ascii".equals(tree.property());
+      if (unicode) {
+        characters.containsUnknownCharacters = true;
+      }
+      if (!tree.isNegation()) {
+        for (int[] range : ranges) {
+          characters.addRange(range[0], range[1], tree);
+        }
+        return;
+      }
+      int next = 0;
+      for (int[] range : ranges) {
+        if (range[0] > next) {
+          characters.addRange(next, range[0] - 1, tree);
+        }
+        next = range[1] + 1;
+      }
+      // In Unicode mode, membership above ASCII is unknown, so nothing is added there
+      int max = unicode ? 0x7F : Character.MAX_CODE_POINT;
+      if (next <= max) {
+        characters.addRange(next, max, tree);
+      }
+    }
+
+    @Nullable
+    private static int[][] posixRanges(String property, boolean caseInsensitive) {
+      switch (property) {
+        case "alnum":
+          return new int[][] {{'0', '9'}, {'A', 'Z'}, {'a', 'z'}};
+        case "alpha":
+          return new int[][] {{'A', 'Z'}, {'a', 'z'}};
+        case "ascii":
+          return new int[][] {{0, 0x7F}};
+        case "blank":
+          return new int[][] {{'\t', '\t'}, {' ', ' '}};
+        case "cntrl":
+          return new int[][] {{0, 0x1F}, {0x7F, 0x7F}};
+        case "digit":
+          return new int[][] {{'0', '9'}};
+        case "graph":
+          return new int[][] {{0x21, 0x7E}};
+        case "lower":
+          return caseInsensitive ? new int[][] {{'A', 'Z'}, {'a', 'z'}} : new int[][] {{'a', 'z'}};
+        case "print":
+          return new int[][] {{0x20, 0x7E}};
+        case "punct":
+          return new int[][] {{0x21, 0x2F}, {0x3A, 0x40}, {0x5B, 0x60}, {0x7B, 0x7E}};
+        case "space":
+          return new int[][] {{'\t', '\r'}, {' ', ' '}};
+        case "upper":
+          return caseInsensitive ? new int[][] {{'A', 'Z'}, {'a', 'z'}} : new int[][] {{'A', 'Z'}};
+        case "word":
+          return new int[][] {{'0', '9'}, {'A', 'Z'}, {'_', '_'}, {'a', 'z'}};
+        case "xdigit":
+          return new int[][] {{'0', '9'}, {'A', 'F'}, {'a', 'f'}};
+        default:
+          return null;
+      }
+    }
+
+    @Override
     public void visitCharacterClassIntersection(CharacterClassIntersectionTree tree) {
       characters.containsUnknownCharacters = true;
     }
@@ -302,7 +402,7 @@ public class SimplifiedRegexCharacterClass {
         case 'W':
           characters.addRange(0x00, '0' - 1, tree);
           characters.addRange('9' + 1, 'A' - 1, tree);
-          characters.addRange('Z'+1, '_' - 1, tree);
+          characters.addRange('Z' + 1, '_' - 1, tree);
           characters.addRange('`', '`', tree);
           if (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS)) {
             characters.addRange('z' + 1, 'µ' - 1, tree);

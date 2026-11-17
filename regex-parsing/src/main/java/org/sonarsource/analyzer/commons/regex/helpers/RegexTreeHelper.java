@@ -16,7 +16,6 @@
  */
 package org.sonarsource.analyzer.commons.regex.helpers;
 
-
 import java.util.HashSet;
 import java.util.Set;
 import org.sonarsource.analyzer.commons.regex.ast.AutomatonState;
@@ -50,7 +49,14 @@ public class RegexTreeHelper {
    * If both are set, it means either one can be the case.
    */
   public static boolean supersetOf(SubAutomaton auto1, SubAutomaton auto2, boolean defaultAnswer) {
-    return new SupersetAutomataChecker(defaultAnswer).check(auto1, auto2);
+    return supersetOf(auto1, auto2, defaultAnswer, false);
+  }
+
+  /**
+   * @param modelPosixClasses when true, POSIX bracket classes are given their PHP/PCRE meaning instead of being ignored
+   */
+  public static boolean supersetOf(SubAutomaton auto1, SubAutomaton auto2, boolean defaultAnswer, boolean modelPosixClasses) {
+    return new SupersetAutomataChecker(defaultAnswer, modelPosixClasses).check(auto1, auto2);
   }
 
   public static boolean isAnchoredAtEnd(AutomatonState start) {
