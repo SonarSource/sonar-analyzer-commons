@@ -33,9 +33,11 @@ public final class IpAddressCandidateExtractor {
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
   // Separate entries of a list, values, and the enclosing quotes or parentheses.
-  private static final Pattern CHUNK_SEPARATOR = Pattern.compile("[,;\"'`()!|+*<>{}\\\\~$^\\s]+", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern WORD_SEPARATOR = Pattern.compile("[\"'`()\\s]+", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern LIST_SEPARATOR = Pattern.compile("[,;]");
+  private static final Pattern PUNCTUATION = Pattern.compile("[!|+*<>{}\\\\~$^]+");
   private static final Pattern VALUE_SEPARATOR = Pattern.compile("[=&?#]");
-  private static final Pattern PATH_SEPARATOR = Pattern.compile("[/@]");
+  private static final Pattern PATH_SEPARATOR = Pattern.compile("[/@,;!|+*<>{}\\\\~$^]");
 
   private IpAddressCandidateExtractor() {
   }
@@ -126,26 +128,60 @@ public final class IpAddressCandidateExtractor {
    */
   public static List<String> extractAll(String content) {
     List<String> result = new ArrayList<>();
-    for (String chunk : CHUNK_SEPARATOR.split(content)) {
-      collectFromChunk(chunk, result);
+    for (String word : WORD_SEPARATOR.split(content)) {
+      collectFromWord(word, result);
     }
     return result;
   }
 
-  private static void collectFromChunk(String chunk, List<String> result) {
+  private static void collectFromWord(String word, List<String> result) {
     int start = 0;
-    Matcher separator = VALUE_SEPARATOR.matcher(chunk);
-    while (start <= chunk.length()) {
-      // A URL extends to the end of the chunk: its query and fragment are not standalone entries.
-      if (URL_PREFIX.matcher(chunk).region(start, chunk.length()).lookingAt()) {
-        collectFromUrl(chunk.substring(start), result);
-        return;
-      }
-      int end = separator.find(start) ? separator.start() : chunk.length();
-      if (end > start) {
-        collectFromEntry(chunk.substring(start, end), result);
+    while (start <= word.length()) {
+      int end;
+      if (isUrlAt(word, start)) {
+        // A comma or semicolon within a URL belongs to it, unless another URL follows.
+        end = nextListSeparator(word, start, true);
+        collectFromUrl(word.substring(start, end), result);
+      } else {
+        end = nextListSeparator(word, start, false);
+        collectFromText(word.substring(start, end), result);
       }
       start = end + 1;
+    }
+  }
+
+  private static boolean isUrlAt(String text, int start) {
+    return URL_PREFIX.matcher(text).region(start, text.length()).lookingAt();
+  }
+
+  private static int nextListSeparator(String word, int start, boolean beforeUrlOnly) {
+    Matcher separator = LIST_SEPARATOR.matcher(word);
+    int from = start;
+    while (separator.find(from)) {
+      if (!beforeUrlOnly || isUrlAt(word, separator.end())) {
+        return separator.start();
+      }
+      from = separator.end();
+    }
+    return word.length();
+  }
+
+  private static void collectFromText(String text, List<String> result) {
+    // A URL after a value separator extends to the end of the text: punctuation, query and fragment stay in its context.
+    int urlStart = text.length();
+    for (int i = 1; i < text.length(); i++) {
+      if (VALUE_SEPARATOR.matcher(text.substring(i - 1, i)).matches() && isUrlAt(text, i)) {
+        urlStart = i;
+        break;
+      }
+    }
+    for (String chunk : PUNCTUATION.split(text.substring(0, urlStart))) {
+      for (String entry : VALUE_SEPARATOR.split(chunk)) {
+        collectFromEntry(entry, result);
+      }
+    }
+    if (urlStart < text.length()) {
+      collectFromUrl(text.substring(urlStart), result);
     }
   }
 
