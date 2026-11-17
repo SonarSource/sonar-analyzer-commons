@@ -31,7 +31,8 @@ public final class IpAddressCandidateExtractor {
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
 
   private static final Pattern URL_IN_TEXT = Pattern.compile(
-    "(?<![\\p{L}\\p{N}_.:\\[\\]-])(?:[a-zA-Z][a-zA-Z0-9+.-]*+:)?//(?:[^\\s/?#\"'`()<>]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
+    "(?<![\\p{L}\\p{N}_.:\\[\\]-])(?:(?=[a-zA-Z0-9_-]*[g-zG-Z_])[a-zA-Z][a-zA-Z0-9_-]*:)?(?:[a-zA-Z][a-zA-Z0-9+.-]*+:)?//(?:[^\\s/?#\"'`()<>]*@)?",
+    Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern AUTHORITY_DELIMITER = Pattern.compile("[/?#,;\\s\"'`()<>]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern URL_DELIMITER = Pattern.compile("[,;\\s\"'`()<>]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ENTRIES = Pattern.compile("[\\p{L}\\p{N}_.:%\\[\\]+/\\-]+", Pattern.UNICODE_CHARACTER_CLASS);
@@ -160,10 +161,12 @@ public final class IpAddressCandidateExtractor {
     int start = 0;
     int colons = 0;
     boolean zone = false;
+    boolean path = url;
     for (int i = 0; i < entry.length(); i++) {
       char current = entry.charAt(i);
       if (isOrdinaryPunctuation(entry, i, start, colons, zone)) {
-        extractEntry(entry.substring(start, i), url, addresses);
+        extractEntry(entry.substring(start, i), path, addresses);
+        path = url || (current == ':' && (path || entry.indexOf('/', start) >= start && entry.indexOf('/', start) < i));
         start = i + 1;
         colons = 0;
         zone = false;
@@ -176,7 +179,7 @@ public final class IpAddressCandidateExtractor {
         zone = false;
       }
     }
-    extractEntry(entry.substring(start), url, addresses);
+    extractEntry(entry.substring(start), path, addresses);
   }
 
   private static boolean isOrdinaryPunctuation(String entry, int index, int start, int colons, boolean zone) {
