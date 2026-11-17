@@ -16,9 +16,14 @@
  */
 package org.sonarsource.analyzer.commons.appsec;
 
+import java.util.List;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.provider.Arguments;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -169,5 +174,57 @@ class IpAddressCandidateExtractorTest {
   })
   void shouldRejectMissingCandidateOrMalformedEndpoint(String content) {
     assertThat(IpAddressCandidateExtractor.extract(content)).isEmpty();
+  }
+
+  static Stream<Arguments> findAllCases() {
+    return Stream.of(
+      // Paths and ordinary text
+      Arguments.of("/registry/ipaddresses/192.168.2.3", List.of("192.168.2.3")),
+      Arguments.of("connect to 10.0.0.1, 10.0.0.2", List.of("10.0.0.1", "10.0.0.2")),
+      Arguments.of("  \t10.0.0.1", List.of("10.0.0.1")),
+      Arguments.of("10.0.0.1;10.0.0.2 10.0.0.1", List.of("10.0.0.1", "10.0.0.2", "10.0.0.1")),
+      Arguments.of("host=10.0.0.1", List.of("10.0.0.1")),
+      Arguments.of("\"10.0.0.1\" '10.0.0.2' (10.0.0.3)", List.of("10.0.0.1", "10.0.0.2", "10.0.0.3")),
+      Arguments.of("a/10.0.0.1/b/10.0.0.2", List.of("10.0.0.1", "10.0.0.2")),
+      // IPv6
+      Arguments.of("addr 2001:db8::1 and ::ffff:192.0.2.1", List.of("2001:db8::1", "::ffff:192.0.2.1")),
+      Arguments.of("fe80::1%eth0 fe80::2%", List.of("fe80::1%eth0", "fe80::2%")),
+      Arguments.of("[2001:db8::1]:8080 [::1]", List.of("2001:db8::1", "::1")),
+      Arguments.of("2001:db8::1:80", List.of("2001:db8::1:80")),
+      // Ports
+      Arguments.of("10.0.0.1:8080 10.0.0.2:65535 10.0.0.3:0", List.of("10.0.0.1", "10.0.0.2", "10.0.0.3")),
+      // CIDR
+      Arguments.of("10.0.0.0/8, 2001:db8::/32 [2001:db8::1]/64", List.of("10.0.0.0/8", "2001:db8::/32", "2001:db8::1/64")),
+      Arguments.of("10.0.0.0/32 10.0.0.0/0 ::/128", List.of("10.0.0.0/32", "10.0.0.0/0", "::/128")),
+      Arguments.of("10.0.0.1/path /x/10.0.0.1/24 10.0.0.1:80/24 10.0.0.1/1000", List.of("10.0.0.1", "10.0.0.1", "10.0.0.1", "10.0.0.1")),
+      // URLs
+      Arguments.of("http://192.0.2.1:8080/a/192.0.2.2?x=192.0.2.3&y=1#192.0.2.4",
+        List.of("192.0.2.1", "192.0.2.2", "192.0.2.3", "192.0.2.4")),
+      Arguments.of("https://user:pw@[2001:db8::1]:80/p", List.of("2001:db8::1")),
+      Arguments.of("//10.0.0.1/24", List.of("10.0.0.1")),
+      Arguments.of("http://example.com/10.0.0.1?ip=10.0.0.2", List.of("10.0.0.1", "10.0.0.2")),
+      Arguments.of("http://10.0.0.1@example.com/", List.of()),
+      Arguments.of("http://10.0.0.1:8080;https://10.0.0.2/other", List.of("10.0.0.1", "10.0.0.2")),
+      // Malformed items do not hide a later address
+      Arguments.of("[2001:db8::1 10.0.0.1", List.of("10.0.0.1")),
+      Arguments.of("10.0.0.1:99999 10.0.0.2", List.of("10.0.0.2")),
+      Arguments.of("10.0.0.1/33 10.0.0.2", List.of("10.0.0.2")),
+      // No match
+      Arguments.of("", List.of()),
+      Arguments.of("no address 1.2.3 v1.2.3.4 1.2.3.4.5 1.2.3.4. -1.2.3.4 1.2.3.4- _1.2.3.4 a1.2.3.4 1.2.3.45a ..1.2.3.4", List.of()),
+      Arguments.of("[10.0.0.1] [10.0.0.1]:80 999.1.1.1 10.0.0.1: 10.0.0.1:x 10.0.0.1:000080 [::1]:65536 ::1/129 2001:db8::1]", List.of()),
+      Arguments.of("example.com host.name:80", List.of()));
+  }
+
+  @ParameterizedTest
+  @MethodSource("findAllCases")
+  void shouldExtractAll(String content, List<String> expected) {
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).containsExactlyElementsOf(expected);
+  }
+
+  @Test
+  void extractShouldKeepExaminingOnlyTheStart() {
+    assertThat(IpAddressCandidateExtractor.extract("/registry/ipaddresses/192.168.2.3")).isEmpty();
+    assertThat(IpAddressCandidateExtractor.extract("connect to 10.0.0.1")).hasValue("connect");
   }
 }
