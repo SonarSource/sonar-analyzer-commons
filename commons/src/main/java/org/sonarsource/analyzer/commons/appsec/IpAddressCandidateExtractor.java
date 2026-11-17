@@ -31,9 +31,9 @@ public final class IpAddressCandidateExtractor {
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
 
   private static final Pattern URL_IN_TEXT = Pattern.compile(
-    "(?<![\\p{L}\\p{N}_.:\\[\\]-])(?:[a-zA-Z][a-zA-Z0-9+.-]*+:)?//(?:[^\\s/?#\"'()<>]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
-  private static final Pattern AUTHORITY_DELIMITER = Pattern.compile("[/?#,;\\s\"'()<>]", Pattern.UNICODE_CHARACTER_CLASS);
-  private static final Pattern URL_DELIMITER = Pattern.compile("[,;\\s\"'()<>]", Pattern.UNICODE_CHARACTER_CLASS);
+    "(?<![\\p{L}\\p{N}_.:\\[\\]-])(?:[a-zA-Z][a-zA-Z0-9+.-]*+:)?//(?:[^\\s/?#\"'`()<>]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern AUTHORITY_DELIMITER = Pattern.compile("[/?#,;\\s\"'`()<>]", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern URL_DELIMITER = Pattern.compile("[,;\\s\"'`()<>]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ENTRIES = Pattern.compile("[\\p{L}\\p{N}_.:%\\[\\]+/\\-]+", Pattern.UNICODE_CHARACTER_CLASS);
 
   private IpAddressCandidateExtractor() {
@@ -181,8 +181,24 @@ public final class IpAddressCandidateExtractor {
 
   private static boolean isOrdinaryPunctuation(String entry, int index, int start, int colons, boolean zone) {
     char current = entry.charAt(index);
-    return (current == '%' && colons < 2)
+    return (current == ':' && colons == 0 && isLabelSeparator(entry, index, start))
+      || (current == '%' && colons < 2)
       || (current == '+' && !zone && (index == start || ":/".indexOf(entry.charAt(index - 1)) < 0));
+  }
+
+  private static boolean isLabelSeparator(String entry, int colon, int start) {
+    int segment = entry.lastIndexOf('/', colon) + 1;
+    String label = entry.substring(Math.max(start, segment), colon);
+    // Hexadecimal groups, dotted addresses and brackets belong to an address or endpoint.
+    if (!label.isEmpty() && (label.chars().allMatch(c -> Character.digit(c, 16) >= 0)
+      || label.indexOf('.') >= 0 || label.indexOf('[') >= 0 || label.indexOf(']') >= 0)) {
+      return false;
+    }
+    int end = entry.indexOf('/', colon + 1);
+    String value = entry.substring(colon + 1, end < 0 ? entry.length() : end);
+    // A label before IPv4 (possibly with a port) or a bracketed endpoint is unambiguous.
+    // Keep unbracketed IPv6 together, including malformed groups and embedded IPv4 tails.
+    return value.startsWith("[") || (value.indexOf('.') >= 0 && value.indexOf(':') == value.lastIndexOf(':'));
   }
 
   private static void extractEntry(String entry, boolean url, List<String> addresses) {
