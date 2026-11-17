@@ -78,3 +78,11 @@
 - '[^\Q[:alpha:]\E]|Z' # Noncompliant
 - '[\Q[:<:]\E]|:' # Noncompliant
 - '[\Q[:digit:]\E[:alpha:]]|Z' # Noncompliant
+
+- '[[\Q:\Ealpha:]]|Z' # Compliant: quoting interrupts the POSIX syntax
+- '[[:al\Qph\Ea:]]|Z' # Compliant
+- '[[:al\Q\Epha:]]|Z' # Compliant
+- '[[:digit:]\Q[:alpha:]\E]|Z' # Compliant
+- '[[:digit:]\Q[:alpha:]\E]|5' # Noncompliant
+
+- '[^[:al\Qpha:]\E]|Z]' # Compliant: lookahead must not consume the quoted closing bracket

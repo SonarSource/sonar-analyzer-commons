@@ -138,6 +138,21 @@ public class RegexLexer {
     return true;
   }
 
+  // POSIX names must not be assembled across quoting delimiters skipped by lookahead.
+  boolean currentIsContiguous(String str) {
+    // Stop at the first mismatch to avoid advancing quoting mode beyond this token.
+    for (int i = 0; i < str.length(); i++) {
+      fillBuffer(i + 1);
+      if (buffer.size() <= i || buffer.get(i).getCharacter() != str.charAt(i)) {
+        return false;
+      }
+      if (i > 0 && buffer.get(i - 1).getRange().getEndingOffset() != buffer.get(i).getRange().getBeginningOffset()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   public int lookAhead(int offset) {
     fillBuffer(offset + 1);
     if (buffer.size() <= offset) {

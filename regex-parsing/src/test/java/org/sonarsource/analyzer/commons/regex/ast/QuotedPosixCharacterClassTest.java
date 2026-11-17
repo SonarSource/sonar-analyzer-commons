@@ -19,6 +19,9 @@ package org.sonarsource.analyzer.commons.regex.ast;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.analyzer.commons.regex.RegexFeature;
+import org.sonarsource.analyzer.commons.regex.RegexParseResult;
+import org.sonarsource.analyzer.commons.regex.RegexParser;
+import org.sonarsource.analyzer.commons.regex.php.PhpRegexSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.sonarsource.analyzer.commons.regex.RegexParserTestUtils.assertFailParsing;
@@ -41,6 +44,20 @@ class QuotedPosixCharacterClassTest {
       }
     }
     assertFailParsing("[\\\\Q[:alpha:]]", "Expected '\\E', but found the end of the regex", RegexFeature.POSIX_CHARACTER_CLASS);
+  }
+
+  @Test
+  void posixNameCannotSpanQuotingDelimiters() {
+    RegexParseResult result = new RegexParser(new PhpRegexSource("[[\\Q:\\Ealpha:]]", '\''), new FlagSet()).parse();
+    assertThat(result.getSyntaxErrors()).isEmpty();
+    SequenceTree sequence = assertType(SequenceTree.class, result.getResult());
+    assertThat(sequence.getItems()).hasSize(2);
+    CharacterClassTree characterClass = assertType(CharacterClassTree.class, sequence.getItems().get(0));
+    CharacterClassUnionTree union = assertType(CharacterClassUnionTree.class, characterClass.getContents());
+    assertThat(union.getCharacterClasses())
+      .extracting(element -> assertType(CharacterTree.class, element).characterAsString())
+      .containsExactly("[", ":", "a", "l", "p", "h", "a", ":");
+    assertThat(assertType(CharacterTree.class, sequence.getItems().get(1)).characterAsString()).isEqualTo("]");
   }
 
 }

@@ -988,7 +988,7 @@ public class RegexParser {
     if (characters.isInQuotingMode() && characters.isNotAtEnd()) {
       return readCharacter();
     }
-    if (characters.currentIs("[:") && source.supportsFeature(RegexFeature.POSIX_CHARACTER_CLASS)) {
+    if (characters.currentIsContiguous("[:") && source.supportsFeature(RegexFeature.POSIX_CHARACTER_CLASS)) {
       PosixCharacterClassElementTree tree = parsePosixCharacterClass();
       if (tree != null) {
         return tree;
@@ -1035,7 +1035,7 @@ public class RegexParser {
     boolean isNegation = characters.lookAhead(2) == '^';
     Map<String, String> posixLookup = isNegation ? POSIX_CHARACTER_CLASS_NEGATION_LOOKUP : POSIX_CHARACTER_CLASS_LOOKUP;
     Optional<Map.Entry<String, String>> posixClass = posixLookup.entrySet().stream()
-      .filter(posix -> characters.currentIs(posix.getKey())).findFirst();
+      .filter(posix -> characters.currentIsContiguous(posix.getKey())).findFirst();
     if (posixClass.isPresent()) {
       characters.moveNext(posixClass.get().getKey().length());
       return new PosixCharacterClassElementTree(source, openingBracket, characters.getCurrent(), isNegation, posixClass.get().getValue(), activeFlags);
