@@ -16,6 +16,7 @@
  */
 package org.sonarsource.analyzer.commons.appsec;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -170,4 +171,122 @@ class IpAddressCandidateExtractorTest {
   void shouldRejectMissingCandidateOrMalformedEndpoint(String content) {
     assertThat(IpAddressCandidateExtractor.extract(content)).isEmpty();
   }
+
+  @ParameterizedTest
+  @CsvSource(delimiter = '|', value = {
+    "/registry/ipaddresses/192.168.2.3 | 192.168.2.3",
+    "registry/192.168.2.3 | 192.168.2.3",
+    "registry/2001:db8::1 | 2001:db8::1",
+    "/registry/services/specs/default/192.168.2.3 | 192.168.2.3",
+    "'  connect to 10.0.0.1' | 10.0.0.1",
+    "'\u00a0192.0.2.1' | 192.0.2.1",
+    "address=192.0.2.1 | 192.0.2.1",
+    "address=\"192.0.2.1\" | 192.0.2.1",
+    "(192.0.2.1) | 192.0.2.1",
+    "192.0.2.1:0 | 192.0.2.1",
+    "192.0.2.1:65535 | 192.0.2.1",
+    "192.0.2.1:00080 | 192.0.2.1",
+    "[2001:DB8::1]:65535 | 2001:DB8::1",
+    "[2001:db8::1]:0 | 2001:db8::1",
+    "[2001:db8::1] | 2001:db8::1",
+    "2001:db8::1:8080 | 2001:db8::1:8080",
+    ":: | ::",
+    "::00000:2 | ::00000:2",
+    "::FFFF:192.0.2.1 | ::FFFF:192.0.2.1",
+    "2001:db8::192.0.2.1 | 2001:db8::192.0.2.1",
+    "2001:0DB8:0000:0000:0000:0000:0000:0001 | 2001:0DB8:0000:0000:0000:0000:0000:0001",
+    "[::ffff:192.0.2.1]:80 | ::ffff:192.0.2.1",
+    "fe80::1%eth0 | fe80::1%eth0",
+    "fe80::1% | fe80::1%",
+    "[fe80::1%接口]:80 | fe80::1%接口",
+    "http://[fe80::1%25eth0]:80/path | fe80::1%25eth0",
+    "192.0.2.1/0 | 192.0.2.1/0",
+    "192.0.2.1/32 | 192.0.2.1/32",
+    "192.0.2.1/032 | 192.0.2.1/032",
+    "2001:db8::1/0 | 2001:db8::1/0",
+    "2001:db8::1/128 | 2001:db8::1/128",
+    "[fe80::1%eth0]/064 | fe80::1%eth0/064",
+    "::ffff:192.0.2.1/128 | ::ffff:192.0.2.1/128",
+    "192.0.2.1/path | 192.0.2.1",
+    "192.0.2.1/ | 192.0.2.1",
+    "/192.0.2.1/33 | 192.0.2.1",
+    "root/192.0.2.1/24 | 192.0.2.1",
+    "192.0.2.1/24/path | 192.0.2.1",
+    "192.0.2.1:80/33 | 192.0.2.1",
+    "[2001:db8::1]:80/129 | 2001:db8::1",
+    "https://192.0.2.1/33 | 192.0.2.1",
+    "//[2001:db8::1]/129 | 2001:db8::1",
+    "custom-scheme.v1://user:pass@192.0.2.1:80/path | 192.0.2.1",
+    "https://example.org/path/192.0.2.1 | 192.0.2.1",
+    "https://example.org?address=192.0.2.1 | 192.0.2.1",
+    "https://example.org#192.0.2.1 | 192.0.2.1",
+    "https://example.org?address=192.0.2.1/33 | 192.0.2.1",
+    "https://example.org#2001:db8::1/129 | 2001:db8::1",
+    "https://192.0.2.2:pass@example.org/192.0.2.1 | 192.0.2.1",
+    "//192.0.2.2@example.org?ip=192.0.2.1 | 192.0.2.1",
+    "http://192.0.2.2,user:pass@example.org/192.0.2.1 | 192.0.2.1",
+    "http://192.0.2.2;user:pass@example.org/192.0.2.1 | 192.0.2.1",
+    "http://192.0.2.2=pass@example.org/192.0.2.1 | 192.0.2.1",
+    "https://host192.0.2.2/path/192.0.2.1 | 192.0.2.1",
+    // Extraction is independent of whether a rule permits the address.
+    "127.0.0.1 | 127.0.0.1",
+    "8.8.8.8 | 8.8.8.8"
+  })
+  void shouldExtractValidAddressesThroughoutContent(String content, String expected) {
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).containsExactly(expected);
+  }
+
+  @Test
+  void shouldKeepAllOccurrencesInSourceOrder() {
+    assertThat(IpAddressCandidateExtractor.extractAll("192.0.2.1/192.0.2.2"))
+      .containsExactly("192.0.2.1", "192.0.2.2");
+    assertThat(IpAddressCandidateExtractor.extractAll(
+      "connect to 10.0.0.1, 10.0.0.2;10.0.0.1\t[2001:DB8::1]:80\n::ffff:192.0.2.1"))
+        .containsExactly("10.0.0.1", "10.0.0.2", "10.0.0.1", "2001:DB8::1", "::ffff:192.0.2.1");
+    assertThat(IpAddressCandidateExtractor.extractAll(
+      "https://192.0.2.9:password@192.0.2.1:80/192.0.2.2?ip=192.0.2.3&next=[2001:db8::1]#192.0.2.4"))
+        .containsExactly("192.0.2.1", "192.0.2.2", "192.0.2.3", "2001:db8::1", "192.0.2.4");
+    assertThat(IpAddressCandidateExtractor.extractAll(
+      "http://192.0.2.1,https://[2001:db8::1];//example.org/192.0.2.2 192.0.2.3/24"))
+        .containsExactly("192.0.2.1", "2001:db8::1", "192.0.2.2", "192.0.2.3/24");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "", "ordinary text", "example.org", "https://example.org/path",
+    "prefix192.0.2.1", "192.0.2.1suffix", "version1.2.3.4", "v1.2.3.4.5",
+    "192.0.2.1.", ".192.0.2.1", "192.0.2.1.5", "999.192.0.2.1",
+    "-192.0.2.1", "192.0.2.1-foo", "_192.0.2.1", "192.0.2.1_foo",
+    "接口192.0.2.1", "192.0.2.1接口", "192.0.2.１２", "01.2.3.4",
+    "256.0.2.1", "192.0.2", "2001:db8::1::2", "::ffff:192.0.2.999",
+    "::ffff:0192.0.2.1", "bad::ffff:192.0.2.1z", "2001:db8::1.",
+    "192.0.2.1:", "192.0.2.1:bad", "192.0.2.1:65536", "192.0.2.1:000080",
+    "192.0.2.1:-1", "192.0.2.1:+80", "192.0.2.1:８０", "192.0.2.1:80:90",
+    "[2001:db8::1]:", "[2001:db8::1]:65536", "[2001:db8::1]:000080",
+    "[2001:db8::1]:bad", "[2001:db8::1]:-1", "[2001:db8::1]:+80", "[2001:db8::1]:８０",
+    "[2001:db8::1]8080", "[2001:db8::1]suffix", "[192.0.2.1]", "[192.0.2.1]:80",
+    "[192.0.2.1:80]", "[2001:db8::1", "2001:db8::1]", "[[2001:db8::1]]",
+    "192.0.2.1/33", "192.0.2.1/1000", "192.0.2.1/-1", "192.0.2.1/+24",
+    "192.0.2.1/３２", "192.0.2.1/24x", "192.0.2.1/999999999999999999999",
+    "2001:db8::1/129", "2001:db8::1/1000", "[2001:db8::1]/129",
+    "https://192.0.2.1@example.org/path", "//192.0.2.1:password@example.org/path",
+    "https://host192.0.2.1/path", "https://[192.0.2.1]/path", "https://192.0.2.1:65536/path",
+    "https://[2001:db8::1]=junk/path", "https://name=192.0.2.1/path", "https://192.0.2.1!name/path",
+    "connect to fe80::1%eth0.", "192.0.2.1/𝟛𝟛"
+  })
+  void shouldRejectInvalidAddressesWithoutRecoveringShorterParts(String content) {
+    assertThat(IpAddressCandidateExtractor.extractAll(content)).isEmpty();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "[2001:db8::1", "2001:db8::1]", "[[2001:db8::1]]", "192.0.2.2:bad",
+    "[2001:db8::1]:65536", "192.0.2.2/33", "https://192.0.2.2:65536/path",
+    "https://[2001:db8::1]=junk/path"
+  })
+  void shouldContinueAfterMalformedEntry(String malformed) {
+    assertThat(IpAddressCandidateExtractor.extractAll(malformed + "; 192.0.2.1"))
+      .containsExactly("192.0.2.1");
+  }
+
 }
