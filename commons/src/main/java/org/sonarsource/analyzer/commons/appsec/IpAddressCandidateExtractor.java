@@ -31,8 +31,10 @@ public final class IpAddressCandidateExtractor {
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
 
   private static final Pattern URL_IN_TEXT = Pattern.compile(
-    "(?<![\\p{L}\\p{N}_.+-])(?:[a-zA-Z][a-zA-Z0-9+.-]*+:)?//(?:[^\\s/?#\"'()]*@)?[^\\s,;\"'()]*", Pattern.UNICODE_CHARACTER_CLASS);
-  private static final Pattern ENTRIES = Pattern.compile("[^\\s,;\"'()=?#&<>!{}|~]+", Pattern.UNICODE_CHARACTER_CLASS);
+    "(?<![\\p{L}\\p{N}_.:\\[\\]-])(?:[a-zA-Z][a-zA-Z0-9+.-]*+:)?//(?:[^\\s/?#\"'()<>]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern AUTHORITY_DELIMITER = Pattern.compile("[/?#,;\\s\"'()<>]", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern URL_DELIMITER = Pattern.compile("[,;\\s\"'()<>]", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern ENTRIES = Pattern.compile("[\\p{L}\\p{N}_.:%\\[\\]+/\\-]+", Pattern.UNICODE_CHARACTER_CLASS);
 
   private IpAddressCandidateExtractor() {
   }
@@ -119,29 +121,68 @@ public final class IpAddressCandidateExtractor {
     List<String> addresses = new ArrayList<>();
     Matcher urls = URL_IN_TEXT.matcher(content);
     int previous = 0;
-    while (urls.find()) {
-      extractEntries(content.substring(previous, urls.start()), false, addresses);
-      String url = urls.group();
-      int host = url.indexOf("//") + 2;
-      int authorityEnd = host;
-      while (authorityEnd < url.length() && "/?#".indexOf(url.charAt(authorityEnd)) < 0) {
-        authorityEnd++;
-      }
-      int userInfo = url.lastIndexOf('@', authorityEnd - 1);
-      stripBracketsAndPort(url.substring(Math.max(host, userInfo + 1), authorityEnd))
+    int urlEnd = 0;
+    while (urls.find(previous)) {
+      extractBetweenUrls(content, previous, urls.start(), urlEnd, addresses);
+      int host = urls.end();
+      Matcher authorityDelimiter = AUTHORITY_DELIMITER.matcher(content);
+      int authorityEnd = authorityDelimiter.find(host) ? authorityDelimiter.start() : content.length();
+      stripBracketsAndPort(content.substring(host, authorityEnd))
         .ifPresent(candidate -> addValidAddress(candidate.candidate(), addresses));
-      extractEntries(url.substring(authorityEnd), true, addresses);
-      previous = urls.end();
+      // Nested URLs share the surrounding URL boundary; do not rescan the remaining text for each one.
+      if (host >= urlEnd) {
+        Matcher urlDelimiter = URL_DELIMITER.matcher(content);
+        urlEnd = urlDelimiter.find(host) ? urlDelimiter.start() : content.length();
+      }
+      previous = authorityEnd;
     }
-    extractEntries(content.substring(previous), false, addresses);
+    extractBetweenUrls(content, previous, content.length(), urlEnd, addresses);
     return addresses;
+  }
+
+  private static void extractBetweenUrls(String content, int start, int end, int urlEnd, List<String> addresses) {
+    if (start < urlEnd) {
+      int pathEnd = Math.min(end, urlEnd);
+      extractEntries(content.substring(start, pathEnd), true, addresses);
+      start = pathEnd;
+    }
+    extractEntries(content.substring(start, end), false, addresses);
   }
 
   private static void extractEntries(String content, boolean url, List<String> addresses) {
     Matcher entries = ENTRIES.matcher(content);
     while (entries.find()) {
-      extractEntry(entries.group(), url, addresses);
+      extractOrdinaryEntry(entries.group(), url, addresses);
     }
+  }
+
+  private static void extractOrdinaryEntry(String entry, boolean url, List<String> addresses) {
+    int start = 0;
+    int colons = 0;
+    boolean zone = false;
+    for (int i = 0; i < entry.length(); i++) {
+      char current = entry.charAt(i);
+      if (isOrdinaryPunctuation(entry, i, start, colons, zone)) {
+        extractEntry(entry.substring(start, i), url, addresses);
+        start = i + 1;
+        colons = 0;
+        zone = false;
+      } else if (current == ':') {
+        colons++;
+      } else if (current == '%') {
+        zone = true;
+      } else if (current == '/' || current == ']') {
+        colons = 0;
+        zone = false;
+      }
+    }
+    extractEntry(entry.substring(start), url, addresses);
+  }
+
+  private static boolean isOrdinaryPunctuation(String entry, int index, int start, int colons, boolean zone) {
+    char current = entry.charAt(index);
+    return (current == '%' && colons < 2)
+      || (current == '+' && !zone && (index == start || ":/".indexOf(entry.charAt(index - 1)) < 0));
   }
 
   private static void extractEntry(String entry, boolean url, List<String> addresses) {
@@ -172,7 +213,7 @@ public final class IpAddressCandidateExtractor {
   private static boolean looksLikePrefix(String suffix) {
     // A second address is another path segment, never a CIDR prefix.
     return !suffix.isEmpty() && (Character.isDigit(suffix.codePointAt(0)) || suffix.charAt(0) == '+' || suffix.charAt(0) == '-')
-      && IpAddressClassifier.parse(suffix).isEmpty();
+      && stripBracketsAndPort(suffix).filter(candidate -> IpAddressClassifier.parse(candidate.candidate()).isPresent()).isEmpty();
   }
 
   private static void addValidAddress(String address, List<String> addresses) {

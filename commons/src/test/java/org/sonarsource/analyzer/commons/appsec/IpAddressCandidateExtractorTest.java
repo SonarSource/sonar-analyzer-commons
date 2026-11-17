@@ -220,6 +220,16 @@ class IpAddressCandidateExtractorTest {
     "https://example.org/path/192.0.2.1 | 192.0.2.1",
     "https://example.org?address=192.0.2.1 | 192.0.2.1",
     "https://example.org#192.0.2.1 | 192.0.2.1",
+    "https://example.org/path@192.0.2.1 | 192.0.2.1",
+    "+https://192.0.2.2:password@192.0.2.1/path | 192.0.2.1",
+    "%https://192.0.2.2:password@192.0.2.1/path | 192.0.2.1",
+    "+[2001:db8::1]+ | 2001:db8::1",
+    "fe80::1%eth+0 | fe80::1%eth+0",
+    "<https://192.0.2.1> | 192.0.2.1",
+    "<https://[2001:db8::1]:80> | 2001:db8::1",
+    "https://example.org/?next=https://user@192.0.2.1/path | 192.0.2.1",
+    "https://example.org/?next=https://192.0.2.2:password@192.0.2.1/path | 192.0.2.1",
+    "https://example.org/?next=//user@192.0.2.1/path | 192.0.2.1",
     "https://example.org?address=192.0.2.1/33 | 192.0.2.1",
     "https://example.org#2001:db8::1/129 | 2001:db8::1",
     "https://192.0.2.2:pass@example.org/192.0.2.1 | 192.0.2.1",
@@ -240,6 +250,12 @@ class IpAddressCandidateExtractorTest {
   void shouldKeepAllOccurrencesInSourceOrder() {
     assertThat(IpAddressCandidateExtractor.extractAll("192.0.2.1/192.0.2.2"))
       .containsExactly("192.0.2.1", "192.0.2.2");
+    assertThat(IpAddressCandidateExtractor.extractAll("192.0.2.1/192.0.2.2:80"))
+      .containsExactly("192.0.2.1", "192.0.2.2");
+    assertThat(IpAddressCandidateExtractor.extractAll("192.0.2.1/[2001:db8::1]:80"))
+      .containsExactly("192.0.2.1", "2001:db8::1");
+    assertThat(IpAddressCandidateExtractor.extractAll("https://192.0.2.1/192.0.2.2?next=https://user@192.0.2.3/192.0.2.4"))
+      .containsExactly("192.0.2.1", "192.0.2.2", "192.0.2.3", "192.0.2.4");
     assertThat(IpAddressCandidateExtractor.extractAll(
       "connect to 10.0.0.1, 10.0.0.2;10.0.0.1\t[2001:DB8::1]:80\n::ffff:192.0.2.1"))
         .containsExactly("10.0.0.1", "10.0.0.2", "10.0.0.1", "2001:DB8::1", "::ffff:192.0.2.1");
@@ -249,6 +265,21 @@ class IpAddressCandidateExtractorTest {
     assertThat(IpAddressCandidateExtractor.extractAll(
       "http://192.0.2.1,https://[2001:db8::1];//example.org/192.0.2.2 192.0.2.3/24"))
         .containsExactly("192.0.2.1", "2001:db8::1", "192.0.2.2", "192.0.2.3/24");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"!", "@", "$", "^", "*", "\\", "|", "~", "`", "<", ">", "{", "}", "=", "?", "#", "&", "+", "%", "—", "…"})
+  void shouldUseOrdinaryPunctuationAsDelimiters(String delimiter) {
+    assertThat(IpAddressCandidateExtractor.extractAll("before" + delimiter + "192.0.2.1" + delimiter + "after"))
+      .containsExactly("192.0.2.1");
+    assertThat(IpAddressCandidateExtractor.extractAll(delimiter + "192.0.2.1" + delimiter + "192.0.2.2" + delimiter))
+      .containsExactly("192.0.2.1", "192.0.2.2");
+  }
+
+  @Test
+  void shouldExtractHostFromDeeplyNestedQueryUrls() {
+    String nested = "https://example.org/?next=".repeat(2000) + "https://user@192.0.2.1/path";
+    assertThat(IpAddressCandidateExtractor.extractAll(nested)).containsExactly("192.0.2.1");
   }
 
   @ParameterizedTest
@@ -272,7 +303,7 @@ class IpAddressCandidateExtractorTest {
     "https://192.0.2.1@example.org/path", "//192.0.2.1:password@example.org/path",
     "https://host192.0.2.1/path", "https://[192.0.2.1]/path", "https://192.0.2.1:65536/path",
     "https://[2001:db8::1]=junk/path", "https://name=192.0.2.1/path", "https://192.0.2.1!name/path",
-    "connect to fe80::1%eth0.", "192.0.2.1/𝟛𝟛"
+    "connect to fe80::1%eth0.", "192.0.2.1/𝟛𝟛", "2001:db8::https://example.org"
   })
   void shouldRejectInvalidAddressesWithoutRecoveringShorterParts(String content) {
     assertThat(IpAddressCandidateExtractor.extractAll(content)).isEmpty();
