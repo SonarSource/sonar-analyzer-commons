@@ -30,7 +30,8 @@ public final class IpAddressCandidateExtractor {
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
   // Separate entries of a list, values, and the enclosing quotes or parentheses.
-  private static final Pattern ENTRY_SEPARATOR = Pattern.compile("[,;=&?#\"'`()\\s]+", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern CHUNK_SEPARATOR = Pattern.compile("[,;\"'`()\\s]+", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern VALUE_SEPARATOR = Pattern.compile("[=&?#]");
   private static final Pattern PATH_SEPARATOR = Pattern.compile("[/@]");
 
   private IpAddressCandidateExtractor() {
@@ -122,26 +123,30 @@ public final class IpAddressCandidateExtractor {
    */
   public static List<String> extractAll(String content) {
     List<String> result = new ArrayList<>();
-    for (String entry : ENTRY_SEPARATOR.split(content)) {
-      if (!entry.isEmpty()) {
-        collectFromEntry(entry, result);
-      }
+    for (String chunk : CHUNK_SEPARATOR.split(content)) {
+      collectFromChunk(chunk, result);
     }
     return result;
   }
 
-  private static void collectFromEntry(String entry, List<String> result) {
-    Matcher protocol = URL_PREFIX.matcher(entry);
-    if (protocol.find()) {
-      String rest = entry.substring(protocol.end());
-      int path = rest.indexOf('/');
-      String host = path >= 0 ? rest.substring(0, path) : rest;
-      parseEndpoint(host).ifPresent(result::add);
-      if (path >= 0) {
-        collectFromSegments(rest.substring(path + 1), result);
+  private static void collectFromChunk(String chunk, List<String> result) {
+    int start = 0;
+    Matcher separator = VALUE_SEPARATOR.matcher(chunk);
+    while (start <= chunk.length()) {
+      // A URL extends to the end of the chunk: its query and fragment are not standalone entries.
+      if (URL_PREFIX.matcher(chunk).region(start, chunk.length()).lookingAt()) {
+        collectFromUrl(chunk.substring(start), result);
+        return;
       }
-      return;
+      int end = separator.find(start) ? separator.start() : chunk.length();
+      if (end > start) {
+        collectFromEntry(chunk.substring(start, end), result);
+      }
+      start = end + 1;
     }
+  }
+
+  private static void collectFromEntry(String entry, List<String> result) {
     int slash = entry.indexOf('/');
     if (slash >= 0 && slash == entry.lastIndexOf('/')) {
       String suffix = entry.substring(slash + 1);
@@ -152,6 +157,29 @@ public final class IpAddressCandidateExtractor {
       }
     }
     collectFromSegments(entry, result);
+  }
+
+  private static void collectFromUrl(String url, List<String> result) {
+    Matcher protocol = URL_PREFIX.matcher(url);
+    if (protocol.find()) {
+      String rest = url.substring(protocol.end());
+      int pathStart = indexOfAny(rest, "/?#&=");
+      parseEndpoint(pathStart >= 0 ? rest.substring(0, pathStart) : rest).ifPresent(result::add);
+      if (pathStart >= 0) {
+        for (String part : VALUE_SEPARATOR.split(rest.substring(pathStart))) {
+          collectFromSegments(part, result);
+        }
+      }
+    }
+  }
+
+  private static int indexOfAny(String text, String chars) {
+    for (int i = 0; i < text.length(); i++) {
+      if (chars.indexOf(text.charAt(i)) >= 0) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   private static void parseWithCidr(String address, String suffix, List<String> result) {
@@ -181,7 +209,7 @@ public final class IpAddressCandidateExtractor {
   }
 
   private static boolean isAddress(StrippedCandidate stripped) {
-    return IpAddressClassifier.parse(stripped.candidate()).isPresent() && stripped.candidate().indexOf('/') < 0;
+    return IpAddressClassifier.parse(stripped.candidate()).isPresent();
   }
 
   private static Optional<StrippedCandidate> stripBracketsAndPort(String candidate) {

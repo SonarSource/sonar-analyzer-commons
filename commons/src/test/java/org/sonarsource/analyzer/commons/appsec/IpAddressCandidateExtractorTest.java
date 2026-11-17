@@ -17,13 +17,13 @@
 package org.sonarsource.analyzer.commons.appsec;
 
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import java.util.stream.Stream;
-import org.junit.jupiter.params.provider.Arguments;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -176,7 +176,7 @@ class IpAddressCandidateExtractorTest {
     assertThat(IpAddressCandidateExtractor.extract(content)).isEmpty();
   }
 
-  static Stream<Arguments> findAllCases() {
+  static Stream<Arguments> extractAllCases() {
     return Stream.of(
       // Paths and ordinary text
       Arguments.of("/registry/ipaddresses/192.168.2.3", List.of("192.168.2.3")),
@@ -205,6 +205,9 @@ class IpAddressCandidateExtractorTest {
       Arguments.of("http://example.com/10.0.0.1?ip=10.0.0.2", List.of("10.0.0.1", "10.0.0.2")),
       Arguments.of("http://10.0.0.1@example.com/", List.of()),
       Arguments.of("http://10.0.0.1:8080;https://10.0.0.2/other", List.of("10.0.0.1", "10.0.0.2")),
+      Arguments.of("http://h/p?ip=10.0.0.1/24#10.0.0.0/8", List.of("10.0.0.1", "10.0.0.0")),
+      Arguments.of("url=http://h/p?ip=10.0.0.1/24 net=10.0.0.0/8", List.of("10.0.0.1", "10.0.0.0/8")),
+      Arguments.of("user@10.0.0.1", List.of("10.0.0.1")),
       // Malformed items do not hide a later address
       Arguments.of("[2001:db8::1 10.0.0.1", List.of("10.0.0.1")),
       Arguments.of("10.0.0.1:99999 10.0.0.2", List.of("10.0.0.2")),
@@ -217,7 +220,7 @@ class IpAddressCandidateExtractorTest {
   }
 
   @ParameterizedTest
-  @MethodSource("findAllCases")
+  @MethodSource("extractAllCases")
   void shouldExtractAll(String content, List<String> expected) {
     assertThat(IpAddressCandidateExtractor.extractAll(content)).containsExactlyElementsOf(expected);
   }
