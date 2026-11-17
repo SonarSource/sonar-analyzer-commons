@@ -73,13 +73,11 @@ public class SimplifiedRegexCharacterClass {
 
   @Nullable
   public static SimplifiedRegexCharacterClass of(AutomatonState tree) {
-    if (tree instanceof CharacterClassElementTree characterClassElementTree) {
-      return new SimplifiedRegexCharacterClass(characterClassElementTree);
-    } else if (tree instanceof DotTree dotTree) {
-      return new SimplifiedRegexCharacterClass(dotTree);
-    } else {
-      return null;
-    }
+    return switch (tree) {
+      case CharacterClassElementTree characterClassElementTree -> new SimplifiedRegexCharacterClass(characterClassElementTree);
+      case DotTree dotTree -> new SimplifiedRegexCharacterClass(dotTree);
+      case null, default -> null;
+    };
   }
 
   public boolean isEmpty() {
@@ -259,22 +257,26 @@ public class SimplifiedRegexCharacterClass {
           }
           return;
         }
-        boolean lastInsertedIsNotNull = false;
-        if (inner.contents.get(0) == null) {
-          characters.contents.put(0, tree);
-          lastInsertedIsNotNull = true;
-        }
-        for (Map.Entry<Integer, RegexSyntaxElement> entry : inner.contents.entrySet()) {
-          if (entry.getValue() == null) {
-            characters.contents.put(entry.getKey(), tree);
-            lastInsertedIsNotNull = true;
-          } else if (lastInsertedIsNotNull) {
-            characters.contents.put(entry.getKey(), null);
-            lastInsertedIsNotNull = false;
-          }
-        }
+        addExactClassComplement(inner, tree);
       } else {
         super.visitCharacterClass(tree);
+      }
+    }
+
+    private void addExactClassComplement(SimplifiedRegexCharacterClass inner, CharacterClassTree tree) {
+      boolean lastInsertedIsNotNull = false;
+      if (inner.contents.get(0) == null) {
+        characters.contents.put(0, tree);
+        lastInsertedIsNotNull = true;
+      }
+      for (Map.Entry<Integer, RegexSyntaxElement> entry : inner.contents.entrySet()) {
+        if (entry.getValue() == null) {
+          characters.contents.put(entry.getKey(), tree);
+          lastInsertedIsNotNull = true;
+        } else if (lastInsertedIsNotNull) {
+          characters.contents.put(entry.getKey(), null);
+          lastInsertedIsNotNull = false;
+        }
       }
     }
 
@@ -413,25 +415,29 @@ public class SimplifiedRegexCharacterClass {
           }
           break;
         case 'S':
-          characters.addRange(0x00, '\t' - 1, tree);
-          characters.addRange('\r' + 1, ' ' - 1, tree);
-          if (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS)) {
-            characters.addRange(' ' + 1, 0x84, tree);
-            characters.addRange(0x86, 0x9F, tree);
-            characters.addRange(0xA1, 0x167F, tree);
-            characters.addRange(0x1681, 0x1FFF, tree);
-            characters.addRange(0x200B, 0x2027, tree);
-            characters.addRange(0x202A, 0x202E, tree);
-            characters.addRange(0x2030, 0x205E, tree);
-            characters.addRange(0x2060, 0x2FFF, tree);
-            characters.addRange(0x3001, Character.MAX_CODE_POINT, tree);
-          } else {
-            characters.addRange(' ' + 1, Character.MAX_CODE_POINT, tree);
-          }
+          addNonWhitespace(tree);
           break;
         default:
           characters.addUnknownCharacters(-1);
           break;
+      }
+    }
+
+    private void addNonWhitespace(EscapedCharacterClassTree tree) {
+      characters.addRange(0x00, '\t' - 1, tree);
+      characters.addRange('\r' + 1, ' ' - 1, tree);
+      if (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS)) {
+        characters.addRange(' ' + 1, 0x84, tree);
+        characters.addRange(0x86, 0x9F, tree);
+        characters.addRange(0xA1, 0x167F, tree);
+        characters.addRange(0x1681, 0x1FFF, tree);
+        characters.addRange(0x200B, 0x2027, tree);
+        characters.addRange(0x202A, 0x202E, tree);
+        characters.addRange(0x2030, 0x205E, tree);
+        characters.addRange(0x2060, 0x2FFF, tree);
+        characters.addRange(0x3001, Character.MAX_CODE_POINT, tree);
+      } else {
+        characters.addRange(' ' + 1, Character.MAX_CODE_POINT, tree);
       }
     }
 

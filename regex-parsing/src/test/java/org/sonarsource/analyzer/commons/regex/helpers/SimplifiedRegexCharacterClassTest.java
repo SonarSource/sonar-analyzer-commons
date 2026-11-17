@@ -414,7 +414,11 @@ class SimplifiedRegexCharacterClassTest {
 
     assertSupersetOf("[_-`]", "[`]", false, flags).isTrue();
     assertSupersetOf("[_-`]", "[_]", false, flags).isTrue();
+  }
 
+  @Test
+  void superset_of_case_insensitive_ranges_spanning_letters() {
+    int flags = Pattern.CASE_INSENSITIVE;
     assertSupersetOf("[6-a]", "[6-Z]", false, flags).isTrue();
     assertSupersetOf("[6-a]", "[a-z]", false, flags).isTrue();
 
