@@ -19,6 +19,7 @@ package org.sonarsource.analyzer.commons.appsec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,6 +33,11 @@ public final class IpAddressCandidateExtractor {
   // Separate entries of a list, values, and the enclosing quotes or parentheses.
   private static final Pattern WORD_SEPARATOR = Pattern.compile("[\"'`()\\s]+", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern LIST_SEPARATOR = Pattern.compile("[,;]");
+  private static final Set<Byte> PUNCTUATION_TYPES = Set.of(
+    Character.START_PUNCTUATION, Character.END_PUNCTUATION,
+    Character.INITIAL_QUOTE_PUNCTUATION, Character.FINAL_QUOTE_PUNCTUATION,
+    Character.OTHER_PUNCTUATION, Character.MATH_SYMBOL,
+    Character.CURRENCY_SYMBOL, Character.MODIFIER_SYMBOL, Character.OTHER_SYMBOL);
   private static final String PUNCTUATION = "!|+*<>{}\\~$^";
   private static final Pattern VALUE_SEPARATOR = Pattern.compile("[=&?#]");
 
@@ -154,10 +160,7 @@ public final class IpAddressCandidateExtractor {
     if (c < 128) {
       return false;
     }
-    return switch (Character.getType(c)) {
-      case Character.START_PUNCTUATION, Character.END_PUNCTUATION, Character.INITIAL_QUOTE_PUNCTUATION, Character.FINAL_QUOTE_PUNCTUATION, Character.OTHER_PUNCTUATION, Character.MATH_SYMBOL, Character.CURRENCY_SYMBOL, Character.MODIFIER_SYMBOL, Character.OTHER_SYMBOL -> true;
-      default -> false;
-    };
+    return PUNCTUATION_TYPES.contains((byte) Character.getType(c));
   }
 
   private static boolean isUrlAt(String text, int start) {
