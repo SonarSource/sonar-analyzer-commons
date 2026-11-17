@@ -27,9 +27,6 @@ public final class IpAddressCandidateExtractor {
 
   private static final Pattern URL_PREFIX = Pattern.compile(
     "^(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//(?:[^/?#,@\\s]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
-  // Same as URL_PREFIX, but user information does not span query separators.
-  private static final Pattern URL_PREFIX_ALL = Pattern.compile(
-    "^(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//(?:[^/?#,@&=\\s]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
   // Separate entries of a list, values, and the enclosing quotes or parentheses.
@@ -138,7 +135,7 @@ public final class IpAddressCandidateExtractor {
     while (start <= word.length()) {
       int end;
       if (isUrlAt(word, start)) {
-        // A comma or semicolon within a URL belongs to it, unless another URL follows.
+        // A comma or semicolon within a URL path, query or user information belongs to it, unless another URL follows.
         end = nextListSeparator(word, start, true);
         collectFromUrl(word.substring(start, end), result);
       } else {
@@ -153,12 +150,24 @@ public final class IpAddressCandidateExtractor {
     return URL_PREFIX.matcher(text).region(start, text.length()).lookingAt();
   }
 
-  private static int nextListSeparator(String word, int start, boolean beforeUrlOnly) {
+  private static int nextListSeparator(String word, int start, boolean inUrl) {
     Matcher separator = LIST_SEPARATOR.matcher(word);
+    int authorityEnd = word.length();
+    if (inUrl) {
+      int authorityStart = word.indexOf("//", start) + 2;
+      authorityEnd = authorityStart;
+      while (authorityEnd < word.length() && "/?#".indexOf(word.charAt(authorityEnd)) < 0) {
+        authorityEnd++;
+      }
+    }
     int from = start;
     while (separator.find(from)) {
-      if (!beforeUrlOnly || isUrlAt(word, separator.end())) {
-        return separator.start();
+      int index = separator.start();
+      // Within a URL, a separator ends the entry if another URL follows, or in the authority unless it is user information.
+      boolean endsUrl = isUrlAt(word, separator.end())
+        || (index < authorityEnd && !(word.indexOf('@', index) >= 0 && word.indexOf('@', index) < authorityEnd));
+      if (!inUrl || endsUrl) {
+        return index;
       }
       from = separator.end();
     }
@@ -169,7 +178,8 @@ public final class IpAddressCandidateExtractor {
     // A URL after a value separator extends to the end of the text: punctuation, query and fragment stay in its context.
     int urlStart = text.length();
     for (int i = 1; i < text.length(); i++) {
-      if (VALUE_SEPARATOR.matcher(text.substring(i - 1, i)).matches() && isUrlAt(text, i)) {
+      char previous = text.charAt(i - 1);
+      if ((VALUE_SEPARATOR.matcher(String.valueOf(previous)).matches() || PUNCTUATION.indexOf(previous) >= 0) && isUrlAt(text, i)) {
         urlStart = i;
         break;
       }
@@ -218,7 +228,7 @@ public final class IpAddressCandidateExtractor {
   }
 
   private static void collectFromUrl(String url, List<String> result) {
-    Matcher protocol = URL_PREFIX_ALL.matcher(url);
+    Matcher protocol = URL_PREFIX.matcher(url);
     if (protocol.find()) {
       String rest = url.substring(protocol.end());
       int pathStart = indexOfAny(rest, "/?#&=");
