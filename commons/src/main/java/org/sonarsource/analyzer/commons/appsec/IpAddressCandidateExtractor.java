@@ -146,6 +146,20 @@ public final class IpAddressCandidateExtractor {
     }
   }
 
+  /** Ordinary punctuation and symbols delimit addresses; letters, digits, dots, hyphens, and underscores do not. */
+  private static boolean isPunctuation(char c) {
+    if (PUNCTUATION.indexOf(c) >= 0) {
+      return true;
+    }
+    if (c < 128) {
+      return false;
+    }
+    return switch (Character.getType(c)) {
+      case Character.START_PUNCTUATION, Character.END_PUNCTUATION, Character.INITIAL_QUOTE_PUNCTUATION, Character.FINAL_QUOTE_PUNCTUATION, Character.OTHER_PUNCTUATION, Character.MATH_SYMBOL, Character.CURRENCY_SYMBOL, Character.MODIFIER_SYMBOL, Character.OTHER_SYMBOL -> true;
+      default -> false;
+    };
+  }
+
   private static boolean isUrlAt(String text, int start) {
     return URL_PREFIX.matcher(text).region(start, text.length()).lookingAt();
   }
@@ -179,7 +193,7 @@ public final class IpAddressCandidateExtractor {
     int urlStart = text.length();
     for (int i = 1; i < text.length(); i++) {
       char previous = text.charAt(i - 1);
-      if ((VALUE_SEPARATOR.matcher(String.valueOf(previous)).matches() || PUNCTUATION.indexOf(previous) >= 0) && isUrlAt(text, i)) {
+      if ((VALUE_SEPARATOR.matcher(String.valueOf(previous)).matches() || isPunctuation(previous)) && isUrlAt(text, i)) {
         urlStart = i;
         break;
       }
@@ -201,13 +215,14 @@ public final class IpAddressCandidateExtractor {
     StringBuilder piece = new StringBuilder();
     boolean inZone = false;
     for (char c : text.toCharArray()) {
-      boolean punctuation = PUNCTUATION.indexOf(c) >= 0;
+      boolean punctuation = isPunctuation(c);
       if (delimiters.indexOf(c) >= 0 || (punctuation && !inZone)) {
         pieces.add(piece.toString());
         piece.setLength(0);
         inZone = false;
       } else {
-        inZone |= c == '%' && piece.indexOf(":") >= 0;
+        // A closing bracket ends the zone of a bracketed IPv6 endpoint.
+        inZone = c != ']' && (inZone || (c == '%' && piece.indexOf(":") >= 0));
         piece.append(c);
       }
     }
