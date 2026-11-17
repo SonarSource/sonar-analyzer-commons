@@ -18,4 +18,53 @@
 - '.*' # Compliant
 - '[[:space:]]|x' # Compliant
 - 'x|[[:space:]]' # Compliant
-- '[[:space:]]|\n' # Compliant, false negative
+- '[[:space:]]|\n' # Noncompliant {{Remove or rework this redundant alternative.}}
+#              ^^^
+- '\n|[[:space:]]' # Noncompliant
+- '[[:alpha:]]|A' # Noncompliant
+- '[[:alnum:]]|[0-9]' # Noncompliant
+- '[[:digit:]]|a' # Compliant
+- '[[:^digit:]]|5' # Compliant
+- '[[:^digit:]]|a' # Noncompliant
+- '[^[:digit:]]|a' # Noncompliant
+- '[^[:^digit:]]|5' # Noncompliant
+- '[[:digit:]a-f]|c' # Noncompliant
+- '[[:alpha:][:digit:]]|[A-Z0-9]' # Noncompliant
+- '[[:^digit:]0-4]|[0-9]' # Compliant: overlap is not containment
+- '[[:lower:]]|A' # Compliant
+- '[[:lower:]]|A': 'i' # Noncompliant
+- '(?i:[[:lower:]])|A' # Noncompliant
+- '(?-i:[[:lower:]])|A': 'i' # Compliant
+- '[[:space:]]|\n': 'u' # Noncompliant
+- '[[:lower:]]|A': 'iu' # Noncompliant
+- '[[:upper:]]|a': 'i' # Noncompliant
+- '[[:^lower:]]|A': 'i' # Compliant
+- '[[:^lower:]]|A' # Noncompliant
+- '[[:space:]]|\n|\r' # Noncompliant
+- '([[:space:]])|(\n)' # Noncompliant
+- '(\n)|([[:space:]])' # Compliant: preserve capture ordering restriction
+- '\n|([[:space:]])' # Compliant
+- '[[:space:]]|[\nx]' # Compliant: overlap only
+- '[[:<:]]|a' # Compliant
+- '[[:>:]]|a' # Compliant
+- '[[:<:]a]|a' # Compliant: boundary marker is not a character set
+- '[^[:>:]]|a' # Compliant
+- '(?U)[[:space:]]|\n' # Noncompliant
+- '(?U)[[:digit:]]|a' # Compliant
+- '(?U)[[:^digit:]]|5' # Compliant
+- '(?U)[[:^digit:]]|a' # Noncompliant
+- '(?U)[^[:digit:]]|a' # Noncompliant
+- '(?U)[[:lower:]]|A' # Compliant
+- '(?Ui)[[:lower:]]|A' # Noncompliant
+- '(?U)[[:alpha:]]|é' # Compliant: unknown additional membership
+- '(?U)[[:^digit:]]|é' # Compliant: unknown complement membership
+- '(?U)[^[:digit:]]|é' # Compliant
+- '(?U)([a-zA-Z])|[[:alpha:]]' # Compliant: unknown subset and reverse comparison blocked by capturing group
+- '(?U)[a-zA-Z]|[[:alpha:]]' # Noncompliant
+- '(?U)[^[:ascii:][:digit:]]|[^\x00-\x7f]' # Compliant: no known members is not an empty set
+- '(?U)[^\x00-\x7f]|[^[:ascii:][:digit:]]' # Compliant
+- '(?U)[[:ascii:]]|[A-Z]' # Noncompliant
+- '(?U)[[:^ascii:]]|é' # Noncompliant
+- '[[:unknown:]]|a' # Compliant
+- '[[:space]]|\n' # Compliant: malformed class
+- '[\n]|\n' # Noncompliant
