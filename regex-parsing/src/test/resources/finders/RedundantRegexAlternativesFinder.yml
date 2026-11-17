@@ -60,7 +60,8 @@
 - '(?U)[[:alpha:]]|é' # Compliant
 - '(?U)[[:^alpha:]]|é' # Compliant
 - '(?U)[^[:alpha:]]|5' # Noncompliant
-- '(?U)[A-Za-z]|[[:alpha:]]' # Noncompliant: known ASCII coverage in reverse order
+# Known ASCII coverage is sufficient in reverse order.
+- '(?U)[A-Za-z]|[[:alpha:]]' # Noncompliant
 - '(?U)([A-Za-z])|[[:alpha:]]' # Compliant: unknown additional membership cannot prove forward coverage
 - '(?U)[[:ascii:]]|\x7f' # Noncompliant
 - '(?U)[[:^ascii:]]|é' # Noncompliant
