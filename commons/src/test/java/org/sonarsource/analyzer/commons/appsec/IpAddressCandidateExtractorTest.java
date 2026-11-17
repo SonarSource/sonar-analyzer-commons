@@ -214,6 +214,7 @@ class IpAddressCandidateExtractorTest {
       Arguments.of("10.0.0.1! <10.0.0.2> {10.0.0.3}|10.0.0.4+10.0.0.5 \\\\10.0.0.6\\share", List.of("10.0.0.1", "10.0.0.2", "10.0.0.3", "10.0.0.4", "10.0.0.5", "10.0.0.6")),
       Arguments.of("http://10.0.0.1!x@example.com/ http://u:10.0.0.2!+@example.com/ x=http://a!b@10.0.0.3/p!10.0.0.4", List.of("10.0.0.3", "10.0.0.4")),
       Arguments.of("http://h/a|10.0.0.0/24 http://h/x;10.0.0.0/24 http://h/x,https://10.0.0.1/", List.of("10.0.0.0", "10.0.0.0", "10.0.0.1")),
+      Arguments.of("fe80::1%e+th!x fe80::2%a|b/64 http://[fe80::3%e+th]/p 10.0.0.1%a+b", List.of("fe80::1%e+th!x", "fe80::2%a|b/64", "fe80::3%e+th")),
       Arguments.of("user@10.0.0.1", List.of("10.0.0.1")),
       // Malformed items do not hide a later address
       Arguments.of("[2001:db8::1 10.0.0.1", List.of("10.0.0.1")),

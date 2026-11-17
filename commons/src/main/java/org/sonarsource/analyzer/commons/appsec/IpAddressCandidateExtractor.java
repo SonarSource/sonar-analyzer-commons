@@ -35,9 +35,8 @@ public final class IpAddressCandidateExtractor {
   // Separate entries of a list, values, and the enclosing quotes or parentheses.
   private static final Pattern WORD_SEPARATOR = Pattern.compile("[\"'`()\\s]+", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern LIST_SEPARATOR = Pattern.compile("[,;]");
-  private static final Pattern PUNCTUATION = Pattern.compile("[!|+*<>{}\\\\~$^]+");
+  private static final String PUNCTUATION = "!|+*<>{}\\~$^";
   private static final Pattern VALUE_SEPARATOR = Pattern.compile("[=&?#]");
-  private static final Pattern PATH_SEPARATOR = Pattern.compile("[/@,;!|+*<>{}\\\\~$^]");
 
   private IpAddressCandidateExtractor() {
   }
@@ -175,14 +174,35 @@ public final class IpAddressCandidateExtractor {
         break;
       }
     }
-    for (String chunk : PUNCTUATION.split(text.substring(0, urlStart))) {
-      for (String entry : VALUE_SEPARATOR.split(chunk)) {
-        collectFromEntry(entry, result);
-      }
+    for (String entry : splitKeepingZones(text.substring(0, urlStart), "=&?#")) {
+      collectFromEntry(entry, result);
     }
     if (urlStart < text.length()) {
       collectFromUrl(text.substring(urlStart), result);
     }
+  }
+
+  /**
+   * Splits at the given delimiters and at ordinary punctuation, except that punctuation inside the zone of an IPv6 address
+   * (after a '%' in a piece containing a colon) is kept: the zone is opaque text that ends only at a delimiter.
+   */
+  private static List<String> splitKeepingZones(String text, String delimiters) {
+    List<String> pieces = new ArrayList<>();
+    StringBuilder piece = new StringBuilder();
+    boolean inZone = false;
+    for (char c : text.toCharArray()) {
+      boolean punctuation = PUNCTUATION.indexOf(c) >= 0;
+      if (delimiters.indexOf(c) >= 0 || (punctuation && !inZone)) {
+        pieces.add(piece.toString());
+        piece.setLength(0);
+        inZone = false;
+      } else {
+        inZone |= c == '%' && piece.indexOf(":") >= 0;
+        piece.append(c);
+      }
+    }
+    pieces.add(piece.toString());
+    return pieces;
   }
 
   private static void collectFromEntry(String entry, List<String> result) {
@@ -242,7 +262,7 @@ public final class IpAddressCandidateExtractor {
   }
 
   private static void collectFromSegments(String path, List<String> result) {
-    for (String segment : PATH_SEPARATOR.split(path)) {
+    for (String segment : splitKeepingZones(path, "/@,;")) {
       parseEndpoint(segment).ifPresent(result::add);
     }
   }
