@@ -69,3 +69,12 @@
 - '[^[:<:]]|x' # Compliant
 - '[[:<:]x]|x' # Compliant
 - '[[:<:]]a|a' # Compliant
+
+
+# POSIX-looking text remains literal inside PCRE quoting.
+- '[\Q[:alpha:]\E]|Z' # Compliant
+- '[\Q[:^alpha:]\E]|Z' # Compliant
+- '[\Q[:alpha:]\E]|a' # Noncompliant
+- '[^\Q[:alpha:]\E]|Z' # Noncompliant
+- '[\Q[:<:]\E]|:' # Noncompliant
+- '[\Q[:digit:]\E[:alpha:]]|Z' # Noncompliant

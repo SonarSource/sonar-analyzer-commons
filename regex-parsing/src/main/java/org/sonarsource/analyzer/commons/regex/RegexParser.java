@@ -77,8 +77,7 @@ public class RegexParser {
   private static final String POSIX_CHARACTER_CLASS_PATTERN = "[:%s%s:]";
 
   private static final Set<String> POSIX_CHARACTER_CLASSES = new HashSet<>(Arrays.asList(
-    "alnum", "alpha", "ascii", "blank", "cntrl", "digit", "graph", "lower", "print", "punct", "space", "upper", "word", "xdigit", "<", ">"
-  ));
+    "alnum", "alpha", "ascii", "blank", "cntrl", "digit", "graph", "lower", "print", "punct", "space", "upper", "word", "xdigit", "<", ">"));
 
   private static final Map<String, String> POSIX_CHARACTER_CLASS_LOOKUP = posixCharacterClassMap(false);
 
@@ -282,7 +281,7 @@ public class RegexParser {
     if (!isAsciiDigit(characters.getCurrentChar())) {
       return null;
     }
-    while(isAsciiDigit(characters.getCurrentChar())) {
+    while (isAsciiDigit(characters.getCurrentChar())) {
       characters.moveNext();
     }
     IndexRange range = new IndexRange(startIndex, characters.getCurrentStartIndex());
@@ -443,9 +442,8 @@ public class RegexParser {
     } else {
       expected("flag or ':' or ')'");
     }
-    GroupTree group = finishGroup(previousFreeSpacingMode, openingParen, (range, inner) ->
-      new NonCapturingGroupTree(source, range, enabledFlags, disabledFlags, inner, activeFlags)
-    );
+    GroupTree group = finishGroup(previousFreeSpacingMode, openingParen,
+      (range, inner) -> new NonCapturingGroupTree(source, range, enabledFlags, disabledFlags, inner, activeFlags));
     activeFlags = previousFlags;
     return group;
   }
@@ -499,7 +497,7 @@ public class RegexParser {
     }
     if (inner.is(RegexTree.Kind.CHARACTER)) {
       reference.append(((CharacterTree) inner).characterAsString());
-    } else if (inner.is(RegexTree.Kind.SEQUENCE)){
+    } else if (inner.is(RegexTree.Kind.SEQUENCE)) {
       ((SequenceTree) inner).getItems().stream()
         .filter(CharacterTree.class::isInstance)
         .map(i -> ((CharacterTree) i).characterAsString())
@@ -641,10 +639,9 @@ public class RegexParser {
 
   protected RegexTree parseNamedUnicodeCharacter(SourceCharacter backslash) {
     return parseEscapedSequence('{', '}', "a Unicode character name", content ->
-      // TODO: Once we move to Java 9+, use Character.codePointOf to produce a CharacterTree with the named Unicode
-      //       character instead of a MiscEscapeSequenceTree and produce a syntax error for illegal character names
-      new MiscEscapeSequenceTree(source, backslash.getRange().merge(content.closer.getRange()), activeFlags)
-    );
+    // TODO: Once we move to Java 9+, use Character.codePointOf to produce a CharacterTree with the named Unicode
+    // character instead of a MiscEscapeSequenceTree and produce a syntax error for illegal character names
+    new MiscEscapeSequenceTree(source, backslash.getRange().merge(content.closer.getRange()), activeFlags));
   }
 
   protected RegexTree parseControlSequence(SourceCharacter backslash) {
@@ -748,11 +745,11 @@ public class RegexParser {
   }
 
   protected RegexTree parseNamedBackReference(SourceCharacter backslash) {
-    if(characters.currentIs("k<") && supportsAnyOfFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME, RegexFeature.JAVA_SYNTAX_GROUP_NAME)) {
+    if (characters.currentIs("k<") && supportsAnyOfFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME, RegexFeature.JAVA_SYNTAX_GROUP_NAME)) {
       return parseNamedBackReference(backslash, '<', '>');
-    } else if(characters.currentIs("k'") && supportsAnyOfFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
+    } else if (characters.currentIs("k'") && supportsAnyOfFeatures(RegexFeature.DOTNET_SYNTAX_GROUP_NAME)) {
       return parseNamedBackReference(backslash, '\'', '\'');
-    } else if((characters.currentIs("k{") || characters.currentIs("g{")) && supportsAnyOfFeatures(RegexFeature.PERL_SYNTAX_GROUP_NAME)) {
+    } else if ((characters.currentIs("k{") || characters.currentIs("g{")) && supportsAnyOfFeatures(RegexFeature.PERL_SYNTAX_GROUP_NAME)) {
       return parseNamedBackReference(backslash, '{', '}');
     }
     characters.moveNext();
@@ -988,12 +985,14 @@ public class RegexParser {
 
   @CheckForNull
   protected CharacterClassElementTree parseCharacterClassElement(boolean isAtBeginning) {
-    if (characters.currentIs("[:") && source.supportsFeature(RegexFeature.POSIX_CHARACTER_CLASS)) {
-      PosixCharacterClassElementTree tree = parsePosixCharacterClass();
-      if (tree != null) return tree;
-    }
     if (characters.isInQuotingMode() && characters.isNotAtEnd()) {
       return readCharacter();
+    }
+    if (characters.currentIs("[:") && source.supportsFeature(RegexFeature.POSIX_CHARACTER_CLASS)) {
+      PosixCharacterClassElementTree tree = parsePosixCharacterClass();
+      if (tree != null) {
+        return tree;
+      }
     }
     if (characters.isAtEnd() || characters.currentIs("&&")) {
       return null;

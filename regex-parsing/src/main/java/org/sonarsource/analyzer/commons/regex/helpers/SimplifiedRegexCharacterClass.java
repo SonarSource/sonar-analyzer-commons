@@ -68,13 +68,11 @@ public class SimplifiedRegexCharacterClass {
 
   @Nullable
   public static SimplifiedRegexCharacterClass of(AutomatonState tree) {
-    if (tree instanceof CharacterClassElementTree characterClassElementTree) {
-      return new SimplifiedRegexCharacterClass(characterClassElementTree);
-    } else if (tree instanceof DotTree dotTree) {
-      return new SimplifiedRegexCharacterClass(dotTree);
-    } else {
-      return null;
-    }
+    return switch (tree) {
+      case CharacterClassElementTree characterClassElementTree -> new SimplifiedRegexCharacterClass(characterClassElementTree);
+      case DotTree dotTree -> new SimplifiedRegexCharacterClass(dotTree);
+      case null, default -> null;
+    };
   }
 
   public boolean isEmpty() {
@@ -275,7 +273,7 @@ public class SimplifiedRegexCharacterClass {
         positive.contents.forEach((from, element) -> {
           if (element != null) {
             Integer next = positive.contents.higherKey(from);
-            characters.addRange(from, next == null ? Character.MAX_CODE_POINT : next - 1, tree);
+            characters.addRange(from, next == null ? Character.MAX_CODE_POINT : (next - 1), tree);
           }
         });
         if (positive.containsUnknownCharacters) {
@@ -292,7 +290,7 @@ public class SimplifiedRegexCharacterClass {
         if (from <= to) {
           characters.addRange(from, to, tree);
         }
-        from = entry.getValue() == null ? entry.getKey() : limit + 1;
+        from = entry.getValue() == null ? entry.getKey() : (limit + 1);
       }
       if (from <= limit) {
         characters.addRange(from, limit, tree);
@@ -341,9 +339,7 @@ public class SimplifiedRegexCharacterClass {
       switch (tree.getType()) {
         case 'd':
           characters.addRange('0', '9', tree);
-          if (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS)) {
-            characters.addUnknownCharacters(0);
-          }
+          addUnknownUnicodeCharacters(tree);
           break;
         case 'D':
           characters.addRange(0x00, '0' - 1, tree);
@@ -359,9 +355,7 @@ public class SimplifiedRegexCharacterClass {
           characters.addRange('A', 'Z', tree);
           characters.addRange('_', '_', tree);
           characters.addRange('a', 'z', tree);
-          if (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS)) {
-            characters.addUnknownCharacters(0);
-          }
+          addUnknownUnicodeCharacters(tree);
           break;
         case 'W':
           characters.addRange(0x00, '0' - 1, tree);
@@ -409,6 +403,12 @@ public class SimplifiedRegexCharacterClass {
         default:
           characters.addUnknownCharacters(0);
           break;
+      }
+    }
+
+    private void addUnknownUnicodeCharacters(EscapedCharacterClassTree tree) {
+      if (tree.activeFlags().contains(Pattern.UNICODE_CHARACTER_CLASS)) {
+        characters.addUnknownCharacters(0);
       }
     }
 
