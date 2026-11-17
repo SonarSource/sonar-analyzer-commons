@@ -16,25 +16,30 @@
  */
 package org.sonarsource.analyzer.commons.regex.helpers;
 
-
 import java.util.List;
 import java.util.regex.Pattern;
 import org.assertj.core.api.AbstractBooleanAssert;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.sonarsource.analyzer.commons.regex.java.JavaRegexSource;
 import org.sonarsource.analyzer.commons.regex.RegexParseResult;
 import org.sonarsource.analyzer.commons.regex.RegexParser;
 import org.sonarsource.analyzer.commons.regex.RegexSource;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterClassElementTree;
+import org.sonarsource.analyzer.commons.regex.ast.CharacterClassTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterRangeTree;
 import org.sonarsource.analyzer.commons.regex.ast.CharacterTree;
 import org.sonarsource.analyzer.commons.regex.ast.DotTree;
 import org.sonarsource.analyzer.commons.regex.ast.FlagSet;
 import org.sonarsource.analyzer.commons.regex.ast.IndexRange;
 import org.sonarsource.analyzer.commons.regex.ast.MiscEscapeSequenceTree;
+import org.sonarsource.analyzer.commons.regex.ast.PosixCharacterClassElementTree;
+import org.sonarsource.analyzer.commons.regex.ast.SourceCharacter;
 import org.sonarsource.analyzer.commons.regex.ast.RegexSyntaxElement;
 import org.sonarsource.analyzer.commons.regex.ast.RegexTree;
 import org.sonarsource.analyzer.commons.regex.ast.SequenceTree;
+import org.sonarsource.analyzer.commons.regex.php.PhpRegexSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,6 +49,78 @@ import static org.mockito.Mockito.mock;
 class SimplifiedRegexCharacterClassTest {
 
   public static final int NO_FLAGS = 0;
+
+  @ParameterizedTest
+  @CsvSource(value = {
+    "alnum;[0-9A-Za-z]",
+    "alpha;[A-Za-z]",
+    "ascii;[\\x00-\\x7f]",
+    "blank;[ \\t]",
+    "cntrl;[\\x00-\\x1f\\x7f]",
+    "digit;[0-9]",
+    "graph;[!-~]",
+    "lower;[a-z]",
+    "print;[ -~]",
+    "punct;[!-/:-@\\[-`{-~]",
+    "space;[ \\t-\\r]",
+    "upper;[A-Z]",
+    "word;[0-9A-Z_a-z]",
+    "xdigit;[0-9A-Fa-f]"
+  }, delimiter = ';')
+  void posix_membership(String property, String expectedRegex) {
+    for (int flags : new int[] {NO_FLAGS, Pattern.CASE_INSENSITIVE, Pattern.UNICODE_CHARACTER_CLASS,
+      Pattern.UNICODE_CHARACTER_CLASS | Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE}) {
+      Pattern expected = Pattern.compile(expectedRegex, flags & Pattern.CASE_INSENSITIVE);
+      SimplifiedRegexCharacterClass positive = parsePhpClass("[[:" + property + ":]]", flags);
+      SimplifiedRegexCharacterClass negative = parsePhpClass("[[:^" + property + ":]]", flags);
+      SimplifiedRegexCharacterClass outerNegative = parsePhpClass("[^[:" + property + ":]]", flags);
+      SimplifiedRegexCharacterClass doubleNegative = parsePhpClass("[^[:^" + property + ":]]", flags);
+      for (int codePoint = 0; codePoint <= 255; codePoint++) {
+        boolean included = expected.matcher(Character.toString(codePoint)).matches();
+        boolean exact = codePoint < 128 || (flags & Pattern.UNICODE_CHARACTER_CLASS) == 0 || "ascii".equals(property);
+        SimplifiedRegexCharacterClass character = new SimplifiedRegexCharacterClass();
+        character.addRange(codePoint, codePoint, mock(CharacterClassElementTree.class));
+        assertThat(positive.supersetOf(character, false)).as("%s flags=%s codePoint=%s", property, flags, codePoint).isEqualTo(included);
+        assertThat(negative.supersetOf(character, false)).as("negated %s flags=%s codePoint=%s", property, flags, codePoint).isEqualTo(exact && !included);
+        assertThat(outerNegative.supersetOf(character, false)).as("outer negated %s flags=%s codePoint=%s", property, flags, codePoint).isEqualTo(exact && !included);
+        assertThat(doubleNegative.supersetOf(character, false)).as("double negated %s flags=%s codePoint=%s", property, flags, codePoint).isEqualTo(included);
+      }
+    }
+  }
+
+  @Test
+  void posix_unions_and_unknown_membership() {
+    SimplifiedRegexCharacterClass union = parsePhpClass("[[:alpha:]0-9_]", NO_FLAGS);
+    assertThat(union.supersetOf(parsePhpClass("[A-Z0-9_]", NO_FLAGS), false)).isTrue();
+    assertThat(union.supersetOf(parsePhpClass("[A-Z!]", NO_FLAGS), false)).isFalse();
+    assertThat(parsePhpClass("[^[:^digit:]a-z]", NO_FLAGS).supersetOf(parsePhpClass("[0-9]", NO_FLAGS), false)).isTrue();
+    SimplifiedRegexCharacterClass universal = parsePhpClass("[\\s\\S]", NO_FLAGS);
+    for (String property : new String[] {"unknown", "<", ">"}) {
+      for (boolean negated : new boolean[] {false, true}) {
+        RegexSource source = new PhpRegexSource("", '\'');
+        IndexRange range = new IndexRange(0, 0);
+        PosixCharacterClassElementTree node = new PosixCharacterClassElementTree(source, range, negated, property, new FlagSet());
+        CharacterClassTree outer = new CharacterClassTree(source, range, mock(SourceCharacter.class), true, node, new FlagSet());
+        for (CharacterClassElementTree tree : new CharacterClassElementTree[] {node, outer}) {
+          SimplifiedRegexCharacterClass unknown = new SimplifiedRegexCharacterClass(tree);
+          assertThat(unknown.isEmpty()).isFalse();
+          assertThat(unknown.matchesAnyCharacter()).isFalse();
+          assertThat(unknown.supersetOf(universal, false)).isFalse();
+          assertThat(universal.supersetOf(unknown, false)).isFalse();
+        }
+      }
+    }
+    SimplifiedRegexCharacterClass unicode = parsePhpClass("[[:alpha:]]", Pattern.UNICODE_CHARACTER_CLASS);
+    assertThat(parsePhpClass("[A-Za-z]", NO_FLAGS).supersetOf(unicode, false)).isFalse();
+    assertThat(universal.supersetOf(unicode, false)).isFalse();
+    assertThat(parsePhpClass("[[:^alpha:]a-z]", Pattern.UNICODE_CHARACTER_CLASS).supersetOf(parsePhpClass("[0-9a-z]", NO_FLAGS), false)).isTrue();
+  }
+
+  private static SimplifiedRegexCharacterClass parsePhpClass(String regex, int flags) {
+    RegexParseResult result = new RegexParser(new PhpRegexSource(regex, '\''), new FlagSet(flags)).parse();
+    assertThat(result.getSyntaxErrors()).isEmpty();
+    return SimplifiedRegexCharacterClass.of(result.getResult());
+  }
 
   @Test
   void testIntersectionWithTrueAsDefaultAnswer() {
@@ -301,7 +378,7 @@ class SimplifiedRegexCharacterClassTest {
     assertSupersetOf(".", "\t", false, Pattern.DOTALL).isTrue();
     assertSupersetOf(".", ".", false, Pattern.DOTALL).isTrue();
     // UNIX_LINES is ignored when DOTALL is set
-    assertSupersetOf(".", "\n", false, Pattern.UNIX_LINES|Pattern.DOTALL).isTrue();
+    assertSupersetOf(".", "\n", false, Pattern.UNIX_LINES | Pattern.DOTALL).isTrue();
   }
 
   @Test
@@ -495,4 +572,3 @@ class SimplifiedRegexCharacterClassTest {
     return result;
   }
 }
-
