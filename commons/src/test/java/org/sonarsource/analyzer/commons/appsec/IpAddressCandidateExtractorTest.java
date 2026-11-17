@@ -197,6 +197,8 @@ class IpAddressCandidateExtractorTest {
     "[2001:db8::1] | 2001:db8::1",
     "2001:db8::1:8080 | 2001:db8::1:8080",
     ":: | ::",
+    "::192.0.2.1 | ::192.0.2.1",
+    "::192.0.2.1/96 | ::192.0.2.1/96",
     "::00000:2 | ::00000:2",
     "::FFFF:192.0.2.1 | ::FFFF:192.0.2.1",
     "2001:db8::192.0.2.1 | 2001:db8::192.0.2.1",
@@ -257,6 +259,10 @@ class IpAddressCandidateExtractorTest {
 
   @Test
   void shouldKeepAllOccurrencesInSourceOrder() {
+    assertThat(IpAddressCandidateExtractor.extractAll("address:192.0.2.1+2001:db8::1"))
+      .containsExactly("192.0.2.1", "2001:db8::1");
+    assertThat(IpAddressCandidateExtractor.extractAll("address:192.0.2.1%2001:db8::1"))
+      .containsExactly("192.0.2.1", "2001:db8::1");
     assertThat(IpAddressCandidateExtractor.extractAll("192.0.2.1/192.0.2.2"))
       .containsExactly("192.0.2.1", "192.0.2.2");
     assertThat(IpAddressCandidateExtractor.extractAll("192.0.2.1/192.0.2.2:80"))
@@ -298,7 +304,7 @@ class IpAddressCandidateExtractorTest {
     "192.0.2.1.", ".192.0.2.1", "192.0.2.1.5", "999.192.0.2.1",
     "-192.0.2.1", "192.0.2.1-foo", "_192.0.2.1", "192.0.2.1_foo",
     "接口192.0.2.1", "192.0.2.1接口", "192.0.2.１２", "01.2.3.4",
-    "address:192.0.2.1:65536", "address:192.0.2.1:bad", "address:192.0.2.1/33",
+    "address:192.0.2.1:+80", "address:192.0.2.1:65536", "address:192.0.2.1:bad", "address:192.0.2.1/33",
     "abcd:192.0.2.1", "gggg:ffff::192.0.2.1", "address:[2001:db8::1]:65536",
     "256.0.2.1", "192.0.2", "2001:db8::1::2", "::ffff:192.0.2.999",
     "::ffff:0192.0.2.1", "bad::ffff:192.0.2.1z", "2001:db8::1.",

@@ -194,11 +194,14 @@ public final class IpAddressCandidateExtractor {
       || label.indexOf('.') >= 0 || label.indexOf('[') >= 0 || label.indexOf(']') >= 0)) {
       return false;
     }
-    int end = entry.indexOf('/', colon + 1);
-    String value = entry.substring(colon + 1, end < 0 ? entry.length() : end);
+    int end = colon + 1;
+    while (end < entry.length() && "/+%".indexOf(entry.charAt(end)) < 0) {
+      end++;
+    }
+    String value = entry.substring(colon + 1, end);
     // A label before IPv4 (possibly with a port) or a bracketed endpoint is unambiguous.
     // Keep unbracketed IPv6 together, including malformed groups and embedded IPv4 tails.
-    return value.startsWith("[") || (value.indexOf('.') >= 0 && value.indexOf(':') == value.lastIndexOf(':'));
+    return value.startsWith("[") || (!value.startsWith(":") && value.indexOf('.') >= 0 && value.indexOf(':') == value.lastIndexOf(':'));
   }
 
   private static void extractEntry(String entry, boolean url, List<String> addresses) {
