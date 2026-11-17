@@ -150,8 +150,7 @@ public final class IpAddressCandidateExtractor {
     int slash = entry.indexOf('/');
     if (slash >= 0 && slash == entry.lastIndexOf('/')) {
       String suffix = entry.substring(slash + 1);
-      // Three digits cover both IPv4 and IPv6 prefixes; longer suffixes are paths.
-      if (suffix.length() <= 3 && ASCII_DIGITS.matcher(suffix).matches()) {
+      if (ASCII_DIGITS.matcher(suffix).matches()) {
         parseWithCidr(entry.substring(0, slash), suffix, result);
         return;
       }
@@ -193,9 +192,14 @@ public final class IpAddressCandidateExtractor {
     if (candidate.portRemoved()) {
       // An endpoint is not a network: the digits are a path.
       result.add(candidate.candidate());
-    } else if (Integer.parseInt(suffix) <= (candidate.candidate().indexOf(':') >= 0 ? 128 : 32)) {
+    } else if (isValidPrefixLength(suffix, candidate.candidate().indexOf(':') >= 0 ? 128 : 32)) {
       result.add(candidate.candidate() + "/" + suffix);
     }
+  }
+
+  private static boolean isValidPrefixLength(String digits, int maxBits) {
+    String significant = digits.replaceFirst("^0+(?=\\d)", "");
+    return significant.length() <= 3 && Integer.parseInt(significant) <= maxBits;
   }
 
   private static void collectFromSegments(String path, List<String> result) {
@@ -209,7 +213,7 @@ public final class IpAddressCandidateExtractor {
   }
 
   private static boolean isAddress(StrippedCandidate stripped) {
-    return IpAddressClassifier.parse(stripped.candidate()).isPresent();
+    return !stripped.candidate().endsWith(".") && IpAddressClassifier.parse(stripped.candidate()).isPresent();
   }
 
   private static Optional<StrippedCandidate> stripBracketsAndPort(String candidate) {
