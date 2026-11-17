@@ -33,7 +33,7 @@ public final class IpAddressCandidateExtractor {
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
   // Separate entries of a list, values, and the enclosing quotes or parentheses.
-  private static final Pattern CHUNK_SEPARATOR = Pattern.compile("[,;\"'`()\\s]+", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern CHUNK_SEPARATOR = Pattern.compile("[,;\"'`()!|+*<>{}\\\\~$^\\s]+", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern VALUE_SEPARATOR = Pattern.compile("[=&?#]");
   private static final Pattern PATH_SEPARATOR = Pattern.compile("[/@]");
 
