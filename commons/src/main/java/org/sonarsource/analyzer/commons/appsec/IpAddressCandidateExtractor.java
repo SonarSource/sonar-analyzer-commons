@@ -27,6 +27,9 @@ public final class IpAddressCandidateExtractor {
 
   private static final Pattern URL_PREFIX = Pattern.compile(
     "^(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//(?:[^/?#,@\\s]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
+  // Same as URL_PREFIX, but user information does not span query separators.
+  private static final Pattern URL_PREFIX_ALL = Pattern.compile(
+    "^(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//(?:[^/?#,@&=\\s]*@)?", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ADDRESS_DELIMITER = Pattern.compile("[?#,\\s]", Pattern.UNICODE_CHARACTER_CLASS);
   private static final Pattern ASCII_DIGITS = Pattern.compile("\\d+");
   // Separate entries of a list, values, and the enclosing quotes or parentheses.
@@ -159,7 +162,7 @@ public final class IpAddressCandidateExtractor {
   }
 
   private static void collectFromUrl(String url, List<String> result) {
-    Matcher protocol = URL_PREFIX.matcher(url);
+    Matcher protocol = URL_PREFIX_ALL.matcher(url);
     if (protocol.find()) {
       String rest = url.substring(protocol.end());
       int pathStart = indexOfAny(rest, "/?#&=");
