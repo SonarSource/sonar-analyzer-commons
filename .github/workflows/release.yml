@@ -44,11 +44,11 @@ jobs:
       contents: read
     steps:
       - name: Install jfrog-cli
-        uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+        uses: SonarSource/mise-action-wrapper@65aa289d3f408f4999d13a52a14cde4f54b48442 # 2.0.0
         with:
-          cache: true
           tool_versions: |
             jfrog-cli 2.103
+          persist_github_token: false
       - name: Get promoter token
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
@@ -88,11 +88,11 @@ jobs:
       contents: read
     steps:
       - name: Install jfrog-cli
-        uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+        uses: SonarSource/mise-action-wrapper@65aa289d3f408f4999d13a52a14cde4f54b48442 # 2.0.0
         with:
-          cache: true
           tool_versions: |
             jfrog-cli 2.103
+          persist_github_token: false
       - name: Get promoter token
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
@@ -133,12 +133,12 @@ jobs:
       contents: read
     steps:
       - name: Install jfrog-cli
-        uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+        uses: SonarSource/mise-action-wrapper@65aa289d3f408f4999d13a52a14cde4f54b48442 # 2.0.0
         with:
-          cache: true
           tool_versions: |
             jfrog-cli 2.103
             dotnet 10
+          persist_github_token: false
       - name: Get secrets
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
@@ -188,11 +188,11 @@ jobs:
       contents: read
     steps:
       - name: Install jfrog-cli
-        uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
+        uses: SonarSource/mise-action-wrapper@65aa289d3f408f4999d13a52a14cde4f54b48442 # 2.0.0
         with:
-          cache: true
           tool_versions: |
             jfrog-cli 2.103
+          persist_github_token: false
       - name: Get secrets
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
