@@ -28,6 +28,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,6 +94,23 @@ class CleartextProtocolFilterTest {
 
   static Stream<String> safeUrls() throws IOException, ParseException {
     return samples("safeUrls");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "http://my-service:8080/a[0], true",
+    "ftp://user@my-service/a[0], true",
+    "http://@my-service/a[0], true",
+    "http://my-service:invalid/a[0], false",
+    "http://my-service evil.com/a[0], false",
+    "http://my_service/a[0], false",
+    "http://my-service@evil.com/a[0], false",
+    "http://2130706433:8080/a[0], false",
+    "http://0x08080808/a[0], false",
+    "http://[2001:db8::1]/a[0], false"
+  })
+  void malformedPathDoesNotChangeHostSafety(String url, boolean expected) {
+    assertThat(CleartextProtocolFilter.isSafeWithoutTls(url)).isEqualTo(expected);
   }
 
   @ParameterizedTest(name = "[{index}] {0}")
