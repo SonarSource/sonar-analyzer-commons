@@ -333,7 +333,7 @@ public final class CleartextProtocolFilter {
     }
     var matcher = CLEARTEXT_AUTHORITY.matcher(stripped);
     if (matcher.find()) {
-      return isSafeHost(matcher.group("rest"));
+      return isSafeHost(matcher.group("rest")) || hasSingleLabelHost(stripped);
     }
     var lower = stripped.toLowerCase(Locale.ROOT);
     return CLEARTEXT_SCHEME_PREFIXES.stream().noneMatch(lower::startsWith);
@@ -359,6 +359,17 @@ public final class CleartextProtocolFilter {
 
   private static boolean isSafeHost(String host) {
     return isInternalHost(host) || isNamespaceUriAuthority(host) || isDocumentationHost(host);
+  }
+
+  private static boolean hasSingleLabelHost(String url) {
+    // Validate the complete authority separately so malformed paths do not disable the single-label exemption.
+    var authority = url.substring(url.indexOf("://") + 3).split("[/?#]", 2)[0];
+    try {
+      var host = new URI("http://" + authority).getHost();
+      return host != null && isSingleLabelHost(host);
+    } catch (URISyntaxException e) {
+      return false;
+    }
   }
 
   // Single-integer IPv4 literal written in hexadecimal, e.g. 0x7f000001 (== 127.0.0.1).
