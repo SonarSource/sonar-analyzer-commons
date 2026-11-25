@@ -68,7 +68,7 @@ jobs:
         with:
           version: 2026.10.20
           tool_versions: |
-            rust 1.93.0
+            rust 1.98.1
       - name: Package Cargo crate
         working-directory: sonar-analyzer-commons-configurations/target/packaging/cargo
         run: cargo package --offline --allow-dirty
