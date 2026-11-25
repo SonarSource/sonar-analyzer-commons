@@ -11,9 +11,9 @@
 
   <artifactId>sonar-analyzer-commons-configurations</artifactId>
   <name>SonarSource Analyzers Commons Configurations</name>
-  <description>Machine-readable export (JSON, .nupkg, npm .tgz) of shared analyzer configuration generated from
-    sonar-analyzer-commons, so non-JVM analyzers can consume the same secret-exclusion patterns, validation corpus,
-    and cleartext-protocol exclusions without drift</description>
+  <description>Machine-readable export (JSON, .nupkg, npm .tgz, Rust .crate) of shared analyzer configuration
+    generated from sonar-analyzer-commons, so non-JVM analyzers can consume the same secret-exclusion patterns,
+    validation corpus, and cleartext-protocol exclusions without drift</description>
 
   <properties>
     <exporter.mainClass>org.sonarsource.analyzer.commons.appsec.export.SecretPatternsExporter</exporter.mainClass>
@@ -140,8 +140,9 @@
         </executions>
       </plugin>
 
-      <!-- 2. Filter the NuGet/npm manifest templates with the resolved ${package.version}. Templates live outside
-           src/main/resources so they are not copied into the (unpublished) helper jar. -->
+      <!-- 2. Filter the NuGet/npm/Cargo manifest templates and stage the crate's generated JSON data. Maven runs
+           this plugin after the exporter plugin, so both executions run after the JSON exists. Templates live
+           outside src/main/resources so they are not copied into the (unpublished) helper jar. -->
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
         <executions>
@@ -163,12 +164,38 @@
               <useDefaultExcludes>false</useDefaultExcludes>
             </configuration>
           </execution>
+          <execution>
+            <id>stage-cargo-data</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/packaging/cargo</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/generated-resources</directory>
+                  <targetPath>data</targetPath>
+                  <filtering>false</filtering>
+                </resource>
+                <!-- The crate is distributed on its own, so it carries the license text next to its SPDX id. -->
+                <resource>
+                  <directory>${project.basedir}/..</directory>
+                  <includes>
+                    <include>LICENSE</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
 
-      <!-- 3. Assemble the .nupkg (OPC zip) and npm .tgz (tar.gz) into target/. These are NOT Maven artifacts: the
-           .nupkg is signed and pushed to the Repox NuGet feed by the CI workflow, which reads it straight from
-           target/ (see .github/workflows/build.yml). Only the raw JSON is attached to the Maven reactor below. -->
+      <!-- 3. Assemble the .nupkg (OPC zip) and npm .tgz (tar.gz) into target/. The Cargo crate is packaged by the
+           CI workflow from target/packaging/cargo. These are NOT Maven artifacts: the .nupkg is signed and pushed to
+           the Repox NuGet feed by the CI workflow, which reads it straight from target/ (see
+           .github/workflows/build.yml). Only the raw JSON is attached to the Maven reactor below. -->
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <executions>
@@ -179,7 +206,7 @@
               <goal>single</goal>
             </goals>
             <configuration>
-              <!-- Not attached to the reactor: distributed via the NuGet feed / (future) npm registry, not Maven. -->
+              <!-- Not attached to the reactor: distributed via the NuGet / npm / Cargo feeds, not Maven. -->
               <attach>false</attach>
               <descriptors>
                 <descriptor>src/main/assembly/nupkg.xml</descriptor>
@@ -191,7 +218,7 @@
       </plugin>
 
       <!-- 4. Derive ${package.version} (initialize) and attach the raw JSON as a Maven artifact (package). The
-           .nupkg/.tgz are intentionally not attached here - they are published outside Maven (NuGet feed / npm). -->
+           .nupkg/.tgz/.crate are intentionally not attached here - they are published outside Maven. -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
@@ -211,9 +238,10 @@
               <failIfNoMatch>false</failIfNoMatch>
             </configuration>
           </execution>
-          <!-- npm requires a semver version, but CI stamps a 4-part Maven version (X.Y.Z.BUILD_NUMBER). Rewrite the
-               trailing build segment to a semver prerelease (X.Y.Z.BUILD -> X.Y.Z-BUILD) for the npm package.json.
-               Local -SNAPSHOT and plain 3-part versions do not match and pass through unchanged (both valid semver). -->
+          <!-- npm and Cargo require a semver version, but CI stamps a 4-part Maven version (X.Y.Z.BUILD_NUMBER).
+               Rewrite the trailing build segment to a semver prerelease (X.Y.Z.BUILD -> X.Y.Z-BUILD) for package.json
+               and Cargo.toml. Other versions pass through unchanged; the local X.Y-SNAPSHOT is not valid semver, which
+               only matters when running npm or cargo on a local build (neither is part of the Maven build). -->
           <execution>
             <id>derive-npm-package-version</id>
             <phase>initialize</phase>

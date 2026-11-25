@@ -1,0 +1,10 @@
+[package]
+name = "sonar-analyzer-commons-configurations"
+version = "${npm.package.version}"
+edition = "2021"
+license = "LGPL-3.0-only"
+description = "Shared secret-exclusion and cleartext-protocol configuration and validation corpora from sonar-analyzer-commons for non-JVM SonarSource analyzers."
+repository = "https://github.com/SonarSource/sonar-analyzer-commons"
+readme = "README.md"
+include = ["src/**", "data/*.json", "README.md", "LICENSE"]
+publish = false
