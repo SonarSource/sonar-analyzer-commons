@@ -125,7 +125,7 @@ jobs:
     needs: [release]
     # Run after a successful release, or when release was skipped via publishPackagesOnly. Never on a dry run.
     if: ${{ !cancelled() && inputs.dryRun != true && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
-    runs-on: sonar-xs-public
+    runs-on: sonar-xs
     name: Promote Cargo to releases
     permissions:
       id-token: write
