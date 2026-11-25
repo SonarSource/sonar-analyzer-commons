@@ -160,6 +160,10 @@ public final class CleartextProtocolFilter {
     "^json-schema\\.org|" +
     // Eclipse EMF/Ecore
     "^www\\.eclipse\\.org|" +
+    // ADL xAPI verb/activity identifiers
+    "^adlnet\\.gov|" +
+    // XMPP server-to-server stream namespace
+    "^etherx\\.jabber\\.org|" +
     // Domain-wide exclusions: HTTP diagnostics and OsmAnd identifiers
     "^neverssl\\.com|^osmand\\.net" +
     ")(?=:|$)", Pattern.CASE_INSENSITIVE);
@@ -178,6 +182,7 @@ public final class CleartextProtocolFilter {
     "http://auth0.com/oauth/grant-type",
     "http://bigcontent.io/cms/schema",
     "http://cv.iptc.org/newscodes/digitalsourcetype",
+    "http://cyclonedx.org/schema/",
     "http://dashif.org/guidelines",
     "http://dashif.org/thumbnail_tile",
     "http://data.europa.eu/esco",
@@ -192,6 +197,7 @@ public final class CleartextProtocolFilter {
     "http://powerbi.com/product/schema",
     "http://purl.oclc.org/ooxml",
     "http://snomed.info/sct",
+    "http://snomed.info/id/",
     "http://terminology.hl7.org/codesystem",
     "http://tizen.org/feature",
     "http://tizen.org/system",

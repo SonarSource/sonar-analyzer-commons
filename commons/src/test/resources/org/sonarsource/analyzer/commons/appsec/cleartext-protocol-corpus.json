@@ -218,7 +218,14 @@
     "http://osmand.net",
     "http://osmand.net/api",
     "http://neverssl.com/api",
-    "http://NEVERSSL.COM:8080/api"
+    "http://NEVERSSL.COM:8080/api",
+    "http://cyclonedx.org/schema/bom-1.5.schema.json",
+    "HTTP://CYCLONEDX.ORG/SCHEMA/BOM-1.5.SCHEMA.JSON",
+    "http://snomed.info/sct",
+    "http://snomed.info/sct/900000000000207008/version/20210731",
+    "http://snomed.info/id/22298006",
+    "http://adlnet.gov/expapi/verbs/completed",
+    "http://etherx.jabber.org/streams"
   ],
   "unsafeUrls": [
     "http://acme.com",
@@ -308,6 +315,17 @@
     "http://auth0.com/%6fauth/grant-type",
     "http://auth0.com/other/../oauth/grant-type",
     "http://neverssl.com.anotherdomain.org/api",
-    "http://osmand.net.anotherdomain.org/api"
+    "http://osmand.net.anotherdomain.org/api",
+    "http://cyclonedx.org.evil.com/schema/bom-1.5.schema.json",
+    "http://snomed.info.evil.com/sct",
+    "http://adlnet.gov.evil.com/expapi/verbs/completed",
+    "http://etherx.jabber.org.evil.com/streams",
+    "http://cyclonedx.org/",
+    "http://cyclonedx.org/other",
+    "http://cyclonedx.org:${port}/schema/bom-1.5.schema.json",
+    "http://user:pass@cyclonedx.org/schema/bom-1.5.schema.json",
+    "http://snomed.info/",
+    "http://snomed.info/browser/concepts",
+    "http://snomed.info:${port}/sct"
   ]
 }
