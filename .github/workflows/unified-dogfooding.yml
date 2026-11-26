@@ -10,9 +10,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  unified-platform-dogfooding:
+  build:
     runs-on: sonar-xs
-    name: Unified Platform Dogfooding
+    name: Build and run shadow scans
+    timeout-minutes: 60
     permissions:
       id-token: write
       contents: write # Required for build-number management
@@ -29,8 +30,21 @@ jobs:
           run-shadow-scans: true
           artifactory-reader-role: private-reader
           maven-args: -Pcoverage -Dsonar.organization=sonarsource
+
+  run_iris:
+    needs: [ build ]
+    if: ${{ !cancelled() && needs.build.result == 'success' && github.ref_name == github.event.repository.default_branch }}
+    runs-on: sonar-xs
+    name: Run IRIS
+    timeout-minutes: 60
+    concurrency:
+      group: iris-org.sonarsource.analyzer-commons:sonar-analyzer-commons-parent
+      cancel-in-progress: false
+    permissions:
+      id-token: write
+      contents: read
+    steps:
       - name: Run IRIS Analysis
-        if: github.ref_name == github.event.repository.default_branch
         uses: SonarSource/unified-dogfooding-actions/run-iris@v1
         with:
           primary_project_key: org.sonarsource.analyzer-commons:sonar-analyzer-commons-parent
