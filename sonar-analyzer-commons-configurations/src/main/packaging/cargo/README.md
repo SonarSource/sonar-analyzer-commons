@@ -1,6 +1,6 @@
 # sonar-analyzer-commons-configurations
 
-Shared analyzer configuration data generated from sonar-analyzer-commons for non-JVM SonarSource analyzers.
+Shared analyzer configuration data generated from sonar-analyzer-commons for Rust-based SonarSource analyzers.
 
 ## Installation
 

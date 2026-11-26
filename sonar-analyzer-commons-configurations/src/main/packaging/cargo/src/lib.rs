@@ -20,7 +20,7 @@
 #![no_std]
 
 //! Shared analyzer configuration and validation corpora generated from
-//! sonar-analyzer-commons for non-JVM SonarSource analyzers.
+//! sonar-analyzer-commons for Rust-based SonarSource analyzers.
 //!
 //! The exported values are JSON strings. This crate intentionally supplies
 //! data only; consumers parse the JSON and implement matching semantics in

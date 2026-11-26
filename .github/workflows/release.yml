@@ -35,8 +35,8 @@ jobs:
   # release above does not handle it (the .nupkg is published to the NuGet feed, not as a Maven artifact).
   promote-nuget:
     needs: [release]
-    # Run after a successful release, or when release was skipped via publishPackagesOnly.
-    if: ${{ !cancelled() && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
+    # Run after a successful release, or when release was skipped via publishPackagesOnly. Never on a dry run.
+    if: ${{ !cancelled() && inputs.dryRun != true && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
     runs-on: sonar-xs-public
     name: Promote NuGet to releases
     permissions:
@@ -79,8 +79,8 @@ jobs:
   # release above does not handle it (the .tgz is published to the npm feed, not as a Maven artifact).
   promote-npm:
     needs: [release]
-    # Run after a successful release, or when release was skipped via publishPackagesOnly.
-    if: ${{ !cancelled() && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
+    # Run after a successful release, or when release was skipped via publishPackagesOnly. Never on a dry run.
+    if: ${{ !cancelled() && inputs.dryRun != true && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
     runs-on: sonar-xs-public
     name: Promote npm to releases
     permissions:
