@@ -14,7 +14,7 @@ on:
         default: false
       publishPackagesOnly:
         type: boolean
-        description: Skip Maven/binaries release; only promote and publish npm/NuGet to public registries
+        description: Skip Maven/binaries release; only promote and publish npm/NuGet/Cargo packages
         default: false
 
 jobs:
@@ -35,8 +35,8 @@ jobs:
   # release above does not handle it (the .nupkg is published to the NuGet feed, not as a Maven artifact).
   promote-nuget:
     needs: [release]
-    # Run after a successful release, or when release was skipped via publishPackagesOnly.
-    if: ${{ !cancelled() && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
+    # Run after a successful release, or when release was skipped via publishPackagesOnly. Never on a dry run.
+    if: ${{ !cancelled() && inputs.dryRun != true && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
     runs-on: sonar-xs-public
     name: Promote NuGet to releases
     permissions:
@@ -79,8 +79,8 @@ jobs:
   # release above does not handle it (the .tgz is published to the npm feed, not as a Maven artifact).
   promote-npm:
     needs: [release]
-    # Run after a successful release, or when release was skipped via publishPackagesOnly.
-    if: ${{ !cancelled() && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
+    # Run after a successful release, or when release was skipped via publishPackagesOnly. Never on a dry run.
+    if: ${{ !cancelled() && inputs.dryRun != true && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
     runs-on: sonar-xs-public
     name: Promote npm to releases
     permissions:
@@ -117,6 +117,50 @@ jobs:
           jf rt build-promote "$BUILD_NAME" "$BUILD_NUMBER" "sonarsource-npm-public-releases" \
             --status="Released" \
             --source-repo="sonarsource-npm-public-builds" \
+            --copy=true
+
+  # Promote the Cargo crate from the public build feed to the release feed. As with npm, the Maven
+  # release above does not handle it (the .crate is published to the Cargo feed, not as a Maven artifact).
+  promote-cargo:
+    needs: [release]
+    # Run after a successful release, or when release was skipped via publishPackagesOnly. Never on a dry run.
+    if: ${{ !cancelled() && inputs.dryRun != true && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
+    runs-on: sonar-xs
+    name: Promote Cargo to releases
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Install jfrog-cli
+        uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        with:
+          cache: true
+          tool_versions: |
+            jfrog-cli 2.103
+      - name: Get promoter token
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | PROMOTER_ACCESS_TOKEN;
+      - name: Promote Cargo crate to releases
+        shell: bash
+        env:
+          PROMOTER_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).PROMOTER_ACCESS_TOKEN }}
+          # The release tag is the full 4-part version, e.g. 2.27.0.5000; the build number is its last segment.
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          BUILD_NAME="${GITHUB_REPOSITORY#*/}_cargo"
+          BUILD_NUMBER="${RELEASE_VERSION##*.}"
+          jf config add repox \
+            --artifactory-url="https://repox.jfrog.io/artifactory" \
+            --access-token="$PROMOTER_ACCESS_TOKEN" \
+            --interactive=false
+          jf config use repox
+          jf rt build-promote "$BUILD_NAME" "$BUILD_NUMBER" "sonarsource-cargo-public-releases" \
+            --status="Released" \
+            --source-repo="sonarsource-cargo-public-builds" \
             --copy=true
 
   # sonar-dotnet and SonarJS are public repos with no RepoX access, so the NuGet/npm packages

@@ -60,6 +60,19 @@ jobs:
           retention-days: 7
           overwrite: true
 
+      # --- Cargo crate: Maven stages the sources under target/packaging/cargo; Rust is only needed here, in CI. ---
+      # Packaged after the pipeline artifact upload so Cargo output is not carried into the analysis job.
+      # --offline guarantees the data-only crate never gains a dependency.
+      - name: Install Rust
+        uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        with:
+          version: 2026.10.20
+          tool_versions: |
+            rust 1.98.1
+      - name: Package Cargo crate
+        working-directory: sonar-analyzer-commons-configurations/target/packaging/cargo
+        run: cargo package --offline --allow-dirty
+
       # --- NuGet package: DigiCert-sign and publish to the Repox NuGet feed. ---
       # The Maven build only assembles the .nupkg into target/; it is NOT a Maven artifact. These steps sign it
       # and upload it to a NuGet-layout repo so .NET projects can consume it. Only runs when Maven actually deployed.
@@ -280,6 +293,30 @@ jobs:
           jf rt build-collect-env "$BUILD_NAME" "$BUILD_NUMBER"
           jf rt build-publish "$BUILD_NAME" "$BUILD_NUMBER"
 
+      - name: Deploy Cargo crate to Repox
+        if: steps.build-maven.outputs.deployed == 'true'
+        shell: bash
+        env:
+          BUILD_NUMBER: ${{ steps.build-maven.outputs.BUILD_NUMBER }}
+          PROJECT_VERSION: ${{ steps.build-maven.outputs.project-version }}
+        run: |
+          set -euo pipefail
+          CRATE_NAME=sonar-analyzer-commons-configurations
+          DEPLOY_REPO=sonarsource-cargo-public-qa
+          BUILD_NAME="${GITHUB_REPOSITORY#*/}_cargo"
+          # Releasability requires a groupId:artifactId:version module id on every build-info.
+          MODULE_GAV="org.sonarsource.analyzer-commons:${CRATE_NAME}:${PROJECT_VERSION}"
+          jf config use repox
+          # Artifactory only indexes crates at crates/<name>/<name>-<version>.crate; cargo package names the file so.
+          jf rt upload --flat --fail-no-op \
+            --build-name="$BUILD_NAME" --build-number="$BUILD_NUMBER" --module="$MODULE_GAV" \
+            "sonar-analyzer-commons-configurations/target/packaging/cargo/target/package/${CRATE_NAME}-*.crate" \
+            "${DEPLOY_REPO}/crates/${CRATE_NAME}/"
+          # Read by the promote-cargo job (ci-github-actions/promote) from the build-info to derive the target repo.
+          export ARTIFACTORY_DEPLOY_REPO="$DEPLOY_REPO"
+          jf rt build-collect-env "$BUILD_NAME" "$BUILD_NUMBER"
+          jf rt build-publish "$BUILD_NAME" "$BUILD_NUMBER"
+
   analysis:
     name: NEXT analysis
     needs: build
@@ -408,4 +445,24 @@ jobs:
         uses: SonarSource/ci-github-actions/promote@v2
         with:
           build-name: ${{ github.event.repository.name }}_npm
+          promote-pull-request: true
+
+  promote-cargo:
+    needs: [ build, analysis ]
+    if: >-
+      !cancelled()
+      && needs.build.result == 'success'
+      && (needs.analysis.result == 'success' || needs.analysis.result == 'skipped')
+      && (needs.build.outputs.deployed == 'true')
+    runs-on: sonar-xs
+    name: Promote Cargo
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - *checkout
+      - name: Promote Cargo build
+        uses: SonarSource/ci-github-actions/promote@v2
+        with:
+          build-name: ${{ github.event.repository.name }}_cargo
           promote-pull-request: true
