@@ -147,6 +147,11 @@ class CleartextProtocolFilterTest {
       // Namespace URI authority
       URI.create("http://www.w3.org/2001/XMLSchema"),
       URI.create("http://schema.org/Person"),
+      // Namespace URI authorities added for JS-2368 (spec-mandated identifiers, never dereferenced)
+      URI.create("http://cyclonedx.org/schema/bom-1.5.schema.json"),
+      URI.create("http://snomed.info/id/22298006"),
+      URI.create("http://adlnet.gov/expapi/verbs/completed"),
+      URI.create("http://etherx.jabber.org/streams"),
       // Documentation domain
       URI.create("http://example.com/path"),
       URI.create("http://api.example.com/v1"),
@@ -178,7 +183,17 @@ class CleartextProtocolFilterTest {
       URI.create("http://0x08080808"),
       URI.create("http://[2001:db8::1]"),
       // Credentials before a known-identifier host so the prefix check does not match
-      URI.create("http://user:pass@jabber.org/protocol/muc")
+      URI.create("http://user:pass@jabber.org/protocol/muc"),
+      // JS-2368 namespace authorities under an evil.com suffix
+      URI.create("http://cyclonedx.org.evil.com/schema/bom-1.5.schema.json"),
+      URI.create("http://snomed.info.evil.com/sct"),
+      URI.create("http://adlnet.gov.evil.com/expapi/verbs/completed"),
+      URI.create("http://etherx.jabber.org.evil.com/streams"),
+      // cyclonedx.org also serves ordinary content, so only /schema/ is exempt, not the whole host
+      URI.create("http://cyclonedx.org/other"),
+      // snomed.info also serves ordinary content (e.g. the SNOMED CT browser), so only /sct and
+      // /id/ are exempt, not the whole host
+      URI.create("http://snomed.info/browser/concepts")
     );
   }
 
