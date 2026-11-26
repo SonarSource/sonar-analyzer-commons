@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "question": "Is this field unused?",
+  "instructions": "Answer from the facts only.",
+  "facts": {
+    "field": { "description": "The declaration of the field" }
+  },
+  "policy": "prefer_false_positive"
+}

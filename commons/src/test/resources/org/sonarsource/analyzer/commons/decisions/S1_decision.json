@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "question": "Is this finding a true positive?",
+  "instructions": "Answer from the facts only.",
+  "facts": {
+    "testName": { "description": "The name of the unit test" },
+    "testBody": { "description": "The body of the unit test" },
+    "imports": { "description": "List of imports in the file" }
+  },
+  "policy": "prefer_false_negative",
+  "keyFacts": ["testName", "testBody"],
+  "confidenceThresholdOverride": 0.9
+}
