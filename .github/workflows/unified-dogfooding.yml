@@ -1,0 +1,52 @@
+name: Unified Dogfooding scans
+
+on:
+  schedule:
+    - cron: '0 4 * * 1-5' # Run the workflow Mon-Fri at 04:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: sonar-xs
+    name: Build and run shadow scans
+    permissions:
+      id-token: write
+      contents: write # Required for build-number management
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+        with:
+          version: 2026.10.20
+      - uses: SonarSource/ci-github-actions/build-maven@v2
+        with:
+          deploy: false
+          run-shadow-scans: true
+          artifactory-reader-role: private-reader
+          maven-args: -Pcoverage -Dsonar.organization=sonarsource
+
+  run_iris:
+    needs: [ build ]
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    runs-on: sonar-xs
+    name: Run IRIS
+    concurrency:
+      group: iris
+      cancel-in-progress: false
+      queue: single
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Run IRIS Analysis
+        uses: SonarSource/unified-dogfooding-actions/run-iris@v1
+        with:
+          primary_project_key: org.sonarsource.analyzer-commons:sonar-analyzer-commons-parent
+          primary_platform: Next
+          shadow1_project_key: org.sonarsource.analyzer-commons:sonar-analyzer-commons-parent
+          shadow1_platform: SQC-EU
+          shadow2_project_key: org.sonarsource.analyzer-commons:sonar-analyzer-commons-parent
+          shadow2_platform: SQC-US
